@@ -1,0 +1,52 @@
+{-# LANGUAGE PatternSynonyms #-}
+
+module Env (
+  Env, Name (..), NameSpace (..),
+  pattern FuncName, pattern GenName, pattern ModName, pattern PkgName,
+  pattern ProcName, pattern TypeName, pattern UnspecName, pattern VarName)
+  where
+
+import qualified Data.Map as M
+
+-- TODO: make this an actual newtype with different utils?
+type Env a = M.Map Name a
+data Name = Name { _namespace :: NameSpace
+                 , _name :: String
+                 }
+            deriving (Eq, Ord, Show)
+
+-- TODO: align instances of Eq, Ord for soundness.
+
+data NameSpace = NSFunction
+               | NSGenerated
+               | NSModule
+               | NSPackage
+               | NSProcedure
+               | NSType
+               | NSUnspecified
+               | NSVariable
+                 deriving (Eq, Ord, Show)
+
+pattern FuncName :: String -> Name
+pattern FuncName s = Name NSFunction s
+
+pattern GenName :: String -> Name
+pattern GenName s = Name NSGenerated s
+
+pattern ModName :: String -> Name
+pattern ModName s = Name NSModule s
+
+pattern PkgName :: String -> Name
+pattern PkgName s = Name NSPackage s
+
+pattern ProcName :: String -> Name
+pattern ProcName s = Name NSProcedure s
+
+pattern TypeName :: String -> Name
+pattern TypeName s = Name NSType s
+
+pattern UnspecName :: String -> Name
+pattern UnspecName s = Name NSUnspecified s
+
+pattern VarName :: String -> Name
+pattern VarName s = Name NSVariable s

@@ -1,0 +1,6 @@
+# custom
+dist-newstyle
+magnolia
+
+# vim save files
+*.swp
