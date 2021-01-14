@@ -16,9 +16,8 @@ obj = UImpl (UnspecName "ImA") [ NoCtx $ UType $ TypeName "T"
                                                    (Just (TypeName "T4"))
                                          , NoCtx $ Var UObs (VarName "b")
                                                    (Just (TypeName "T3"))
-                                         , NoCtx $ Var UOut (GenName "retval#1")
-                                                   (Just (TypeName "T3"))
-                                         ] (Just $ NoCtx $ UCall
+                                         ] (NoCtx $ GenName "T3")
+                                           (Just $ NoCtx $ UCall
                                             (UnspecName "f")
                                             [ NoCtx $ UVar $ NoCtx $
                                               Var UObs (VarName "a") Nothing
@@ -55,9 +54,7 @@ scope = M.fromList [( UnspecName "SigB"
                                                       (Just (TypeName "T4"))
                                             , NoCtx $ Var UObs (VarName "b")
                                                       Nothing
-                                            , NoCtx $ Var UOut (GenName "c")
-                                                      Nothing
-                                            ] Nothing]
+                                            ] (NoCtx $ GenName "c") Nothing]
                                  ) ]
                    )]
 

@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 
 module EmitPy (PythonSource (..)) where
@@ -33,10 +32,14 @@ emitPyModule :: UModule -> PythonSource
 emitPyModule = undefined
 
 emitPyDecl :: UDecl -> PythonSource
-emitPyDecl = undefined
+emitPyDecl (WithSrc _ inputDecl) = case inputDecl of
+  -- TODO: add type annotations?
+  UType _ -> noEmit
+  UCallable _ _ _ _ Nothing -> noEmit -- Ignore prototypes
+  UCallable callableType name args retType (Just body) -> undefined
 
 emitPyExprNoIndent :: UExpr -> PythonSource
-emitPyExprNoIndent inputExpr = emitPyExpr 0 inputExpr
+emitPyExprNoIndent = emitPyExpr 0
 
 emitPyExpr :: Int -> UExpr -> PythonSource
 emitPyExpr ind (WithSrc _ inputExpr) = emitPyExpr' ind inputExpr
@@ -45,7 +48,7 @@ emitPyExpr ind (WithSrc _ inputExpr) = emitPyExpr' ind inputExpr
     emitPyExpr' indent expr = let strIndent = mkIndent indent in case expr of
       UVar (WithSrc _ v) -> emitName (_varName v)
       UCall name args _ ->
-        emitName name <> "(" <> (intercalate "," (map (emitPyExpr 0) args)) <>
+        emitName name <> "(" <> intercalate "," (map (emitPyExpr 0) args) <>
         ")"
       UBlockExpr stmts ->
         intercalate ("\n" <> strIndent) $
@@ -74,6 +77,9 @@ mkIndent = flip replicate ' '
 
 incIndent :: Int -> Int
 incIndent = (+2)
+
+noEmit :: PythonSource
+noEmit = ""
 
 emitName :: Name -> PythonSource
 emitName (GenName s) = error $ "Should not happen; trying to emit: " ++

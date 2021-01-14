@@ -53,7 +53,8 @@ checkModule pkg (WithSrc _ (UModule moduleType name decls deps)) = do
     types = [(typeName, [decl]) | decl@(WithSrc _ (UType typeName)) <- decls]
     callables = [d | d@(WithSrc _ UCallable {}) <- decls]
     joinEnvs = M.unionWith (<>)
-    checkBody env callable@(~(WithSrc _ (UCallable callableType _ args body)))
+    checkBody env callable@(~(WithSrc _ (UCallable callableType _ args
+                                                   (WithSrc _ retType) body)))
       | moduleType /= Concept, Axiom <- callableType =
           throwError $ "Axioms can only be declared in concepts." <$ callable
       | Nothing <- body, Axiom <- callableType =
@@ -65,25 +66,24 @@ checkModule pkg (WithSrc _ (UModule moduleType name decls deps)) = do
       -- TODO: handle case for programs
       | Nothing <- body = return ()
       | Just expr <- body = do
-          let returnType = getReturnType callable
           possibleTypes <- inferScopedExprType env (initScope args) expr
           case callableType of
-            Function -> if returnType `elem` possibleTypes then return ()
+            Function -> if retType `elem` possibleTypes then return ()
                         else throwError $ ("Expected return type " <>
-                          pshow returnType <> " but body has one of the " <>
+                          pshow retType <> " but body has one of the " <>
                           "following types: " <> pshow possibleTypes <> ".") <$
                           callable
             _        -> if length possibleTypes == 1 &&
-                          head possibleTypes == returnType
+                          head possibleTypes == retType
                         then return ()
-                        else throwError $ ("Expected " <> pshow returnType <>
+                        else throwError $ ("Expected " <> pshow retType <>
                           " return type in " <> pshow callableType <>
                           "but return value has one of the following " <>
                           "types: " <> pshow possibleTypes <> ".") <$ callable
 
     checkImplemented :: Module -> UDecl -> Except Err ()
     checkImplemented env callable@(~(WithSrc _ (UCallable _ callableName
-                                                          _ body)))
+                                                          _ _ body)))
       | Just _ <- body = return ()
       | Nothing <- body = do
           let ~(Just matches) = M.lookup callableName env
@@ -92,10 +92,11 @@ checkModule pkg (WithSrc _ (UModule moduleType name decls deps)) = do
           when ((mkAnonProto <$> callable) `notElem` anonDefinedMatches) $
                throwError $ "Callable is unimplemented in program." <$ callable
 
-    mkAnonProto ~(UCallable callableType callableName args body) =
-      UCallable callableType callableName (map (mkAnonVar <$>) args) body
+    mkAnonProto ~(UCallable callableType callableName args retType body) =
+      UCallable callableType callableName (map (mkAnonVar <$>) args) retType
+                body
     mkAnonVar (Var mode _ typ) = Var mode (GenName "#anon#") typ
-    isDefined ~(WithSrc _ (UCallable _ _ _ body)) = isJust body
+    isDefined ~(WithSrc _ (UCallable _ _ _ _ body)) = isJust body
 
 -- TODO: sanity check modes
 
@@ -298,19 +299,26 @@ inferScopedExprType inputModule inputScope e = do
     -- TODO: use for annotating AST
     UTypedExpr {} -> undefined
 
-  getFunctionSignature (WithSrc _ (UFunc _ args _)) = map getArgType args
+  getFunctionSignature (WithSrc _ (UFunc _ args _ _)) = map getArgType args
   getFunctionSignature _ = error ("Expected function parameter in " <>
                                   "getFunctionSignature")
 
-  setScopeAndReturnType scope' args fun@(~(WithSrc _ (UFunc _ argVars _))) =
-    let returnType = getReturnType fun in
-    return (foldl updateScope scope' (zip args argVars), [returnType])
+  setScopeAndReturnType scope' args
+                        ~(WithSrc _ (UFunc _ argVars (WithSrc _ retType) _)) =
+    return (foldl updateScope scope' (zip args argVars), [retType])
+
+  updateScope :: Scope -> (UExpr, UVar) -> Scope
+  updateScope scope (WithSrc _ expr, ~(WithSrc _ (Var _ _ typ@(Just _))))
+    | UVar (WithSrc _ (Var _ name _)) <- expr = case M.lookup name scope of
+          Just v@(WithSrc _ (Var mode _ Nothing)) ->
+              M.insert name (Var mode name typ <$ v) scope
+          Just (WithSrc _ (Var _ _ (Just _))) -> scope
+          _ -> error "This should not happen (updateScope)"
+    | otherwise = scope
 
   isCompatibleFunctionDecl :: [[UType]] -> UDecl -> Bool
-  isCompatibleFunctionDecl typeConstraints (WithSrc _ (UFunc _ args _))
-    -- The last argument stored in a function declaration corresponds to the
-    -- return type.
-    | length args /= length typeConstraints + 1 = False
+  isCompatibleFunctionDecl typeConstraints (WithSrc _ (UFunc _ args _ _))
+    | length args /= length typeConstraints = False
     | otherwise = and $ zipWith fitsTypeConstraints typeConstraints args
   isCompatibleFunctionDecl _ _ = False
 
@@ -322,30 +330,24 @@ inferScopedExprType inputModule inputScope e = do
     | typ `elem` typeConstraints = True
     | otherwise = False
 
-  updateScope :: Scope -> (UExpr, UVar) -> Scope
-  updateScope scope (WithSrc _ expr, ~(WithSrc _ (Var _ _ typ@(Just _))))
-    | UVar (WithSrc _ (Var _ name _)) <- expr = case M.lookup name scope of
-          Just v@(WithSrc _ (Var mode _ Nothing)) ->
-              M.insert name (Var mode name typ <$ v) scope
-          Just (WithSrc _ (Var _ _ (Just _))) -> scope
-          _ -> error "This should not happen (updateScope)"
-    | otherwise = scope
-
 checkTypeExists :: WithSrc Name -> Module -> Except Err ()
-checkTypeExists (WithSrc src name) modul = case M.lookup name modul of
-  Nothing      -> throwError (WithSrc src err)
-  Just matches -> if NoCtx (UType name) `elem` matches then return ()
-                  else throwError (WithSrc src err)
-  where
-    err = "Type " <> pshow name <> " does not exist in current scope."
+checkTypeExists (WithSrc src name) modul
+  | Unit <- name = return ()
+  | Pred <- name = return ()
+  | otherwise = case M.lookup name modul of
+      Nothing      -> throwError (WithSrc src err)
+      Just matches -> if NoCtx (UType name) `elem` matches then return ()
+                      else throwError (WithSrc src err)
+    where err = "Type " <> pshow name <> " does not exist in current scope."
 
 -- TODO: ensure functions have a return type defined, though should be handled
 -- by parsing.
 registerProto :: Module -> UDecl -> Except Err Module
 registerProto modul declWSrc@(WithSrc _ decl)
-  | UCallable _ name args _ <- decl = do
+  | UCallable _ name args retType _ <- decl = do
       -- TODO: check for procedures, predicates, axioms (this is only for func)?
       checkArgs args
+      >> checkTypeExists retType modul
       >> return (M.insertWith (<>) name [declWSrc] modul)
   | otherwise = return modul
   where checkArgs :: [UVar] -> Except Err ()
@@ -440,9 +442,9 @@ applyRenaming _decl renaming = applyRenamingInDecl <$> _decl
   where replaceName' = flip replaceName renaming
         applyRenamingInDecl decl
           | UType name <- decl = UType $ replaceName' name
-          | UCallable ctyp name vars expr <- decl =
+          | UCallable ctyp name vars retType expr <- decl =
                 UCallable ctyp (replaceName' name)
-                  (map (applyRenamingInVar <$>) vars)
+                  (map (applyRenamingInVar <$>) vars) (replaceName' <$> retType)
                   (applyRenamingInExpr <$> expr)
         applyRenamingInVar (Var mode name typ) =
           Var mode name (replaceName' <$> typ)
@@ -469,11 +471,3 @@ applyRenaming _decl renaming = applyRenamingInDecl <$> _decl
 
 getArgType :: UVar -> UType
 getArgType ~(WithSrc _ (Var _ _ (Just typ))) = typ
-
-getReturnType :: UDecl -> UType
-getReturnType ~(WithSrc _ (UCallable callableType _ args _)) =
-  case callableType of
-    Axiom     -> Unit
-    Function  -> getArgType $ last args
-    Predicate -> Pred
-    Procedure -> Unit

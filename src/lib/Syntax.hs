@@ -49,7 +49,8 @@ data UModuleType = Signature | Concept | Implementation | Program
 
 type UDecl = WithSrc UDecl'
 data UDecl' = UType UType
-            | UCallable UCallable Name [UVar] (Maybe UExpr) -- TODO: partiality
+            -- TODO: guards/partiality
+            | UCallable UCallable Name [UVar] (WithSrc UType) (Maybe UExpr)
               deriving (Eq, Show)
 
 type UType = Name
@@ -122,14 +123,16 @@ pattern UProg name decls deps = UModule Program name decls deps
 pattern UImpl :: Name -> [UDecl] -> [UModuleDep] -> UModule'
 pattern UImpl name decls deps = UModule Implementation name decls deps
 
-pattern UAxiom :: Name -> [UVar] -> Maybe UExpr -> UDecl'
-pattern UAxiom name args body = UCallable Axiom name args body
+pattern UAxiom :: Name -> [UVar] -> WithSrc UType -> Maybe UExpr -> UDecl'
+pattern UAxiom name args retType body = UCallable Axiom name args retType body
 
-pattern UFunc :: Name -> [UVar] -> Maybe UExpr -> UDecl'
-pattern UFunc name args body = UCallable Function name args body
+pattern UFunc :: Name -> [UVar] -> WithSrc UType -> Maybe UExpr -> UDecl'
+pattern UFunc name args retType body = UCallable Function name args retType body
 
-pattern UPred :: Name -> [UVar] -> Maybe UExpr -> UDecl'
-pattern UPred name args body = UCallable Predicate name args body
+pattern UPred :: Name -> [UVar] -> WithSrc UType -> Maybe UExpr -> UDecl'
+pattern UPred name args retType body =
+  UCallable Predicate name args retType body
 
-pattern UProc :: Name -> [UVar] -> Maybe UExpr -> UDecl'
-pattern UProc name args body = UCallable Procedure name args body
+pattern UProc :: Name -> [UVar] -> WithSrc UType -> Maybe UExpr -> UDecl'
+pattern UProc name args retType body =
+  UCallable Procedure name args retType body

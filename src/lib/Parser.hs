@@ -72,20 +72,17 @@ callable = do
               <|> (keyword ProcedureKW >> return Procedure)
   let nameCons = if callableType == Procedure then ProcName else FuncName
   name <- try symOpName <|> (nameCons <$> nameString)
-  args <- do
-      args' <- case callableType of
-          Procedure -> parens ((varMode >>= annVar) `sepBy` symbol ",")
-          _ -> parens (annVar UObs `sepBy` symbol ",")
-      case callableType of
-        Function -> do
-            WithSrc src typ <- symbol ":" *> withSrc typeName
-            return $ args' <>
-                     [WithSrc src (Var UOut (GenName "retval") (Just typ))]
-        _ -> return args'
+  args <- case callableType of
+      Procedure -> parens ((varMode >>= annVar) `sepBy` symbol ",")
+      _ -> parens (annVar UObs `sepBy` symbol ",")
+  retType <- case callableType of
+      Function  -> symbol ":" *> withSrc typeName
+      Predicate -> return $ NoCtx Pred
+      _         -> return $ NoCtx Unit
   body <- optional (blockExpr
                 <|> (symbol "=" *> (blockExpr <|> (expr <* symbol ";"))))
   when (isNothing body) $ symbol ";"
-  return $ UCallable callableType name args body
+  return $ UCallable callableType name args retType body
 
 annVar :: UVarMode -> Parser UVar
 annVar mode = withSrc annVar'
