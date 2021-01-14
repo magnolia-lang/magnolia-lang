@@ -4,11 +4,13 @@ module Check (checkPackage, checkModule) where
 
 import Control.Monad (foldM)
 import Control.Monad.Except
+import Control.Monad.Trans.State
 --import Debug.Trace (trace)
 import Data.Foldable (traverse_)
 import Data.Maybe (fromJust, isJust, isNothing)
 import Data.Monoid ((<>))
 import Data.Traversable (for)
+import Data.Tuple (swap)
 
 import qualified Data.List as L
 import qualified Data.List.NonEmpty as NE
@@ -46,6 +48,7 @@ checkModule pkg (WithSrc _ (UModule moduleType name decls deps)) = do
   -- Step 4: check bodies if allowed
   traverse_ (checkBody env) callables
   -- Step 5: check that everything is resolved if program
+  -- TODO: return typechecked elements here.
   when (moduleType == Program) $ traverse_ (checkImplemented env) callables
   -- TODO: check that name is unique?
   return $ M.insert name env pkg
@@ -66,7 +69,7 @@ checkModule pkg (WithSrc _ (UModule moduleType name decls deps)) = do
       -- TODO: handle case for programs
       | Nothing <- body = return ()
       | Just expr <- body = do
-          possibleTypes <- inferScopedExprType env (initScope args) expr
+          (tBody, possibleTypes) <- annotateScopedExpr env (initScope args) expr
           case callableType of
             Function -> if retType `elem` possibleTypes then return ()
                         else throwError $ ("Expected return type " <>
@@ -100,26 +103,32 @@ checkModule pkg (WithSrc _ (UModule moduleType name decls deps)) = do
 
 -- TODO: sanity check modes
 
-inferScopedExprType :: Module -> Scope -> UExpr -> Except Err [UType]
-inferScopedExprType inputModule inputScope e = do
-  snd <$> inferScopedExprType' inputModule inputScope e
+annotateScopedExpr :: Module -> Scope -> UExpr -> Except Err TExpr
+annotateScopedExpr inputModule inputScope e = do
+  snd <$> annotateScopedExpr' inputModule inputScope e
   where
-  inferScopedExprType' :: Module -> Scope -> UExpr
-                         -> Except Err (Scope, [UType])
-  inferScopedExprType' modul scope exprWSrc@(WithSrc src expr) = case expr of
+  annotateScopedExpr' :: Module -> Scope -> UExpr
+                         -> Except Err (Scope, TExpr)
+  annotateScopedExpr' modul scope exprWSrc@(WithSrc src expr) =
+    let annot = (,) in case expr of
     -- TODO: annotate type and mode here; return modes?
-    UVar (WithSrc _ (Var _ name typ)) -> case M.lookup name scope of
+    UVar var@(WithSrc _ (Var _ name typ)) -> case M.lookup name scope of
         Nothing -> throwError $ "No such variable in current scope" <$ exprWSrc
         Just (WithSrc _ (Var _ _ typ')) -> let typAnn = fromJust typ in
           case typ' of
-            Nothing     -> if isNothing typ then return (scope, [])
-                           else return (scope, [typAnn])
+            Nothing     -> if isNothing typ
+                           -- We allow this case because in function calls, the
+                           -- type of the variable may not be defined at call
+                           -- time. TODO: is that really true?
+                           then return (scope, (TUnk exprWSrc, []))
+                           else return (scope, (TVar var, [typAnn]))
             Just typSet -> if isNothing typ || typSet == typAnn
-                           then return (scope, [typSet])
+                           then return (scope, (TVar var, [typSet]))
                            else
                              throwError $ "Conflicting types for var" <$
                                           exprWSrc
-    UCall name args _   -> do
+    -- TODO: deal with casting
+    UCall name args cast -> do
         -- Type inference is fairly basic. We assume that for variables, either
         -- the type has been specified/previously inferred, or the variable is
         -- unset and also untyped. The only way to restrict an unknown variable
@@ -135,20 +144,25 @@ inferScopedExprType inputModule inputScope e = do
         -- First, expand the scope by running through the arguments; at every
         -- sub function calls, variables may get annotated.
         -- TODO: opportunities for optimization here if need be.
-        scope' <- foldM (((fst <$>) <$>) . inferScopedExprType' modul) scope
+        -- TODO: is that actually useful?
+        scope' <- foldM (((fst <$>) <$>) . annotateScopedExpr' modul) scope
                         args
         -- Second, actually infer the types of the arguments as much as
         -- possible.
         -- TODO: is traverse a mapAccumL?
-        argTypes <- traverse (inferScopedExprType modul scope') args
-        let candidates = filter (isCompatibleFunctionDecl argTypes) $
+        tArgs <- traverse (annotateScopedExpr modul scope') args
+        let argTypes = map snd tArgs
+            candidates = filter (isCompatibleFunctionDecl argTypes) $
               M.findWithDefault [] name modul
+            tExpr = TCall name tArgs cast
         -- TODO: stop using list to reach return val, maybe use Data.Sequence?
         -- TODO: do something with procedures and axioms here?
         case candidates of
           []  -> throwError $ ("No corresponding function with name '" <>
                                pshow name <> "' in scope") <$ exprWSrc
-          [fun] -> setScopeAndReturnType scope' args fun
+          [fun] -> do
+            (endScope, types) <- setScopeAndReturnType scope' args fun
+            return (endScope, (tExpr, types))
           -- In this case, we have many matches. This may happen for several
           -- reasons:
           -- (1) the arguments are not explicitly typed and resolution is
@@ -164,22 +178,21 @@ inferScopedExprType inputModule inputScope e = do
           matches ->
             let protos = S.fromList $ map getFunctionSignature matches in
             if S.size protos == 1
-            then setScopeAndReturnType scope' args (L.head matches)
+            then do
+              let bestMatch = L.head matches
+              (endScope, types) <- setScopeAndReturnType scope' args bestMatch
+              return (endScope, (tExpr, types))
             else throwError $
                 "Ambiguous function calls, several possible matches" <$ exprWSrc
     UBlockExpr exprStmts -> do
-      -- The type of a block expression is the type of its last expression
-      -- statement. Therefore, we ignore the return types of all the other
-      -- statements and only go through them to build the required scope.
-      scope' <- foldM (((fst <$>) <$>) . inferScopedExprType' modul) scope
-                      (NE.init exprStmts)
-      (scope'', types) <- inferScopedExprType' modul scope' (NE.last exprStmts)
+      (scope', tExprStmts) <-
+          mapAccumM (annotateScopedExpr' modul) scope exprStmts
       -- Return the old scope with potential new annotations; this makes sure
       -- that variables declared in the current scope are eliminated.
       -- Note that we do not yet have nested scopes; this means that it is
       -- never possible to shadow names from an outer scope.
-      let endScope = M.fromList $ map (\k -> (k, scope'' M.! k)) (M.keys scope)
-      return (endScope, types)
+      let endScope = M.fromList $ map (\k -> (k, scope' M.! k)) (M.keys scope)
+      return (endScope, (TBlockExpr tExprStmts, snd $ NE.last tExprStmts))
     ULet mode name maybeType maybeExpr -> do
       unless (isNothing $ M.lookup name scope) $
            throwError $ ("A variable with name " <> pshow name <> "already " <>
@@ -196,9 +209,11 @@ inferScopedExprType inputModule inputScope e = do
                                " without being initialized.") <$ exprWSrc
           -- Variable is unset, therefore has to be UOut.
           return (M.insert name (WithSrc src (Var UOut name (Just typ))) scope,
-                  [Unit])
-        Just expr' -> do
-          (scope', types) <- inferScopedExprType' modul scope expr'
+                  (TLet mode name maybeType Nothing, [Unit]))
+        Just rhsExpr -> do
+          (scope', tRhsExpr) <- annotateScopedExpr' modul scope rhsExpr
+          let tExpr = TLet mode name maybeType (Just tRhsExpr)
+              types = snd tRhsExpr
           case maybeType of
             Nothing -> do
               when (L.length types /= 1) $
@@ -207,7 +222,7 @@ inferScopedExprType inputModule inputScope e = do
               return
                 (M.insert name (WithSrc src (Var mode name (Just (head types))))
                           scope',
-                 [Unit])
+                 annot tExpr [Unit])
             Just typ -> do
               unless (typ `elem` types) $
                      throwError $ "Attempted to cast variable to invalid type"
@@ -216,18 +231,21 @@ inferScopedExprType inputModule inputScope e = do
                     throwError $ "Invalid mode, shouldn't happen" <$ exprWSrc
               return
                 (M.insert name (WithSrc src (Var mode name (Just typ))) scope',
-                 [Unit])
+                 annot tExpr [Unit])
     UIf cond bTrue bFalse -> do
-      (condScope, condTypes) <- inferScopedExprType' modul scope cond
+      (condScope, tCondExpr) <- annotateScopedExpr' modul scope cond
+      let condTypes = snd tCondExpr
       when (condTypes /= [Pred]) $
            throwError $ ("Expected predicate but got one of the following " <>
                          "types: " <> pshow condTypes <> ".") <$ exprWSrc
-      (trueScope, bTrueTypes) <- inferScopedExprType' modul condScope bTrue
-      (falseScope, bFalseTypes) <- inferScopedExprType' modul condScope bFalse
-
-      -- Unifying lists. Probably they should be sets?
-      -- TODO: make sets
-      let commonTypes = filter (`elem` bFalseTypes) bTrueTypes
+      (trueScope, tTrueExpr) <- annotateScopedExpr' modul condScope bTrue
+      (falseScope, tFalseExpr) <- annotateScopedExpr' modul condScope bFalse
+      let tExpr = TIf tCondExpr tTrueExpr tFalseExpr
+          bTrueTypes = snd tTrueExpr
+          bFalseTypes = snd tFalseExpr
+          -- Unifying lists. Probably they should be sets?
+          -- TODO: make sets
+          commonTypes = filter (`elem` bFalseTypes) bTrueTypes
       when (null commonTypes) $
            throwError $ ("Could not unify if branches; candidates for True " <>
                          "branch are " <> pshow bTrueTypes <> " and " <>
@@ -287,17 +305,17 @@ inferScopedExprType inputModule inputScope e = do
                 (Nothing, Nothing) -> return Nothing
 
               return (n, WithSrc vSrc $ Var (_varMode v1) n finalType))
-      return (resultScope, commonTypes)
+      return (resultScope, (tExpr, commonTypes))
     UAssert cond -> do
-      (scope', types) <- inferScopedExprType' modul scope cond
-      when (types /= [Pred]) $
+      (scope', newCond) <-
+          annotateScopedExpr' modul scope cond
+      when (snd newCond /= [Pred]) $
            throwError $ ("Expected Predicate call in assertion but " <>
                          "expression has one of the following possible " <>
-                         "types " <> pshow types <> ".") <$ exprWSrc
-      return (scope', [Unit])
-    USkip -> return (scope, [Unit])
+                         "types " <> pshow (snd newCond) <> ".") <$ exprWSrc
+      return (scope', (TAssert newCond, [Unit]))
+    USkip -> return (scope, (TSkip, [Unit]))
     -- TODO: use for annotating AST
-    UTypedExpr {} -> undefined
 
   getFunctionSignature (WithSrc _ (UFunc _ args _ _)) = map getArgType args
   getFunctionSignature _ = error ("Expected function parameter in " <>
@@ -464,10 +482,17 @@ applyRenaming _decl renaming = applyRenamingInDecl <$> _decl
                     (applyRenamingInExpr bFalse)
           | UAssert cond <- expr = UAssert (applyRenamingInExpr cond)
           | USkip <- expr = USkip
-          | UTypedExpr expr' <- expr = UTypedExpr (applyRenamingInExpr expr')
 
 
 -- === utils ===
 
 getArgType :: UVar -> UType
 getArgType ~(WithSrc _ (Var _ _ (Just typ))) = typ
+
+mapAccumM :: (Traversable t, Monad m)
+          => (a -> b -> m (a, c)) -> a -> t b -> m (a, t c)
+mapAccumM f a tb = swap <$> mapM go tb `runStateT` a
+  where go b = do s <- get
+                  (s', r) <- lift $ f s b
+                  put s'
+                  return r

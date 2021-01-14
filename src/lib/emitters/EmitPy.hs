@@ -92,7 +92,7 @@ emitPyExpr ind (WithSrc _ inputExpr) = emitPyExpr' ind inputExpr <> "\n"
         emitPyExpr (incIndent indent) bFalse <> "\n"
       UAssert cond -> "assert " <> mkInlineExpr indent cond
       USkip -> "pass"
-      UTypedExpr expr' -> emitPyExpr indent expr'
+      --UTypedExpr expr' _ -> emitPyExpr indent expr'
 
     mkInlineExpr :: Int -> UExpr -> PythonSource
     mkInlineExpr indent (WithSrc _ inlineExpr) = case inlineExpr of

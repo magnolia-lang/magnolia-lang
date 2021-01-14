@@ -2,8 +2,8 @@
 {-# LANGUAGE PatternSynonyms #-}
 
 module Syntax (
-    UCallable (..), UDecl, UDecl' (..), UExpr, UExpr' (..), UModule,
-    UModule' (..), UModuleDep, UModuleDep' (..), UModuleType (..),
+    TExpr, TExpr' (..), UCallable (..), UDecl, UDecl' (..), UExpr, UExpr' (..),
+    UModule, UModule' (..), UModuleDep, UModuleDep' (..), UModuleType (..),
     UPackage (..), UType, UVar, UVar' (..), UVarMode (..), WithSrc (..),
     GlobalEnv, Module, Package, Renaming, RenamingBlock,
     pattern Pred, pattern Unit,
@@ -68,6 +68,21 @@ pattern Unit = GenName "Unit"
 data UCallable = Axiom | Function | Predicate | Procedure
                  deriving (Eq, Show)
 
+-- The duplication of the AST seems to be the cheapest way to solve the "AST
+-- typing problem". See http://blog.ezyang.com/2013/05/the-ast-typing-problem/
+-- for more context.
+-- TODO: use only a single return type.
+type TExpr = (TExpr', [UType])
+data TExpr' = TVar UVar
+            | TCall Name [TExpr] (Maybe UType)
+            | TBlockExpr (NE.NonEmpty TExpr)
+            | TLet UVarMode Name (Maybe UType) (Maybe TExpr)
+            | TIf TExpr TExpr TExpr
+            | TAssert TExpr
+            | TSkip
+            | TUnk UExpr
+              deriving (Eq, Show)
+
 -- TODO: split frontend and backend?
 type UExpr = WithSrc UExpr'
 data UExpr' = UVar UVar
@@ -78,7 +93,6 @@ data UExpr' = UVar UVar
             | UIf UPred UExpr UExpr
             | UAssert UPred
             | USkip
-            | UTypedExpr UExpr
               deriving (Eq, Show)
 
 -- Statement are expressions with Unit type.
