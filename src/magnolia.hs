@@ -4,6 +4,7 @@ import qualified Data.Map as M
 import System.Environment (getArgs)
 
 import Check
+import EmitPy
 import Env
 import Parser
 import PPrint
@@ -67,7 +68,7 @@ main = do
   input <- readFile srcFilename
   case runExcept $ parsePackage srcFilename input of
     Left e -> putStrLn e >> error "Shouldn't happen!!"
-    Right modules -> foldM checker pkg modules >>= print
+    Right modules -> foldM checker pkg modules >>= (putStrLn . emitPyPackage)
   where
     checker :: Package -> UModule -> IO Package
     checker pkg mod = do

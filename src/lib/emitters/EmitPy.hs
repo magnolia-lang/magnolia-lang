@@ -1,9 +1,10 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module EmitPy (PythonSource (..), emitPyDecl) where
+module EmitPy (PythonSource (..), emitPyPackage) where
 
 import Data.List (intercalate)
 import qualified Data.List.NonEmpty as NE
+import qualified Data.Map as M
 
 import Emit
 import Env
@@ -27,11 +28,14 @@ instance Emitter PythonSource where
 emitPyGlobalEnv :: GlobalEnv -> PythonSource
 emitPyGlobalEnv = undefined
 
-emitPyPackage :: UPackage -> PythonSource
-emitPyPackage = undefined
+-- TODO: actually implement
+emitPyPackage :: Package -> PythonSource
+emitPyPackage pkg = emitPyModule $ snd $ M.toList pkg !! 0
 
-emitPyModule :: UModule -> PythonSource
-emitPyModule = undefined
+-- TODO: actually implement
+emitPyModule :: Module -> PythonSource
+emitPyModule modul = intercalate "\n\n" $ map (emitPyDecl 0) $ firstModuleDecls
+  where firstModuleDecls = snd $ M.toList modul !! 0
 
 emitPyDecl :: Int -> UDecl -> PythonSource
 emitPyDecl indent (WithSrc _ decl) = case decl of
@@ -54,13 +58,6 @@ emitPyDecl indent (WithSrc _ decl) = case decl of
           emitPyExpr bodyIndent newBody <> mkIndent bodyIndent <>
           "return " <> emitName retVar <> "\n"
   where
-    emitProto :: UDecl' -> PythonSource
-    emitProto ~(UCallable _ name args _ _) = "def " <> emitName name <> "(" <>
-      intercalate ", " (map emitVarName args) <> "):\n"
-
-    emitVarName :: UVar -> PythonSource
-    emitVarName (WithSrc _ v) = emitName $ _varName v
-
     emitProcReturn :: [UVar] -> PythonSource
     emitProcReturn args =
       case filter (\(WithSrc _ (Var mode _ _)) -> mode /= UObs) args of
@@ -70,7 +67,7 @@ emitPyDecl indent (WithSrc _ decl) = case decl of
     bodyIndent = incIndent indent
 
 emitPyExpr :: Int -> UExpr -> PythonSource
-emitPyExpr ind (WithSrc _ inputExpr) = emitPyExpr' ind inputExpr
+emitPyExpr ind (WithSrc _ inputExpr) = emitPyExpr' ind inputExpr <> "\n"
   where
     emitPyExpr' :: Int -> UExpr' -> PythonSource
     emitPyExpr' indent expr = let strIndent = mkIndent indent in case expr of
@@ -78,12 +75,17 @@ emitPyExpr ind (WithSrc _ inputExpr) = emitPyExpr' ind inputExpr
       UCall name args _ ->
         emitName name <> "(" <> intercalate "," (map (emitPyExpr 0) args) <>
         ")"
+      -- TODO: worry about shadowing?
+      -- TODO: work with UTypedExpr.
+      -- TODO: check that function name is free, and
       UBlockExpr stmts ->
-        intercalate ("\n" <> strIndent) $
+        intercalate ("\n" <> mkIndent (incIndent ind)) $
+                    -- TODO: insert return in last statement
                     map (emitPyExpr indent) (NE.toList stmts)
       ULet _ name _ maybeAssignmentExpr -> case maybeAssignmentExpr of
         Nothing -> emitName name <> " = None"
-        Just assignmentExpr -> mkInlineExpr indent assignmentExpr
+        Just assignmentExpr ->
+          emitName name <> " = " <> mkInlineExpr indent assignmentExpr
       UIf cond bTrue bFalse ->
         "if " <> mkInlineExpr indent cond <> ":\n" <>
         emitPyExpr (incIndent indent) bTrue <> "\n" <> strIndent <> "else:" <>
@@ -99,6 +101,7 @@ emitPyExpr ind (WithSrc _ inputExpr) = emitPyExpr' ind inputExpr
         emitPyExpr' (incIndent $ incIndent indent) inlineExpr <> ")()"
       _            -> emitPyExpr' indent inlineExpr
 
+-- === utils ===
 
 mkIndent :: Int -> PythonSource
 mkIndent = flip replicate ' '
@@ -110,9 +113,14 @@ noEmit :: PythonSource
 noEmit = ""
 
 emitName :: Name -> PythonSource
-emitName (GenName s) = error $ "Should not happen; trying to emit: " ++
-                                    show s
 emitName (Name _ s) = mkPythonSource s
+
+emitProto :: UDecl' -> PythonSource
+emitProto ~(UCallable _ name args _ _) = "def " <> emitName name <> "(" <>
+  intercalate ", " (map emitVarName args) <> "):\n"
+
+emitVarName :: UVar -> PythonSource
+emitVarName (WithSrc _ v) = emitName $ _varName v
 
 mkPythonSource :: String -> PythonSource
 mkPythonSource = id
