@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module EmitPy (PythonSource (..)) where
+module EmitPy (PythonSource (..), emitPyDecl) where
 
 import Data.List (intercalate)
 import qualified Data.List.NonEmpty as NE
@@ -41,7 +41,7 @@ emitPyDecl indent (WithSrc _ decl) = case decl of
   -- In Python, it is not possible to have side-effects on all the types of
   -- arguments. Therefore, procedures are turned into functions returning
   -- tuples.
-  UCallable callableType name args retType maybeBody@(Just body) ->
+  UCallable callableType _ args _ maybeBody@(Just body) ->
       emitProto decl <> mkIndent bodyIndent <> case callableType of
         Axiom     -> emitPyExpr bodyIndent body <> "\n"
         Procedure -> emitPyExpr bodyIndent body <> mkIndent bodyIndent <>
@@ -49,7 +49,7 @@ emitPyDecl indent (WithSrc _ decl) = case decl of
         -- Predicates are functions, so UCallable {Function,Predicate} requires
         -- one unique behavior.
         -- TODO: make sure the chosen return name is free.
-        _         -> let retVar = (GenName "freeReturnVar")
+        _         -> let retVar = GenName "freeReturnVar"
                          newBody = ULet UOut retVar Nothing maybeBody <$ body in
           emitPyExpr bodyIndent newBody <> mkIndent bodyIndent <>
           "return " <> emitName retVar <> "\n"
@@ -65,7 +65,7 @@ emitPyDecl indent (WithSrc _ decl) = case decl of
     emitProcReturn args =
       case filter (\(WithSrc _ (Var mode _ _)) -> mode /= UObs) args of
         [] -> "return None"
-        vs -> "return (" <> intercalate ", " (map emitVarName args) <> ",)"
+        rets -> "return (" <> intercalate ", " (map emitVarName rets) <> ",)"
 
     bodyIndent = incIndent indent
 
