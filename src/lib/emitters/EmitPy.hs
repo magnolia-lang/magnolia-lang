@@ -15,12 +15,14 @@ import Syntax
 
 type PythonSource = String
 
+{--
 instance Emitter PythonSource where
   emitGlobalEnv = emitPyGlobalEnv
   emitPackage = emitPyPackage
   emitModule = emitPyModule
   emitDecl = emitPyDecl
   emitExpr = emitPyExprNoIndent
+--}
 
 emitPyGlobalEnv :: GlobalEnv -> PythonSource
 emitPyGlobalEnv = undefined
@@ -31,15 +33,41 @@ emitPyPackage = undefined
 emitPyModule :: UModule -> PythonSource
 emitPyModule = undefined
 
-emitPyDecl :: UDecl -> PythonSource
-emitPyDecl (WithSrc _ inputDecl) = case inputDecl of
+emitPyDecl :: Int -> UDecl -> PythonSource
+emitPyDecl indent (WithSrc _ decl) = case decl of
   -- TODO: add type annotations?
   UType _ -> noEmit
   UCallable _ _ _ _ Nothing -> noEmit -- Ignore prototypes
-  UCallable callableType name args retType (Just body) -> undefined
+  -- In Python, it is not possible to have side-effects on all the types of
+  -- arguments. Therefore, procedures are turned into functions returning
+  -- tuples.
+  UCallable callableType name args retType maybeBody@(Just body) ->
+      emitProto decl <> mkIndent bodyIndent <> case callableType of
+        Axiom     -> emitPyExpr bodyIndent body <> "\n"
+        Procedure -> emitPyExpr bodyIndent body <> mkIndent bodyIndent <>
+                     emitProcReturn args <> "\n"
+        -- Predicates are functions, so UCallable {Function,Predicate} requires
+        -- one unique behavior.
+        -- TODO: make sure the chosen return name is free.
+        _         -> let retVar = (GenName "freeReturnVar")
+                         newBody = ULet UOut retVar Nothing maybeBody <$ body in
+          emitPyExpr bodyIndent newBody <> mkIndent bodyIndent <>
+          "return " <> emitName retVar <> "\n"
+  where
+    emitProto :: UDecl' -> PythonSource
+    emitProto ~(UCallable _ name args _ _) = "def " <> emitName name <> "(" <>
+      intercalate ", " (map emitVarName args) <> "):\n"
 
-emitPyExprNoIndent :: UExpr -> PythonSource
-emitPyExprNoIndent = emitPyExpr 0
+    emitVarName :: UVar -> PythonSource
+    emitVarName (WithSrc _ v) = emitName $ _varName v
+
+    emitProcReturn :: [UVar] -> PythonSource
+    emitProcReturn args =
+      case filter (\(WithSrc _ (Var mode _ _)) -> mode /= UObs) args of
+        [] -> "return None"
+        vs -> "return (" <> intercalate ", " (map emitVarName args) <> ",)"
+
+    bodyIndent = incIndent indent
 
 emitPyExpr :: Int -> UExpr -> PythonSource
 emitPyExpr ind (WithSrc _ inputExpr) = emitPyExpr' ind inputExpr
