@@ -10,58 +10,6 @@ import Parser
 import PPrint
 import Syntax
 
-obj = UImpl (UnspecName "ImA") [ NoCtx $ UType $ TypeName "T"
-                               , NoCtx $ UType $ TypeName "T2"
-                               , NoCtx $ UFunc (FuncName "f")
-                                         [ NoCtx $ Var UObs (VarName "a")
-                                                   (Just (TypeName "T4"))
-                                         , NoCtx $ Var UObs (VarName "b")
-                                                   (Just (TypeName "T3"))
-                                         ] (NoCtx $ GenName "T3")
-                                           (Just $ NoCtx $ UCall
-                                            (UnspecName "f")
-                                            [ NoCtx $ UVar $ NoCtx $
-                                              Var UObs (VarName "a") Nothing
-                                            , NoCtx $ UVar $ NoCtx $
-                                              Var UObs (VarName "a") Nothing
-                                            ] Nothing)
-                               ]
-                               [ NoCtx $ UModuleDep (ModName "SigB")
-                                         [NoCtx
-                                           [ (UnspecName "T1", UnspecName "T2")
-                                           , (UnspecName "T2", UnspecName "T3")
-                                           , (UnspecName "T3", UnspecName "T4")
-                                           , (UnspecName "T4", UnspecName "T1")
-                                           ]
-                                         ]]
-
-scope :: Package
-scope = M.fromList [( UnspecName "SigB"
-                    , M.fromList [ ( TypeName "T1"
-                                   , [NoCtx $ UType $ TypeName "T1"]
-                                   )
-                                 , ( TypeName "T2"
-                                   , [NoCtx $ UType $ TypeName "T2"]
-                                   )
-                                 , ( TypeName "T3"
-                                   , [NoCtx $ UType $ TypeName "T3"]
-                                   )
-                                 , ( TypeName "T4"
-                                   , [NoCtx $ UType $ TypeName "T4"]
-                                 )
-                                 , ( FuncName "f"
-                                   , [NoCtx $ UFunc (FuncName "f")
-                                            [ NoCtx $ Var UObs (VarName "a")
-                                                      (Just (TypeName "T4"))
-                                            , NoCtx $ Var UObs (VarName "b")
-                                                      Nothing
-                                            ] (NoCtx $ GenName "c") Nothing]
-                                 ) ]
-                   )]
-
-pkg :: Package
-pkg = M.empty
-
 main :: IO ()
 main = do
   srcFilename <- head <$> getArgs
@@ -70,9 +18,11 @@ main = do
     Left e -> putStrLn e >> error "Shouldn't happen!!"
     Right modules -> foldM checker pkg modules >>= (putStrLn . emitPyPackage)
   where
-    checker :: Package -> UModule -> IO Package
+    checker :: TCPackage -> UModule PhParse -> IO TCPackage
     checker pkg mod = do
       case runExcept $ checkModule pkg mod of
         Left e  -> putStr "Failed with: " >> pprint e >> return pkg
         Right pkg' -> return pkg'
+    pkg :: TCPackage
+    pkg = M.empty
   --putStrLn $ show $ checkModule scope (NoCtx obj)

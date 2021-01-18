@@ -6,5 +6,5 @@ import Syntax
 -- TODO: emitCxxAST?
 -- TODO: add compileAsLib bool?
 
-emitCxx :: Package -> String
+emitCxx :: PackageEnv PhCheck -> String
 emitCxx = undefined
