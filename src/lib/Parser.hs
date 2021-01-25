@@ -7,16 +7,13 @@ import Control.Monad.Except
 import Data.Functor (($>))
 import Data.Maybe (isNothing)
 import Data.Void
-import Debug.Trace (trace)
 import Text.Megaparsec
 import Text.Megaparsec.Char
 
 import qualified Data.List.NonEmpty as NE
-import qualified Data.Text.Lazy as T
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import Env
-import PPrint
 import Syntax
 
 type Err = String
@@ -30,6 +27,7 @@ type ParsedExpr = UExpr PhParse
 type ParsedVar = UVar PhParse
 
 -- TODO: find type for imports
+parsePackageDependencies :: undefined
 parsePackageDependencies = undefined
 
 parsePackage :: String -> String -> Except Err [ParsedModule]

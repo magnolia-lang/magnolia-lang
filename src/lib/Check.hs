@@ -133,8 +133,8 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
   annotateScopedExpr' :: ModuleScope -> VarScope -> Maybe UType -> UExpr PhParse
                          -> Except Err (VarScope, UExpr PhCheck)
   annotateScopedExpr' modul scope maybeExprType (Ann src expr) = case expr of
-    -- TODO: annotate type and mode here; return modes?
-    UVar (Ann _ (Var mode name typ)) -> case M.lookup name scope of
+    -- TODO: annotate type and mode on variables
+    UVar (Ann _ (Var _ name typ)) -> case M.lookup name scope of
         Nothing -> checkError src "No such variable in current scope"
         Just annScopeVar@(Ann varType _) -> let typAnn = fromJust typ in
           if isNothing typ || typAnn == varType
@@ -157,11 +157,12 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
         -- First, check that all the arguments contain only computations that
         -- are without effects on the environment. This is because evaluation
         -- order might otherwise affect the result of the computation.
-        when (or $ map isStateful args) $
+        when (any isStateful args) $
           checkError src $ "Call expression can not have stateful " <>
                            "computations as arguments."
         argsTC <- traverse (annotateScopedExpr modul scope Nothing) args
         let argTypes = map _ann argsTC
+            -- TODO: deal with modes here
             candidates = filter (isCompatibleFunctionDecl argTypes) $
               M.findWithDefault [] name modul
             exprTC = UCall name argsTC maybeCallCast
@@ -194,7 +195,7 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
               Just cast -> if S.size possibleTypes == 1
                            then do
                              let typAnn = getReturnType (L.head matches)
-                             when (not (isNothing maybeCallCast) &&
+                             when (isJust maybeCallCast &&
                                    typAnn /= cast) $
                                checkError src $ "No candidate matching " <>
                                  "type annotation."
@@ -328,15 +329,6 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
     -- TODO: use for annotating AST
 
   getReturnType ~(Ann _ (UCallable _ _ _ returnType _)) = returnType
-
-  updateScope :: VarScope -> (UExpr p, UVar PhCheck) -> VarScope
-  updateScope scope (Ann _ expr, annVar@(Ann _ ~(Var _ _ typ@(Just _))))
-    | UVar (Ann _ (Var _ name _)) <- expr = case M.lookup name scope of
-          Just (Ann _ (Var mode _ Nothing)) ->
-              M.insert name (Var mode name typ <$$ annVar) scope
-          Just (Ann _ (Var _ _ (Just _))) -> scope
-          _ -> error "This should not happen (updateScope)"
-    | otherwise = scope
 
   isCompatibleFunctionDecl :: [UType] -> UDecl PhCheck -> Bool
   isCompatibleFunctionDecl typeConstraints (Ann _ (UCallable _ _ args _ _))
@@ -503,9 +495,6 @@ applyRenaming annDecl renaming = applyRenamingInDecl <$$> annDecl
 
 -- === utils ===
 
-getArgType :: UVar a -> UType
-getArgType ~(Ann _ (Var _ _ (Just typ))) = typ
-
 mapAccumM :: (Traversable t, Monad m)
           => (a -> b -> m (a, c)) -> a -> t b -> m (a, t c)
 mapAccumM f a tb = swap <$> mapM go tb `runStateT` a
@@ -520,10 +509,12 @@ isStateful (Ann _ expr) = case expr of
   -- - variable declarations/variable assignments
   -- - calls to procedures
   UVar _ -> False
-  UCall (FuncName _) args _ -> or $ map isStateful args
+  UCall (FuncName _) args _ -> any isStateful args
   UCall (ProcName _) _ _ -> True
+  UCall {} -> error $ "call to something that is neither a type " <>
+                      "of function nor a procedure."
   UBlockExpr stmts -> or $ NE.map isStateful stmts
   ULet {} -> True
-  UIf cond bTrue bFalse -> or $ map isStateful [cond, bTrue, bFalse]
+  UIf cond bTrue bFalse -> any isStateful [cond, bTrue, bFalse]
   UAssert cond -> isStateful cond
   USkip -> False

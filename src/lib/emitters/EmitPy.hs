@@ -39,7 +39,7 @@ emitPyDecl indent (Ann _ decl) = case decl of
   -- In Python, it is not possible to have side-effects on all the types of
   -- arguments. Therefore, procedures are turned into functions returning
   -- tuples.
-  UCallable callableType _ args _ maybeBody@(Just body) ->
+  UCallable callableType _ args _ (Just body) ->
       emitProto decl <> mkIndent bodyIndent <> case callableType of
         Axiom     -> emitPyExpr bodyIndent body <> "\n"
         Procedure -> emitPyExpr bodyIndent body <> mkIndent bodyIndent <>
@@ -62,7 +62,7 @@ emitPyExpr :: Int -> TCExpr -> PythonSource
 emitPyExpr = flip emitPrefixedPyExpr ""
 
 emitPrefixedPyExpr :: Int -> PythonSource -> TCExpr -> PythonSource
-emitPrefixedPyExpr ind prefixPySrc (Ann typ inputExpr) =
+emitPrefixedPyExpr ind prefixPySrc (Ann _ inputExpr) =
   go ind prefixPySrc inputExpr
   where
     go :: Int -> PythonSource -> TCExpr' -> PythonSource
