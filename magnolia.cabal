@@ -17,7 +17,7 @@ maintainer:          benjamin.chetioui@uib.no
 build-type:          Simple
 
 library
-  exposed-modules:     Check, Emit, EmitCxx, EmitPy, Env, Parser, PPrint, Syntax
+  exposed-modules:     Check, EmitCxx, EmitPy, Env, Parser, PPrint, Syntax
   build-depends:       base, containers, megaparsec >=8.0, mtl,
                        parser-combinators, pretty-simple, text, transformers
   hs-source-dirs:      src/lib, src/lib/emitters

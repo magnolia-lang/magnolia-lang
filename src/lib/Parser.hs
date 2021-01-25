@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeFamilies #-}
+
 module Parser (parsePackage, parsePackageDependencies) where
 
 import Control.Monad.Combinators.Expr
@@ -21,25 +23,34 @@ type Err = String
 
 type Parser = Parsec Void String
 
+type ParsedPackage = UPackage PhParse
+type ParsedModule = UModule PhParse
+type ParsedDecl = UDecl PhParse
+type ParsedExpr = UExpr PhParse
+type ParsedVar = UVar PhParse
+
 -- TODO: find type for imports
 parsePackageDependencies = undefined
 
-parsePackage :: String -> String -> Except Err [UModule]
+parsePackage :: String -> String -> Except Err [ParsedModule]
 parsePackage filename s =
   case parse (sc >> package) filename s of
     Left e -> throwError $ errorBundlePretty e
-    Right (UPackage _ modules _) -> return modules
+    Right Ann { _elem = UPackage _ modules _ } -> return modules
 
-package :: Parser UPackage
-package = do
-  pkgName <- keyword PackageKW *> packageName
-  deps <- choice [ keyword ImportKW >> (packageName `sepBy1` symbol ",")
-                 , return []
-                 ] <* symbol ";"
-  modules <- manyTill (withSrc (many (symbol ";") *> module' <* many (symbol ";"))) eof
-  return $ UPackage pkgName modules deps
+package :: Parser ParsedPackage
+package = annot package'
+  where
+    package' = do
+      pkgName <- keyword PackageKW *> packageName
+      deps <- choice [ keyword ImportKW >> (packageName `sepBy1` symbol ",")
+                     , return []
+                     ] <* symbol ";"
+      modules <- manyTill (annot (many (symbol ";") *>
+                           module' <* many (symbol ";"))) eof
+      return $ UPackage pkgName modules deps
 
-module' :: Parser UModule'
+module' :: Parser (UModule' PhParse)
 module' = do
   cons <- (keyword ConceptKW >> return UCon)
            <|> (keyword ImplementationKW >> return UImpl)
@@ -53,18 +64,18 @@ module' = do
       deps  = [dep  | (Right dep) <- declsAndDeps]
   return $ cons name decls deps
 
-declaration :: Parser UDecl
-declaration = withSrc declaration' <* many (symbol ";")
+declaration :: Parser ParsedDecl
+declaration = annot declaration' <* many (symbol ";")
   where declaration' =  typeDecl
                     <|> callable
 
-typeDecl :: Parser UDecl'
+typeDecl :: Parser (UDecl' PhParse)
 typeDecl = do
   keyword TypeKW
   name <- typeName <* symbol ";" -- TODO: make expr
   return $ UType name
 
-callable :: Parser UDecl'
+callable :: Parser (UDecl' PhParse)
 callable = do
   callableType <- (keyword AxiomKW >> return Axiom)
               <|> (keyword FunctionKW >> return Function)
@@ -76,26 +87,26 @@ callable = do
       Procedure -> parens ((varMode >>= annVar) `sepBy` symbol ",")
       _ -> parens (annVar UObs `sepBy` symbol ",")
   retType <- case callableType of
-      Function  -> symbol ":" *> withSrc typeName
-      Predicate -> return $ NoCtx Pred
-      _         -> return $ NoCtx Unit
+      Function  -> symbol ":" *> typeName
+      Predicate -> return Pred
+      _         -> return Unit
   body <- optional (blockExpr
                 <|> (symbol "=" *> (blockExpr <|> (expr <* symbol ";"))))
   when (isNothing body) $ symbol ";"
   return $ UCallable callableType name args retType body
 
-annVar :: UVarMode -> Parser UVar
-annVar mode = withSrc annVar'
+annVar :: UVarMode -> Parser ParsedVar
+annVar mode = annot annVar'
   where
     annVar' = do
       name <- varName
       ann <- symbol ":" *> typeName
       return $ Var mode name (Just ann)
 
-nameVar :: UVarMode -> Parser UVar
-nameVar mode = withSrc ((\name -> Var mode name Nothing) <$> varName)
+nameVar :: UVarMode -> Parser ParsedVar
+nameVar mode = annot ((\name -> Var mode name Nothing) <$> varName)
 
-var :: UVarMode -> Parser UVar
+var :: UVarMode -> Parser ParsedVar
 var mode = try (annVar mode) <|> nameVar mode
 
 varMode :: Parser UVarMode
@@ -103,27 +114,27 @@ varMode = try (keyword ObsKW >> return UObs)
       <|> (keyword OutKW >> return UOut)
       <|> (keyword UpdKW >> return UUpd)
 
-expr :: Parser UExpr
+expr :: Parser ParsedExpr
 expr = makeExprParser leafExpr ops
   where
     leafExpr = blockExpr
            <|> try ifExpr
            <|> try (callableCall FuncName)
            <|> try (keyword CallKW *> callableCall ProcName)
-           <|> withSrc (var UUnk >>= \v -> return $ UVar v)
+           <|> annot (var UUnk >>= \v -> return $ UVar v)
            <|> parens expr
 
-blockExpr :: Parser UExpr
-blockExpr = withSrc blockExpr'
+blockExpr :: Parser ParsedExpr
+blockExpr = annot blockExpr'
   where
     blockExpr' = do
       block <- braces (many (exprStmt <* some (symbol ";")))
-      block' <- if null block then (:[]) <$> withSrc (return USkip)
+      block' <- if null block then (:[]) <$> annot (return USkip)
                 else return block
       return $ UBlockExpr (NE.fromList block')
 
-ifExpr :: Parser UExpr
-ifExpr = withSrc ifExpr'
+ifExpr :: Parser ParsedExpr
+ifExpr = annot ifExpr'
   where
     ifExpr' = do
       keyword IfKW
@@ -133,8 +144,8 @@ ifExpr = withSrc ifExpr'
       keyword ElseKW
       UIf cond bTrue <$> expr
 
-callableCall :: (String -> Name) -> Parser UExpr
-callableCall nameCons = withSrc callableCall'
+callableCall :: (String -> Name) -> Parser ParsedExpr
+callableCall nameCons = annot callableCall'
   where
     callableCall' = do
       name <- try symOpName <|> (nameCons <$> nameString)
@@ -142,15 +153,20 @@ callableCall nameCons = withSrc callableCall'
       ann <- optional (symbol ":" *> typeName)
       return $ UCall name args ann
 
-moduleDependency :: Parser UModuleDep
-moduleDependency = withSrc moduleDependency'
+moduleDependency :: Parser (UModuleDep PhParse)
+moduleDependency = annot moduleDependency'
   where
     moduleDependency' = do
       keyword UseKW
       name <- ModName <$> nameString
-      renamings <- many (withSrc $ brackets (renaming `sepBy` symbol ","))
+      renamings <- many renamingBlock
       symbol ";"
       return $ UModuleDep name renamings
+
+renamingBlock :: Parser (URenamingBlock PhParse)
+renamingBlock = annot renamingBlock'
+  where
+    renamingBlock' = URenamingBlock <$> brackets (renaming `sepBy` symbol ",")
 
 renaming :: Parser Renaming
 renaming = do
@@ -159,27 +175,27 @@ renaming = do
   target <- try symOpName <|> (UnspecName <$> nameString)
   return (source, target)
 
-exprStmt :: Parser UExpr
+exprStmt :: Parser ParsedExpr
 exprStmt = assertStmt <|> try letStmt <|> expr
 
-assertStmt :: Parser UExpr
-assertStmt = keyword AssertKW *> withSrc (UAssert <$> expr)
+assertStmt :: Parser ParsedExpr
+assertStmt = keyword AssertKW *> annot (UAssert <$> expr)
 
-letStmt :: Parser UExpr
-letStmt = withSrc letStmt'
+letStmt :: Parser ParsedExpr
+letStmt = annot letStmt'
   where
     letStmt' = do
       keyword LetKW
       isConst <- option False (keyword ObsKW $> True)
       name <- varName
       ann <- optional (symbol ":" *> typeName)
-      value <- optional expr <* symbol ";"
+      value <- optional (symbol "=" *> expr)
       let mode | isConst = UObs
                | isNothing value = UOut
                | otherwise = UUpd
       return $ ULet mode name ann value
 
-ops :: [[Operator Parser UExpr]]
+ops :: [[Operator Parser ParsedExpr]]
 ops = [ map unOp ["+", "-", "!", "~"]                -- unary ops
       , map binOp ["*", "/", "%"]                    -- mult ops
       , map binOp ["+", "-"]                         -- add ops
@@ -191,16 +207,22 @@ ops = [ map unOp ["+", "-", "!", "~"]                -- unary ops
       , [binOp "=>", binOp "<=>"]                    -- logical implication
       ]
 
-unOp :: String -> Operator Parser UExpr
+unOp :: String -> Operator Parser ParsedExpr
 unOp s = Prefix $ unOpCall <$> withSrc (symbol s)
   where
-    unOpCall wrapper e = UCall (FuncName (s <> "_")) [e] Nothing <$ wrapper
+    unOpCall (WithSrc src _) e =
+      Ann { _ann = src, _elem = UCall (FuncName (s <> "_")) [e] Nothing }
 
-binOp :: String -> Operator Parser UExpr
+
+binOp :: String -> Operator Parser ParsedExpr
 binOp s = InfixL $ binOpCall <$> withSrc (symbol s)
   where
-    binOpCall wrapper e1 e2 =
-      UCall (FuncName ("_" <> s <> "_")) [e1, e2] Nothing <$ wrapper
+    binOpCall :: WithSrc a -> ParsedExpr -> ParsedExpr -> ParsedExpr
+    binOpCall (WithSrc src _) e1 e2 =
+      Ann { _ann = src
+          , _elem = UCall (FuncName ("_" <> s <> "_")) [e1, e2] Nothing
+          }
+
 
 -- === utils ===
 
@@ -295,7 +317,17 @@ nameString = lexeme . try $ (:) <$> nameChar <*> many nameChar
 nameChar :: Parser Char
 nameChar = alphaNumChar <|> char '_'
 
-withSrc :: Parser a -> Parser (WithSrc a)
+annot ::
+  (XAnn PhParse e ~ SrcCtx) =>
+  Parser (e PhParse) ->
+  Parser (Ann PhParse e)
+annot p = do
+  (WithSrc src element) <- withSrc p
+  return $ Ann { _ann = src, _elem = element }
+
+withSrc ::
+  Parser a ->
+  Parser (WithSrc a)
 withSrc p = do
   start <- mkSrcPos <$> getSourcePos
   element <- p

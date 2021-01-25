@@ -2,6 +2,7 @@
 
 module Check (checkPackage, checkModule) where
 
+import Control.Applicative
 import Control.Monad (foldM)
 import Control.Monad.Except
 import Control.Monad.Trans.State
@@ -25,110 +26,122 @@ import Syntax
 -- TODO: WIP Err
 type Err = WithSrc T.Text
 
-type Scope = Env UVar
+type VarScope = Env (UVar PhCheck)
+type ModuleScope = ModuleEnv PhCheck
+type PackageScope = PackageEnv PhCheck
+type GlobalScope = GlobalEnv PhCheck
 
-initScope :: [UVar] -> Scope
-initScope = M.fromList . map (\v@(WithSrc _ (Var _ name _)) -> (name, v))
+checkError :: SrcCtx -> T.Text -> Except Err a
+checkError src err = throwError $ WithSrc src err
 
-checkPackage :: GlobalEnv -> UPackage -> Except Err GlobalEnv
-checkPackage _ UPackage {} = undefined
+initScope :: [UVar p] -> VarScope
+initScope = M.fromList . map mkScopeVar
+  where
+    mkScopeVar :: UVar p -> (Name, UVar PhCheck)
+    mkScopeVar ~(Ann _ (Var mode name (Just typ))) =
+      (name, Ann { _ann = typ, _elem = Var mode name (Just typ) })
+
+checkPackage :: GlobalScope -> UPackage PhParse -> Except Err GlobalScope
+checkPackage _ _ = undefined
 
 -- TODO: can variables exist without a type in the scope?
 -- TODO: replace things with relevant sets
 -- TODO: handle circular dependencies
-checkModule :: Package -> UModule -> Except Err Package
+checkModule :: PackageScope -> UModule PhParse -> Except Err PackageScope
 --checkModule pkg modul | trace (pshow modul) False = undefined
-checkModule pkg (WithSrc _ (UModule moduleType name decls deps)) = do
+checkModule pkg (Ann _ (UModule moduleType moduleName decls deps)) = do
   -- Step 1: expand uses
   uses <- foldl joinEnvs M.empty <$> mapM (buildModuleFromDep pkg) deps
   -- Step 2: register types
-  let baseEnv = M.unionWith (<>) uses $ M.fromList types
+  let baseScope = M.unionWith (<>) uses $ M.fromList types
   -- Step 3: check and register protos
-  env <- foldM registerProto baseEnv callables
+  protoScope <- foldM registerProto baseScope callables
   -- Step 4: check bodies if allowed
-  traverse_ (checkBody env) callables
+  (finalScope, callablesTC) <- mapAccumM checkBody protoScope callables
   -- Step 5: check that everything is resolved if program
   -- TODO: return typechecked elements here.
-  when (moduleType == Program) $ traverse_ (checkImplemented env) callables
+  when (moduleType == Program) $
+      traverse_ (checkImplemented finalScope) callablesTC
   -- TODO: check that name is unique?
-  return $ M.insert name env pkg
+  return $ M.insert moduleName finalScope pkg
   where
-    types = [(typeName, [decl]) | decl@(WithSrc _ (UType typeName)) <- decls]
-    callables = [d | d@(WithSrc _ UCallable {}) <- decls]
+    types :: [(Name, [UDecl PhCheck])]
+    types = [ (typeName, [Ann { _ann = ann, _elem = UType typeName }])
+            | Ann ann (UType typeName) <- decls]
+    callables = [d | d@(Ann _ UCallable {}) <- decls]
     joinEnvs = M.unionWith (<>)
-    checkBody env callable@(~(WithSrc _ (UCallable callableType _ args
-                                                   (WithSrc _ retType) body)))
+    checkBody :: ModuleScope
+      -> UDecl PhParse
+      -> Except Err (ModuleScope, UDecl PhCheck)
+    checkBody env decl@(~(Ann src (UCallable callableType fname args retType
+                                             body)))
       | moduleType /= Concept, Axiom <- callableType =
-          throwError $ "Axioms can only be declared in concepts." <$ callable
+          checkError src "Axioms can only be declared in concepts."
       | Nothing <- body, Axiom <- callableType =
-          throwError $ "Axiom without a body." <$ callable
+          checkError src "Axiom without a body."
       | moduleType `notElem` [Implementation, Program], Just _ <- body,
         callableType `elem` [Function, Procedure] =
-          throwError $ (pshow callableType <> " can not have a body in " <>
-                        pshow moduleType) <$ callable
+          checkError src $ pshow callableType <> " can not have a body in " <>
+                           pshow moduleType
       -- TODO: handle case for programs
-      | Nothing <- body = return ()
+      | Nothing <- body = (,) env <$> checkProto env decl
       | Just expr <- body = do
-          (tBody, possibleTypes) <- annotateScopedExpr env (initScope args) expr
-          case callableType of
-            Function -> if retType `elem` possibleTypes then return ()
-                        else throwError $ ("Expected return type " <>
-                          pshow retType <> " but body has one of the " <>
-                          "following types: " <> pshow possibleTypes <> ".") <$
-                          callable
-            _        -> if length possibleTypes == 1 &&
-                          head possibleTypes == retType
-                        then return ()
-                        else throwError $ ("Expected " <> pshow retType <>
-                          " return type in " <> pshow callableType <>
-                          "but return value has one of the following " <>
-                          "types: " <> pshow possibleTypes <> ".") <$ callable
+          -- TODO: fix, propagate required type forward?
+          bodyTC <- annotateScopedExpr env (initScope args) (Just retType) expr
+          ~(Ann typAnn (UCallable _ declName argsTC _ _)) <- checkProto env decl
+          let annDeclTC = Ann typAnn $
+                UCallable callableType declName argsTC retType (Just bodyTC)
+          if _ann bodyTC == retType
+          then return (M.insertWith (<>) fname [annDeclTC] env, annDeclTC)
+          else checkError src ("Expected " <> pshow retType <> " return " <>
+              "type in " <> pshow callableType <> "but return value has " <>
+              "type: " <> pshow (_ann bodyTC) <> ".")
 
-    checkImplemented :: Module -> UDecl -> Except Err ()
-    checkImplemented env callable@(~(WithSrc _ (UCallable _ callableName
-                                                          _ _ body)))
+    checkImplemented :: ModuleScope -> UDecl PhCheck -> Except Err ()
+    checkImplemented env callable@(~(Ann src (UCallable _ callableName
+                                                        _ _ body)))
       | Just _ <- body = return ()
       | Nothing <- body = do
           let ~(Just matches) = M.lookup callableName env
               anonDefinedMatches =
-                map (mkAnonProto <$>) $ filter isDefined matches
-          when ((mkAnonProto <$> callable) `notElem` anonDefinedMatches) $
-               throwError $ "Callable is unimplemented in program." <$ callable
+                map (mkAnonProto <$$>) $ filter isDefined matches
+          when ((mkAnonProto <$$> callable) `notElem` anonDefinedMatches) $
+               checkError src "Callable is unimplemented in program."
 
     mkAnonProto ~(UCallable callableType callableName args retType body) =
-      UCallable callableType callableName (map (mkAnonVar <$>) args) retType
+      UCallable callableType callableName (map (mkAnonVar <$$>) args) retType
                 body
     mkAnonVar (Var mode _ typ) = Var mode (GenName "#anon#") typ
-    isDefined ~(WithSrc _ (UCallable _ _ _ _ body)) = isJust body
+    isDefined ~(Ann _ (UCallable _ _ _ _ body)) = isJust body
 
 -- TODO: sanity check modes
 
-annotateScopedExpr :: Module -> Scope -> UExpr -> Except Err TExpr
-annotateScopedExpr inputModule inputScope e = do
-  snd <$> annotateScopedExpr' inputModule inputScope e
+annotateScopedExpr ::
+  ModuleScope ->
+  VarScope ->
+  Maybe UType ->
+  UExpr PhParse ->
+  Except Err (UExpr PhCheck)
+annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
+  snd <$> annotateScopedExpr' inputModule inputScope inputMaybeExprType e
   where
-  annotateScopedExpr' :: Module -> Scope -> UExpr
-                         -> Except Err (Scope, TExpr)
-  annotateScopedExpr' modul scope exprWSrc@(WithSrc src expr) =
-    let annot = (,) in case expr of
+  -- maybeExprType is a parameter to disambiguate function calls overloaded
+  -- solely on return types. It will *not* be used if the type can be inferred
+  -- without it, and there is thus no guarantee that the resulting annotated
+  -- expression will carry the specified type annotation. If this is important,
+  -- it must be checked outside the call.
+  annotateScopedExpr' :: ModuleScope -> VarScope -> Maybe UType -> UExpr PhParse
+                         -> Except Err (VarScope, UExpr PhCheck)
+  annotateScopedExpr' modul scope maybeExprType (Ann src expr) = case expr of
     -- TODO: annotate type and mode here; return modes?
-    UVar var@(WithSrc _ (Var _ name typ)) -> case M.lookup name scope of
-        Nothing -> throwError $ "No such variable in current scope" <$ exprWSrc
-        Just (WithSrc _ (Var _ _ typ')) -> let typAnn = fromJust typ in
-          case typ' of
-            Nothing     -> if isNothing typ
-                           -- We allow this case because in function calls, the
-                           -- type of the variable may not be defined at call
-                           -- time. TODO: is that really true?
-                           then return (scope, (TUnk exprWSrc, []))
-                           else return (scope, (TVar var, [typAnn]))
-            Just typSet -> if isNothing typ || typSet == typAnn
-                           then return (scope, (TVar var, [typSet]))
-                           else
-                             throwError $ "Conflicting types for var" <$
-                                          exprWSrc
+    UVar (Ann _ (Var mode name typ)) -> case M.lookup name scope of
+        Nothing -> checkError src "No such variable in current scope"
+        Just annScopeVar@(Ann varType _) -> let typAnn = fromJust typ in
+          if isNothing typ || typAnn == varType
+          then return (scope, Ann { _ann = varType, _elem = UVar annScopeVar })
+          else checkError src "Conflicting types for var" -- TODO, expand
     -- TODO: deal with casting
-    UCall name args cast -> do
+    UCall name args maybeCallCast -> do
         -- Type inference is fairly basic. We assume that for variables, either
         -- the type has been specified/previously inferred, or the variable is
         -- unset and also untyped. The only way to restrict an unknown variable
@@ -141,123 +154,139 @@ annotateScopedExpr inputModule inputScope e = do
         -- has multiple possible corresponding bindings, and 'a' is unset
         -- before the call. This will be improved upon later on.
         --
-        -- First, expand the scope by running through the arguments; at every
-        -- sub function calls, variables may get annotated.
-        -- TODO: opportunities for optimization here if need be.
-        -- TODO: is that actually useful?
-        scope' <- foldM (((fst <$>) <$>) . annotateScopedExpr' modul) scope
-                        args
-        -- Second, actually infer the types of the arguments as much as
-        -- possible.
-        -- TODO: is traverse a mapAccumL?
-        tArgs <- traverse (annotateScopedExpr modul scope') args
-        let argTypes = map snd tArgs
+        -- First, check that all the arguments contain only computations that
+        -- are without effects on the environment. This is because evaluation
+        -- order might otherwise affect the result of the computation.
+        when (or $ map isStateful args) $
+          checkError src $ "Call expression can not have stateful " <>
+                           "computations as arguments."
+        argsTC <- traverse (annotateScopedExpr modul scope Nothing) args
+        let argTypes = map _ann argsTC
             candidates = filter (isCompatibleFunctionDecl argTypes) $
               M.findWithDefault [] name modul
-            tExpr = TCall name tArgs cast
+            exprTC = UCall name argsTC maybeCallCast
         -- TODO: stop using list to reach return val, maybe use Data.Sequence?
         -- TODO: do something with procedures and axioms here?
         case candidates of
-          []  -> throwError $ ("No corresponding function with name '" <>
-                               pshow name <> "' in scope") <$ exprWSrc
-          [fun] -> do
-            (endScope, types) <- setScopeAndReturnType scope' args fun
-            return (endScope, (tExpr, types))
-          -- In this case, we have many matches. This may happen for several
-          -- reasons:
-          -- (1) the arguments are not explicitly typed and resolution is
-          --     ambiguous
-          -- (2) the arguments are fully specified but the function can be
+          []  -> checkError src ("No corresponding function with name '" <>
+                                 pshow name <> "' in scope")
+          -- In this case, we have 1+ matches. We can have more than one match
+          -- for several reasons:
+          -- (1) the arguments are fully specified but the function can be
           --     overloaded solely on its return type. In this case, we request
           --     explicit typing from the user
-          -- (3) we registered several prototypes that refer to the same
+          -- (2) we registered several prototypes that refer to the same
           --     function in different ways. This can happen right now because
           --     of how the environment is implemented.
           --     TODO: use sets, and hash arguments ignoring their type to fix
-          --     (3).
+          --     (2).
           matches ->
-            let protos = S.fromList $ map getFunctionSignature matches in
-            if S.size protos == 1
-            then do
-              let bestMatch = L.head matches
-              (endScope, types) <- setScopeAndReturnType scope' args bestMatch
-              return (endScope, (tExpr, types))
-            else throwError $
-                "Ambiguous function calls, several possible matches" <$ exprWSrc
+            let possibleTypes = S.fromList $ map getReturnType matches in
+            case maybeCallCast <|> maybeExprType of
+              Nothing -> if S.size possibleTypes == 1
+                         then let typAnn = getReturnType (L.head matches) in
+                              return ( scope
+                                     , Ann { _ann = typAnn, _elem = exprTC }
+                                     )
+                         else checkError src $ "Can not deduce return type " <>
+                           "from function call; consider adding a type" <>
+                           "annotation."
+              Just cast -> if S.size possibleTypes == 1
+                           then do
+                             let typAnn = getReturnType (L.head matches)
+                             when (not (isNothing maybeCallCast) &&
+                                   typAnn /= cast) $
+                               checkError src $ "No candidate matching " <>
+                                 "type annotation."
+                             return ( scope
+                                    , Ann { _ann = typAnn, _elem = exprTC }
+                                    )
+                           else do
+                             unless (cast `S.member` possibleTypes) $
+                               checkError src $ "No candidate matching " <>
+                                 "type annotation."
+                             return ( scope
+                                    , Ann { _ann = cast, _elem = exprTC }
+                                    )
+              -- TODO: ignore modes when overloading functions
     UBlockExpr exprStmts -> do
-      (scope', tExprStmts) <-
-          mapAccumM (annotateScopedExpr' modul) scope exprStmts
+      (intermediateScope, initExprStmtsTC) <-
+          mapAccumM (flip (annotateScopedExpr' modul) Nothing) scope
+                    (NE.init exprStmts)
+      -- The last exprStmt must be treated differently because it's potentially
+      -- annotated.
+      (scope', lastExprStmtTC) <-
+          annotateScopedExpr' modul intermediateScope maybeExprType
+                             (NE.last exprStmts)
       -- Return the old scope with potential new annotations; this makes sure
       -- that variables declared in the current scope are eliminated.
       -- Note that we do not yet have nested scopes; this means that it is
       -- never possible to shadow names from an outer scope.
       let endScope = M.fromList $ map (\k -> (k, scope' M.! k)) (M.keys scope)
-      return (endScope, (TBlockExpr tExprStmts, snd $ NE.last tExprStmts))
+          newBlock = UBlockExpr $ NE.fromList (initExprStmtsTC <>
+                                               [lastExprStmtTC])
+      return (endScope, Ann { _ann = _ann lastExprStmtTC, _elem = newBlock })
     ULet mode name maybeType maybeExpr -> do
       unless (isNothing $ M.lookup name scope) $
-           throwError $ ("A variable with name " <> pshow name <> "already " <>
-                         "exists in the current scope.") <$ exprWSrc
+           checkError src ("A variable with name " <> pshow name <>
+                           "already exists in the current scope.")
       case maybeExpr of
         Nothing -> do
           when (isNothing maybeType) $
-               throwError $ ("Attempting to declare variable with no type " <>
-                             "annotation or assignment expression") <$ exprWSrc
+               checkError src ("Attempting to declare variable with no " <>
+                               "type annotation or assignment expression")
           let (Just typ) = maybeType
-          checkTypeExists (typ <$ exprWSrc) modul
+          checkTypeExists modul (WithSrc src typ)
           unless (mode == UOut) $
-                 throwError $ ("Variable can not be set to " <> pshow mode <>
-                               " without being initialized.") <$ exprWSrc
+                 checkError src ("Variable can not be set to " <> pshow mode <>
+                                 " without being initialized.")
           -- Variable is unset, therefore has to be UOut.
-          return (M.insert name (WithSrc src (Var UOut name (Just typ))) scope,
-                  (TLet mode name maybeType Nothing, [Unit]))
+          let newVar = Var UOut name (Just typ)
+          return ( M.insert name Ann { _ann = typ, _elem = newVar } scope
+                 , Ann Unit (ULet mode name maybeType Nothing)
+                 )
         Just rhsExpr -> do
-          (scope', tRhsExpr) <- annotateScopedExpr' modul scope rhsExpr
-          let tExpr = TLet mode name maybeType (Just tRhsExpr)
-              types = snd tRhsExpr
+          (scope', rhsExprTC) <- annotateScopedExpr' modul scope
+              (maybeType <|> maybeExprType) rhsExpr
+          let exprTC = ULet mode name maybeType (Just rhsExprTC)
+              rhsType = _ann rhsExprTC
           case maybeType of
             Nothing -> do
-              when (L.length types /= 1) $
-                   throwError $ ("Could not infer variable type from " <>
-                                 "assignment expression.") <$ exprWSrc
-              return
-                (M.insert name (WithSrc src (Var mode name (Just (head types))))
-                          scope',
-                 annot tExpr [Unit])
+              let newVar = Var mode name (Just rhsType)
+              return ( M.insert name (Ann rhsType newVar) scope'
+                     , Ann { _ann = Unit, _elem = exprTC }
+                     )
             Just typ -> do
-              unless (typ `elem` types) $
-                     throwError $ "Attempted to cast variable to invalid type"
-                                  <$ exprWSrc
+              unless (typ == rhsType) $
+                  checkError src "Attempted to cast variable to invalid type"
               when (mode == UOut) $
-                    throwError $ "Invalid mode, shouldn't happen" <$ exprWSrc
-              return
-                (M.insert name (WithSrc src (Var mode name (Just typ))) scope',
-                 annot tExpr [Unit])
+                  checkError src "Invalid mode, shouldn't happen"
+              let newVar = Var mode name (Just typ)
+              return ( M.insert name Ann { _ann = typ, _elem = newVar } scope'
+                     , Ann { _ann = Unit, _elem = exprTC }
+                     )
     UIf cond bTrue bFalse -> do
-      (condScope, tCondExpr) <- annotateScopedExpr' modul scope cond
-      let condTypes = snd tCondExpr
-      when (condTypes /= [Pred]) $
-           throwError $ ("Expected predicate but got one of the following " <>
-                         "types: " <> pshow condTypes <> ".") <$ exprWSrc
-      (trueScope, tTrueExpr) <- annotateScopedExpr' modul condScope bTrue
-      (falseScope, tFalseExpr) <- annotateScopedExpr' modul condScope bFalse
-      let tExpr = TIf tCondExpr tTrueExpr tFalseExpr
-          bTrueTypes = snd tTrueExpr
-          bFalseTypes = snd tFalseExpr
-          -- Unifying lists. Probably they should be sets?
-          -- TODO: make sets
-          commonTypes = filter (`elem` bFalseTypes) bTrueTypes
-      when (null commonTypes) $
-           throwError $ ("Could not unify if branches; candidates for True " <>
-                         "branch are " <> pshow bTrueTypes <> " and " <>
-                         "candidates for False branch are " <>
-                         pshow bFalseTypes <> ".") <$ exprWSrc
+      (condScope, condExprTC) <-
+          annotateScopedExpr' modul scope (Just Pred) cond
+      when (_ann condExprTC /= Pred) $
+           checkError src ("Expected predicate but got the following " <>
+                           "type: " <> pshow (_ann condExprTC) <> ".")
+      (trueScope, trueExprTC) <-
+          annotateScopedExpr' modul condScope maybeExprType bTrue
+      (falseScope, falseExprTC) <-
+          annotateScopedExpr' modul condScope (Just (_ann trueExprTC)) bFalse
+      when (_ann trueExprTC /= _ann falseExprTC) $
+          checkError src ("Could not unify if branches; True branch has " <>
+                          "type " <> pshow (_ann trueExprTC) <> " and False " <>
+                          "branch has type " <> pshow (_ann falseExprTC) <> ".")
+      let exprTC = UIf condExprTC trueExprTC falseExprTC
       -- TODO: join scopes. Description below:
       -- TODO: add sets of possible types to variables for type inference.
       -- TODO: can we set a variable to be "linearly assigned to" (only one
       --       time)?
       -- Modes are either upgraded in both branches, or we should throw an
       -- error. Each variable v in the parent scope has to satisfy one of the
-      -- following properties:
+      -- following properties: (TODO: (1), (2) and (4) are invalid now).
       --   (1) v's type is unknown in the condition and the 2 branches
       --   (2) v's type is unknown in the condition, and set to the same value
       --       in the 2 branches (TODO: an intersection exists?)
@@ -270,129 +299,114 @@ annotateScopedExpr inputModule inputScope e = do
       --       if the initial mode is not out).
       -- Note: all variables from the initial scope should exist in all scopes.
       -- TODO: deal with short circuiting when emitting C++
-      let scopeVars = M.toList $ M.map (\(WithSrc _ (Var _ name _)) ->
-               let f = fromJust . M.lookup name in
-               (f trueScope, f falseScope)) scope
+      -- TODO: we can actually use the "least permissive variable mode"
+      --       constraint to allow var to only be set in one branch; do we want
+      --       to allow that?
+      let scopeVars = M.toList $ M.map (\(Ann _ (Var _ name _)) ->
+               let findVar = fromJust . M.lookup name in
+               (findVar trueScope, findVar falseScope)) scope
       resultScope <- M.fromList <$> for scopeVars (
-          \(n, (WithSrc vSrc v1, WithSrc _ v2)) -> do
+          \(n, (Ann typ1 v1, Ann typ2 v2)) -> do
               -- (5) || (6) || (7) <=> _varMode v1 == _varMode v2
               when (_varMode v1 /= _varMode v2) $
-                  throwError $ ("Mode of variable " <> pshow n <> "is " <>
-                                "inconsistent across branches.") <$ exprWSrc
-              finalType <- case (_varType v1, _varType v2) of
-                -- (2) || (3) || (4)
-                (Just x, Just y) -> do
-                    when (x /= y) $
-                         throwError $ ("Variable " <> pshow n <> " has " <>
-                                       "inconsistent types across branches. " <>
-                                       "Candidate is " <> pshow x <> " in " <>
-                                       "the True branch and " <> pshow y <>
-                                       " in the False branch.") <$ exprWSrc
-                    return $ Just x
-                -- TODO: possible (2) when type inference is better
-                (Just x, Nothing)  ->
-                    throwError $ ("Could not infer type of " <> pshow n <>
-                                  " in the False branch of if statement but " <>
-                                  " type is set to " <> pshow x <> " in " <>
-                                  "the True branch.") <$ exprWSrc
-                -- TODO: possible (2) when type inference is better
-                (Nothing, Just y)  ->
-                    throwError $ ("Could not infer type of " <> pshow n <>
-                                  " in the True branch of if statement but " <>
-                                  " type is set to " <> pshow y <> " in " <>
-                                  "the False branch.") <$ exprWSrc
-                -- (1)
-                (Nothing, Nothing) -> return Nothing
-
-              return (n, WithSrc vSrc $ Var (_varMode v1) n finalType))
-      return (resultScope, (tExpr, commonTypes))
+                  checkError src ("Mode of variable " <> pshow n <> "is " <>
+                                  "inconsistent across branches.")
+              when (typ1 /= typ2) $ error "Shouldn't happen" -- TODO: remove
+              return (n, Ann { _ann = typ1
+                             , _elem = v1
+                             }))
+      return (resultScope, Ann { _ann = _ann trueExprTC, _elem = exprTC })
     UAssert cond -> do
       (scope', newCond) <-
-          annotateScopedExpr' modul scope cond
-      when (snd newCond /= [Pred]) $
-           throwError $ ("Expected Predicate call in assertion but " <>
-                         "expression has one of the following possible " <>
-                         "types " <> pshow (snd newCond) <> ".") <$ exprWSrc
-      return (scope', (TAssert newCond, [Unit]))
-    USkip -> return (scope, (TSkip, [Unit]))
+          annotateScopedExpr' modul scope (Just Pred) cond
+      when (_ann newCond /= Pred) $
+           checkError src ("Expected Predicate call in assertion but " <>
+                           "expression has one of the following possible " <>
+                           "types " <> pshow (_ann newCond) <> ".")
+      return (scope', Ann { _ann = Unit, _elem = UAssert newCond })
+    USkip -> return (scope, Ann { _ann = Unit, _elem = USkip })
     -- TODO: use for annotating AST
 
-  getFunctionSignature (WithSrc _ (UFunc _ args _ _)) = map getArgType args
-  getFunctionSignature _ = error ("Expected function parameter in " <>
-                                  "getFunctionSignature")
+  getReturnType ~(Ann _ (UCallable _ _ _ returnType _)) = returnType
 
-  setScopeAndReturnType scope' args
-                        ~(WithSrc _ (UFunc _ argVars (WithSrc _ retType) _)) =
-    return (foldl updateScope scope' (zip args argVars), [retType])
-
-  updateScope :: Scope -> (UExpr, UVar) -> Scope
-  updateScope scope (WithSrc _ expr, ~(WithSrc _ (Var _ _ typ@(Just _))))
-    | UVar (WithSrc _ (Var _ name _)) <- expr = case M.lookup name scope of
-          Just v@(WithSrc _ (Var mode _ Nothing)) ->
-              M.insert name (Var mode name typ <$ v) scope
-          Just (WithSrc _ (Var _ _ (Just _))) -> scope
+  updateScope :: VarScope -> (UExpr p, UVar PhCheck) -> VarScope
+  updateScope scope (Ann _ expr, annVar@(Ann _ ~(Var _ _ typ@(Just _))))
+    | UVar (Ann _ (Var _ name _)) <- expr = case M.lookup name scope of
+          Just (Ann _ (Var mode _ Nothing)) ->
+              M.insert name (Var mode name typ <$$ annVar) scope
+          Just (Ann _ (Var _ _ (Just _))) -> scope
           _ -> error "This should not happen (updateScope)"
     | otherwise = scope
 
-  isCompatibleFunctionDecl :: [[UType]] -> UDecl -> Bool
-  isCompatibleFunctionDecl typeConstraints (WithSrc _ (UFunc _ args _ _))
+  isCompatibleFunctionDecl :: [UType] -> UDecl PhCheck -> Bool
+  isCompatibleFunctionDecl typeConstraints (Ann _ (UCallable _ _ args _ _))
     | length args /= length typeConstraints = False
-    | otherwise = and $ zipWith fitsTypeConstraints typeConstraints args
+    | otherwise = and $ zipWith (\x y -> x == _ann y) typeConstraints args
   isCompatibleFunctionDecl _ _ = False
 
-  fitsTypeConstraints :: [UType] -> UVar -> Bool
-  fitsTypeConstraints typeConstraints ~(WithSrc _ (Var _ _ (Just typ)))
-    -- If an argument has an unspecified argType, it is a wildcard in the
-    -- current call,
-    | [] <- typeConstraints = True
-    | typ `elem` typeConstraints = True
-    | otherwise = False
 
-checkTypeExists :: WithSrc Name -> Module -> Except Err ()
-checkTypeExists (WithSrc src name) modul
+checkTypeExists ::
+  ModuleScope ->
+  WithSrc Name ->
+  Except Err ()
+checkTypeExists modul (WithSrc src name)
   | Unit <- name = return ()
   | Pred <- name = return ()
   | otherwise = case M.lookup name modul of
-      Nothing      -> throwError (WithSrc src err)
-      Just matches -> if NoCtx (UType name) `elem` matches then return ()
-                      else throwError (WithSrc src err)
+      Nothing      -> checkError src err
+      Just matches -> if Ann Nothing (UType name) `elem` matches then return ()
+                      else checkError src err
     where err = "Type " <> pshow name <> " does not exist in current scope."
 
 -- TODO: ensure functions have a return type defined, though should be handled
 -- by parsing.
-registerProto :: Module -> UDecl -> Except Err Module
-registerProto modul declWSrc@(WithSrc _ decl)
-  | UCallable _ name args retType _ <- decl = do
-      -- TODO: check for procedures, predicates, axioms (this is only for func)?
-      checkArgs args
-      >> checkTypeExists retType modul
-      >> return (M.insertWith (<>) name [declWSrc] modul)
+
+registerProto ::
+  ModuleScope ->
+  UDecl PhParse ->
+  Except Err ModuleScope
+registerProto modul annDecl
+  | Ann _ (UCallable _ name _ _ _) <- annDecl = do
+      -- TODO: ensure bodies are registered later on
+      checkedProto <- checkProto modul annDecl
+      return $ M.insertWith (<>) name [checkedProto] modul
   | otherwise = return modul
-  where checkArgs :: [UVar] -> Except Err ()
+
+-- TODO: check for procedures, predicates, axioms (this is only for func)?
+checkProto :: ModuleScope -> UDecl PhParse -> Except Err (UDecl PhCheck)
+checkProto modul ~(Ann ann (UCallable callableType name args retType _)) = do
+  checkedArgs <- checkArgs args
+  checkTypeExists modul (WithSrc ann retType)
+  return Ann { _ann = ann
+             , _elem = UCallable callableType name checkedArgs retType Nothing
+             }
+  where checkArgs :: [UVar PhParse] -> Except Err [UVar PhCheck]
         checkArgs vars = do
           -- TODO: make sure there is no need to check
           --when (callableType /= Function) $ error "TODO: proc/axiom/pred"
-          let varSet = S.fromList [name | (WithSrc _ (Var _ name _)) <- vars]
-
+          let varSet = S.fromList [_varName v | (Ann _ v) <- vars]
           if S.size varSet /= L.length vars
-          then throwError $ "Duplicate argument names in function prototype." <$
-                            declWSrc
-          else if not $ null [v | v@(WithSrc _ (Var _ _ Nothing)) <- vars]
-          then throwError $ ("Argument missing accompanying type binding in " <>
-                             "function prototype") <$ declWSrc
-          else traverse_ checkArgType vars
+          then checkError ann "Duplicate argument names in function prototype."
+          else if not $ null [v | v@(Ann _ (Var _ _ Nothing)) <- vars]
+          then checkError ann ("Argument missing accompanying type " <>
+                               "binding in function prototype.")
+          else mapM checkArgType vars
 
-        checkArgType :: UVar -> Except Err ()
+        checkArgType :: UVar PhParse -> Except Err (UVar PhCheck)
         checkArgType var
-          | (WithSrc _ (Var _ _ (Just typ))) <- var =
-              checkTypeExists (typ <$ var) modul
+          | Ann src (Var mode varName (Just typ)) <- var = do
+              checkTypeExists modul (WithSrc src typ)
+              return $ Ann typ (Var mode varName (Just typ))
           | otherwise = error "unreachable (checkArgs)"
 
-buildModuleFromDep :: Package -> UModuleDep -> Except Err Module
-buildModuleFromDep pkg dep@(WithSrc _ (UModuleDep name renamings)) =
+buildModuleFromDep ::
+  PackageScope ->
+  UModuleDep PhParse ->
+  Except Err ModuleScope
+buildModuleFromDep pkg (Ann ann (UModuleDep name renamings)) =
   case M.lookup name pkg of
     Nothing ->
-      throwError $ ("No module named " <> pshow name <> "in scope.") <$ dep
+      checkError ann ("No module named " <> pshow name <> "in scope.")
     Just modul -> foldM applyRenamingBlock modul renamings
 
 -- TODO: cleanup duplicates, make a set of UDecl instead of a list?
@@ -400,14 +414,15 @@ buildModuleFromDep pkg dep@(WithSrc _ (UModuleDep name renamings)) =
 -- TODO: add annotations to renamings, work with something better than just
 --       name.
 -- TODO: improve error diagnostics
-applyRenamingBlock :: Module -> RenamingBlock -> Except Err Module
-applyRenamingBlock modul renamingBlock@(WithSrc _ renamings) = do
+applyRenamingBlock :: ModuleScope -> URenamingBlock PhParse -> Except Err ModuleScope
+applyRenamingBlock modul renamingBlock@(Ann src (URenamingBlock renamings)) = do
   let renamingMap = M.fromList renamings
       (sources, targets) = (L.map fst renamings, L.map snd renamings)
       -- TODO: will have to modify when renamings can be more atomic and
       -- namespace can be specified.
-      filterSources srcs ns =
-        filter (\(Name _ src) -> isNothing $ M.lookup (Name ns src) modul) srcs
+      filterSources sourceNames namespace =
+        filter (\(Name _ nameStr) ->
+                isNothing $ M.lookup (Name namespace nameStr) modul) sourceNames
       unknownSources =
         foldl filterSources sources [NSFunction, NSProcedure, NSType]
       -- All renamings in a renaming block happen at the same time. If we have
@@ -435,11 +450,11 @@ applyRenamingBlock modul renamingBlock@(WithSrc _ renamings) = do
                (source, freeName) <- r']
   (modul', renamings') <- (
       if M.size renamingMap /= L.length renamings
-      then throwError $ "Duplicate key in renaming block." <$ renamingBlock
+      then checkError src "Duplicate key in renaming block."
       else if not (null unknownSources)
-      then throwError $ "Renaming block has unknown sources." <$ renamingBlock
+      then checkError src "Renaming block has unknown sources."
       else if not (null occurOnBothSides)
-      then applyRenamingBlock modul (r' <$ renamingBlock)
+      then applyRenamingBlock modul (URenamingBlock r' <$$ renamingBlock)
            >>= \modul' -> return (modul', r'')
       else return (modul, renamings))
   return $ M.fromListWith (<>) $ L.map (\(k, decls) ->
@@ -455,20 +470,22 @@ replaceName origName@(Name ns nameStr) (Name _ sourceStr, Name _ targetStr) =
 
 -- Applies a renaming to a declaration. Renamings only affect names defined at
 -- declaration level; this means that they do not affect local variables.
-applyRenaming :: UDecl -> Renaming -> UDecl
-applyRenaming _decl renaming = applyRenamingInDecl <$> _decl
+applyRenaming :: UDecl PhCheck -> Renaming -> UDecl PhCheck
+applyRenaming annDecl renaming = applyRenamingInDecl <$$> annDecl
   where replaceName' = flip replaceName renaming
+        --applyRenamingInDecl :: UDecl p -> UDecl p
         applyRenamingInDecl decl
           | UType name <- decl = UType $ replaceName' name
           | UCallable ctyp name vars retType expr <- decl =
                 UCallable ctyp (replaceName' name)
-                  (map (applyRenamingInVar <$>) vars) (replaceName' <$> retType)
+                  (map (applyRenamingInVar <$$>) vars) (replaceName' retType)
                   (applyRenamingInExpr <$> expr)
         applyRenamingInVar (Var mode name typ) =
           Var mode name (replaceName' <$> typ)
-        applyRenamingInExpr = (applyRenamingInExpr' <$>)
+        applyRenamingInExpr = (applyRenamingInExpr' <$$>)
+        applyRenamingInExpr' :: UExpr' p -> UExpr' p
         applyRenamingInExpr' expr
-          | UVar var <- expr = UVar $ applyRenamingInVar <$> var
+          | UVar var <- expr = UVar $ applyRenamingInVar <$$> var
           | UCall name vars typ <- expr =
                 UCall (replaceName' name) (map applyRenamingInExpr vars)
                   (replaceName' <$> typ)
@@ -486,8 +503,8 @@ applyRenaming _decl renaming = applyRenamingInDecl <$> _decl
 
 -- === utils ===
 
-getArgType :: UVar -> UType
-getArgType ~(WithSrc _ (Var _ _ (Just typ))) = typ
+getArgType :: UVar a -> UType
+getArgType ~(Ann _ (Var _ _ (Just typ))) = typ
 
 mapAccumM :: (Traversable t, Monad m)
           => (a -> b -> m (a, c)) -> a -> t b -> m (a, t c)
@@ -496,3 +513,17 @@ mapAccumM f a tb = swap <$> mapM go tb `runStateT` a
                   (s', r) <- lift $ f s b
                   put s'
                   return r
+
+isStateful :: UExpr p -> Bool
+isStateful (Ann _ expr) = case expr of
+  -- Operations that can affect the scope are:
+  -- - variable declarations/variable assignments
+  -- - calls to procedures
+  UVar _ -> False
+  UCall (FuncName _) args _ -> or $ map isStateful args
+  UCall (ProcName _) _ _ -> True
+  UBlockExpr stmts -> or $ NE.map isStateful stmts
+  ULet {} -> True
+  UIf cond bTrue bFalse -> or $ map isStateful [cond, bTrue, bFalse]
+  UAssert cond -> isStateful cond
+  USkip -> False

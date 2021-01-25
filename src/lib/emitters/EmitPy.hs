@@ -6,8 +6,8 @@ import Data.List (intercalate)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
 
-import Emit
 import Env
+import PPrint
 import Syntax
 
 --data PythonSource = PythonSourceFile String PythonSource
@@ -16,29 +16,23 @@ import Syntax
 
 type PythonSource = String
 
-{--
-instance Emitter PythonSource where
-  emitGlobalEnv = emitPyGlobalEnv
-  emitPackage = emitPyPackage
-  emitModule = emitPyModule
-  emitDecl = emitPyDecl
-  emitExpr = emitPyExprNoIndent
---}
+type TCDecl' = UDecl' PhCheck
+type TCExpr' = UExpr' PhCheck
 
-emitPyGlobalEnv :: GlobalEnv -> PythonSource
+emitPyGlobalEnv :: GlobalEnv PhCheck -> PythonSource
 emitPyGlobalEnv = undefined
 
 -- TODO: actually implement
-emitPyPackage :: Package -> PythonSource
-emitPyPackage pkg = emitPyModule $ snd $ M.toList pkg !! 0
+emitPyPackage :: TCPackage -> PythonSource
+emitPyPackage pkg = emitPyModule $ snd . head $ M.toList pkg
 
 -- TODO: actually implement
-emitPyModule :: Module -> PythonSource
-emitPyModule modul = intercalate "\n\n" $ map (emitPyDecl 0) $ firstModuleDecls
-  where firstModuleDecls = snd $ M.toList modul !! 0
+emitPyModule :: TCModule -> PythonSource
+emitPyModule modul = intercalate "\n\n" $ map (emitPyDecl 0) firstModuleDecls
+  where firstModuleDecls = snd $ head $ M.toList modul
 
-emitPyDecl :: Int -> UDecl -> PythonSource
-emitPyDecl indent (WithSrc _ decl) = case decl of
+emitPyDecl :: Int -> TCDecl -> PythonSource
+emitPyDecl indent (Ann _ decl) = case decl of
   -- TODO: add type annotations?
   UType _ -> noEmit
   UCallable _ _ _ _ Nothing -> noEmit -- Ignore prototypes
@@ -53,53 +47,47 @@ emitPyDecl indent (WithSrc _ decl) = case decl of
         -- Predicates are functions, so UCallable {Function,Predicate} requires
         -- one unique behavior.
         -- TODO: make sure the chosen return name is free.
-        _         -> let retVar = GenName "freeReturnVar"
-                         newBody = ULet UOut retVar Nothing maybeBody <$ body in
-          emitPyExpr bodyIndent newBody <> mkIndent bodyIndent <>
-          "return " <> emitName retVar <> "\n"
+        _         -> emitPrefixedPyExpr bodyIndent
+                                        (mkIndent bodyIndent <> "return ") body
   where
-    emitProcReturn :: [UVar] -> PythonSource
+    emitProcReturn :: [TCVar] -> PythonSource
     emitProcReturn args =
-      case filter (\(WithSrc _ (Var mode _ _)) -> mode /= UObs) args of
+      case filter (\(Ann _ (Var mode _ _)) -> mode /= UObs) args of
         [] -> "return None"
         rets -> "return (" <> intercalate ", " (map emitVarName rets) <> ",)"
 
     bodyIndent = incIndent indent
 
-emitPyExpr :: Int -> UExpr -> PythonSource
-emitPyExpr ind (WithSrc _ inputExpr) = emitPyExpr' ind inputExpr <> "\n"
+emitPyExpr :: Int -> TCExpr -> PythonSource
+emitPyExpr = flip emitPrefixedPyExpr ""
+
+emitPrefixedPyExpr :: Int -> PythonSource -> TCExpr -> PythonSource
+emitPrefixedPyExpr ind prefixPySrc (Ann typ inputExpr) =
+  go ind prefixPySrc inputExpr
   where
-    emitPyExpr' :: Int -> UExpr' -> PythonSource
-    emitPyExpr' indent expr = let strIndent = mkIndent indent in case expr of
-      UVar (WithSrc _ v) -> emitName (_varName v)
-      UCall name args _ ->
-        emitName name <> "(" <> intercalate "," (map (emitPyExpr 0) args) <>
-        ")"
-      -- TODO: worry about shadowing?
-      -- TODO: work with UTypedExpr.
-      -- TODO: check that function name is free, and
+    go :: Int -> PythonSource -> TCExpr' -> PythonSource
+    go indent prefix expr = let strIndent = mkIndent indent in case expr of
+      UVar (Ann _ v) -> prefix <> emitName (_varName v)
+      UCall name args _ -> prefix <> emitName name <> "(" <>
+          intercalate "," (map (emitPyExpr 0) args) <> ")"
       UBlockExpr stmts ->
-        intercalate ("\n" <> mkIndent (incIndent ind)) $
-                    -- TODO: insert return in last statement
-                    map (emitPyExpr indent) (NE.toList stmts)
-      ULet _ name _ maybeAssignmentExpr -> case maybeAssignmentExpr of
+        intercalate ("\n" <> strIndent)
+                    (map (emitPyExpr indent) (NE.init stmts)) <> "\n" <>
+        emitPrefixedPyExpr indent prefix (NE.last stmts)
+      -- TODO: prefix == "" or error?
+      ULet _ name _ maybeAssignmentExpr -> prefix <> case maybeAssignmentExpr of
         Nothing -> emitName name <> " = None"
         Just assignmentExpr ->
-          emitName name <> " = " <> mkInlineExpr indent assignmentExpr
+          emitPrefixedPyExpr indent (emitName name <> " = ") assignmentExpr
       UIf cond bTrue bFalse ->
-        "if " <> mkInlineExpr indent cond <> ":\n" <>
-        emitPyExpr (incIndent indent) bTrue <> "\n" <> strIndent <> "else:" <>
-        emitPyExpr (incIndent indent) bFalse <> "\n"
-      UAssert cond -> "assert " <> mkInlineExpr indent cond
+        emitPrefixedPyExpr indent "if " cond <> ":\n" <>
+        emitPrefixedPyExpr (incIndent indent) prefix bTrue <> "\n" <>
+        strIndent <> "else:\n" <>
+        emitPrefixedPyExpr (incIndent indent) prefix bFalse <> "\n"
+      -- TODO: prefix == "" or error?
+      UAssert cond -> prefix <> emitPrefixedPyExpr indent "assert " cond
       USkip -> "pass"
       --UTypedExpr expr' _ -> emitPyExpr indent expr'
-
-    mkInlineExpr :: Int -> UExpr -> PythonSource
-    mkInlineExpr indent (WithSrc _ inlineExpr) = case inlineExpr of
-      UBlockExpr _ ->
-        "lambda: (\n" <> mkIndent indent <>
-        emitPyExpr' (incIndent $ incIndent indent) inlineExpr <> ")()"
-      _            -> emitPyExpr' indent inlineExpr
 
 -- === utils ===
 
@@ -115,12 +103,12 @@ noEmit = ""
 emitName :: Name -> PythonSource
 emitName (Name _ s) = mkPythonSource s
 
-emitProto :: UDecl' -> PythonSource
+emitProto :: TCDecl' -> PythonSource
 emitProto ~(UCallable _ name args _ _) = "def " <> emitName name <> "(" <>
   intercalate ", " (map emitVarName args) <> "):\n"
 
-emitVarName :: UVar -> PythonSource
-emitVarName (WithSrc _ v) = emitName $ _varName v
+emitVarName :: TCVar -> PythonSource
+emitVarName (Ann _ v) = emitName $ _varName v
 
 mkPythonSource :: String -> PythonSource
 mkPythonSource = id
