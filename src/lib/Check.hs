@@ -1,15 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Check (checkPackage, checkModule) where
+module Check (checkModule) where
 
 import Control.Applicative
-import Control.Monad (foldM)
 import Control.Monad.Except
 import Control.Monad.Trans.State
 --import Debug.Trace (trace)
 import Data.Foldable (traverse_)
 import Data.Maybe (fromJust, isJust, isNothing)
-import Data.Monoid ((<>))
 import Data.Traversable (for)
 import Data.Tuple (swap)
 
@@ -23,13 +21,8 @@ import Env
 import PPrint
 import Syntax
 
--- TODO: WIP Err
-type Err = WithSrc T.Text
-
 type VarScope = Env (UVar PhCheck)
-type ModuleScope = ModuleEnv PhCheck
-type PackageScope = PackageEnv PhCheck
-type GlobalScope = GlobalEnv PhCheck
+type ModuleScope = Env [UDecl PhCheck] --ModuleEnv PhCheck
 
 checkError :: SrcCtx -> T.Text -> Except Err a
 checkError src err = throwError $ WithSrc src err
@@ -41,19 +34,20 @@ initScope = M.fromList . map mkScopeVar
     mkScopeVar ~(Ann _ (Var mode name (Just typ))) =
       (name, Ann { _ann = typ, _elem = Var mode name (Just typ) })
 
-checkPackage :: GlobalScope -> UPackage PhParse -> Except Err GlobalScope
-checkPackage _ _ = undefined
-
 -- TODO: can variables exist without a type in the scope?
 -- TODO: replace things with relevant sets
 -- TODO: handle circular dependencies
-checkModule :: PackageScope -> UModule PhParse -> Except Err PackageScope
+checkModule :: Env [TCTopLevelDecl]
+  -> UModule PhParse
+  -> Except Err (Env [TCTopLevelDecl])
 --checkModule pkg modul | trace (pshow modul) False = undefined
-checkModule pkg (Ann _ (UModule moduleType moduleName decls deps)) = do
+checkModule tlDecls (Ann ann (UModule moduleType moduleName decls deps)) = do
+  let moduleDecls = M.map getModules tlDecls
   -- Step 1: expand uses
-  uses <- foldl joinEnvs M.empty <$> mapM (buildModuleFromDep pkg) deps
+  (depScope, checkedDeps) <- foldl joinTuple (M.empty, M.empty) <$>
+      mapM (buildModuleFromDep moduleDecls) deps
   -- Step 2: register types
-  let baseScope = M.unionWith (<>) uses $ M.fromList types
+  let baseScope = M.unionWith (<>) depScope $ M.fromList types
   -- Step 3: check and register protos
   protoScope <- foldM registerProto baseScope callables
   -- Step 4: check bodies if allowed
@@ -63,14 +57,33 @@ checkModule pkg (Ann _ (UModule moduleType moduleName decls deps)) = do
   when (moduleType == Program) $
       traverse_ (checkImplemented finalScope) callablesTC
   -- TODO: check that name is unique?
-  return $ M.insert moduleName finalScope pkg
+  -- TODO: make module
+  let resultModuleDecl = UModuleDecl $
+        Ann { _ann = (ann, LocalDecl)
+            , _elem = UModule moduleType moduleName finalScope checkedDeps
+            } -- :: TCModule
+  return $ M.insertWith (<>) moduleName [resultModuleDecl] tlDecls
+  --undefined
   where
+    getModules :: [UTopLevelDecl p] -> [UModule p]
+    getModules tlds = foldl extractModule [] tlds
+
+    extractModule :: [UModule p] -> UTopLevelDecl p -> [UModule p]
+    extractModule acc topLevelDecl
+      | UModuleDecl m <- topLevelDecl = m:acc
+      | otherwise = acc
+
     types :: [(Name, [UDecl PhCheck])]
-    types = [ (typeName, [Ann { _ann = ann, _elem = UType typeName }])
-            | Ann ann (UType typeName) <- decls]
+    types = [ (typeName, [Ann { _ann = (typAnn, [LocalDecl])
+                              , _elem = UType typeName
+                              }])
+            | Ann typAnn (UType typeName) <- decls]
     callables = [d | d@(Ann _ UCallable {}) <- decls]
-    joinEnvs = M.unionWith (<>)
-    checkBody :: ModuleScope
+
+    joinTuple (a, b) (a', b') = (M.unionWith (<>) a a', M.unionWith (<>) b b')
+
+    checkBody
+      :: ModuleScope
       -> UDecl PhParse
       -> Except Err (ModuleScope, UDecl PhCheck)
     checkBody env decl@(~(Ann src (UCallable callableType fname args retType
@@ -98,8 +111,8 @@ checkModule pkg (Ann _ (UModule moduleType moduleName decls deps)) = do
               "type: " <> pshow (_ann bodyTC) <> ".")
 
     checkImplemented :: ModuleScope -> UDecl PhCheck -> Except Err ()
-    checkImplemented env callable@(~(Ann src (UCallable _ callableName
-                                                        _ _ body)))
+    checkImplemented env callable@(~(Ann (src, _) (UCallable _ callableName
+                                                             _ _ body)))
       | Just _ <- body = return ()
       | Nothing <- body = do
           let ~(Just matches) = M.lookup callableName env
@@ -123,16 +136,16 @@ annotateScopedExpr ::
   UExpr PhParse ->
   Except Err (UExpr PhCheck)
 annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
-  snd <$> annotateScopedExpr' inputModule inputScope inputMaybeExprType e
+  snd <$> go inputModule inputScope inputMaybeExprType e
   where
   -- maybeExprType is a parameter to disambiguate function calls overloaded
   -- solely on return types. It will *not* be used if the type can be inferred
   -- without it, and there is thus no guarantee that the resulting annotated
   -- expression will carry the specified type annotation. If this is important,
   -- it must be checked outside the call.
-  annotateScopedExpr' :: ModuleScope -> VarScope -> Maybe UType -> UExpr PhParse
-                         -> Except Err (VarScope, UExpr PhCheck)
-  annotateScopedExpr' modul scope maybeExprType (Ann src expr) = case expr of
+  go :: ModuleScope -> VarScope -> Maybe UType -> UExpr PhParse
+     -> Except Err (VarScope, UExpr PhCheck)
+  go modul scope maybeExprType (Ann src expr) = case expr of
     -- TODO: annotate type and mode on variables
     UVar (Ann _ (Var _ name typ)) -> case M.lookup name scope of
         Nothing -> checkError src "No such variable in current scope"
@@ -212,13 +225,11 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
               -- TODO: ignore modes when overloading functions
     UBlockExpr exprStmts -> do
       (intermediateScope, initExprStmtsTC) <-
-          mapAccumM (flip (annotateScopedExpr' modul) Nothing) scope
-                    (NE.init exprStmts)
+          mapAccumM (flip (go modul) Nothing) scope (NE.init exprStmts)
       -- The last exprStmt must be treated differently because it's potentially
       -- annotated.
       (scope', lastExprStmtTC) <-
-          annotateScopedExpr' modul intermediateScope maybeExprType
-                             (NE.last exprStmts)
+          go modul intermediateScope maybeExprType (NE.last exprStmts)
       -- Return the old scope with potential new annotations; this makes sure
       -- that variables declared in the current scope are eliminated.
       -- Note that we do not yet have nested scopes; this means that it is
@@ -247,7 +258,7 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
                  , Ann Unit (ULet mode name maybeType Nothing)
                  )
         Just rhsExpr -> do
-          (scope', rhsExprTC) <- annotateScopedExpr' modul scope
+          (scope', rhsExprTC) <- go modul scope
               (maybeType <|> maybeExprType) rhsExpr
           let exprTC = ULet mode name maybeType (Just rhsExprTC)
               rhsType = _ann rhsExprTC
@@ -267,15 +278,13 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
                      , Ann { _ann = Unit, _elem = exprTC }
                      )
     UIf cond bTrue bFalse -> do
-      (condScope, condExprTC) <-
-          annotateScopedExpr' modul scope (Just Pred) cond
+      (condScope, condExprTC) <- go modul scope (Just Pred) cond
       when (_ann condExprTC /= Pred) $
            checkError src ("Expected predicate but got the following " <>
                            "type: " <> pshow (_ann condExprTC) <> ".")
-      (trueScope, trueExprTC) <-
-          annotateScopedExpr' modul condScope maybeExprType bTrue
+      (trueScope, trueExprTC) <- go modul condScope maybeExprType bTrue
       (falseScope, falseExprTC) <-
-          annotateScopedExpr' modul condScope (Just (_ann trueExprTC)) bFalse
+          go modul condScope (Just (_ann trueExprTC)) bFalse
       when (_ann trueExprTC /= _ann falseExprTC) $
           checkError src ("Could not unify if branches; True branch has " <>
                           "type " <> pshow (_ann trueExprTC) <> " and False " <>
@@ -318,8 +327,7 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
                              }))
       return (resultScope, Ann { _ann = _ann trueExprTC, _elem = exprTC })
     UAssert cond -> do
-      (scope', newCond) <-
-          annotateScopedExpr' modul scope (Just Pred) cond
+      (scope', newCond) <- go modul scope (Just Pred) cond
       when (_ann newCond /= Pred) $
            checkError src ("Expected Predicate call in assertion but " <>
                            "expression has one of the following possible " <>
@@ -346,9 +354,10 @@ checkTypeExists modul (WithSrc src name)
   | Pred <- name = return ()
   | otherwise = case M.lookup name modul of
       Nothing      -> checkError src err
-      Just matches -> if Ann Nothing (UType name) `elem` matches then return ()
+      Just matches -> if noAnn (UType name) `elem` matches then return ()
                       else checkError src err
     where err = "Type " <> pshow name <> " does not exist in current scope."
+          noAnn = Ann undefined
 
 -- TODO: ensure functions have a return type defined, though should be handled
 -- by parsing.
@@ -369,7 +378,7 @@ checkProto :: ModuleScope -> UDecl PhParse -> Except Err (UDecl PhCheck)
 checkProto modul ~(Ann ann (UCallable callableType name args retType _)) = do
   checkedArgs <- checkArgs args
   checkTypeExists modul (WithSrc ann retType)
-  return Ann { _ann = ann
+  return Ann { _ann = (ann, [LocalDecl])
              , _elem = UCallable callableType name checkedArgs retType Nothing
              }
   where checkArgs :: [UVar PhParse] -> Except Err [UVar PhCheck]
@@ -392,21 +401,34 @@ checkProto modul ~(Ann ann (UCallable callableType name args retType _)) = do
           | otherwise = error "unreachable (checkArgs)"
 
 buildModuleFromDep ::
-  PackageScope ->
+  Env [TCModule] ->
   UModuleDep PhParse ->
-  Except Err ModuleScope
+  Except Err (Env [TCDecl], Env [TCModuleDep])
 buildModuleFromDep pkg (Ann ann (UModuleDep name renamings)) =
   case M.lookup name pkg of
     Nothing ->
       checkError ann ("No module named " <> pshow name <> "in scope.")
-    Just modul -> foldM applyRenamingBlock modul renamings
+    Just []        -> checkError ann "This is a compiler bug"
+    Just [Ann _ m] -> do
+      renamedDecls <- foldM applyRenamingBlock (_moduleDecls m) renamings
+      -- TODO: do this well
+      let checkedDep =
+            Ann ann (UModuleDep name $ map checkRenamingBlock renamings)
+      return (renamedDecls, M.singleton name [checkedDep])
+    Just _         -> error "TODO: implement fully qualified use names"
+  where
+    checkRenamingBlock :: URenamingBlock PhParse -> URenamingBlock PhCheck
+    checkRenamingBlock (Ann ann_ (URenamingBlock rs)) = Ann ann_ (URenamingBlock rs)
 
 -- TODO: cleanup duplicates, make a set of UDecl instead of a list?
 -- TODO: finish renamings
 -- TODO: add annotations to renamings, work with something better than just
 --       name.
 -- TODO: improve error diagnostics
-applyRenamingBlock :: ModuleScope -> URenamingBlock PhParse -> Except Err ModuleScope
+applyRenamingBlock
+  :: ModuleScope
+  -> URenamingBlock PhParse
+  -> Except Err ModuleScope
 applyRenamingBlock modul renamingBlock@(Ann src (URenamingBlock renamings)) = do
   let renamingMap = M.fromList renamings
       (sources, targets) = (L.map fst renamings, L.map snd renamings)

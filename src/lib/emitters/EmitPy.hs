@@ -24,12 +24,19 @@ emitPyGlobalEnv = undefined
 
 -- TODO: actually implement
 emitPyPackage :: TCPackage -> PythonSource
-emitPyPackage pkg = emitPyModule $ snd . head $ M.toList pkg
+emitPyPackage pkg =
+  emitPyModule $ head $ foldl extractModuleList [] (_packageDecls (_elem pkg))
+  where
+    extractModuleList moduleList pkgDeclList =
+      moduleList <> foldl extractModule [] pkgDeclList
+    extractModule moduleList pkgDecl = case pkgDecl of
+      UModuleDecl modul -> modul:moduleList
+      _ -> moduleList
 
 -- TODO: actually implement
 emitPyModule :: TCModule -> PythonSource
 emitPyModule modul = intercalate "\n\n" $ map (emitPyDecl 0) firstModuleDecls
-  where firstModuleDecls = snd $ head $ M.toList modul
+  where firstModuleDecls = snd $ head $ M.toList (_moduleDecls $ _elem modul)
 
 emitPyDecl :: Int -> TCDecl -> PythonSource
 emitPyDecl indent (Ann _ decl) = case decl of

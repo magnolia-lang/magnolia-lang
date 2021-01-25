@@ -1,20 +1,27 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
 module Syntax (
     UCallable (..), UDecl, UDecl' (..), UExpr, UExpr' (..), UModule,
     UModule' (..), UModuleDep, UModuleDep' (..), UModuleType (..),
-    UPackage, UPackage' (..), URenamingBlock, URenamingBlock' (..), UType,
+    UNamedRenaming, UNamedRenaming' (..),
+    UPackage, UPackage' (..), UPackageDep, UPackageDep' (..), URenamingBlock,
+    URenamingBlock' (..), UTopLevelDecl (..), UType,
     UVar, UVar' (..), UVarMode (..), WithSrc (..),
-    GlobalEnv, ModuleEnv, PackageEnv, Renaming,
-    TCDecl, TCExpr, TCModule, TCPackage, TCVar,
+    GlobalEnv, PackageHead (..), Renaming,
+    TCDecl, TCExpr, TCModule, TCModuleDep, TCPackage, TCTopLevelDecl, TCVar,
+    NamedNode (..),
+    DeclOrigin (..), Err,
     PhParse, PhCheck, PhCodeGen, SrcCtx,
     Ann (..), XAnn, (<$$>), (<$$),
     pattern Pred, pattern Unit,
@@ -24,22 +31,30 @@ module Syntax (
   where
 
 import Data.List.NonEmpty as NE
---import Data.Void
+import Data.Map as M
+import Data.Text.Lazy as T
 
 import Env
 
--- === front-end language CST ===
+-- === preprocessing utils ===
 
--- TODO: should we have an IR for functional optimisations?
+data PackageHead = PackageHead { _packageHeadPath :: FilePath
+                               , _packageHeadStr :: String
+                               , _packageHeadName :: Name
+                               , _packageHeadImports :: [WithSrc Name]
+                               }
+                   deriving (Eq, Show)
 
 -- === env utils ===
 
-type GlobalEnv e = Env (PackageEnv e)
-type PackageEnv e = Env (ModuleEnv e)
-type ModuleEnv e = Env [UDecl e]
+type GlobalEnv p = Env (UPackage p)
 
-type TCPackage = PackageEnv PhCheck
-type TCModule = ModuleEnv PhCheck
+--type GlobalEnv p = Env (Env (Env [UDecl p]))
+
+type TCPackage = UPackage PhCheck
+type TCTopLevelDecl = UTopLevelDecl PhCheck
+type TCModule = UModule PhCheck
+type TCModuleDep = UModuleDep PhCheck
 type TCDecl = UDecl PhCheck
 type TCExpr = UExpr PhCheck
 type TCVar = UVar PhCheck
@@ -64,16 +79,33 @@ instance Show (e p) => Show (Ann p e) where
 -- === AST ===
 
 type UPackage p = Ann p UPackage'
-data UPackage' p = UPackage Name [UModule p] [Name]
-                   deriving (Eq, Show)
+data UPackage' p = UPackage { _packageName :: Name
+                            , _packageDecls :: XPhasedContainer p (UTopLevelDecl p)
+                            , _packageDeps :: [UPackageDep p]
+                            }
+
+type UPackageDep p = Ann p UPackageDep'
+newtype UPackageDep' p = UPackageDep Name -- Renaming blocks?
+                         deriving (Eq, Show)
+
+data UTopLevelDecl p = UNamedRenamingDecl (UNamedRenaming p)
+                     | UModuleDecl (UModule p)
+                     | USatisfactionDecl (USatisfaction p)
+
+type UNamedRenaming p = Ann p UNamedRenaming'
+data UNamedRenaming' p = UNamedRenaming Name [URenamingBlock p]
+                         deriving (Eq, Show)
+
+type USatisfaction p = Ann p USatisfaction'
+data USatisfaction' p = USatisfaction Name Name -- TODO
+                        deriving (Eq, Show)
 
 type UModule p = Ann p UModule'
 data UModule' p = UModule { _moduleType :: UModuleType
                           , _moduleName :: Name
-                          , _moduleDecls :: [UDecl p]
-                          , _moduleDeps :: [UModuleDep p]
+                          , _moduleDecls :: XPhasedContainer p (UDecl p)
+                          , _moduleDeps :: XPhasedContainer p (UModuleDep p)
                           }
-                  deriving (Eq, Show)
 
 -- Expose out for DAG building
 type UModuleDep p = Ann p UModuleDep'
@@ -136,15 +168,25 @@ data UVar' p = Var { _varMode :: UVarMode
 data UVarMode = UObs | UOut | UUnk | UUpd
                 deriving (Eq, Show)
 
--- TODO: deal with annotations
+-- == annotation utils ==
+
 type SrcPos = (String, Int, Int)
 
 type SrcCtx = Maybe (SrcPos, SrcPos)
-data WithSrc a = WithSrc SrcCtx a
+data WithSrc a = WithSrc { _srcCtx :: SrcCtx
+                         , _fromSrc :: a
+                         }
                  deriving (Functor, Show)
 
 instance Eq a => Eq (WithSrc a) where
   (WithSrc _ x) == (WithSrc _ y) = x == y
+
+type Err = WithSrc T.Text
+
+-- TODO: External
+-- TODO: actually deal with ImportedDecl
+data DeclOrigin = LocalDecl | ImportedDecl Name Name -- | External Name
+                deriving (Eq, Show)
 
 -- === compilation phases ===
 
@@ -154,44 +196,104 @@ data PhCodeGen
 
 -- === XAnn type family ===
 
-type family XAnn p (e :: * -> *)
+type family XAnn p (e :: * -> *) where
+  XAnn PhParse UPackage' = SrcCtx
+  XAnn PhCheck UPackage' = SrcCtx
 
-type instance XAnn PhParse UPackage' = SrcCtx
-type instance XAnn PhCheck UPackage' = SrcCtx
+  XAnn PhParse UPackageDep' = SrcCtx
+  XAnn PhCheck UPackageDep' = SrcCtx
 
-type instance XAnn PhParse UModule' = SrcCtx
-type instance XAnn PhCheck UModule' = SrcCtx
+  XAnn PhParse UNamedRenaming' = SrcCtx
+  XAnn PhCheck UNamedRenaming' = (SrcCtx, DeclOrigin)
 
-type instance XAnn PhParse UModuleDep' = SrcCtx
-type instance XAnn PhCheck UModuleDep' = SrcCtx
+  XAnn PhParse USatisfaction' = SrcCtx
+  XAnn PhCheck USatisfaction' = (SrcCtx, DeclOrigin)
 
-type instance XAnn PhParse URenamingBlock' = SrcCtx
-type instance XAnn PhCheck URenamingBlock' = SrcCtx
+  XAnn PhParse UModule' = SrcCtx
+  XAnn PhCheck UModule' = (SrcCtx, DeclOrigin)
 
-type instance XAnn PhParse UDecl' = SrcCtx
-type instance XAnn PhCheck UDecl' = SrcCtx
+  XAnn PhParse UModuleDep' = SrcCtx
+  XAnn PhCheck UModuleDep' = SrcCtx
 
-type instance XAnn PhParse UExpr' = SrcCtx
-type instance XAnn PhCheck UExpr' = UType
+  XAnn PhParse URenamingBlock' = SrcCtx
+  XAnn PhCheck URenamingBlock' = SrcCtx
 
-type instance XAnn PhParse UVar' = SrcCtx
-type instance XAnn PhCheck UVar' = UType
+  XAnn PhParse UDecl' = SrcCtx
+  XAnn PhCheck UDecl' = (SrcCtx, [DeclOrigin])
+
+  XAnn PhParse UExpr' = SrcCtx
+  XAnn PhCheck UExpr' = UType
+
+  XAnn PhParse UVar' = SrcCtx
+  XAnn PhCheck UVar' = UType
+
+-- WIP PhasedContainer
+-- TODO: use NE.NonEmpty instead of []?
+type family XPhasedContainer p e where
+  XPhasedContainer PhParse e = [e]
+  XPhasedContainer PhCheck e = M.Map Name [e]
+
+-- TODO: move?
+-- == standalone show instances ===
+
+deriving instance Show (UModule' PhCheck)
+deriving instance Show (UTopLevelDecl PhCheck)
+deriving instance Show (UPackage' PhCheck)
+
+-- === useful typeclasses ===
+
+class NamedNode n where
+  nodeName :: n -> Name
+
+instance NamedNode (e p) => NamedNode (Ann p e) where
+  nodeName = nodeName . _elem
+
+instance NamedNode (UPackage' p) where
+  nodeName = _packageName
+
+instance NamedNode (UPackageDep' p) where
+  nodeName (UPackageDep name) = name
+
+instance NamedNode (UTopLevelDecl p) where
+  nodeName topLevelDecl = case topLevelDecl of
+    UNamedRenamingDecl namedRenaming -> nodeName namedRenaming
+    UModuleDecl modul -> nodeName modul
+    USatisfactionDecl satisfaction -> nodeName satisfaction
+
+instance NamedNode (UNamedRenaming' p) where
+  nodeName (UNamedRenaming name _) = name
+
+instance NamedNode (UModule' p) where
+  nodeName = _moduleName
+
+instance NamedNode (USatisfaction' p) where
+  nodeName (USatisfaction name _) = name
+
+instance NamedNode (UModuleDep' p) where
+  nodeName (UModuleDep name _) = name
+
+instance NamedNode (UDecl' p) where
+  nodeName decl = case decl of
+    UType name -> name
+    UCallable _ name _ _ _ -> name
 
 -- === useful patterns ===
 
 pattern NoCtx :: a -> WithSrc a
 pattern NoCtx item = WithSrc Nothing item
 
-pattern USig :: Name -> [UDecl p] -> [UModuleDep p] -> UModule' p
+pattern USig
+  :: Name -> XPhasedContainer p (UDecl p) -> XPhasedContainer p (UModuleDep p)
+  -> UModule' p
 pattern USig name decls deps = UModule Signature name decls deps
 
-pattern UCon :: Name -> [UDecl p] -> [UModuleDep p] -> UModule' p
+pattern UCon :: Name -> XPhasedContainer p (UDecl p) -> XPhasedContainer p (UModuleDep p) -> UModule' p
 pattern UCon name decls deps = UModule Concept name decls deps
 
-pattern UProg :: Name -> [UDecl p] -> [UModuleDep p] -> UModule' p
+pattern UProg :: Name -> XPhasedContainer p (UDecl p) -> XPhasedContainer p (UModuleDep p) -> UModule' p
 pattern UProg name decls deps = UModule Program name decls deps
 
-pattern UImpl :: Name -> [UDecl p] -> [UModuleDep p] -> UModule' p
+pattern UImpl :: Name -> XPhasedContainer p (UDecl p) -> XPhasedContainer p (UModuleDep p) -> UModule' p
 pattern UImpl name decls deps = UModule Implementation name decls deps
 
 pattern UAxiom :: Name -> [UVar p] -> UType -> Maybe (UExpr p) -> UDecl' p

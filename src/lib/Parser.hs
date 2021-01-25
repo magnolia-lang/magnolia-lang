@@ -1,6 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module Parser (parsePackage, parsePackageDependencies) where
+module Parser (parsePackage, parsePackageHead) where
 
 import Control.Monad.Combinators.Expr
 import Control.Monad.Except
@@ -11,56 +11,88 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 
 import qualified Data.List.NonEmpty as NE
+import qualified Data.Text.Lazy as T
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import Env
 import Syntax
 
-type Err = String
-
 type Parser = Parsec Void String
 
 type ParsedPackage = UPackage PhParse
-type ParsedModule = UModule PhParse
 type ParsedDecl = UDecl PhParse
 type ParsedExpr = UExpr PhParse
 type ParsedVar = UVar PhParse
 
 -- TODO: find type for imports
-parsePackageDependencies :: undefined
-parsePackageDependencies = undefined
+parsePackageHead :: FilePath -> String -> ExceptT Err IO PackageHead
+parsePackageHead filePath s =
+  case parse (sc >> packageHead filePath s) filePath s of
+    Left e -> throwError . NoCtx . T.pack $ errorBundlePretty e
+    Right ph -> return ph
 
-parsePackage :: String -> String -> Except Err [ParsedModule]
-parsePackage filename s =
-  case parse (sc >> package) filename s of
-    Left e -> throwError $ errorBundlePretty e
-    Right Ann { _elem = UPackage _ modules _ } -> return modules
+parsePackage :: FilePath -> String -> ExceptT Err IO ParsedPackage
+parsePackage filePath s =
+  case parse (sc >> package) filePath s of
+    Left e -> throwError . NoCtx . T.pack $ errorBundlePretty e
+    Right pkg -> return pkg
+
+packageHead :: FilePath -> String -> Parser PackageHead
+packageHead filePath s = do
+  pkgName <- keyword PackageKW *> packageName
+  -- TODO: error out if package name is different from filepath?
+  imports <- choice [ keyword ImportKW >>
+                      (withSrc packageName `sepBy1` symbol ",")
+                    , return []
+                    ] <* symbol ";"
+  return PackageHead { _packageHeadPath = filePath
+                     , _packageHeadStr = s
+                     , _packageHeadName = pkgName
+                     , _packageHeadImports = imports
+                     }
 
 package :: Parser ParsedPackage
 package = annot package'
   where
     package' = do
       pkgName <- keyword PackageKW *> packageName
-      deps <- choice [ keyword ImportKW >> (packageName `sepBy1` symbol ",")
+      deps <- choice [ keyword ImportKW >>
+                       (annot (UPackageDep <$> packageName) `sepBy1` symbol ",")
                      , return []
                      ] <* symbol ";"
-      modules <- manyTill (annot (many (symbol ";") *>
-                           module' <* many (symbol ";"))) eof
-      return $ UPackage pkgName modules deps
+      decls <- manyTill (many (symbol ";") *>
+                         topLevelDecl <* many (symbol ";")) eof
+      return $ UPackage pkgName decls deps
 
-module' :: Parser (UModule' PhParse)
-module' = do
-  cons <- (keyword ConceptKW >> return UCon)
-           <|> (keyword ImplementationKW >> return UImpl)
-           <|> (keyword SignatureKW >> return USig)
-           <|> (keyword ProgramKW >> return UProg)
-  name <- ModName <$> nameString
-  symbol "="
-  declsAndDeps <- braces $ many (try (Left <$> declaration)
-                                 <|> (Right <$> moduleDependency))
-  let decls = [decl | (Left decl) <- declsAndDeps]
-      deps  = [dep  | (Right dep) <- declsAndDeps]
-  return $ cons name decls deps
+topLevelDecl :: Parser (UTopLevelDecl PhParse)
+topLevelDecl =  (UModuleDecl <$> moduleDecl)
+            <|> (UNamedRenamingDecl <$> renamingDecl)
+            -- TODO: <|> (USatisfaction <$$> ...)
+
+moduleDecl :: Parser (UModule PhParse)
+moduleDecl = annot moduleDecl'
+  where
+    moduleDecl' = do
+      cons <- (keyword ConceptKW >> return UCon)
+               <|> (keyword ImplementationKW >> return UImpl)
+               <|> (keyword SignatureKW >> return USig)
+               <|> (keyword ProgramKW >> return UProg)
+      name <- ModName <$> nameString
+      symbol "="
+      declsAndDeps <- braces $ many (try (Left <$> declaration)
+                                     <|> (Right <$> moduleDependency))
+      let decls = [decl | (Left decl) <- declsAndDeps]
+          deps  = [dep  | (Right dep) <- declsAndDeps]
+      return $ cons name decls deps
+
+renamingDecl :: Parser (UNamedRenaming PhParse)
+renamingDecl = annot renamingDecl'
+  where
+    renamingDecl' = do
+      keyword RenamingKW
+      name <- RenamingName <$> nameString
+      symbol "="
+      UNamedRenaming name <$> many renamingBlock
 
 declaration :: Parser ParsedDecl
 declaration = annot declaration' <* many (symbol ";")
@@ -120,6 +152,7 @@ expr = makeExprParser leafExpr ops
            <|> try (callableCall FuncName)
            <|> try (keyword CallKW *> callableCall ProcName)
            <|> annot (var UUnk >>= \v -> return $ UVar v)
+           <|> annot (keyword SkipKW >> return USkip)
            <|> parens expr
 
 blockExpr :: Parser ParsedExpr
@@ -199,7 +232,7 @@ ops = [ map unOp ["+", "-", "!", "~"]                -- unary ops
       , map binOp ["+", "-"]                         -- add ops
       , map binOp ["<<", ">>"]                       -- shift ops
       , [binOp ".."]                                 -- range
-      , map binOp ["<", ">", ">=", "<=", "==", "!="] -- comparison ops
+      , map binOp ["<", ">", ">=", "<=", "==", "!=", "===", "!=="] -- comparison ops
       , [binOp "&&"]                                 -- logical and
       , [binOp "||"]                                 -- logical or
       , [binOp "=>", binOp "<=>"]                    -- logical implication
@@ -233,6 +266,7 @@ brackets = between (symbol "[") (symbol "]")
 parens :: Parser a -> Parser a
 parens = between (symbol "(") (symbol ")")
 
+-- TODO: reason about "==" and the need for "===" and "!==".
 symOpName :: Parser Name
 symOpName = choice $ map (try . mkSymOpNameParser) symOps
   where symOps = [ "+_", "-_", "!_", "~_"
@@ -240,7 +274,7 @@ symOpName = choice $ map (try . mkSymOpNameParser) symOps
                  , "_+_", "_-_"
                  , "_<<_", "_>>_"
                  , "_.._"
-                 , "_<_", "_>_", "_>=_", "_<=_", "_==_", "_!=_"
+                 , "_<_", "_>_", "_>=_", "_<=_", "_==_", "_!=_", "_===_", "_!==_"
                  , "_&&_"
                  , "_||_"
                  , "_=>_", "_<=>_"
@@ -250,10 +284,11 @@ symOpName = choice $ map (try . mkSymOpNameParser) symOps
           return $ FuncName s
 
 data Keyword = ConceptKW | ImplementationKW | ProgramKW | SignatureKW
+             | RenamingKW
              | AxiomKW | FunctionKW | PredicateKW | ProcedureKW | TypeKW
              | UseKW
              | ObsKW | OutKW | UpdKW
-             | AssertKW | CallKW | IfKW | ThenKW | ElseKW | LetKW
+             | AssertKW | CallKW | IfKW | ThenKW | ElseKW | LetKW | SkipKW
              | PackageKW | ImportKW
 
 keyword :: Keyword -> Parser ()
@@ -268,6 +303,7 @@ keyword kw = (lexeme . try) $ string s *> notFollowedBy nameChar
       FunctionKW       -> "function"
       PredicateKW      -> "predicate"
       ProcedureKW      -> "procedure"
+      RenamingKW       -> "renaming"
       TypeKW           -> "type"
       UseKW            -> "use"
       ObsKW            -> "obs"
@@ -279,6 +315,7 @@ keyword kw = (lexeme . try) $ string s *> notFollowedBy nameChar
       ThenKW           -> "then"
       ElseKW           -> "else"
       LetKW            -> "var"
+      SkipKW           -> "skip"
       PackageKW        -> "package"
       ImportKW         -> "imports"
 
@@ -307,7 +344,10 @@ packageName :: Parser Name
 packageName = PkgName <$> packageString
 
 packageString :: Parser String
-packageString = lexeme . try $ (:) <$> nameChar <*> many (nameChar <|> char '.')
+packageString = do
+  fqfn <- lexeme . try $ (:) <$> nameChar
+                             <*> many (nameChar <|> (char '.' >> return '/'))
+  return $ fqfn <> ".mg"
 
 nameString :: Parser String
 nameString = lexeme . try $ (:) <$> nameChar <*> many nameChar
