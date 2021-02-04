@@ -15,17 +15,14 @@ import qualified Data.List as L
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
 import qualified Data.Set as S
-import qualified Data.Text.Lazy as T
 
 import Env
 import PPrint
 import Syntax
+import Util
 
 type VarScope = Env (UVar PhCheck)
 type ModuleScope = Env [UDecl PhCheck] --ModuleEnv PhCheck
-
-checkError :: SrcCtx -> T.Text -> Except Err a
-checkError src err = throwError $ WithSrc src err
 
 initScope :: [UVar p] -> VarScope
 initScope = M.fromList . map mkScopeVar
@@ -40,12 +37,12 @@ initScope = M.fromList . map mkScopeVar
 checkModule :: Env [TCTopLevelDecl]
   -> UModule PhParse
   -> Except Err (Env [TCTopLevelDecl])
---checkModule pkg modul | trace (pshow modul) False = undefined
 checkModule tlDecls (Ann ann (UModule moduleType moduleName decls deps)) = do
   let moduleDecls = M.map getModules tlDecls
+      namedRenamings = M.map getNamedRenamings tlDecls
   -- Step 1: expand uses
   (depScope, checkedDeps) <- foldl joinTuple (M.empty, M.empty) <$>
-      mapM (buildModuleFromDep moduleDecls) deps
+      mapM (buildModuleFromDependency namedRenamings moduleDecls) deps
   -- Step 2: register types
   let baseScope = M.unionWith (<>) depScope $ M.fromList types
   -- Step 3: check and register protos
@@ -63,16 +60,7 @@ checkModule tlDecls (Ann ann (UModule moduleType moduleName decls deps)) = do
             , _elem = UModule moduleType moduleName finalScope checkedDeps
             } -- :: TCModule
   return $ M.insertWith (<>) moduleName [resultModuleDecl] tlDecls
-  --undefined
   where
-    getModules :: [UTopLevelDecl p] -> [UModule p]
-    getModules tlds = foldl extractModule [] tlds
-
-    extractModule :: [UModule p] -> UTopLevelDecl p -> [UModule p]
-    extractModule acc topLevelDecl
-      | UModuleDecl m <- topLevelDecl = m:acc
-      | otherwise = acc
-
     types :: [(Name, [UDecl PhCheck])]
     types = [ (typeName, [Ann { _ann = (typAnn, [LocalDecl])
                               , _elem = UType typeName
@@ -89,12 +77,12 @@ checkModule tlDecls (Ann ann (UModule moduleType moduleName decls deps)) = do
     checkBody env decl@(~(Ann src (UCallable callableType fname args retType
                                              body)))
       | moduleType /= Concept, Axiom <- callableType =
-          checkError src "Axioms can only be declared in concepts."
+          throwLocatedE src "Axioms can only be declared in concepts."
       | Nothing <- body, Axiom <- callableType =
-          checkError src "Axiom without a body."
+          throwLocatedE src "Axiom without a body."
       | moduleType `notElem` [Implementation, Program], Just _ <- body,
         callableType `elem` [Function, Procedure] =
-          checkError src $ pshow callableType <> " can not have a body in " <>
+          throwLocatedE src $ pshow callableType <> " can not have a body in " <>
                            pshow moduleType
       -- TODO: handle case for programs
       | Nothing <- body = (,) env <$> checkProto env decl
@@ -106,7 +94,7 @@ checkModule tlDecls (Ann ann (UModule moduleType moduleName decls deps)) = do
                 UCallable callableType declName argsTC retType (Just bodyTC)
           if _ann bodyTC == retType
           then return (M.insertWith (<>) fname [annDeclTC] env, annDeclTC)
-          else checkError src ("Expected " <> pshow retType <> " return " <>
+          else throwLocatedE src ("Expected " <> pshow retType <> " return " <>
               "type in " <> pshow callableType <> "but return value has " <>
               "type: " <> pshow (_ann bodyTC) <> ".")
 
@@ -119,7 +107,7 @@ checkModule tlDecls (Ann ann (UModule moduleType moduleName decls deps)) = do
               anonDefinedMatches =
                 map (mkAnonProto <$$>) $ filter isDefined matches
           when ((mkAnonProto <$$> callable) `notElem` anonDefinedMatches) $
-               checkError src "Callable is unimplemented in program."
+               throwLocatedE src "Callable is unimplemented in program."
 
     mkAnonProto ~(UCallable callableType callableName args retType body) =
       UCallable callableType callableName (map (mkAnonVar <$$>) args) retType
@@ -148,11 +136,11 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
   go modul scope maybeExprType (Ann src expr) = case expr of
     -- TODO: annotate type and mode on variables
     UVar (Ann _ (Var _ name typ)) -> case M.lookup name scope of
-        Nothing -> checkError src "No such variable in current scope"
+        Nothing -> throwLocatedE src "No such variable in current scope"
         Just annScopeVar@(Ann varType _) -> let typAnn = fromJust typ in
           if isNothing typ || typAnn == varType
           then return (scope, Ann { _ann = varType, _elem = UVar annScopeVar })
-          else checkError src "Conflicting types for var" -- TODO, expand
+          else throwLocatedE src "Conflicting types for var" -- TODO, expand
     -- TODO: deal with casting
     UCall name args maybeCallCast -> do
         -- Type inference is fairly basic. We assume that for variables, either
@@ -171,7 +159,7 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
         -- are without effects on the environment. This is because evaluation
         -- order might otherwise affect the result of the computation.
         when (any isStateful args) $
-          checkError src $ "Call expression can not have stateful " <>
+          throwLocatedE src $ "Call expression can not have stateful " <>
                            "computations as arguments."
         argsTC <- traverse (annotateScopedExpr modul scope Nothing) args
         let argTypes = map _ann argsTC
@@ -182,7 +170,7 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
         -- TODO: stop using list to reach return val, maybe use Data.Sequence?
         -- TODO: do something with procedures and axioms here?
         case candidates of
-          []  -> checkError src ("No corresponding function with name '" <>
+          []  -> throwLocatedE src ("No corresponding function with name '" <>
                                  pshow name <> "' in scope")
           -- In this case, we have 1+ matches. We can have more than one match
           -- for several reasons:
@@ -202,7 +190,7 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
                               return ( scope
                                      , Ann { _ann = typAnn, _elem = exprTC }
                                      )
-                         else checkError src $ "Can not deduce return type " <>
+                         else throwLocatedE src $ "Can not deduce return type " <>
                            "from function call; consider adding a type" <>
                            "annotation."
               Just cast -> if S.size possibleTypes == 1
@@ -210,14 +198,14 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
                              let typAnn = getReturnType (L.head matches)
                              when (isJust maybeCallCast &&
                                    typAnn /= cast) $
-                               checkError src $ "No candidate matching " <>
+                               throwLocatedE src $ "No candidate matching " <>
                                  "type annotation."
                              return ( scope
                                     , Ann { _ann = typAnn, _elem = exprTC }
                                     )
                            else do
                              unless (cast `S.member` possibleTypes) $
-                               checkError src $ "No candidate matching " <>
+                               throwLocatedE src $ "No candidate matching " <>
                                  "type annotation."
                              return ( scope
                                     , Ann { _ann = cast, _elem = exprTC }
@@ -240,17 +228,17 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
       return (endScope, Ann { _ann = _ann lastExprStmtTC, _elem = newBlock })
     ULet mode name maybeType maybeExpr -> do
       unless (isNothing $ M.lookup name scope) $
-           checkError src ("A variable with name " <> pshow name <>
+           throwLocatedE src ("A variable with name " <> pshow name <>
                            "already exists in the current scope.")
       case maybeExpr of
         Nothing -> do
           when (isNothing maybeType) $
-               checkError src ("Attempting to declare variable with no " <>
+               throwLocatedE src ("Attempting to declare variable with no " <>
                                "type annotation or assignment expression")
           let (Just typ) = maybeType
           checkTypeExists modul (WithSrc src typ)
           unless (mode == UOut) $
-                 checkError src ("Variable can not be set to " <> pshow mode <>
+                 throwLocatedE src ("Variable can not be set to " <> pshow mode <>
                                  " without being initialized.")
           -- Variable is unset, therefore has to be UOut.
           let newVar = Var UOut name (Just typ)
@@ -270,9 +258,9 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
                      )
             Just typ -> do
               unless (typ == rhsType) $
-                  checkError src "Attempted to cast variable to invalid type"
+                  throwLocatedE src "Attempted to cast variable to invalid type"
               when (mode == UOut) $
-                  checkError src "Invalid mode, shouldn't happen"
+                  throwLocatedE src "Invalid mode, shouldn't happen"
               let newVar = Var mode name (Just typ)
               return ( M.insert name Ann { _ann = typ, _elem = newVar } scope'
                      , Ann { _ann = Unit, _elem = exprTC }
@@ -280,13 +268,13 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
     UIf cond bTrue bFalse -> do
       (condScope, condExprTC) <- go modul scope (Just Pred) cond
       when (_ann condExprTC /= Pred) $
-           checkError src ("Expected predicate but got the following " <>
+           throwLocatedE src ("Expected predicate but got the following " <>
                            "type: " <> pshow (_ann condExprTC) <> ".")
       (trueScope, trueExprTC) <- go modul condScope maybeExprType bTrue
       (falseScope, falseExprTC) <-
           go modul condScope (Just (_ann trueExprTC)) bFalse
       when (_ann trueExprTC /= _ann falseExprTC) $
-          checkError src ("Could not unify if branches; True branch has " <>
+          throwLocatedE src ("Could not unify if branches; True branch has " <>
                           "type " <> pshow (_ann trueExprTC) <> " and False " <>
                           "branch has type " <> pshow (_ann falseExprTC) <> ".")
       let exprTC = UIf condExprTC trueExprTC falseExprTC
@@ -319,7 +307,7 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
           \(n, (Ann typ1 v1, Ann typ2 v2)) -> do
               -- (5) || (6) || (7) <=> _varMode v1 == _varMode v2
               when (_varMode v1 /= _varMode v2) $
-                  checkError src ("Mode of variable " <> pshow n <> "is " <>
+                  throwLocatedE src ("Mode of variable " <> pshow n <> "is " <>
                                   "inconsistent across branches.")
               when (typ1 /= typ2) $ error "Shouldn't happen" -- TODO: remove
               return (n, Ann { _ann = typ1
@@ -329,7 +317,7 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
     UAssert cond -> do
       (scope', newCond) <- go modul scope (Just Pred) cond
       when (_ann newCond /= Pred) $
-           checkError src ("Expected Predicate call in assertion but " <>
+           throwLocatedE src ("Expected Predicate call in assertion but " <>
                            "expression has one of the following possible " <>
                            "types " <> pshow (_ann newCond) <> ".")
       return (scope', Ann { _ann = Unit, _elem = UAssert newCond })
@@ -353,9 +341,9 @@ checkTypeExists modul (WithSrc src name)
   | Unit <- name = return ()
   | Pred <- name = return ()
   | otherwise = case M.lookup name modul of
-      Nothing      -> checkError src err
+      Nothing      -> throwLocatedE src err
       Just matches -> if noAnn (UType name) `elem` matches then return ()
-                      else checkError src err
+                      else throwLocatedE src err
     where err = "Type " <> pshow name <> " does not exist in current scope."
           noAnn = Ann undefined
 
@@ -387,9 +375,9 @@ checkProto modul ~(Ann ann (UCallable callableType name args retType _)) = do
           --when (callableType /= Function) $ error "TODO: proc/axiom/pred"
           let varSet = S.fromList [_varName v | (Ann _ v) <- vars]
           if S.size varSet /= L.length vars
-          then checkError ann "Duplicate argument names in function prototype."
+          then throwLocatedE ann "Duplicate argument names in function prototype."
           else if not $ null [v | v@(Ann _ (Var _ _ Nothing)) <- vars]
-          then checkError ann ("Argument missing accompanying type " <>
+          then throwLocatedE ann ("Argument missing accompanying type " <>
                                "binding in function prototype.")
           else mapM checkArgType vars
 
@@ -400,25 +388,25 @@ checkProto modul ~(Ann ann (UCallable callableType name args retType _)) = do
               return $ Ann typ (Var mode varName (Just typ))
           | otherwise = error "unreachable (checkArgs)"
 
-buildModuleFromDep ::
-  Env [TCModule] ->
-  UModuleDep PhParse ->
-  Except Err (Env [TCDecl], Env [TCModuleDep])
-buildModuleFromDep pkg (Ann ann (UModuleDep name renamings)) =
+buildModuleFromDependency
+  :: Env [UNamedRenaming PhCheck]
+  -> Env [TCModule]
+  -> UModuleDep PhParse
+  -> Except Err (Env [TCDecl], Env [TCModuleDep])
+buildModuleFromDependency namedRenamings pkg
+                          (Ann ann (UModuleDep name renamings)) =
   case M.lookup name pkg of
     Nothing ->
-      checkError ann ("No module named " <> pshow name <> "in scope.")
-    Just []        -> checkError ann "This is a compiler bug"
+      throwLocatedE ann ("No module named " <> pshow name <> "in scope.")
+    Just []        -> throwLocatedE ann "This is a compiler bug"
     Just [Ann _ m] -> do
-      renamedDecls <- foldM applyRenamingBlock (_moduleDecls m) renamings
+      -- TODO: gather here env of known renamings
+      checkedRenamings <- mapM (expandRenamingBlock namedRenamings) renamings
+      renamedDecls <- foldM applyRenamingBlock (_moduleDecls m) checkedRenamings
       -- TODO: do this well
-      let checkedDep =
-            Ann ann (UModuleDep name $ map checkRenamingBlock renamings)
+      let checkedDep = Ann ann (UModuleDep name checkedRenamings)
       return (renamedDecls, M.singleton name [checkedDep])
     Just _         -> error "TODO: implement fully qualified use names"
-  where
-    checkRenamingBlock :: URenamingBlock PhParse -> URenamingBlock PhCheck
-    checkRenamingBlock (Ann ann_ (URenamingBlock rs)) = Ann ann_ (URenamingBlock rs)
 
 -- TODO: cleanup duplicates, make a set of UDecl instead of a list?
 -- TODO: finish renamings
@@ -427,11 +415,15 @@ buildModuleFromDep pkg (Ann ann (UModuleDep name renamings)) =
 -- TODO: improve error diagnostics
 applyRenamingBlock
   :: ModuleScope
-  -> URenamingBlock PhParse
+  -> URenamingBlock PhCheck
   -> Except Err ModuleScope
 applyRenamingBlock modul renamingBlock@(Ann src (URenamingBlock renamings)) = do
-  let renamingMap = M.fromList renamings
-      (sources, targets) = (L.map fst renamings, L.map snd renamings)
+  -- TODO: pass renaming decls to expand them
+  let inlineRenamings = mkInlineRenamings renamingBlock
+      renamingMap = M.fromList inlineRenamings
+      (sources, targets) = ( L.map fst inlineRenamings
+                           , L.map snd inlineRenamings
+                           )
       -- TODO: will have to modify when renamings can be more atomic and
       -- namespace can be specified.
       filterSources sourceNames namespace =
@@ -455,7 +447,7 @@ applyRenamingBlock modul renamingBlock@(Ann src (URenamingBlock renamings)) = do
       occurOnBothSides = L.filter (`elem` targets) sources
       unambiguousRenamings = filter (\(source, _) ->
                                      source `notElem` occurOnBothSides)
-                                    renamings
+                                    inlineRenamings
       -- TODO: cleanup
       r' = zip occurOnBothSides
                     [GenName ("gen#" ++ show i) | i <- [1..] :: [Int]]
@@ -464,13 +456,14 @@ applyRenamingBlock modul renamingBlock@(Ann src (URenamingBlock renamings)) = do
                (source, freeName) <- r']
   (modul', renamings') <- (
       if M.size renamingMap /= L.length renamings
-      then checkError src "Duplicate key in renaming block."
+      then throwLocatedE src "Duplicate source in renaming block."
       else if not (null unknownSources)
-      then checkError src "Renaming block has unknown sources."
+      then throwLocatedE src "Renaming block has unknown sources."
       else if not (null occurOnBothSides)
-      then applyRenamingBlock modul (URenamingBlock r' <$$ renamingBlock)
+      then let annR' = map (Ann (Nothing, LocalDecl) . InlineRenaming) r' in
+           applyRenamingBlock modul (URenamingBlock annR' <$$ renamingBlock)
            >>= \modul' -> return (modul', r'')
-      else return (modul, renamings))
+      else return (modul, inlineRenamings))
   return $ M.fromListWith (<>) $ L.map (\(k, decls) ->
           (tryAllRenamings replaceName k renamings',
            L.map (flip (tryAllRenamings applyRenaming) renamings') decls)) $
@@ -478,13 +471,13 @@ applyRenamingBlock modul renamingBlock@(Ann src (URenamingBlock renamings)) = do
   where tryAllRenamings renamingFun target = foldl renamingFun target
 
 -- TODO: specialize replacements based on namespaces?
-replaceName :: Name -> Renaming -> Name
+replaceName :: Name -> InlineRenaming -> Name
 replaceName origName@(Name ns nameStr) (Name _ sourceStr, Name _ targetStr) =
   if sourceStr == nameStr then Name ns targetStr else origName
 
 -- Applies a renaming to a declaration. Renamings only affect names defined at
 -- declaration level; this means that they do not affect local variables.
-applyRenaming :: UDecl PhCheck -> Renaming -> UDecl PhCheck
+applyRenaming :: UDecl PhCheck -> InlineRenaming -> UDecl PhCheck
 applyRenaming annDecl renaming = applyRenamingInDecl <$$> annDecl
   where replaceName' = flip replaceName renaming
         --applyRenamingInDecl :: UDecl p -> UDecl p

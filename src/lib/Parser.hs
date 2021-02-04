@@ -92,7 +92,7 @@ renamingDecl = annot renamingDecl'
       keyword RenamingKW
       name <- RenamingName <$> nameString
       symbol "="
-      UNamedRenaming name <$> many renamingBlock
+      UNamedRenaming name <$> renamingBlock
 
 declaration :: Parser ParsedDecl
 declaration = annot declaration' <* many (symbol ";")
@@ -199,12 +199,17 @@ renamingBlock = annot renamingBlock'
   where
     renamingBlock' = URenamingBlock <$> brackets (renaming `sepBy` symbol ",")
 
-renaming :: Parser Renaming
-renaming = do
-  source <- try symOpName <|> (UnspecName <$> nameString)
-  symbol "=>"
-  target <- try symOpName <|> (UnspecName <$> nameString)
-  return (source, target)
+renaming :: Parser (URenaming PhParse)
+renaming = try inlineRenaming <|> annot (RefRenaming . RenamingName <$> nameString)
+
+inlineRenaming :: Parser (URenaming PhParse)
+inlineRenaming = annot inlineRenaming'
+  where
+    inlineRenaming' = do
+      source <- try symOpName <|> (UnspecName <$> nameString)
+      symbol "=>"
+      target <- try symOpName <|> (UnspecName <$> nameString)
+      return $ InlineRenaming (source, target)
 
 exprStmt :: Parser ParsedExpr
 exprStmt = assertStmt <|> try letStmt <|> expr

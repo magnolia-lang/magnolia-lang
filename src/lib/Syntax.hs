@@ -18,7 +18,7 @@ module Syntax (
     UPackage, UPackage' (..), UPackageDep, UPackageDep' (..), URenamingBlock,
     URenamingBlock' (..), UTopLevelDecl (..), UType,
     UVar, UVar' (..), UVarMode (..), WithSrc (..),
-    GlobalEnv, PackageHead (..), Renaming,
+    GlobalEnv, InlineRenaming, PackageHead (..), URenaming' (..), URenaming,
     TCDecl, TCExpr, TCModule, TCModuleDep, TCPackage, TCTopLevelDecl, TCVar,
     NamedNode (..),
     DeclOrigin (..), Err,
@@ -33,6 +33,7 @@ module Syntax (
 import Data.List.NonEmpty as NE
 import Data.Map as M
 import Data.Text.Lazy as T
+import Data.Void
 
 import Env
 
@@ -88,13 +89,13 @@ type UPackageDep p = Ann p UPackageDep'
 newtype UPackageDep' p = UPackageDep Name -- Renaming blocks?
                          deriving (Eq, Show)
 
+-- TODO: split in package?
 data UTopLevelDecl p = UNamedRenamingDecl (UNamedRenaming p)
                      | UModuleDecl (UModule p)
                      | USatisfactionDecl (USatisfaction p)
 
 type UNamedRenaming p = Ann p UNamedRenaming'
-data UNamedRenaming' p = UNamedRenaming Name [URenamingBlock p]
-                         deriving (Eq, Show)
+data UNamedRenaming' p = UNamedRenaming Name (URenamingBlock p)
 
 type USatisfaction p = Ann p USatisfaction'
 data USatisfaction' p = USatisfaction Name Name -- TODO
@@ -110,15 +111,16 @@ data UModule' p = UModule { _moduleType :: UModuleType
 -- Expose out for DAG building
 type UModuleDep p = Ann p UModuleDep'
 data UModuleDep' p = UModuleDep Name [URenamingBlock p]
-                     deriving (Eq, Show)
 
 type URenamingBlock p = Ann p URenamingBlock'
-newtype URenamingBlock' p = URenamingBlock [Renaming]
-                            deriving (Eq, Show)
-
+newtype URenamingBlock' p = URenamingBlock [URenaming p]
 
 -- TODO: make annotated binders to keep typing information
-type Renaming = (Name, Name)
+type URenaming p = Ann p URenaming'
+data URenaming' p = InlineRenaming InlineRenaming
+                  | RefRenaming (XRefRenaming p)
+
+type InlineRenaming = (Name, Name)
 
 data UModuleType = Signature | Concept | Implementation | Program
                    deriving (Eq, Show)
@@ -218,6 +220,9 @@ type family XAnn p (e :: * -> *) where
   XAnn PhParse URenamingBlock' = SrcCtx
   XAnn PhCheck URenamingBlock' = SrcCtx
 
+  XAnn PhParse URenaming' = SrcCtx
+  XAnn PhCheck URenaming' = (SrcCtx, DeclOrigin)
+
   XAnn PhParse UDecl' = SrcCtx
   XAnn PhCheck UDecl' = (SrcCtx, [DeclOrigin])
 
@@ -227,15 +232,25 @@ type family XAnn p (e :: * -> *) where
   XAnn PhParse UVar' = SrcCtx
   XAnn PhCheck UVar' = UType
 
--- WIP PhasedContainer
--- TODO: use NE.NonEmpty instead of []?
+-- === other useful type families ===
+
 type family XPhasedContainer p e where
   XPhasedContainer PhParse e = [e]
   XPhasedContainer PhCheck e = M.Map Name [e]
 
--- TODO: move?
--- == standalone show instances ===
+-- The goal of XRenamingRef is to statically prevent the existence of
+-- references to named renamings after the consistency/type checking phase.
+type family XRefRenaming p where
+  XRefRenaming PhParse = Name
+  XRefRenaming PhCheck = Void
 
+-- TODO: move?
+-- === standalone show instances ===
+
+deriving instance Show (URenaming' PhCheck)
+deriving instance Show (URenamingBlock' PhCheck)
+deriving instance Show (UModuleDep' PhCheck)
+deriving instance Show (UNamedRenaming' PhCheck)
 deriving instance Show (UModule' PhCheck)
 deriving instance Show (UTopLevelDecl PhCheck)
 deriving instance Show (UPackage' PhCheck)
