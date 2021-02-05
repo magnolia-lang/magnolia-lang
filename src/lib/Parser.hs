@@ -65,37 +65,35 @@ package = annot package'
       return $ UPackage pkgName decls deps
 
 topLevelDecl :: Parser (UTopLevelDecl PhParse)
-topLevelDecl =  (UModuleDecl <$> moduleDecl)
+topLevelDecl =  try (UModuleDecl <$> moduleDecl)
             <|> (UNamedRenamingDecl <$> renamingDecl)
-            -- TODO: <|> (USatisfaction <$$> ...)
+            <|> (USatisfactionDecl <$> satisfaction)
 
 moduleDecl :: Parser (UModule PhParse)
-moduleDecl = annot $ try moduleRef <|> inlineModule
+moduleDecl = do
+  typ <- moduleType
+  name <- ModName <$> nameString
+  symbol "="
+  annot $ try (moduleRef typ name) <|> inlineModule typ name
 
-moduleRef :: Parser (UModule' PhParse)
-moduleRef = do
-  typ <- (keyword ConceptKW >> return Concept)
+moduleType :: Parser UModuleType
+moduleType = (keyword ConceptKW >> return Concept)
           <|> (keyword ImplementationKW >> return Implementation)
           <|> (keyword SignatureKW >> return Signature)
           <|> (keyword ProgramKW >> return Program)
-  name <- ModName <$> nameString
-  symbol "="
+
+moduleRef :: UModuleType -> Name -> Parser (UModule' PhParse)
+moduleRef typ name = do
   refName <- ModName <$> nameString
   return $ RefModule typ name refName
 
-inlineModule :: Parser (UModule' PhParse)
-inlineModule = do
-  cons <- (keyword ConceptKW >> return UCon)
-            <|> (keyword ImplementationKW >> return UImpl)
-            <|> (keyword SignatureKW >> return USig)
-            <|> (keyword ProgramKW >> return UProg)
-  name <- ModName <$> nameString
-  symbol "="
+inlineModule :: UModuleType -> Name -> Parser (UModule' PhParse)
+inlineModule typ name = do
   declsAndDeps <- braces $ many (try (Left <$> declaration)
-                                  <|> (Right <$> moduleDependency))
+                                 <|> (Right <$> moduleDependency))
   let decls = [decl | (Left decl) <- declsAndDeps]
       deps  = [dep  | (Right dep) <- declsAndDeps]
-  return $ cons name decls deps
+  return $ UModule typ name decls deps
 
 renamingDecl :: Parser (UNamedRenaming PhParse)
 renamingDecl = annot renamingDecl'
@@ -105,6 +103,29 @@ renamingDecl = annot renamingDecl'
       name <- RenamingName <$> nameString
       symbol "="
       UNamedRenaming name <$> renamingBlock
+
+satisfaction :: Parser (USatisfaction PhParse)
+satisfaction = annot satisfaction'
+  where
+    -- TODO: fresh gen?
+    anonName = GenName "__anonymous_module_name__"
+    typ = Concept
+    anonModule = annot $ moduleRef typ anonName <|> inlineModule typ anonName
+
+    renamedModule = do
+      modul <- anonModule
+      renamingBlocks <- many renamingBlock
+      return $ RenamedModule modul renamingBlocks
+
+    satisfaction' = do
+      -- TODO: add renamings
+      keyword SatisfactionKW
+      name <- SatName <$> nameString
+      symbol "="
+      initialModule <- renamedModule
+      withModule <- optional $ keyword WithKW >> renamedModule
+      modeledModule <- keyword ModelsKW >> renamedModule
+      return $ USatisfaction name initialModule withModule modeledModule
 
 declaration :: Parser ParsedDecl
 declaration = annot declaration' <* many (symbol ";")
@@ -120,6 +141,7 @@ typeDecl = do
 callable :: Parser (UDecl' PhParse)
 callable = do
   callableType <- (keyword AxiomKW >> return Axiom)
+              <|> (keyword TheoremKW >> return Axiom)
               <|> (keyword FunctionKW >> return Function)
               <|> (keyword PredicateKW >> return Predicate)
               <|> (keyword ProcedureKW >> return Procedure)
@@ -163,8 +185,8 @@ expr = makeExprParser leafExpr ops
            <|> try ifExpr
            <|> try (callableCall FuncName)
            <|> try (keyword CallKW *> callableCall ProcName)
-           <|> annot (var UUnk >>= \v -> return $ UVar v)
            <|> annot (keyword SkipKW >> return USkip)
+           <|> annot (var UUnk >>= \v -> return $ UVar v)
            <|> parens expr
 
 blockExpr :: Parser ParsedExpr
@@ -301,8 +323,10 @@ symOpName = choice $ map (try . mkSymOpNameParser) symOps
           return $ FuncName s
 
 data Keyword = ConceptKW | ImplementationKW | ProgramKW | SignatureKW
-             | RenamingKW
-             | AxiomKW | FunctionKW | PredicateKW | ProcedureKW | TypeKW
+             | RenamingKW | SatisfactionKW
+             | ModelsKW | WithKW
+             | AxiomKW | FunctionKW | PredicateKW | ProcedureKW | TheoremKW
+             | TypeKW
              | UseKW
              | ObsKW | OutKW | UpdKW
              | AssertKW | CallKW | IfKW | ThenKW | ElseKW | LetKW | SkipKW
@@ -316,11 +340,15 @@ keyword kw = (lexeme . try) $ string s *> notFollowedBy nameChar
       ImplementationKW -> "implementation"
       ProgramKW        -> "program"
       SignatureKW      -> "signature"
+      RenamingKW       -> "renaming"
+      SatisfactionKW   -> "satisfaction"
+      ModelsKW         -> "models"
+      WithKW           -> "with"
       AxiomKW          -> "axiom"
       FunctionKW       -> "function"
       PredicateKW      -> "predicate"
       ProcedureKW      -> "procedure"
-      RenamingKW       -> "renaming"
+      TheoremKW        -> "theorem"
       TypeKW           -> "type"
       UseKW            -> "use"
       ObsKW            -> "obs"

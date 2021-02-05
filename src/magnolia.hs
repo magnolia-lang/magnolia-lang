@@ -15,21 +15,9 @@ main :: IO ()
 main = do
   srcFilename <- head <$> getArgs
   input <- readFile srcFilename
-  runExceptT (load srcFilename >>= upsweep) >>= pprint
-  --parsePackageHead srcFilename input
-  error "end"
-  {--
-  eitherModules <- runExceptT $ parsePackage srcFilename input
-  case eitherModules of
+  eitherGlobalEnv <-runExceptT (load srcFilename >>= upsweep)
+  case eitherGlobalEnv of
     Left e -> pprint e >> error "Shouldn't happen!!"
-    Right modules -> foldM checker pkg modules >>= (putStrLn . emitPyPackage)
-  where
-    checker :: TCPackage -> UModule PhParse -> IO TCPackage
-    checker pkg mod = do
-      case runExcept $ checkModule pkg mod of
-        Left e  -> putStr "Failed with: " >> pprint e >> return pkg
-        Right pkg' -> return pkg'
-    pkg :: TCPackage
-    pkg = M.empty
-  --putStrLn $ show $ checkModule scope (NoCtx obj)
-  --}
+    Right globalEnv -> case M.lookup (PkgName srcFilename) globalEnv of
+      Nothing  -> putStrLn "Compiler bug!" -- TODO: handle dir paths better
+      Just pkg -> pprint pkg >> putStrLn (emitPyPackage pkg)

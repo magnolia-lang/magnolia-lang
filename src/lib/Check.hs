@@ -532,19 +532,21 @@ replaceName origName@(Name ns nameStr) (Name _ sourceStr, Name _ targetStr) =
 applyRenaming :: UDecl PhCheck -> InlineRenaming -> UDecl PhCheck
 applyRenaming annDecl renaming = applyRenamingInDecl <$$> annDecl
   where replaceName' = flip replaceName renaming
-        --applyRenamingInDecl :: UDecl p -> UDecl p
+        applyRenamingInDecl :: UDecl' PhCheck -> UDecl' PhCheck
         applyRenamingInDecl decl
           | UType name <- decl = UType $ replaceName' name
           | UCallable ctyp name vars retType expr <- decl =
                 UCallable ctyp (replaceName' name)
-                  (map (applyRenamingInVar <$$>) vars) (replaceName' retType)
+                  (map applyRenamingInVar vars) (replaceName' retType)
                   (applyRenamingInExpr <$> expr)
-        applyRenamingInVar (Var mode name typ) =
-          Var mode name (replaceName' <$> typ)
-        applyRenamingInExpr = (applyRenamingInExpr' <$$>)
-        applyRenamingInExpr' :: UExpr' p -> UExpr' p
+        applyRenamingInVar :: UVar PhCheck -> UVar PhCheck
+        applyRenamingInVar (Ann typAnn (Var mode name typ)) =
+          Ann (replaceName' typAnn) $ Var mode name (replaceName' <$> typ)
+        applyRenamingInExpr :: UExpr PhCheck -> UExpr PhCheck
+        applyRenamingInExpr (Ann typAnn expr) =
+          Ann (replaceName' typAnn) (applyRenamingInExpr' expr)
         applyRenamingInExpr' expr
-          | UVar var <- expr = UVar $ applyRenamingInVar <$$> var
+          | UVar var <- expr = UVar $ applyRenamingInVar var
           | UCall name vars typ <- expr =
                 UCall (replaceName' name) (map applyRenamingInExpr vars)
                   (replaceName' <$> typ)

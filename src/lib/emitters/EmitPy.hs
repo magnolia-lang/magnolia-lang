@@ -25,7 +25,8 @@ emitPyGlobalEnv = undefined
 -- TODO: actually implement
 emitPyPackage :: TCPackage -> PythonSource
 emitPyPackage pkg =
-  emitPyModule $ head $ foldl extractModuleList [] (_packageDecls (_elem pkg))
+  intercalate "\n\n# Next module\n\n" $ map emitPyModule $
+    foldl extractModuleList [] (_packageDecls (_elem pkg))
   where
     extractModuleList moduleList pkgDeclList =
       moduleList <> foldl extractModule [] pkgDeclList
@@ -49,6 +50,7 @@ emitPyDecl indent (Ann _ decl) = case decl of
   UCallable callableType _ args _ (Just body) ->
       emitProto decl <> mkIndent bodyIndent <> case callableType of
         Axiom     -> emitPyExpr bodyIndent body <> "\n"
+        -- TODO: what to do with this?
         Procedure -> emitPyExpr bodyIndent body <> mkIndent bodyIndent <>
                      emitProcReturn args <> "\n"
         -- Predicates are functions, so UCallable {Function,Predicate} requires

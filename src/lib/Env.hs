@@ -3,8 +3,8 @@
 module Env (
   Env, Name (..), NameSpace (..),
   pattern FuncName, pattern GenName, pattern ModName, pattern PkgName,
-  pattern ProcName, pattern RenamingName, pattern TypeName, pattern UnspecName,
-  pattern VarName)
+  pattern ProcName, pattern RenamingName, pattern SatName, pattern TypeName,
+  pattern UnspecName, pattern VarName)
   where
 
 import qualified Data.Map as M
@@ -24,6 +24,7 @@ data NameSpace = NSFunction
                | NSPackage
                | NSProcedure
                | NSRenaming
+               | NSSatisfaction
                | NSType
                | NSUnspecified
                | NSVariable
@@ -46,6 +47,9 @@ pattern ProcName s = Name NSProcedure s
 
 pattern RenamingName :: String -> Name
 pattern RenamingName s = Name NSRenaming s
+
+pattern SatName :: String -> Name
+pattern SatName s = Name NSSatisfaction s
 
 pattern TypeName :: String -> Name
 pattern TypeName s = Name NSType s

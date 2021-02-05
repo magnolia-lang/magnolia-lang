@@ -123,7 +123,7 @@ upsweepRenamings = foldM go
       let rCycle = T.intercalate ", " $ map (pshow . nodeName) namedBlock in
       throwNonLocatedE $ "Found cyclic dependency between the following " <>
         "renamings: [" <> rCycle <> "]."
-    
+
     go env (G.AcyclicSCC (Ann src (UNamedRenaming name renamingBlock))) =
       let eitherExpandedBlock = runExcept $
             expandRenamingBlock (M.map getNamedRenamings env) renamingBlock in -- TODO: expand named renamings
@@ -168,7 +168,7 @@ load = (topSortPackages <$>) . go M.empty
                     packageHead <- parsePackageHead filePath input
                     let newHeads = M.insert filePath packageHead loadedHeads
                         imports = map _fromSrc (_packageHeadImports packageHead)
-                    lift $ pprint imports
+                    --lift $ pprint imports -- debug
                     foldM (\state imp -> go state (_name imp)) newHeads imports
     topSortPackages pkgHeads = G.stronglyConnComp
         [ (ph, pk, map (_name . _fromSrc) $ _packageHeadImports ph)

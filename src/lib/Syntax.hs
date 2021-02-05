@@ -16,9 +16,10 @@ module Syntax (
     UModule' (..), UModuleDep, UModuleDep' (..), UModuleType (..),
     UNamedRenaming, UNamedRenaming' (..),
     UPackage, UPackage' (..), UPackageDep, UPackageDep' (..), URenamingBlock,
-    URenamingBlock' (..), UTopLevelDecl (..), UType,
-    UVar, UVar' (..), UVarMode (..), WithSrc (..),
-    GlobalEnv, InlineRenaming, PackageHead (..), URenaming' (..), URenaming,
+    URenamingBlock' (..), USatisfaction, USatisfaction' (..),
+    UTopLevelDecl (..), UType, UVar, UVar' (..), UVarMode (..), WithSrc (..),
+    GlobalEnv, InlineRenaming, PackageHead (..), RenamedModule (..),
+    URenaming' (..), URenaming,
     TCDecl, TCExpr, TCModule, TCModuleDep, TCPackage, TCTopLevelDecl, TCVar,
     NamedNode (..),
     DeclOrigin (..), Err,
@@ -69,6 +70,7 @@ data Ann p e = Ann { _ann :: XAnn p e
 instance Eq (e p) => Eq (Ann p e) where
   Ann _ e1 == Ann _ e2 = e1 == e2
 
+-- TODO: display annotation using UndecidableInstances?
 instance Show (e p) => Show (Ann p e) where
   show = show . _elem
 
@@ -99,8 +101,10 @@ type UNamedRenaming p = Ann p UNamedRenaming'
 data UNamedRenaming' p = UNamedRenaming Name (URenamingBlock p)
 
 type USatisfaction p = Ann p USatisfaction'
-data USatisfaction' p = USatisfaction Name Name -- TODO
-                        deriving (Eq, Show)
+data USatisfaction' p =
+  USatisfaction Name (RenamedModule p) (Maybe (RenamedModule p)) (RenamedModule p)
+
+data RenamedModule p = RenamedModule (UModule p) [URenamingBlock p]
 
 type UModule p = Ann p UModule'
 data UModule' p = UModule UModuleType Name (XPhasedContainer p (UDecl p)) (XPhasedContainer p (UModuleDep p))
@@ -248,6 +252,8 @@ deriving instance Show (URenamingBlock' PhCheck)
 deriving instance Show (UModuleDep' PhCheck)
 deriving instance Show (UNamedRenaming' PhCheck)
 deriving instance Show (UModule' PhCheck)
+deriving instance Show (RenamedModule PhCheck)
+deriving instance Show (USatisfaction' PhCheck)
 deriving instance Show (UTopLevelDecl PhCheck)
 deriving instance Show (UPackage' PhCheck)
 
@@ -279,7 +285,7 @@ instance NamedNode (UModule' p) where
   nodeName (RefModule _ name _) = name
 
 instance NamedNode (USatisfaction' p) where
-  nodeName (USatisfaction name _) = name
+  nodeName (USatisfaction name _ _ _) = name
 
 instance NamedNode (UModuleDep' p) where
   nodeName (UModuleDep name _) = name
