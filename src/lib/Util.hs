@@ -85,13 +85,14 @@ expandRenaming env (Ann src renaming) = case renaming of
     Just namedRenamings -> case namedRenamings of
       []  -> throwLocatedE src $ "Compiler bug in renaming expansion: " <>
                                  "no match but existing renaming name."
-      nrs -> do
+      _ -> do
         -- TODO: add disambiguation attempts
-        when (length nrs /= 1) $
+        when (length namedRenamings /= 1) $
           throwLocatedE src $ "Could not deduce named renaming instance " <>
                               "from '" <> pshow ref <> "'. Candidates " <>
-                              "are: " <> pshow nrs
-        let Ann _ (UNamedRenaming _ (Ann _ (URenamingBlock renamings))) = head nrs
+                              "are: " <> pshow namedRenamings <> "."
+        let Ann _ (UNamedRenaming _ (Ann _ (URenamingBlock renamings))) =
+              head namedRenamings
         return renamings
 
 mkInlineRenamings :: URenamingBlock PhCheck -> [InlineRenaming]
