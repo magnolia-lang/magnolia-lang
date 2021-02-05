@@ -10,6 +10,7 @@ import Data.Foldable (traverse_)
 import Data.Maybe (fromJust, isJust, isNothing)
 import Data.Traversable (for)
 import Data.Tuple (swap)
+import Data.Void
 
 import qualified Data.List as L
 import qualified Data.List.NonEmpty as NE
@@ -37,12 +38,33 @@ initScope = M.fromList . map mkScopeVar
 checkModule :: Env [TCTopLevelDecl]
   -> UModule PhParse
   -> Except Err (Env [TCTopLevelDecl])
+checkModule tlDecls (Ann src (RefModule typ name refName)) =
+  case M.lookup refName (M.map getModules tlDecls) of
+    Nothing -> throwLocatedE src $ "No module '" <> pshow refName <> "' " <>
+                                   "exists in current scope."
+    Just refs -> case refs of
+      -- TODO: NE.NonEmpty instead of []? Checking [] is annoying.
+      []  -> throwLocatedE src $ "Compiler bug in module ref expansion: " <>
+                                 "no match but existing module name."
+      _   -> do
+         -- TODO: add disambiguation attempts
+        when (length refs /= 1) $
+          throwLocatedE src $ "Could not deduce named renaming instance " <>
+                              "from '" <> pshow refName <> "'. Candidates " <>
+                              "are: " <> pshow refs <> "."
+        -- cast module: do we need to check out the deps?
+        ~(Ann _ (UModule _ _ decls deps)) <- castModule typ (head refs)
+        let renamedModule = UModule typ name decls deps :: UModule' PhCheck
+            renamedModuleDecl =
+              UModuleDecl $ Ann (src, LocalDecl) renamedModule
+        return $ M.insertWith (<>) name [renamedModuleDecl] tlDecls
+
 checkModule tlDecls (Ann ann (UModule moduleType moduleName decls deps)) = do
-  let moduleDecls = M.map getModules tlDecls
+  let modules = M.map getModules tlDecls
       namedRenamings = M.map getNamedRenamings tlDecls
   -- Step 1: expand uses
   (depScope, checkedDeps) <- foldl joinTuple (M.empty, M.empty) <$>
-      mapM (buildModuleFromDependency namedRenamings moduleDecls) deps
+      mapM (buildModuleFromDependency namedRenamings modules) deps
   -- Step 2: register types
   let baseScope = M.unionWith (<>) depScope $ M.fromList types
   -- Step 3: check and register protos
@@ -115,6 +137,36 @@ checkModule tlDecls (Ann ann (UModule moduleType moduleName decls deps)) = do
     mkAnonVar (Var mode _ typ) = Var mode (GenName "#anon#") typ
     isDefined ~(Ann _ (UCallable _ _ _ _ body)) = isJust body
 
+-- TODO: finish module casting.
+castModule
+  :: Monad t
+  => UModuleType
+  -> UModule PhCheck
+  -> ExceptT Err t (UModule PhCheck)
+castModule dstTyp origModule@(Ann (src, _) (UModule srcTyp _ _ _)) = do
+  let moduleWithSwappedType = return $ swapTyp <$$> origModule
+  case (srcTyp, dstTyp) of
+    (Signature, Concept) -> moduleWithSwappedType
+    (Signature, Implementation) -> moduleWithSwappedType
+    (Signature, Program) -> noCast
+    (Concept, Signature) -> undefined -- TODO: strip axioms
+    (Concept, Implementation) -> undefined -- TODO: strip axioms?
+    (Concept, Program) -> noCast
+    (Implementation, Signature) -> undefined -- TODO: mkSignature
+    (Implementation, Concept) -> undefined -- TODO: mkSignature?
+    (Implementation, Program) -> undefined -- TODO: check if valid program?
+    (Program, Signature) -> undefined -- TODO: mkSignature
+    (Program, Concept) -> undefined -- TODO: mkSignature?
+    (Program, Implementation) -> moduleWithSwappedType
+    _ -> return origModule
+  where
+    noCast = throwLocatedE src $ pshow srcTyp <> " can not be casted to " <>
+                                 pshow dstTyp
+    swapTyp :: UModule' PhCheck -> UModule' PhCheck
+    swapTyp (UModule _ name decls deps) = UModule dstTyp name decls deps
+    swapTyp (RefModule _ _ v) = absurd v
+
+castModule _ (Ann _ (RefModule _ _ v)) = absurd v
 -- TODO: sanity check modes
 
 annotateScopedExpr ::
@@ -399,10 +451,10 @@ buildModuleFromDependency namedRenamings pkg
     Nothing ->
       throwLocatedE ann ("No module named " <> pshow name <> "in scope.")
     Just []        -> throwLocatedE ann "This is a compiler bug"
-    Just [Ann _ m] -> do
+    Just [m] -> do
       -- TODO: gather here env of known renamings
       checkedRenamings <- mapM (expandRenamingBlock namedRenamings) renamings
-      renamedDecls <- foldM applyRenamingBlock (_moduleDecls m) checkedRenamings
+      renamedDecls <- foldM applyRenamingBlock (moduleDecls m) checkedRenamings
       -- TODO: do this well
       let checkedDep = Ann ann (UModuleDep name checkedRenamings)
       return (renamedDecls, M.singleton name [checkedDep])

@@ -1,9 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Util (
-    throwLocatedE, throwNonLocatedE, expandRenaming, expandRenamingBlock,
-    getModules, getNamedRenamings, mkInlineRenamings,
-    checkRenamingBlock)
+    throwLocatedE, throwNonLocatedE,
+    getModules, getNamedRenamings,
+    moduleDecls, moduleDepNames,
+    mkInlineRenamings, expandRenaming, expandRenamingBlock, checkRenamingBlock)
   where
 
 import Control.Monad
@@ -40,6 +42,18 @@ getNamedRenamings = foldl extractNamedRenaming []
     extractNamedRenaming acc topLevelDecl
       | UNamedRenamingDecl nr <- topLevelDecl = nr:acc
       | otherwise = acc
+
+-- === modules manipulation ===
+
+moduleDecls :: UModule PhCheck -> Env [UDecl PhCheck]
+moduleDecls (Ann _ modul) = case modul of
+  UModule _ _ decls _ -> decls
+  RefModule _ _ v -> absurd v
+
+moduleDepNames :: UModule PhParse -> [Name]
+moduleDepNames (Ann _ modul) = case modul of
+  UModule _ _ _ deps -> map nodeName deps
+  RefModule _ _ refName -> [refName]
 
 -- === renamings manipulation ===
 

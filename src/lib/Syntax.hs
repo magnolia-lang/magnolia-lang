@@ -24,6 +24,7 @@ module Syntax (
     DeclOrigin (..), Err,
     PhParse, PhCheck, PhCodeGen, SrcCtx,
     Ann (..), XAnn, (<$$>), (<$$),
+    XRef,
     pattern Pred, pattern Unit,
     pattern NoCtx,
     pattern UCon, pattern UProg, pattern UImpl, pattern USig,
@@ -102,11 +103,8 @@ data USatisfaction' p = USatisfaction Name Name -- TODO
                         deriving (Eq, Show)
 
 type UModule p = Ann p UModule'
-data UModule' p = UModule { _moduleType :: UModuleType
-                          , _moduleName :: Name
-                          , _moduleDecls :: XPhasedContainer p (UDecl p)
-                          , _moduleDeps :: XPhasedContainer p (UModuleDep p)
-                          }
+data UModule' p = UModule UModuleType Name (XPhasedContainer p (UDecl p)) (XPhasedContainer p (UModuleDep p))
+                | RefModule UModuleType Name (XRef p)
 
 -- Expose out for DAG building
 type UModuleDep p = Ann p UModuleDep'
@@ -118,7 +116,7 @@ newtype URenamingBlock' p = URenamingBlock [URenaming p]
 -- TODO: make annotated binders to keep typing information
 type URenaming p = Ann p URenaming'
 data URenaming' p = InlineRenaming InlineRenaming
-                  | RefRenaming (XRefRenaming p)
+                  | RefRenaming (XRef p)
 
 type InlineRenaming = (Name, Name)
 
@@ -156,8 +154,6 @@ data UExpr' p = UVar (UVar p)
               | UAssert (UExpr p)
               | USkip
               deriving (Eq, Show)
-              -- TODO: "upstream" to Ann?
-              -- | UExpr (XExprExt p)
 
 type UVar p = Ann p UVar'
 data UVar' p = Var { _varMode :: UVarMode
@@ -187,8 +183,8 @@ type Err = WithSrc T.Text
 
 -- TODO: External
 -- TODO: actually deal with ImportedDecl
-data DeclOrigin = LocalDecl | ImportedDecl Name Name -- | External Name
-                deriving (Eq, Show)
+data DeclOrigin = LocalDecl | ImportedDecl Name Name -- or | External Name
+                  deriving (Eq, Show)
 
 -- === compilation phases ===
 
@@ -238,11 +234,11 @@ type family XPhasedContainer p e where
   XPhasedContainer PhParse e = [e]
   XPhasedContainer PhCheck e = M.Map Name [e]
 
--- The goal of XRenamingRef is to statically prevent the existence of
--- references to named renamings after the consistency/type checking phase.
-type family XRefRenaming p where
-  XRefRenaming PhParse = Name
-  XRefRenaming PhCheck = Void
+-- The goal of XRef is to statically prevent the existence of references to
+-- named top level elements after the consistency/type checking phase.
+type family XRef p where
+  XRef PhParse = Name
+  XRef PhCheck = Void
 
 -- TODO: move?
 -- === standalone show instances ===
@@ -279,7 +275,8 @@ instance NamedNode (UNamedRenaming' p) where
   nodeName (UNamedRenaming name _) = name
 
 instance NamedNode (UModule' p) where
-  nodeName = _moduleName
+  nodeName (UModule _ name _ _) = name
+  nodeName (RefModule _ name _) = name
 
 instance NamedNode (USatisfaction' p) where
   nodeName (USatisfaction name _) = name

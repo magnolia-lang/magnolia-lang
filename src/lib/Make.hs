@@ -52,7 +52,7 @@ topSortModules :: [UModule PhParse] -> [G.SCC (UModule PhParse)]
 topSortModules modules = G.stronglyConnComp
     [ ( modul
       , nodeName modul
-      , map nodeName (_moduleDeps (_elem modul))
+      , moduleDepNames modul
       )
     | modul <- modules
     ]
@@ -147,7 +147,7 @@ upsweepModules = foldM go
       -> G.SCC (UModule PhParse)
       -> ExceptT Err IO (Env [TCTopLevelDecl])
     go _ (G.CyclicSCC modules) =
-      let mCycle = T.intercalate ", " $ map (pshow . _moduleName . _elem) modules in
+      let mCycle = T.intercalate ", " $ map (pshow . nodeName) modules in
       throwNonLocatedE $ "Found cyclic dependency between the following " <>
         "modules: [" <> mCycle <> "]."
 

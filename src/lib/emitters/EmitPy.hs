@@ -7,8 +7,8 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
 
 import Env
-import PPrint
 import Syntax
+import Util
 
 --data PythonSource = PythonSourceFile String PythonSource
 --                  | PythonSourceBlock [PythonSource]
@@ -36,7 +36,7 @@ emitPyPackage pkg =
 -- TODO: actually implement
 emitPyModule :: TCModule -> PythonSource
 emitPyModule modul = intercalate "\n\n" $ map (emitPyDecl 0) firstModuleDecls
-  where firstModuleDecls = snd $ head $ M.toList (_moduleDecls $ _elem modul)
+  where firstModuleDecls = snd $ head $ M.toList (moduleDecls modul)
 
 emitPyDecl :: Int -> TCDecl -> PythonSource
 emitPyDecl indent (Ann _ decl) = case decl of

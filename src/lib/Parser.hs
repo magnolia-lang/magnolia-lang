@@ -70,20 +70,32 @@ topLevelDecl =  (UModuleDecl <$> moduleDecl)
             -- TODO: <|> (USatisfaction <$$> ...)
 
 moduleDecl :: Parser (UModule PhParse)
-moduleDecl = annot moduleDecl'
-  where
-    moduleDecl' = do
-      cons <- (keyword ConceptKW >> return UCon)
-               <|> (keyword ImplementationKW >> return UImpl)
-               <|> (keyword SignatureKW >> return USig)
-               <|> (keyword ProgramKW >> return UProg)
-      name <- ModName <$> nameString
-      symbol "="
-      declsAndDeps <- braces $ many (try (Left <$> declaration)
-                                     <|> (Right <$> moduleDependency))
-      let decls = [decl | (Left decl) <- declsAndDeps]
-          deps  = [dep  | (Right dep) <- declsAndDeps]
-      return $ cons name decls deps
+moduleDecl = annot $ try moduleRef <|> inlineModule
+
+moduleRef :: Parser (UModule' PhParse)
+moduleRef = do
+  typ <- (keyword ConceptKW >> return Concept)
+          <|> (keyword ImplementationKW >> return Implementation)
+          <|> (keyword SignatureKW >> return Signature)
+          <|> (keyword ProgramKW >> return Program)
+  name <- ModName <$> nameString
+  symbol "="
+  refName <- ModName <$> nameString
+  return $ RefModule typ name refName
+
+inlineModule :: Parser (UModule' PhParse)
+inlineModule = do
+  cons <- (keyword ConceptKW >> return UCon)
+            <|> (keyword ImplementationKW >> return UImpl)
+            <|> (keyword SignatureKW >> return USig)
+            <|> (keyword ProgramKW >> return UProg)
+  name <- ModName <$> nameString
+  symbol "="
+  declsAndDeps <- braces $ many (try (Left <$> declaration)
+                                  <|> (Right <$> moduleDependency))
+  let decls = [decl | (Left decl) <- declsAndDeps]
+      deps  = [dep  | (Right dep) <- declsAndDeps]
+  return $ cons name decls deps
 
 renamingDecl :: Parser (UNamedRenaming PhParse)
 renamingDecl = annot renamingDecl'
