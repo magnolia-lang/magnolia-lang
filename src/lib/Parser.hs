@@ -1,9 +1,9 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module Parser (parsePackage, parsePackageHead) where
+module Parser (parsePackage, parsePackageHead, parseReplCommand) where
 
 import Control.Monad.Combinators.Expr
-import Control.Monad.Except
+import Control.Monad.Except (void, when, ExceptT, throwError)
 import Data.Functor (($>))
 import Data.Maybe (isNothing)
 import Data.Void
@@ -24,18 +24,55 @@ type ParsedDecl = UDecl PhParse
 type ParsedExpr = UExpr PhParse
 type ParsedVar = UVar PhParse
 
+-- === repl parsing utils ===
+
+parseReplCommand :: String -> ExceptT Err IO Command
+parseReplCommand s = case parse (replCommand <* eof) "repl" s of
+  Left e -> throwError . NoCtx . T.pack $ errorBundlePretty e
+  Right com -> return com
+
+replCommand :: Parser Command
+replCommand =  loadPackageCommand
+           <|> reloadPackageCommand
+           <|> inspectModuleCommand
+           <|> inspectPackageCommand
+           <|> listPackageCommand
+           <|> showMenuCommand
+
+loadPackageCommand :: Parser Command
+loadPackageCommand = do
+  symbol "load"
+  LoadPackage <$> (try sourceFileString <|> packageString)
+
+reloadPackageCommand :: Parser Command
+reloadPackageCommand = do
+  symbol "reload"
+  ReloadPackage <$> (try sourceFileString <|> packageString)
+
+inspectModuleCommand :: Parser Command
+inspectModuleCommand = do
+  symbol "inspectm"
+  InspectModule . ModName <$> nameString
+
+inspectPackageCommand :: Parser Command
+inspectPackageCommand = do
+  symbol "inspectp"
+  InspectPackage <$> packageName
+
+listPackageCommand :: Parser Command
+listPackageCommand = symbol "list" >> return ListPackages
+
+showMenuCommand :: Parser Command
+showMenuCommand = symbol "help" >> return ShowMenu
+
+-- === package head parsing utils ===
+
 -- TODO: find type for imports
 parsePackageHead :: FilePath -> String -> ExceptT Err IO PackageHead
 parsePackageHead filePath s =
   case parse (sc >> packageHead filePath s) filePath s of
     Left e -> throwError . NoCtx . T.pack $ errorBundlePretty e
     Right ph -> return ph
-
-parsePackage :: FilePath -> String -> ExceptT Err IO ParsedPackage
-parsePackage filePath s =
-  case parse (sc >> package) filePath s of
-    Left e -> throwError . NoCtx . T.pack $ errorBundlePretty e
-    Right pkg -> return pkg
 
 packageHead :: FilePath -> String -> Parser PackageHead
 packageHead filePath s = do
@@ -50,6 +87,14 @@ packageHead filePath s = do
                      , _packageHeadName = pkgName
                      , _packageHeadImports = imports
                      }
+
+-- === package parsing utils ===
+
+parsePackage :: FilePath -> String -> ExceptT Err IO ParsedPackage
+parsePackage filePath s =
+  case parse (sc >> package) filePath s of
+    Left e -> throwError . NoCtx . T.pack $ errorBundlePretty e
+    Right pkg -> return pkg
 
 package :: Parser ParsedPackage
 package = annot package'
@@ -154,10 +199,11 @@ callable = do
       Function  -> symbol ":" *> typeName
       Predicate -> return Pred
       _         -> return Unit
+  guard <- optional (keyword GuardKW >> expr)
   body <- optional (blockExpr
                 <|> (symbol "=" *> (blockExpr <|> (expr <* symbol ";"))))
   when (isNothing body) $ symbol ";"
-  return $ UCallable callableType name args retType body
+  return $ UCallable callableType name args retType guard body
 
 annVar :: UVarMode -> Parser ParsedVar
 annVar mode = annot annVar'
@@ -293,8 +339,7 @@ binOp s = InfixL $ binOpCall <$> withSrc (symbol s)
           , _elem = UCall (FuncName ("_" <> s <> "_")) [e1, e2] Nothing
           }
 
-
--- === utils ===
+-- === general parsing utils ===
 
 braces :: Parser a -> Parser a
 braces = between (symbol "{") (symbol "}")
@@ -329,6 +374,7 @@ data Keyword = ConceptKW | ImplementationKW | ProgramKW | SignatureKW
              | TypeKW
              | UseKW
              | ObsKW | OutKW | UpdKW
+             | GuardKW
              | AssertKW | CallKW | IfKW | ThenKW | ElseKW | LetKW | SkipKW
              | PackageKW | ImportKW
 
@@ -354,6 +400,7 @@ keyword kw = (lexeme . try) $ string s *> notFollowedBy nameChar
       ObsKW            -> "obs"
       OutKW            -> "out"
       UpdKW            -> "upd"
+      GuardKW          -> "guard"
       AssertKW         -> "assert"
       CallKW           -> "call"
       IfKW             -> "if"
@@ -389,10 +436,14 @@ packageName :: Parser Name
 packageName = PkgName <$> packageString
 
 packageString :: Parser String
-packageString = do
-  fqfn <- lexeme . try $ (:) <$> nameChar
-                             <*> many (nameChar <|> (char '.' >> return '/'))
-  return $ fqfn <> ".mg"
+packageString =
+  lexeme . try $ (:) <$> nameChar <*> many (nameChar <|> char '.')
+
+sourceFileString :: Parser String
+sourceFileString =
+  lexeme . try $ (:) <$> sourceFileChar <*> many sourceFileChar <> string ".mg"
+  where
+    sourceFileChar = nameChar <|> char '/'
 
 nameString :: Parser String
 nameString = lexeme . try $ (:) <$> nameChar <*> many nameChar

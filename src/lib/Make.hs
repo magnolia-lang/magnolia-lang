@@ -3,10 +3,11 @@
 module Make (
   load, upsweep) where
 
-import Control.Monad (foldM)
+import Control.Monad (foldM, unless, when)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Except
 import qualified Data.Graph as G
+import qualified Data.List as L
 import qualified Data.Map as M
 import qualified Data.Text.Lazy as T
 
@@ -17,6 +18,7 @@ import PPrint
 import Syntax
 import Util
 
+-- TODO: recover when tcing?
 upsweep :: [G.SCC PackageHead] -> ExceptT Err IO (GlobalEnv PhCheck)
 upsweep = foldM go M.empty
   where
@@ -164,12 +166,21 @@ load = (topSortPackages <$>) . go M.empty
   where
     go loadedHeads filePath = case M.lookup filePath loadedHeads of
       Just _ -> return loadedHeads
-      Nothing -> do input <- lift $ readFile filePath
+      Nothing -> do unless (".mg" `L.isSuffixOf` filePath) $
+                      throwNonLocatedE $ "Magnolia source code files must " <>
+                        "have the \".mg\" extension"
+                    input <- lift $ readFile filePath
                     packageHead <- parsePackageHead filePath input
-                    let newHeads = M.insert filePath packageHead loadedHeads
-                        imports = map _fromSrc (_packageHeadImports packageHead)
+                    let pkgStr = _name $ _packageHeadName packageHead
+                        expectedPkgStr = _name $ mkPkgNameFromPath filePath
+                        newHeads = M.insert filePath packageHead loadedHeads
+                        imports = map (mkPkgPathFromName . _fromSrc)
+                            (_packageHeadImports packageHead)
+                    when (expectedPkgStr /= pkgStr) $
+                      throwNonLocatedE $ "expected package to have name " <>
+                        pshow expectedPkgStr <> " but got " <> pshow pkgStr
                     --lift $ pprint imports -- debug
-                    foldM (\state imp -> go state (_name imp)) newHeads imports
+                    foldM go newHeads imports
     topSortPackages pkgHeads = G.stronglyConnComp
         [ (ph, pk, map (_name . _fromSrc) $ _packageHeadImports ph)
         | (pk, ph) <- M.toList pkgHeads

@@ -92,12 +92,13 @@ checkModule tlDecls (Ann ann (UModule moduleType moduleName decls deps)) = do
 
     joinTuple (a, b) (a', b') = (M.unionWith (<>) a a', M.unionWith (<>) b b')
 
+    -- TODO: deal with guards (unify, check)
     checkBody
       :: ModuleScope
       -> UDecl PhParse
       -> Except Err (ModuleScope, UDecl PhCheck)
     checkBody env decl@(~(Ann src (UCallable callableType fname args retType
-                                             body)))
+                                             mguard body)))
       | moduleType /= Concept, Axiom <- callableType =
           throwLocatedE src "Axioms can only be declared in concepts."
       | Nothing <- body, Axiom <- callableType =
@@ -111,9 +112,11 @@ checkModule tlDecls (Ann ann (UModule moduleType moduleName decls deps)) = do
       | Just expr <- body = do
           -- TODO: fix, propagate required type forward?
           bodyTC <- annotateScopedExpr env (initScope args) (Just retType) expr
-          ~(Ann typAnn (UCallable _ declName argsTC _ _)) <- checkProto env decl
+          ~(Ann typAnn (UCallable _ declName argsTC _ guardTC _)) <-
+              checkProto env decl
           let annDeclTC = Ann typAnn $
-                UCallable callableType declName argsTC retType (Just bodyTC)
+                UCallable callableType declName argsTC retType guardTC
+                          (Just bodyTC)
           if _ann bodyTC == retType
           then return (M.insertWith (<>) fname [annDeclTC] env, annDeclTC)
           else throwLocatedE src ("Expected " <> pshow retType <> " return " <>
@@ -122,7 +125,7 @@ checkModule tlDecls (Ann ann (UModule moduleType moduleName decls deps)) = do
 
     checkImplemented :: ModuleScope -> UDecl PhCheck -> Except Err ()
     checkImplemented env callable@(~(Ann (src, _) (UCallable _ callableName
-                                                             _ _ body)))
+                                                             _ _ _ body)))
       | Just _ <- body = return ()
       | Nothing <- body = do
           let ~(Just matches) = M.lookup callableName env
@@ -131,11 +134,11 @@ checkModule tlDecls (Ann ann (UModule moduleType moduleName decls deps)) = do
           when ((mkAnonProto <$$> callable) `notElem` anonDefinedMatches) $
                throwLocatedE src "Callable is unimplemented in program."
 
-    mkAnonProto ~(UCallable callableType callableName args retType body) =
+    mkAnonProto ~(UCallable callableType callableName args retType mguard mbody) =
       UCallable callableType callableName (map (mkAnonVar <$$>) args) retType
-                body
+                mguard mbody
     mkAnonVar (Var mode _ typ) = Var mode (GenName "#anon#") typ
-    isDefined ~(Ann _ (UCallable _ _ _ _ body)) = isJust body
+    isDefined ~(Ann _ (UCallable _ _ _ _ _ mbody)) = isJust mbody
 
 -- TODO: finish module casting.
 castModule
@@ -376,10 +379,10 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
     USkip -> return (scope, Ann { _ann = Unit, _elem = USkip })
     -- TODO: use for annotating AST
 
-  getReturnType ~(Ann _ (UCallable _ _ _ returnType _)) = returnType
+  getReturnType ~(Ann _ (UCallable _ _ _ returnType _ _)) = returnType
 
   isCompatibleFunctionDecl :: [UType] -> UDecl PhCheck -> Bool
-  isCompatibleFunctionDecl typeConstraints (Ann _ (UCallable _ _ args _ _))
+  isCompatibleFunctionDecl typeConstraints (Ann _ (UCallable _ _ args _ _ _))
     | length args /= length typeConstraints = False
     | otherwise = and $ zipWith (\x y -> x == _ann y) typeConstraints args
   isCompatibleFunctionDecl _ _ = False
@@ -407,19 +410,20 @@ registerProto ::
   UDecl PhParse ->
   Except Err ModuleScope
 registerProto modul annDecl
-  | Ann _ (UCallable _ name _ _ _) <- annDecl = do
+  | Ann _ (UCallable _ name _ _ _ _) <- annDecl = do
       -- TODO: ensure bodies are registered later on
       checkedProto <- checkProto modul annDecl
       return $ M.insertWith (<>) name [checkedProto] modul
   | otherwise = return modul
 
 -- TODO: check for procedures, predicates, axioms (this is only for func)?
+-- TODO: check guard
 checkProto :: ModuleScope -> UDecl PhParse -> Except Err (UDecl PhCheck)
-checkProto modul ~(Ann ann (UCallable callableType name args retType _)) = do
+checkProto modul ~(Ann ann (UCallable callableType name args retType mguard _)) = do
   checkedArgs <- checkArgs args
   checkTypeExists modul (WithSrc ann retType)
   return Ann { _ann = (ann, [LocalDecl])
-             , _elem = UCallable callableType name checkedArgs retType Nothing
+             , _elem = UCallable callableType name checkedArgs retType Nothing Nothing -- TODO: reinsert guard
              }
   where checkArgs :: [UVar PhParse] -> Except Err [UVar PhCheck]
         checkArgs vars = do
@@ -535,10 +539,11 @@ applyRenaming annDecl renaming = applyRenamingInDecl <$$> annDecl
         applyRenamingInDecl :: UDecl' PhCheck -> UDecl' PhCheck
         applyRenamingInDecl decl
           | UType name <- decl = UType $ replaceName' name
-          | UCallable ctyp name vars retType expr <- decl =
+          | UCallable ctyp name vars retType mguard mbody <- decl =
                 UCallable ctyp (replaceName' name)
                   (map applyRenamingInVar vars) (replaceName' retType)
-                  (applyRenamingInExpr <$> expr)
+                  (applyRenamingInExpr <$> mguard)
+                  (applyRenamingInExpr <$> mbody)
         applyRenamingInVar :: UVar PhCheck -> UVar PhCheck
         applyRenamingInVar (Ann typAnn (Var mode name typ)) =
           Ann (replaceName' typAnn) $ Var mode name (replaceName' <$> typ)

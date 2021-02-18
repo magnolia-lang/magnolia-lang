@@ -22,6 +22,7 @@ module Syntax (
     URenaming' (..), URenaming,
     TCDecl, TCExpr, TCModule, TCModuleDep, TCPackage, TCTopLevelDecl, TCVar,
     NamedNode (..),
+    Command (..),
     DeclOrigin (..), Err,
     PhParse, PhCheck, PhCodeGen, SrcCtx,
     Ann (..), XAnn, (<$$>), (<$$),
@@ -29,15 +30,26 @@ module Syntax (
     pattern Pred, pattern Unit,
     pattern NoCtx,
     pattern UCon, pattern UProg, pattern UImpl, pattern USig,
-    pattern UAxiom, pattern UFunc, pattern UPred, pattern UProc)
+    pattern UAxiom, pattern UFunc, pattern UPred, pattern UProc,
+    getModules, getNamedRenamings,
+    moduleDecls, moduleDepNames)
   where
 
-import Data.List.NonEmpty as NE
-import Data.Map as M
-import Data.Text.Lazy as T
+import qualified Data.List.NonEmpty as NE
+import qualified Data.Map as M
+import qualified Data.Text.Lazy as T
 import Data.Void
 
 import Env
+
+-- === repl utils ===
+
+data Command = LoadPackage String
+             | ReloadPackage String
+             | InspectModule Name -- TODO: add optional package name
+             | InspectPackage Name
+             | ListPackages
+             | ShowMenu
 
 -- === preprocessing utils ===
 
@@ -130,8 +142,11 @@ data UModuleType = Signature | Concept | Implementation | Program
 type UDecl p = Ann p UDecl'
 data UDecl' p = UType UType
               -- TODO: guards/partiality
-              | UCallable UCallable Name [UVar p] UType (Maybe (UExpr p))
+              | UCallable UCallable Name [UVar p] UType (CGuard p) (CBody p)
               deriving (Eq, Show)
+
+type CBody p = Maybe (UExpr p)
+type CGuard p = Maybe (UExpr p)
 
 type UType = Name
 
@@ -293,7 +308,10 @@ instance NamedNode (UModuleDep' p) where
 instance NamedNode (UDecl' p) where
   nodeName decl = case decl of
     UType name -> name
-    UCallable _ name _ _ _ -> name
+    UCallable _ name _ _ _ _ -> name
+
+instance NamedNode (UVar' p) where
+  nodeName (Var _ name _) = name
 
 -- === useful patterns ===
 
@@ -305,25 +323,64 @@ pattern USig
   -> UModule' p
 pattern USig name decls deps = UModule Signature name decls deps
 
-pattern UCon :: Name -> XPhasedContainer p (UDecl p) -> XPhasedContainer p (UModuleDep p) -> UModule' p
+pattern UCon
+  :: Name -> XPhasedContainer p (UDecl p) -> XPhasedContainer p (UModuleDep p)
+  -> UModule' p
 pattern UCon name decls deps = UModule Concept name decls deps
 
-pattern UProg :: Name -> XPhasedContainer p (UDecl p) -> XPhasedContainer p (UModuleDep p) -> UModule' p
+pattern UProg
+  :: Name -> XPhasedContainer p (UDecl p) -> XPhasedContainer p (UModuleDep p)
+  -> UModule' p
 pattern UProg name decls deps = UModule Program name decls deps
 
-pattern UImpl :: Name -> XPhasedContainer p (UDecl p) -> XPhasedContainer p (UModuleDep p) -> UModule' p
+pattern UImpl
+  :: Name -> XPhasedContainer p (UDecl p) -> XPhasedContainer p (UModuleDep p)
+  -> UModule' p
 pattern UImpl name decls deps = UModule Implementation name decls deps
 
-pattern UAxiom :: Name -> [UVar p] -> UType -> Maybe (UExpr p) -> UDecl' p
-pattern UAxiom name args retType body = UCallable Axiom name args retType body
+pattern UAxiom :: Name -> [UVar p] -> UType -> CGuard p -> CBody p -> UDecl' p
+pattern UAxiom name args retType guard body =
+  UCallable Axiom name args retType guard body
 
-pattern UFunc :: Name -> [UVar p] -> UType -> Maybe (UExpr p) -> UDecl' p
-pattern UFunc name args retType body = UCallable Function name args retType body
+pattern UFunc :: Name -> [UVar p] -> UType -> CGuard p -> CBody p -> UDecl' p
+pattern UFunc name args retType guard body =
+  UCallable Function name args retType guard body
 
-pattern UPred :: Name -> [UVar p] -> UType -> Maybe (UExpr p) -> UDecl' p
-pattern UPred name args retType body =
-  UCallable Predicate name args retType body
+pattern UPred :: Name -> [UVar p] -> UType -> CGuard p -> CBody p -> UDecl' p
+pattern UPred name args retType guard body =
+  UCallable Predicate name args retType guard body
 
-pattern UProc :: Name -> [UVar p] -> UType -> Maybe (UExpr p) -> UDecl' p
-pattern UProc name args retType body =
-  UCallable Procedure name args retType body
+pattern UProc :: Name -> [UVar p] -> UType -> CGuard p -> CBody p -> UDecl' p
+pattern UProc name args retType guard body =
+  UCallable Procedure name args retType guard body
+
+-- === top level declarations manipulation ===
+
+getModules :: Foldable t => t (UTopLevelDecl p) -> [UModule p]
+getModules = foldl extractModule []
+  where
+    extractModule :: [UModule p] -> UTopLevelDecl p -> [UModule p]
+    extractModule acc topLevelDecl
+      | UModuleDecl m <- topLevelDecl = m:acc
+      | otherwise = acc
+
+getNamedRenamings :: Foldable t => t (UTopLevelDecl p) -> [UNamedRenaming p]
+getNamedRenamings = foldl extractNamedRenaming []
+  where
+    extractNamedRenaming
+      :: [UNamedRenaming p] -> UTopLevelDecl p -> [UNamedRenaming p]
+    extractNamedRenaming acc topLevelDecl
+      | UNamedRenamingDecl nr <- topLevelDecl = nr:acc
+      | otherwise = acc
+
+-- === modules manipulation ===
+
+moduleDecls :: UModule PhCheck -> Env [UDecl PhCheck]
+moduleDecls (Ann _ modul) = case modul of
+  UModule _ _ decls _ -> decls
+  RefModule _ _ v -> absurd v
+
+moduleDepNames :: UModule PhParse -> [Name]
+moduleDepNames (Ann _ modul) = case modul of
+  UModule _ _ _ deps -> map nodeName deps
+  RefModule _ _ refName -> [refName]

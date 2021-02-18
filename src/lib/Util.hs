@@ -3,13 +3,13 @@
 
 module Util (
     throwLocatedE, throwNonLocatedE,
-    getModules, getNamedRenamings,
-    moduleDecls, moduleDepNames,
+    mkPkgNameFromPath, mkPkgPathFromName, mkPkgPathFromStr, isPkgPath,
     mkInlineRenamings, expandRenaming, expandRenamingBlock, checkRenamingBlock)
   where
 
 import Control.Monad
 import Control.Monad.Trans.Except
+import qualified Data.List as L
 import qualified Data.Map as M
 import qualified Data.Text.Lazy as T
 import Data.Void
@@ -24,36 +24,21 @@ throwLocatedE src err = throwE $ WithSrc src err
 throwNonLocatedE :: Monad t => T.Text -> ExceptT Err t e
 throwNonLocatedE = throwLocatedE Nothing
 
--- === top level declarations manipulation ===
+-- === package name manipulation ===
 
-getModules :: [UTopLevelDecl p] -> [UModule p]
-getModules = foldl extractModule []
-  where
-    extractModule :: [UModule p] -> UTopLevelDecl p -> [UModule p]
-    extractModule acc topLevelDecl
-      | UModuleDecl m <- topLevelDecl = m:acc
-      | otherwise = acc
+mkPkgNameFromPath :: String -> Name
+mkPkgNameFromPath pkgPath = PkgName $ map (\c -> if c == '/' then '.' else c) $
+  take (length pkgPath - 3) pkgPath
 
-getNamedRenamings :: [UTopLevelDecl p] -> [UNamedRenaming p]
-getNamedRenamings = foldl extractNamedRenaming []
-  where
-    extractNamedRenaming
-      :: [UNamedRenaming p] -> UTopLevelDecl p -> [UNamedRenaming p]
-    extractNamedRenaming acc topLevelDecl
-      | UNamedRenamingDecl nr <- topLevelDecl = nr:acc
-      | otherwise = acc
+mkPkgPathFromName :: Name -> String
+mkPkgPathFromName = mkPkgPathFromStr. _name
 
--- === modules manipulation ===
+mkPkgPathFromStr :: String -> String
+mkPkgPathFromStr pkgStr =
+  map (\c -> if c == '.' then '/' else c) pkgStr <> ".mg"
 
-moduleDecls :: UModule PhCheck -> Env [UDecl PhCheck]
-moduleDecls (Ann _ modul) = case modul of
-  UModule _ _ decls _ -> decls
-  RefModule _ _ v -> absurd v
-
-moduleDepNames :: UModule PhParse -> [Name]
-moduleDepNames (Ann _ modul) = case modul of
-  UModule _ _ _ deps -> map nodeName deps
-  RefModule _ _ refName -> [refName]
+isPkgPath :: String -> Bool
+isPkgPath s = ".mg" `L.isSuffixOf` s
 
 -- === renamings manipulation ===
 

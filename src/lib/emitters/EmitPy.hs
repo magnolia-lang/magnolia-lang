@@ -43,11 +43,11 @@ emitPyDecl :: Int -> TCDecl -> PythonSource
 emitPyDecl indent (Ann _ decl) = case decl of
   -- TODO: add type annotations?
   UType _ -> noEmit
-  UCallable _ _ _ _ Nothing -> noEmit -- Ignore prototypes
+  UCallable _ _ _ _ _ Nothing -> noEmit -- Ignore prototypes
   -- In Python, it is not possible to have side-effects on all the types of
   -- arguments. Therefore, procedures are turned into functions returning
   -- tuples.
-  UCallable callableType _ args _ (Just body) ->
+  UCallable callableType _ args _ _ (Just body) ->
       emitProto decl <> mkIndent bodyIndent <> case callableType of
         Axiom     -> emitPyExpr bodyIndent body <> "\n"
         -- TODO: what to do with this?
@@ -113,7 +113,7 @@ emitName :: Name -> PythonSource
 emitName (Name _ s) = mkPythonSource s
 
 emitProto :: TCDecl' -> PythonSource
-emitProto ~(UCallable _ name args _ _) = "def " <> emitName name <> "(" <>
+emitProto ~(UCallable _ name args _ _ _) = "def " <> emitName name <> "(" <>
   intercalate ", " (map emitVarName args) <> "):\n"
 
 emitVarName :: TCVar -> PythonSource
