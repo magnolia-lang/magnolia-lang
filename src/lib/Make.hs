@@ -128,7 +128,7 @@ upsweepRenamings = foldM go
       let eitherExpandedBlock = runExcept $
             expandRenamingBlock (M.map getNamedRenamings env) renamingBlock in -- TODO: expand named renamings
       case eitherExpandedBlock of
-        Left e -> lift (pprint e) >> throwE e
+        Left e -> throwE e -- just passing along the error for now --lift (pprint e) >> throwE e
         Right expandedBlock ->
           let tcNamedRenaming = Ann (src, LocalDecl)
                                     (UNamedRenaming name expandedBlock) in
@@ -150,11 +150,11 @@ upsweepModules = foldM go
       let mCycle = T.intercalate ", " $ map (pshow . nodeName) modules in
       throwNonLocatedE CyclicModuleErr mCycle
 
-    -- TODO: error catching
+    -- TODO: error catching & recovery
     go env (G.AcyclicSCC modul) =
       let eitherNewEnv = runExcept $ checkModule env modul in
       case eitherNewEnv of
-        Left e -> lift (pprint e) >> throwE e
+        Left e -> throwE e -- TODO: error catching: --lift (pprint e) >> throwE e
         Right newEnv -> return newEnv
 
 -- TODO: cache and choose what to reload with granularity
