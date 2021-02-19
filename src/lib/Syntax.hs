@@ -23,7 +23,7 @@ module Syntax (
     TCDecl, TCExpr, TCModule, TCModuleDep, TCPackage, TCTopLevelDecl, TCVar,
     NamedNode (..),
     Command (..),
-    DeclOrigin (..), Err,
+    DeclOrigin (..), Err (..), ErrType (..),
     PhParse, PhCheck, PhCodeGen, SrcCtx,
     Ann (..), XAnn, (<$$>), (<$$),
     XRef,
@@ -198,7 +198,33 @@ data WithSrc a = WithSrc { _srcCtx :: SrcCtx
 instance Eq a => Eq (WithSrc a) where
   (WithSrc _ x) == (WithSrc _ y) = x == y
 
-type Err = WithSrc T.Text
+data Err = Err ErrType SrcCtx T.Text --WithSrc T.Text
+           deriving Show
+
+data ErrType = AmbiguousFunctionRefErr
+             | AmbiguousModuleRefErr
+             | AmbiguousNamedRenamingRefErr
+             | AmbiguousProcedureRefErr
+             | CompilerErr
+             | CyclicCallableErr
+             | CyclicModuleErr
+             | CyclicNamedRenamingErr
+             | CyclicPackageErr
+             | DeclContextErr
+             | InvalidDeclErr
+             | MiscErr
+             | ModeMismatchErr
+             | NotImplementedErr
+             | ParseErr
+             | TypeErr
+             | UnboundFunctionErr
+             | UnboundModuleErr
+             | UnboundNameErr
+             | UnboundProcedureErr
+             | UnboundTypeErr
+             | UnboundNamedRenamingErr
+             | UnboundVarErr
+               deriving Show
 
 -- TODO: External
 -- TODO: actually deal with ImportedDecl

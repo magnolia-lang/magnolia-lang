@@ -18,11 +18,11 @@ import Env
 import PPrint
 import Syntax
 
-throwLocatedE :: Monad t => SrcCtx -> T.Text -> ExceptT Err t e
-throwLocatedE src err = throwE $ WithSrc src err
+throwLocatedE :: Monad t => ErrType -> SrcCtx -> T.Text -> ExceptT Err t e
+throwLocatedE errType src err = throwE $ Err errType src err
 
-throwNonLocatedE :: Monad t => T.Text -> ExceptT Err t e
-throwNonLocatedE = throwLocatedE Nothing
+throwNonLocatedE :: Monad t => ErrType -> T.Text -> ExceptT Err t e
+throwNonLocatedE errType = throwLocatedE errType Nothing
 
 -- === package name manipulation ===
 
@@ -59,8 +59,8 @@ checkRenamingBlock (Ann blockSrc (URenamingBlock renamings)) = do
       -- It seems that the below pattern matching can not be avoided, due to
       -- coercion concerns (https://gitlab.haskell.org/ghc/ghc/-/issues/15683).
       InlineRenaming r -> return $ Ann (src, LocalDecl) (InlineRenaming r)
-      RefRenaming _ -> throwLocatedE src $ "Compiler bug: references left " <>
-        "in renaming block at checking time."
+      RefRenaming _ -> throwLocatedE CompilerErr src $ "references left " <>
+        "in renaming block at checking time"
 
 expandRenamingBlock
   :: Monad t
@@ -79,17 +79,15 @@ expandRenaming
 expandRenaming env (Ann src renaming) = case renaming of
   InlineRenaming ir -> return [Ann (src, LocalDecl) (InlineRenaming ir)]
   RefRenaming ref -> case M.lookup ref env of
-    Nothing -> throwLocatedE src $ "Named renaming " <> pshow ref <>
-                                   " does not exist in current scope."
+    Nothing -> throwLocatedE UnboundNamedRenamingErr src $ pshow ref
     Just namedRenamings -> case namedRenamings of
-      []  -> throwLocatedE src $ "Compiler bug in renaming expansion: " <>
-                                 "no match but existing renaming name."
+      []  -> throwLocatedE CompilerErr src
+        "renaming name exists but is not bound in renaming expansion"
       _ -> do
         -- TODO: add disambiguation attempts
         when (length namedRenamings /= 1) $
-          throwLocatedE src $ "Could not deduce named renaming instance " <>
-                              "from '" <> pshow ref <> "'. Candidates " <>
-                              "are: " <> pshow namedRenamings <> "."
+          throwLocatedE AmbiguousNamedRenamingRefErr src $ pshow ref <>
+            "'. Candidates are: " <> pshow namedRenamings
         let Ann _ (UNamedRenaming _ (Ann _ (URenamingBlock renamings))) =
               head namedRenamings
         return renamings

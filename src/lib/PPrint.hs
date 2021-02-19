@@ -10,6 +10,7 @@ import Control.Monad (join)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
 import qualified Data.Text.Lazy as T
+import qualified Data.Text.Lazy.IO as TIO
 import Data.Text.Prettyprint.Doc
 import Data.Text.Prettyprint.Doc.Render.Text
 import Data.Void (absurd)
@@ -25,7 +26,7 @@ p = pretty
 
 -- TODO: Text.Lazy -> Text.Strict (renderLazy -> renderStrict)
 pprint :: Pretty a => a -> IO ()
-pprint = putStrLn . T.unpack . render
+pprint = TIO.putStrLn . render
 
 render :: Pretty a => a -> T.Text
 render = renderLazy . layoutPretty defaultLayoutOptions . p
@@ -34,11 +35,43 @@ pshow :: Pretty a => a -> T.Text
 pshow = render
 
 instance Pretty Err where -- TODO: change error to have error types
-  pretty (WithSrc srcInfo txt) = case srcInfo of
-    Nothing -> "<no context>" <+> p txt
+  pretty (Err errType srcInfo txt) = case srcInfo of
+    Nothing -> "<no context>:" <+> p txt
     Just ((filename, startLine, startColumn), _) ->
       p filename <> ":" <> p startLine <> ":" <> p startColumn <>
-      ": error:" <+> p txt
+      ":" <+> p errType <+> p txt
+
+instance Pretty ErrType where
+  pretty e = case e of
+    AmbiguousFunctionRefErr -> ambiguous "functions"
+    AmbiguousModuleRefErr -> ambiguous "modules"
+    AmbiguousNamedRenamingRefErr -> ambiguous "named renamings"
+    AmbiguousProcedureRefErr -> ambiguous "procedures"
+    CompilerErr -> "Compiler bug!" <> line
+      <> "Please report this at github.com/magnolia-lang/magnolia-lang"
+      <> line
+    CyclicCallableErr -> cyclic "callables"
+    CyclicModuleErr -> cyclic "modules"
+    CyclicNamedRenamingErr -> cyclic "named renamings"
+    CyclicPackageErr -> cyclic "packages"
+    DeclContextErr -> "Declaration context error:"
+    InvalidDeclErr -> "Declaration error:"
+    MiscErr -> "Error:"
+    ModeMismatchErr -> "Mode error:"
+    NotImplementedErr -> "Not implemented:"
+    ParseErr -> "Parse error:"
+    TypeErr -> "Type error:"
+    UnboundFunctionErr -> unbound "function"
+    UnboundModuleErr -> unbound "module"
+    UnboundNameErr -> unbound "name"
+    UnboundProcedureErr -> unbound "procedure"
+    UnboundTypeErr -> unbound "type"
+    UnboundNamedRenamingErr -> unbound "named renaming"
+    UnboundVarErr -> unbound "variable"
+    where
+      ambiguous s = "Error: could not disambiguate between" <+> s <> ":"
+      cyclic s = "Error: found cyclic dependency between" <+> s <> ":"
+      unbound s = "Error:" <+> s <+> "not in scope:"
 
 instance Pretty Name where
   pretty (Name _ str) = p str

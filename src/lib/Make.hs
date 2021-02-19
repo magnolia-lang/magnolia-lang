@@ -28,9 +28,8 @@ upsweep = foldM go M.empty
       -> G.SCC PackageHead
       -> ExceptT Err IO (GlobalEnv PhCheck)
     go _ (G.CyclicSCC pkgHeads) =
-      let pCycle = T.intercalate ", " $ map (pshow . _packageHeadName) pkgHeads in
-      throwNonLocatedE $ "Found cyclic dependency between the following " <>
-        "packages: [" <> pCycle <> "]."
+      let pCycle = T.intercalate ", " $ map (pshow . _packageHeadName) pkgHeads
+      in throwNonLocatedE CyclicPackageErr pCycle
 
     go globalEnv (G.AcyclicSCC pkgHead) = do
       Ann ann (UPackage name decls deps) <-
@@ -86,8 +85,8 @@ loadPackageDependency
   -> ExceptT Err IO (Env [TCTopLevelDecl])
 loadPackageDependency globalEnv localEnv (Ann src dep) =
   case M.lookup (nodeName dep) globalEnv of
-    Nothing -> throwLocatedE src $ "Attempted to load package " <>
-      pshow (nodeName dep) <> " but package couldn't be found."
+    Nothing -> throwLocatedE MiscErr src $ "attempted to load package " <>
+      pshow (nodeName dep) <> " but package couldn't be found"
     Just (Ann _ pkg) -> do
       let importedLocalDecls =
             M.map (foldl (importLocal (nodeName dep)) [])
@@ -123,8 +122,7 @@ upsweepRenamings = foldM go
       -> ExceptT Err IO (Env [TCTopLevelDecl])
     go _ (G.CyclicSCC namedBlock) =
       let rCycle = T.intercalate ", " $ map (pshow . nodeName) namedBlock in
-      throwNonLocatedE $ "Found cyclic dependency between the following " <>
-        "renamings: [" <> rCycle <> "]."
+      throwNonLocatedE CyclicNamedRenamingErr rCycle
 
     go env (G.AcyclicSCC (Ann src (UNamedRenaming name renamingBlock))) =
       let eitherExpandedBlock = runExcept $
@@ -150,8 +148,7 @@ upsweepModules = foldM go
       -> ExceptT Err IO (Env [TCTopLevelDecl])
     go _ (G.CyclicSCC modules) =
       let mCycle = T.intercalate ", " $ map (pshow . nodeName) modules in
-      throwNonLocatedE $ "Found cyclic dependency between the following " <>
-        "modules: [" <> mCycle <> "]."
+      throwNonLocatedE CyclicModuleErr mCycle
 
     -- TODO: error catching
     go env (G.AcyclicSCC modul) =
@@ -167,8 +164,8 @@ load = (topSortPackages <$>) . go M.empty
     go loadedHeads filePath = case M.lookup filePath loadedHeads of
       Just _ -> return loadedHeads
       Nothing -> do unless (".mg" `L.isSuffixOf` filePath) $
-                      throwNonLocatedE $ "Magnolia source code files must " <>
-                        "have the \".mg\" extension"
+                      throwNonLocatedE MiscErr $ "Magnolia source code " <>
+                        "files must have the \".mg\" extension"
                     input <- lift $ readFile filePath
                     packageHead <- parsePackageHead filePath input
                     let pkgStr = _name $ _packageHeadName packageHead
@@ -177,8 +174,9 @@ load = (topSortPackages <$>) . go M.empty
                         imports = map (mkPkgPathFromName . _fromSrc)
                             (_packageHeadImports packageHead)
                     when (expectedPkgStr /= pkgStr) $
-                      throwNonLocatedE $ "expected package to have name " <>
-                        pshow expectedPkgStr <> " but got " <> pshow pkgStr
+                      throwNonLocatedE MiscErr $ "expected package to have " <>
+                        "name " <> pshow expectedPkgStr <> " but got " <>
+                        pshow pkgStr
                     --lift $ pprint imports -- debug
                     foldM go newHeads imports
     topSortPackages pkgHeads = G.stronglyConnComp

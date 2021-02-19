@@ -24,11 +24,17 @@ type ParsedDecl = UDecl PhParse
 type ParsedExpr = UExpr PhParse
 type ParsedVar = UVar PhParse
 
+-- === exception handling utils ===
+
+throwNonLocatedParseError :: ParseErrorBundle String Void -> ExceptT Err IO b
+throwNonLocatedParseError =
+  throwError . Err ParseErr Nothing . T.pack . errorBundlePretty
+
 -- === repl parsing utils ===
 
 parseReplCommand :: String -> ExceptT Err IO Command
 parseReplCommand s = case parse (replCommand <* eof) "repl" s of
-  Left e -> throwError . NoCtx . T.pack $ errorBundlePretty e
+  Left e -> throwNonLocatedParseError e
   Right com -> return com
 
 replCommand :: Parser Command
@@ -71,7 +77,7 @@ showMenuCommand = symbol "help" >> return ShowMenu
 parsePackageHead :: FilePath -> String -> ExceptT Err IO PackageHead
 parsePackageHead filePath s =
   case parse (sc >> packageHead filePath s) filePath s of
-    Left e -> throwError . NoCtx . T.pack $ errorBundlePretty e
+    Left e -> throwNonLocatedParseError e
     Right ph -> return ph
 
 packageHead :: FilePath -> String -> Parser PackageHead
@@ -81,7 +87,7 @@ packageHead filePath s = do
   imports <- choice [ keyword ImportKW >>
                       (withSrc packageName `sepBy1` symbol ",")
                     , return []
-                    ] <* symbol ";"
+                    ] <* semi
   return PackageHead { _packageHeadPath = filePath
                      , _packageHeadStr = s
                      , _packageHeadName = pkgName
@@ -93,7 +99,7 @@ packageHead filePath s = do
 parsePackage :: FilePath -> String -> ExceptT Err IO ParsedPackage
 parsePackage filePath s =
   case parse (sc >> package) filePath s of
-    Left e -> throwError . NoCtx . T.pack $ errorBundlePretty e
+    Left e -> throwNonLocatedParseError e
     Right pkg -> return pkg
 
 package :: Parser ParsedPackage
@@ -104,9 +110,9 @@ package = annot package'
       deps <- choice [ keyword ImportKW >>
                        (annot (UPackageDep <$> packageName) `sepBy1` symbol ",")
                      , return []
-                     ] <* symbol ";"
-      decls <- manyTill (many (symbol ";") *>
-                         topLevelDecl <* many (symbol ";")) eof
+                     ] <* semi
+      decls <- manyTill (many semi *>
+                         topLevelDecl <* many semi) eof
       return $ UPackage pkgName decls deps
 
 topLevelDecl :: Parser (UTopLevelDecl PhParse)
@@ -173,14 +179,14 @@ satisfaction = annot satisfaction'
       return $ USatisfaction name initialModule withModule modeledModule
 
 declaration :: Parser ParsedDecl
-declaration = annot declaration' <* many (symbol ";")
+declaration = annot declaration' <* many semi
   where declaration' =  typeDecl
                     <|> callable
 
 typeDecl :: Parser (UDecl' PhParse)
 typeDecl = do
   keyword TypeKW
-  name <- typeName <* symbol ";" -- TODO: make expr
+  name <- typeName <* semi -- TODO: make expr
   return $ UType name
 
 callable :: Parser (UDecl' PhParse)
@@ -201,8 +207,8 @@ callable = do
       _         -> return Unit
   guard <- optional (keyword GuardKW >> expr)
   body <- optional (blockExpr
-                <|> (symbol "=" *> (blockExpr <|> (expr <* symbol ";"))))
-  when (isNothing body) $ symbol ";"
+                <|> (symbol "=" *> (blockExpr <|> (expr <* semi))))
+  when (isNothing body) semi
   return $ UCallable callableType name args retType guard body
 
 annVar :: UVarMode -> Parser ParsedVar
@@ -239,7 +245,7 @@ blockExpr :: Parser ParsedExpr
 blockExpr = annot blockExpr'
   where
     blockExpr' = do
-      block <- braces (many (exprStmt <* some (symbol ";")))
+      block <- braces (many (exprStmt <* some semi))
       block' <- if null block then (:[]) <$> annot (return USkip)
                 else return block
       return $ UBlockExpr (NE.fromList block')
@@ -271,7 +277,7 @@ moduleDependency = annot moduleDependency'
       keyword UseKW
       name <- ModName <$> nameString
       renamings <- many renamingBlock
-      symbol ";"
+      semi
       return $ UModuleDep name renamings
 
 renamingBlock :: Parser (URenamingBlock PhParse)
@@ -317,7 +323,8 @@ ops = [ map unOp ["+", "-", "!", "~"]                -- unary ops
       , map binOp ["+", "-"]                         -- add ops
       , map binOp ["<<", ">>"]                       -- shift ops
       , [binOp ".."]                                 -- range
-      , map binOp ["<", ">", ">=", "<=", "==", "!=", "===", "!=="] -- comparison ops
+      , map binOp [ "<", ">", ">=", "<=", "=="
+                  , "!=", "===", "!=="]              -- comparison ops
       , [binOp "&&"]                                 -- logical and
       , [binOp "||"]                                 -- logical or
       , [binOp "=>", binOp "<=>"]                    -- logical implication
@@ -425,6 +432,9 @@ lexeme = L.lexeme sc
 
 symbol :: String -> Parser ()
 symbol = void . L.symbol sc
+
+semi :: Parser ()
+semi = symbol ";"
 
 typeName :: Parser Name
 typeName = TypeName <$> nameString
