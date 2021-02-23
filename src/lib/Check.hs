@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Check (checkModule) where
 
@@ -55,10 +56,10 @@ checkModule tlDecls (Ann src (RefModule typ name refName)) =
         ~(Ann _ (UModule _ _ decls deps)) <- castModule typ (head refs)
         let renamedModule = UModule typ name decls deps :: UModule' PhCheck
             renamedModuleDecl =
-              UModuleDecl $ Ann (src, LocalDecl) renamedModule
+              UModuleDecl $ Ann (LocalDecl src) renamedModule
         return $ M.insertWith (<>) name [renamedModuleDecl] tlDecls
 
-checkModule tlDecls (Ann src (UModule moduleType moduleName decls deps)) = do
+checkModule tlDecls (Ann modSrc (UModule moduleType moduleName decls deps)) = do
   let modules = M.map getModules tlDecls
       namedRenamings = M.map getNamedRenamings tlDecls
   -- Step 1: expand uses
@@ -77,16 +78,16 @@ checkModule tlDecls (Ann src (UModule moduleType moduleName decls deps)) = do
   -- TODO: check that name is unique?
   -- TODO: make module
   let resultModuleDecl = UModuleDecl $
-        Ann { _ann = (src, LocalDecl)
+        Ann { _ann = LocalDecl modSrc
             , _elem = UModule moduleType moduleName finalScope checkedDeps
             } -- :: TCModule
   return $ M.insertWith (<>) moduleName [resultModuleDecl] tlDecls
   where
     types :: [(Name, [UDecl PhCheck])]
-    types = [ (typeName, [Ann { _ann = (typAnn, [LocalDecl])
+    types = [ (typeName, [Ann { _ann = [LocalDecl srcAnn]
                               , _elem = UType typeName
                               }])
-            | Ann typAnn (UType typeName) <- decls]
+            | Ann srcAnn (UType typeName) <- decls]
     callables = [d | d@(Ann _ UCallable {}) <- decls]
 
     joinTuple (a, b) (a', b') = (M.unionWith (<>) a a', M.unionWith (<>) b b')
@@ -126,13 +127,14 @@ checkModule tlDecls (Ann src (UModule moduleType moduleName decls deps)) = do
             pshow (_ann bodyTC)
 
     checkImplemented :: ModuleScope -> UDecl PhCheck -> Except Err ()
-    checkImplemented env callable@(~(Ann (src, _) (UCallable _ callableName
-                                                             _ _ _ body)))
+    checkImplemented env callable@(~(Ann declO (UCallable _ callableName
+                                                          _ _ _ body)))
       | Just _ <- body = return ()
       | Nothing <- body = do
           let ~(Just matches) = M.lookup callableName env
               anonDefinedMatches =
                 map (mkAnonProto <$$>) $ filter isDefined matches
+              src = srcCtx $ head declO -- TODO: is head the best one to get?
           when ((mkAnonProto <$$> callable) `notElem` anonDefinedMatches) $
             throwLocatedE InvalidDeclErr src $ pshow callable <>
               " was left unimplemented in program"
@@ -149,7 +151,7 @@ castModule
   => UModuleType
   -> UModule PhCheck
   -> ExceptT Err t (UModule PhCheck)
-castModule dstTyp origModule@(Ann (src, _) (UModule srcTyp _ _ _)) = do
+castModule dstTyp origModule@(Ann declO (UModule srcTyp _ _ _)) = do
   let moduleWithSwappedType = return $ swapTyp <$$> origModule
   case (srcTyp, dstTyp) of
     (Signature, Concept) -> moduleWithSwappedType
@@ -166,7 +168,7 @@ castModule dstTyp origModule@(Ann (src, _) (UModule srcTyp _ _ _)) = do
     (Program, Implementation) -> moduleWithSwappedType
     _ -> return origModule
   where
-    noCast = throwLocatedE MiscErr src $
+    noCast = throwLocatedE MiscErr (srcCtx declO) $
       pshow srcTyp <> " can not be casted to " <> pshow dstTyp
     swapTyp :: UModule' PhCheck -> UModule' PhCheck
     swapTyp (UModule _ name decls deps) = UModule dstTyp name decls deps
@@ -416,7 +418,6 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
     | otherwise = and $ zipWith (\x y -> x == _ann y) typeConstraints args
   isCompatibleFunctionDecl _ _ = False
 
-
 checkTypeExists ::
   ModuleScope ->
   WithSrc Name ->
@@ -450,7 +451,7 @@ checkProto :: ModuleScope -> UDecl PhParse -> Except Err (UDecl PhCheck)
 checkProto modul ~(Ann src (UCallable ctype name args retType mguard _)) = do
   checkedArgs <- checkArgs args
   checkTypeExists modul (WithSrc src retType)
-  return Ann { _ann = (src, [LocalDecl])
+  return Ann { _ann = [LocalDecl src]
              , _elem = UCallable ctype name checkedArgs retType Nothing Nothing -- TODO: reinsert guard
              }
   where checkArgs :: [UVar PhParse] -> Except Err [UVar PhCheck]
@@ -548,7 +549,7 @@ applyRenamingBlock modul renamingBlock@(Ann src (URenamingBlock renamings)) = do
       then throwLocatedE MiscErr src $ "renaming block has unknown " <>
         "sources: " <> pshow unknownSources
       else if not (null occurOnBothSides)
-      then let annR' = map (Ann (Nothing, LocalDecl) . InlineRenaming) r' in
+      then let annR' = map (Ann (LocalDecl Nothing) . InlineRenaming) r' in
            applyRenamingBlock modul (URenamingBlock annR' <$$ renamingBlock)
            >>= \modul' -> return (modul', r'')
       else return (modul, inlineRenamings))

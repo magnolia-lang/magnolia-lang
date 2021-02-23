@@ -21,7 +21,7 @@ module Syntax (
     GlobalEnv, InlineRenaming, PackageHead (..), RenamedModule (..),
     URenaming' (..), URenaming,
     TCDecl, TCExpr, TCModule, TCModuleDep, TCPackage, TCTopLevelDecl, TCVar,
-    NamedNode (..),
+    HasSrcCtx (..), NamedNode (..),
     Command (..),
     DeclOrigin (..), Err (..), ErrType (..),
     PhParse, PhCheck, PhCodeGen, SrcCtx,
@@ -228,7 +228,7 @@ data ErrType = AmbiguousFunctionRefErr
 
 -- TODO: External
 -- TODO: actually deal with ImportedDecl
-data DeclOrigin = LocalDecl | ImportedDecl Name Name -- or | External Name
+data DeclOrigin = LocalDecl SrcCtx | ImportedDecl Name Name SrcCtx -- or | External Name
                   deriving (Eq, Show)
 
 -- === compilation phases ===
@@ -247,13 +247,13 @@ type family XAnn p (e :: * -> *) where
   XAnn PhCheck UPackageDep' = SrcCtx
 
   XAnn PhParse UNamedRenaming' = SrcCtx
-  XAnn PhCheck UNamedRenaming' = (SrcCtx, DeclOrigin)
+  XAnn PhCheck UNamedRenaming' = DeclOrigin
 
   XAnn PhParse USatisfaction' = SrcCtx
-  XAnn PhCheck USatisfaction' = (SrcCtx, DeclOrigin)
+  XAnn PhCheck USatisfaction' = DeclOrigin
 
   XAnn PhParse UModule' = SrcCtx
-  XAnn PhCheck UModule' = (SrcCtx, DeclOrigin)
+  XAnn PhCheck UModule' = DeclOrigin
 
   XAnn PhParse UModuleDep' = SrcCtx
   XAnn PhCheck UModuleDep' = SrcCtx
@@ -262,10 +262,10 @@ type family XAnn p (e :: * -> *) where
   XAnn PhCheck URenamingBlock' = SrcCtx
 
   XAnn PhParse URenaming' = SrcCtx
-  XAnn PhCheck URenaming' = (SrcCtx, DeclOrigin)
+  XAnn PhCheck URenaming' = DeclOrigin
 
   XAnn PhParse UDecl' = SrcCtx
-  XAnn PhCheck UDecl' = (SrcCtx, [DeclOrigin])
+  XAnn PhCheck UDecl' = [DeclOrigin]
 
   XAnn PhParse UExpr' = SrcCtx
   XAnn PhCheck UExpr' = UType
@@ -338,6 +338,24 @@ instance NamedNode (UDecl' p) where
 
 instance NamedNode (UVar' p) where
   nodeName (Var _ name _) = name
+
+
+class HasSrcCtx a where
+  srcCtx :: a -> SrcCtx
+
+instance HasSrcCtx SrcCtx where
+  srcCtx = id
+
+instance HasSrcCtx DeclOrigin where
+  srcCtx declO = case declO of
+    LocalDecl src -> src
+    ImportedDecl _ _ src -> src
+
+instance HasSrcCtx (SrcCtx, a) where
+  srcCtx (src, _) = src
+
+instance HasSrcCtx (WithSrc a) where
+  srcCtx = _srcCtx
 
 -- === useful patterns ===
 

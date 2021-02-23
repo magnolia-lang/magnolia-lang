@@ -99,12 +99,12 @@ importLocal
   -> TCTopLevelDecl
   -> [TCTopLevelDecl]
 importLocal name acc decl = case decl of
-  UNamedRenamingDecl (Ann (src, LocalDecl) node) ->
-    UNamedRenamingDecl (Ann (src, ImportedDecl name (nodeName node)) node):acc
-  UModuleDecl (Ann (src, LocalDecl) node) ->
-    UModuleDecl (Ann (src, ImportedDecl name (nodeName node)) node):acc
-  USatisfactionDecl (Ann (src, LocalDecl) node) ->
-    USatisfactionDecl (Ann (src, ImportedDecl name (nodeName node)) node):acc
+  UNamedRenamingDecl (Ann (LocalDecl src) node) ->
+    UNamedRenamingDecl (Ann (ImportedDecl name (nodeName node) src) node):acc
+  UModuleDecl (Ann (LocalDecl src) node) ->
+    UModuleDecl (Ann (ImportedDecl name (nodeName node) src) node):acc
+  USatisfactionDecl (Ann (LocalDecl src) node) ->
+    USatisfactionDecl (Ann (ImportedDecl name (nodeName node) src) node):acc
   _ -> acc -- Ann (src, ImportedDecl name (nodeName modul)) modul:acc
 
 
@@ -130,7 +130,7 @@ upsweepRenamings = foldM go
       case eitherExpandedBlock of
         Left e -> throwE e -- just passing along the error for now --lift (pprint e) >> throwE e
         Right expandedBlock ->
-          let tcNamedRenaming = Ann (src, LocalDecl)
+          let tcNamedRenaming = Ann (LocalDecl src)
                                     (UNamedRenaming name expandedBlock) in
           return $ M.insertWith (<>) name [UNamedRenamingDecl tcNamedRenaming]
                                 env

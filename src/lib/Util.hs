@@ -58,7 +58,7 @@ checkRenamingBlock (Ann blockSrc (URenamingBlock renamings)) = do
     checkInlineRenaming (Ann src renaming) = case renaming of
       -- It seems that the below pattern matching can not be avoided, due to
       -- coercion concerns (https://gitlab.haskell.org/ghc/ghc/-/issues/15683).
-      InlineRenaming r -> return $ Ann (src, LocalDecl) (InlineRenaming r)
+      InlineRenaming r -> return $ Ann (LocalDecl src) (InlineRenaming r)
       RefRenaming _ -> throwLocatedE CompilerErr src $ "references left " <>
         "in renaming block at checking time"
 
@@ -77,7 +77,7 @@ expandRenaming
   -> URenaming PhParse
   -> ExceptT Err t [URenaming PhCheck]
 expandRenaming env (Ann src renaming) = case renaming of
-  InlineRenaming ir -> return [Ann (src, LocalDecl) (InlineRenaming ir)]
+  InlineRenaming ir -> return [Ann (LocalDecl src) (InlineRenaming ir)]
   RefRenaming ref -> case M.lookup ref env of
     Nothing -> throwLocatedE UnboundNamedRenamingErr src $ pshow ref
     Just namedRenamings -> case namedRenamings of
