@@ -63,6 +63,7 @@ checkModule tlDecls (Ann src (RefModule typ name refName)) =
 checkModule tlDecls (Ann modSrc (UModule moduleType moduleName decls deps)) = do
   let modules = M.map getModules tlDecls
       namedRenamings = M.map getNamedRenamings tlDecls
+      callables = getCallableDecls decls
   -- Step 1: expand uses
   (depScope, checkedDeps) <- do
       (depScopeList, checkedDepsList) <- unzip <$>
@@ -71,7 +72,8 @@ checkModule tlDecls (Ann modSrc (UModule moduleType moduleName decls deps)) = do
       let checkedDeps = foldl (M.unionWith (<>)) M.empty checkedDepsList
       return (depScope, checkedDeps)
   -- Step 2: register types
-  baseScope <- foldM insertAndMergeDecl depScope types
+  -- TODO: remove name as parameter to "insertAndMergeDecl"
+  baseScope <- foldM insertAndMergeDecl depScope (map TypeDecl types)
   -- Step 3: check and register protos
   protoScope <- do
     -- we first register all the protos without checking the guards
@@ -93,53 +95,45 @@ checkModule tlDecls (Ann modSrc (UModule moduleType moduleName decls deps)) = do
             } -- :: TCModule
   return $ M.insertWith (<>) moduleName [resultModuleDecl] tlDecls
   where
-    types :: [(Name, UDecl PhCheck)]
-    types = [ (typeName, Ann { _ann = [LocalDecl srcAnn]
-                             , _elem = UType typeName
-                             })
-            | Ann srcAnn (UType typeName) <- decls]
-    callables = [d | d@(Ann _ UCallable {}) <- decls]
+    types :: [TypeDecl PhCheck]
+    types = map (\t -> Ann [LocalDecl (_ann t)] (Type (nodeName t)))
+      (getTypeDecls decls)
 
-    -- TODO: deal with guards (unify, check)
-    -- TODO: improve error messages
     checkBody
       :: ModuleScope
-      -> UDecl PhParse
-      -> Except Err (ModuleScope, UDecl PhCheck)
-    checkBody env decl@(~(Ann src (UCallable ctype fname args retType
-                                             _ body)))
+      -> CallableDecl PhParse
+      -> Except Err (ModuleScope, CallableDecl PhCheck)
+    checkBody env decl@(Ann src (Callable ctype fname args retType _ mbody))
       | moduleType /= Concept, Axiom <- ctype =
           throwLocatedE DeclContextErr src
             "axioms can only be declared in concepts"
-      | Nothing <- body, Axiom <- ctype =
+      | Nothing <- mbody, Axiom <- ctype =
           throwLocatedE InvalidDeclErr src "axiom without a body"
-      | moduleType `notElem` [Implementation, Program], Just _ <- body,
+      | moduleType `notElem` [Implementation, Program], Just _ <- mbody,
         ctype `elem` [Function, Procedure] =
           throwLocatedE InvalidDeclErr src $ pshow ctype <>
             " can not have a body in " <> pshow moduleType
       -- TODO: handle case for programs
-      | Nothing <- body = (,) env <$> checkProto True env decl
-      | Just expr <- body = do
+      | Nothing <- mbody = (,) env <$> checkProto True env decl
+      | Just expr <- mbody = do
           -- TODO: fix, propagate required type forward?
           bodyTC <- annotateScopedExpr env (initScope args) (Just retType) expr
-          ~(Ann typAnn (UCallable _ declName argsTC _ guardTC _)) <-
-              checkProto True env decl
+          Ann typAnn (Callable _ _ argsTC _ guardTC _) <- checkProto True env decl
           let annDeclTC = Ann typAnn $
-                UCallable ctype declName argsTC retType guardTC
-                          (Just bodyTC)
+                Callable ctype fname argsTC retType guardTC (Just bodyTC)
           if _ann bodyTC == retType
-          then (, annDeclTC) <$> insertAndMergeDecl env (fname, annDeclTC)
+          then (,annDeclTC) <$> insertAndMergeDecl env (CallableDecl annDeclTC)
           else throwLocatedE TypeErr src $
             "expected return type to be " <> pshow retType <> " in " <>
             pshow ctype <> "but return value has type " <>
             pshow (_ann bodyTC)
 
-    checkImplemented :: ModuleScope -> UDecl PhCheck -> Except Err ()
-    checkImplemented env callable@(~(Ann declO (UCallable _ callableName
-                                                          _ _ _ body)))
-      | Just _ <- body = return ()
-      | Nothing <- body = do
-          let ~(Just matches) = M.lookup callableName env
+    checkImplemented :: ModuleScope -> CallableDecl PhCheck -> Except Err ()
+    checkImplemented env callable@(Ann declO
+      (Callable _ callableName _ _ _ body)) = case body of
+        Just _ -> return ()
+        Nothing -> do
+          let ~(Just matches) = getCallableDecls <$> M.lookup callableName env
               anonDefinedMatches =
                 map (mkAnonProto <$$>) $ filter callableIsImplemented matches
               src = srcCtx $ head declO -- TODO: is head the best one to get?
@@ -147,9 +141,9 @@ checkModule tlDecls (Ann modSrc (UModule moduleType moduleName decls deps)) = do
             throwLocatedE InvalidDeclErr src $ pshow callable <>
               " was left unimplemented in program"
 
-    mkAnonProto ~(UCallable ctype callableName args retType mguard mbody) =
-      UCallable ctype callableName (map (mkAnonVar <$$>) args) retType
-                mguard mbody
+    mkAnonProto (Callable ctype callableName args retType mguard mbody) =
+      Callable ctype callableName (map (mkAnonVar <$$>) args) retType
+               mguard mbody
     mkAnonVar (Var mode _ typ) = Var mode (GenName "#anon#") typ
 
 -- TODO: finish module casting.
@@ -240,7 +234,7 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
             -- TODO: deal with modes here
             -- TODO: change with passing cast as parameter & whatever that implies
             candidates = filter (prototypeMatchesTypeConstraints argTypes Nothing) $
-              M.findWithDefault [] name modul
+              getCallableDecls (M.findWithDefault [] name modul)
             exprTC = UCall name argsTC maybeCallCast
         -- TODO: stop using list to reach return val, maybe use Data.Sequence?
         -- TODO: do something with procedures and axioms here?
@@ -418,11 +412,12 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
     USkip -> return (scope, Ann { _ann = Unit, _elem = USkip })
     -- TODO: use for annotating AST
 
-  getReturnType ~(Ann _ (UCallable _ _ _ returnType _ _)) = returnType
+  getReturnType (Ann _ (Callable _ _ _ returnType _ _)) = returnType
 
-prototypeMatchesTypeConstraints :: [UType] -> Maybe UType -> TCDecl -> Bool
+prototypeMatchesTypeConstraints
+  :: [UType] -> Maybe UType -> TCCallableDecl -> Bool
 prototypeMatchesTypeConstraints argTypeConstraints mreturnTypeConstraint
-  ~(Ann _ (UCallable _ _ declArgs declReturnType _ _))
+  (Ann _ (Callable _ _ declArgs declReturnType _ _))
   | length declArgs /= length argTypeConstraints = False
   | otherwise =
       let ~(Just returnTypeConstraint) = mreturnTypeConstraint
@@ -433,30 +428,36 @@ prototypeMatchesTypeConstraints argTypeConstraints mreturnTypeConstraint
       in fitsArgTypeConstraints && fitsReturnTypeConstraints
 
 insertAndMergeDecl
-  :: ModuleScope -> (Name, TCDecl) -> Except Err ModuleScope
-insertAndMergeDecl env (name, decl) = do
+  :: ModuleScope -> TCDecl -> Except Err ModuleScope
+insertAndMergeDecl env decl = do
   newDeclList <- mkNewDeclList
   return $ M.insert name newDeclList env
   where
-    mkNewDeclList = case name of
-      TypeName _ -> return [mergeTypes decl (head <$> M.lookup name env)] -- TODO: ensure this is always correct?
-      FuncName _ -> mergePrototypes decl (M.lookup name env)
-      ProcName _ -> mergePrototypes decl (M.lookup name env)
-      Name ns s  ->
-        throwLocatedE NotImplementedErr (srcCtx . head $ _ann decl) $
-          "insertAndMergeDecl for " <> pshow ns <> " (called for '" <>
-          pshow s <> "')"
+    name = nodeName decl
+    mkNewDeclList = case decl of
+      TypeDecl tdecl ->
+        (:[]) . TypeDecl <$> mergeTypes tdecl (head <$> M.lookup name env)
+      CallableDecl cdecl ->
+        map CallableDecl <$> mergePrototypes cdecl (M.lookup name env)
 
-    mergeTypes :: TCDecl -> Maybe TCDecl -> TCDecl
-    mergeTypes annT1@(Ann declO1 t1@(~(UType _))) mannT2 = case mannT2 of
-      Nothing                      -> annT1
-      Just ~(Ann declO2 (UType _)) -> Ann (mergeAnns declO1 declO2) t1
+    -- TODO: is this motivation for storing types and callables in different
+    -- scopes?
+    mergeTypes :: TCTypeDecl -> Maybe TCDecl -> Except Err TCTypeDecl
+    mergeTypes annT1@(Ann declO1 t1) mannT2 = case mannT2 of
+      Nothing                        -> return annT1
+      Just (TypeDecl (Ann declO2 _)) -> return $ Ann (mergeAnns declO1 declO2) t1
+      Just (CallableDecl cdecl) ->
+        throwLocatedE CompilerErr (srcCtx (head declO1)) $ "a callable " <>
+        "was registered with name " <> pshow (nodeName cdecl) <> "but " <>
+        pshow (nodeName cdecl) <> " belongs to the type namespace"
 
-    mergePrototypes :: TCDecl -> Maybe [TCDecl] -> Except Err [TCDecl]
-    mergePrototypes anninpProto@(Ann _ inpProto@(~UCallable {})) mprotos
-      | Nothing <- mprotos = return [anninpProto]
-      | Just protos <- mprotos = do
-        let ~(UCallable ctype _ args returnType mguard mbody) = inpProto
+    mergePrototypes
+      :: TCCallableDecl -> Maybe [TCDecl] -> Except Err [TCCallableDecl]
+    mergePrototypes anncallableDecl@(Ann declO callableDecl) mdecls
+      | Nothing <- mdecls = return [anncallableDecl]
+      | Just decls <- mdecls = do
+        let protos = getCallableDecls decls
+            (Callable ctype _ args returnType mguard mbody) = callableDecl
             argTypes = map (fromJust . _varType . _elem) args
             (matches, nonMatches) = L.partition
               (prototypeMatchesTypeConstraints argTypes (Just returnType)) protos
@@ -464,21 +465,21 @@ insertAndMergeDecl env (name, decl) = do
               L.partition callableIsImplemented matches
         if not (null matches) then do
           when (isJust mbody && not (null matchesWithBody)) $
-            throwLocatedE InvalidDeclErr (srcCtx . head $ _ann decl) $ -- TODO: how to add src info better here?
+            throwLocatedE InvalidDeclErr (srcCtx . head $ declO) $ -- TODO: how to add src info better here?
               "attempting to import two different implementations for " <>
               pshow ctype <> " " <> pshow name
           when (length matchesWithBody > 1 || length matchesWithoutBody > 1) $
-            throwLocatedE CompilerErr (srcCtx . head $ _ann decl) $
-              "context contains several definitions of the same prototype in " <>
-              "AST for " <> pshow ctype <> " " <> pshow name
+            throwLocatedE CompilerErr (srcCtx . head $ declO) $
+              "context contains several definitions of the same prototype " <>
+              "in AST for " <> pshow ctype <> " " <> pshow name
           when (length matchesWithBody == 1 && length matchesWithoutBody == 1 &&
                   extractGuard (head matchesWithBody) /=
                   extractGuard (head matchesWithoutBody)) $
-            throwLocatedE CompilerErr (srcCtx . head $ _ann decl) $
+            throwLocatedE CompilerErr (srcCtx . head $ declO) $
               "existing prototype and implementation have inconsistent " <>
               "guards for " <> pshow ctype <> " " <> pshow name
           when (null matchesWithoutBody) $
-            throwLocatedE CompilerErr (srcCtx . head $ _ann decl) $
+            throwLocatedE CompilerErr (srcCtx . head $ declO) $
               "expected prototype to be registered in scope for " <>
               pshow ctype <> " " <> pshow name
           -- From here on out, we know that we have at least an existing match,
@@ -489,17 +490,17 @@ insertAndMergeDecl env (name, decl) = do
           let newMatches = map (flip replaceGuard newGuard <$$>) matches
           -- We know that we have exactly one of two possible configurations
           -- here:
-          -- (1) anninpProto does not have a body, and we already have
+          -- (1) anncallableDecl does not have a body, and we already have
           --     an equivalent prototype in scope
-          -- (2) anninpProto has a body, and we already have the relevant
+          -- (2) anncallableDecl has a body, and we already have the relevant
           --     prototype in scope
           -- TODO: clean out irrelevant protos where possible, and
           --       remove reliance on the existence of a prototype without body
           --       in scope (not sure if absolutely needed here, but either way)
-          if callableIsImplemented anninpProto
-          then return $ anninpProto : newMatches <> nonMatches
+          if callableIsImplemented anncallableDecl
+          then return $ anncallableDecl : newMatches <> nonMatches
           else return $ newMatches <> nonMatches
-        else return (anninpProto : nonMatches)
+        else return $ anncallableDecl : nonMatches
 
     mergeGuards :: CGuard p -> CGuard p -> Except Err (CGuard p)
     mergeGuards mguard1 mguard2 = case (mguard1, mguard2) of
@@ -512,17 +513,17 @@ insertAndMergeDecl env (name, decl) = do
         else throwLocatedE NotImplementedErr Nothing -- TODO: make guard1 && guard2 + add right srcctx
           "merging of two callables with different guards"
 
-    mergeAnns :: t ~ XAnn PhCheck UDecl' => t -> t -> t
+    mergeAnns :: t ~ [DeclOrigin] => t -> t -> t
     mergeAnns declOs1 declOs2 = S.toList $ S.fromList (declOs1 <> declOs2)
 
-    extractGuard ~(Ann _ (UCallable _ _ _ _ mguard _)) = mguard
+    extractGuard ~(Ann _ (Callable _ _ _ _ mguard _)) = mguard
 
 mergeModules :: ModuleScope -> ModuleScope -> Except Err ModuleScope
 mergeModules mod1 mod2 =
-  foldM insertAndMergeDeclList mod1 $ M.toList mod2
+  foldM insertAndMergeDeclList mod1 (map snd $ M.toList mod2)
   where
-    insertAndMergeDeclList initEnv (name, declList) =
-      foldM (\env decl -> insertAndMergeDecl env (name, decl)) initEnv declList
+    insertAndMergeDeclList initEnv declList =
+      foldM insertAndMergeDecl initEnv declList
 
 checkTypeExists ::
   ModuleScope ->
@@ -533,7 +534,7 @@ checkTypeExists modul (WithSrc src name)
   | Pred <- name = return ()
   | otherwise = case M.lookup name modul of
       Nothing      -> throwLocatedE UnboundTypeErr src (pshow name)
-      Just matches -> if Ann undefined (UType name) `elem` matches
+      Just matches -> if not $ null (getTypeDecls matches)
                       then return ()
                       else throwLocatedE UnboundTypeErr src (pshow name)
 
@@ -543,20 +544,19 @@ checkTypeExists modul (WithSrc src name)
 registerProto ::
   Bool -> -- whether to register/check guards or not
   ModuleScope ->
-  UDecl PhParse ->
+  CallableDecl PhParse ->
   Except Err ModuleScope
-registerProto checkGuards modul annDecl
-  | Ann _ (UCallable _ name _ _ _ _) <- annDecl = do
-      -- TODO: ensure bodies are registered later on
-      checkedProto <- checkProto checkGuards modul annDecl
-      insertAndMergeDecl modul (name, checkedProto)
-  | otherwise = return modul
+registerProto checkGuards modul annCallable =
+  do -- TODO: ensure bodies are registered later on
+    checkedProto <- checkProto checkGuards modul annCallable
+    insertAndMergeDecl modul (CallableDecl checkedProto)
 
 -- TODO: check for procedures, predicates, axioms (this is only for func)?
 -- TODO: check guard
-checkProto :: Bool -> ModuleScope -> UDecl PhParse -> Except Err (UDecl PhCheck)
+checkProto
+  :: Bool -> ModuleScope -> CallableDecl PhParse -> Except Err (CallableDecl PhCheck)
 checkProto checkGuards env
-    ~(Ann src (UCallable ctype name args retType mguard _)) = do
+    (Ann src (Callable ctype name args retType mguard _)) = do
   tcArgs <- checkArgs args
   checkTypeExists env (WithSrc src retType)
   tcGuard <- case mguard of
@@ -565,7 +565,7 @@ checkProto checkGuards env
       then Just <$> annotateScopedExpr env (initScope args) (Just Pred) guard
       else return Nothing
   return Ann { _ann = [LocalDecl src]
-             , _elem = UCallable ctype name tcArgs retType tcGuard Nothing
+             , _elem = Callable ctype name tcArgs retType tcGuard Nothing
              }
   where checkArgs :: [UVar PhParse] -> Except Err [UVar PhCheck]
         checkArgs vars = do
@@ -680,37 +680,35 @@ replaceName origName@(Name ns nameStr) (Name _ sourceStr, Name _ targetStr) =
 -- Applies a renaming to a declaration. Renamings only affect names defined at
 -- declaration level; this means that they do not affect local variables.
 applyRenaming :: UDecl PhCheck -> InlineRenaming -> UDecl PhCheck
-applyRenaming annDecl renaming = applyRenamingInDecl <$$> annDecl
-  where replaceName' = flip replaceName renaming
-        applyRenamingInDecl :: UDecl' PhCheck -> UDecl' PhCheck
-        applyRenamingInDecl decl
-          | UType name <- decl = UType $ replaceName' name
-          | UCallable ctyp name vars retType mguard mbody <- decl =
-                UCallable ctyp (replaceName' name)
-                  (map applyRenamingInVar vars) (replaceName' retType)
-                  (applyRenamingInExpr <$> mguard)
-                  (applyRenamingInExpr <$> mbody)
-        applyRenamingInVar :: UVar PhCheck -> UVar PhCheck
-        applyRenamingInVar (Ann typAnn (Var mode name typ)) =
-          Ann (replaceName' typAnn) $ Var mode name (replaceName' <$> typ)
-        applyRenamingInExpr :: UExpr PhCheck -> UExpr PhCheck
-        applyRenamingInExpr (Ann typAnn expr) =
-          Ann (replaceName' typAnn) (applyRenamingInExpr' expr)
-        applyRenamingInExpr' expr
-          | UVar var <- expr = UVar $ applyRenamingInVar var
-          | UCall name vars typ <- expr =
-                UCall (replaceName' name) (map applyRenamingInExpr vars)
-                  (replaceName' <$> typ)
-          | UBlockExpr stmts <- expr =
-                UBlockExpr $ NE.map applyRenamingInExpr stmts
-          | ULet mode name typ assignmentExpr <- expr =
-                ULet mode name (replaceName' <$> typ)
-                     (applyRenamingInExpr <$> assignmentExpr)
-          | UIf cond bTrue bFalse <- expr =
-                UIf (applyRenamingInExpr cond) (applyRenamingInExpr bTrue)
-                    (applyRenamingInExpr bFalse)
-          | UAssert cond <- expr = UAssert (applyRenamingInExpr cond)
-          | USkip <- expr = USkip
+applyRenaming decl renaming = case decl of
+  TypeDecl typeDecl -> TypeDecl $ applyRenamingInTypeDecl <$$> typeDecl
+  CallableDecl callableDecl ->
+    CallableDecl $ applyRenamingInCallableDecl <$$> callableDecl
+  where
+    replaceName' = flip replaceName renaming
+    applyRenamingInTypeDecl (Type typ) = Type $ replaceName' typ
+    applyRenamingInCallableDecl (Callable ctyp name vars retType mguard mbody) =
+      Callable ctyp (replaceName' name)
+        (map applyRenamingInVar vars) (replaceName' retType)
+        (applyRenamingInExpr <$> mguard)
+        (applyRenamingInExpr <$> mbody)
+    applyRenamingInVar :: UVar PhCheck -> UVar PhCheck
+    applyRenamingInVar (Ann typAnn (Var mode name typ)) =
+      Ann (replaceName' typAnn) $ Var mode name (replaceName' <$> typ)
+    applyRenamingInExpr :: UExpr PhCheck -> UExpr PhCheck
+    applyRenamingInExpr (Ann typAnn expr) =
+      Ann (replaceName' typAnn) (applyRenamingInExpr' expr)
+    applyRenamingInExpr' expr = case expr of
+      UVar var -> UVar $ applyRenamingInVar var
+      UCall name vars typ -> UCall (replaceName' name)
+        (map applyRenamingInExpr vars) (replaceName' <$> typ)
+      UBlockExpr stmts -> UBlockExpr $ NE.map applyRenamingInExpr stmts
+      ULet mode name typ assignmentExpr -> ULet mode name
+        (replaceName' <$> typ) (applyRenamingInExpr <$> assignmentExpr)
+      UIf cond bTrue bFalse -> UIf (applyRenamingInExpr cond)
+        (applyRenamingInExpr bTrue) (applyRenamingInExpr bFalse)
+      UAssert cond -> UAssert (applyRenamingInExpr cond)
+      USkip -> USkip
 
 
 -- === utils ===

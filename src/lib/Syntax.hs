@@ -13,7 +13,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Syntax (
-    UCallable (..), UDecl, UDecl' (..), UExpr, UExpr' (..), UModule,
+    CallableDecl, CallableDecl' (..), CallableType (..), TypeDecl,
+    TypeDecl' (..),
+    UDecl (..), UExpr, UExpr' (..), UModule,
     UModule' (..), UModuleDep, UModuleDep' (..), UModuleType (..),
     UNamedRenaming, UNamedRenaming' (..),
     UPackage, UPackage' (..), UPackageDep, UPackageDep' (..), URenamingBlock,
@@ -22,7 +24,8 @@ module Syntax (
     GlobalEnv, InlineRenaming, PackageHead (..), RenamedModule (..),
     URenaming' (..), URenaming,
     CBody, CGuard,
-    TCDecl, TCExpr, TCModule, TCModuleDep, TCPackage, TCTopLevelDecl, TCVar,
+    TCCallableDecl, TCDecl, TCExpr, TCModule, TCModuleDep, TCPackage,
+    TCTopLevelDecl, TCTypeDecl, TCVar,
     HasSrcCtx (..), NamedNode (..),
     Command (..),
     DeclOrigin (..), Err (..), ErrType (..),
@@ -34,7 +37,8 @@ module Syntax (
     pattern UCon, pattern UProg, pattern UImpl, pattern USig,
     pattern UAxiom, pattern UFunc, pattern UPred, pattern UProc,
     getModules, getNamedRenamings,
-    moduleDecls, moduleDepNames)
+    moduleDecls, moduleDepNames,
+    getTypeDecls, getCallableDecls)
   where
 
 import qualified Data.List.NonEmpty as NE
@@ -73,6 +77,8 @@ type TCTopLevelDecl = UTopLevelDecl PhCheck
 type TCModule = UModule PhCheck
 type TCModuleDep = UModuleDep PhCheck
 type TCDecl = UDecl PhCheck
+type TCCallableDecl = CallableDecl PhCheck
+type TCTypeDecl = TypeDecl PhCheck
 type TCExpr = UExpr PhCheck
 type TCVar = UVar PhCheck
 
@@ -141,11 +147,18 @@ type InlineRenaming = (Name, Name)
 data UModuleType = Signature | Concept | Implementation | Program
                    deriving (Eq, Show)
 
-type UDecl p = Ann p UDecl'
-data UDecl' p = UType UType
-              -- TODO: guards/partiality
-              | UCallable UCallable Name [UVar p] UType (CGuard p) (CBody p)
-              deriving (Eq, Show)
+data UDecl p = TypeDecl (TypeDecl p)
+             | CallableDecl (CallableDecl p)
+               deriving (Eq, Show)
+
+type TypeDecl p = Ann p TypeDecl'
+newtype TypeDecl' p = Type UType
+                     deriving (Eq, Show)
+
+type CallableDecl p = Ann p CallableDecl'
+data CallableDecl' p =
+  Callable CallableType Name [UVar p] UType (CGuard p) (CBody p)
+  deriving (Eq, Show)
 
 type CBody p = Maybe (UExpr p)
 type CGuard p = Maybe (UExpr p)
@@ -162,8 +175,8 @@ pattern Unit = GenName "Unit"
 
 -- TODO: can I simplify? Axioms and Predicates are function, except with a
 --       predefined return type.
-data UCallable = Axiom | Function | Predicate | Procedure
-                 deriving (Eq, Show)
+data CallableType = Axiom | Function | Predicate | Procedure
+                    deriving (Eq, Show)
 
 type UExpr p = Ann p UExpr'
 data UExpr' p = UVar (UVar p)
@@ -267,8 +280,11 @@ type family XAnn p (e :: * -> *) where
   XAnn PhParse URenaming' = SrcCtx
   XAnn PhCheck URenaming' = DeclOrigin
 
-  XAnn PhParse UDecl' = SrcCtx
-  XAnn PhCheck UDecl' = [DeclOrigin]
+  XAnn PhParse TypeDecl' = SrcCtx
+  XAnn PhCheck TypeDecl' = [DeclOrigin]
+
+  XAnn PhParse CallableDecl' = SrcCtx
+  XAnn PhCheck CallableDecl' = [DeclOrigin]
 
   XAnn PhParse UExpr' = SrcCtx
   XAnn PhCheck UExpr' = UType
@@ -334,10 +350,16 @@ instance NamedNode (USatisfaction' p) where
 instance NamedNode (UModuleDep' p) where
   nodeName (UModuleDep name _) = name
 
-instance NamedNode (UDecl' p) where
+instance NamedNode (UDecl p) where
   nodeName decl = case decl of
-    UType name -> name
-    UCallable _ name _ _ _ _ -> name
+    TypeDecl tdecl -> nodeName tdecl
+    CallableDecl cdecl -> nodeName cdecl
+
+instance NamedNode (TypeDecl' p) where
+  nodeName (Type name) = name
+
+instance NamedNode (CallableDecl' p) where
+  nodeName (Callable _ name _ _ _ _) = name
 
 instance NamedNode (UVar' p) where
   nodeName (Var _ name _) = name
@@ -388,21 +410,21 @@ pattern UImpl
   -> UModule' p
 pattern UImpl name decls deps = UModule Implementation name decls deps
 
-pattern UAxiom :: Name -> [UVar p] -> UType -> CGuard p -> CBody p -> UDecl' p
+pattern UAxiom :: Name -> [UVar p] -> UType -> CGuard p -> CBody p -> CallableDecl' p
 pattern UAxiom name args retType guard body =
-  UCallable Axiom name args retType guard body
+  Callable Axiom name args retType guard body
 
-pattern UFunc :: Name -> [UVar p] -> UType -> CGuard p -> CBody p -> UDecl' p
+pattern UFunc :: Name -> [UVar p] -> UType -> CGuard p -> CBody p -> CallableDecl' p
 pattern UFunc name args retType guard body =
-  UCallable Function name args retType guard body
+  Callable Function name args retType guard body
 
-pattern UPred :: Name -> [UVar p] -> UType -> CGuard p -> CBody p -> UDecl' p
+pattern UPred :: Name -> [UVar p] -> UType -> CGuard p -> CBody p -> CallableDecl' p
 pattern UPred name args retType guard body =
-  UCallable Predicate name args retType guard body
+  Callable Predicate name args retType guard body
 
-pattern UProc :: Name -> [UVar p] -> UType -> CGuard p -> CBody p -> UDecl' p
+pattern UProc :: Name -> [UVar p] -> UType -> CGuard p -> CBody p -> CallableDecl' p
 pattern UProc name args retType guard body =
-  UCallable Procedure name args retType guard body
+  Callable Procedure name args retType guard body
 
 -- === top level declarations manipulation ===
 
@@ -434,3 +456,21 @@ moduleDepNames :: UModule PhParse -> [Name]
 moduleDepNames (Ann _ modul) = case modul of
   UModule _ _ _ deps -> map nodeName deps
   RefModule _ _ refName -> [refName]
+
+-- === module declarations manipulation ===
+
+getTypeDecls :: Foldable t => t (UDecl p) -> [TypeDecl p]
+getTypeDecls = foldl extractType []
+  where
+    extractType :: [TypeDecl p] -> UDecl p -> [TypeDecl p]
+    extractType acc decl = case decl of
+      TypeDecl tdecl -> tdecl:acc
+      _ -> acc
+
+getCallableDecls :: Foldable t => t (UDecl p) -> [CallableDecl p]
+getCallableDecls = foldl extractCallable []
+  where
+    extractCallable :: [CallableDecl p] -> UDecl p -> [CallableDecl p]
+    extractCallable acc decl = case decl of
+      CallableDecl cdecl -> cdecl:acc
+      _ -> acc

@@ -152,24 +152,30 @@ instance Pretty UModuleType where
     Implementation -> "implementation"
     Program -> "program"
 
-instance Pretty (UDecl' PhCheck) where
+instance Pretty (UDecl PhCheck) where
   pretty decl = case decl of
-    UType typ -> "type" <+> p typ <> ";"
-    UCallable callableType name args ret mguard mbody ->
-      let pret = if callableType == Function then " : " <> p ret else ""
-          pbody = case mbody of Nothing -> ";"; Just body -> " = " <> p body
-          pguard = case mguard of Nothing -> ""
-                                  Just guard -> " guard " <> p guard
-      in p callableType <+> p name <+> prettyArgs callableType args <>
-         pret <> pguard <> pbody
+    TypeDecl tdecl -> pretty tdecl
+    CallableDecl cdecl -> pretty cdecl
+
+instance Pretty (TypeDecl' p) where
+  pretty (Type typ) = "type" <+> p typ <> ";"
+
+instance Pretty (CallableDecl' p) where
+  pretty (Callable callableType name args ret mguard mbody) =
+    let pret = if callableType == Function then " : " <> p ret else ""
+        pbody = case mbody of Nothing -> ";"; Just body -> " = " <> p body
+        pguard = case mguard of Nothing -> ""
+                                Just guard -> " guard " <> p guard
+    in p callableType <+> p name <+> prettyArgs <>
+        pret <> pguard <> pbody
     where
-      prettyArgs :: UCallable -> [UVar PhCheck] -> Doc ann
-      prettyArgs callableType args = case callableType of
+      prettyArgs :: Doc ann
+      prettyArgs = case callableType of
         Procedure -> parens $ hsep $ punctuate comma (map p args)
         _ -> parens $ hsep $ punctuate comma $
             map (\(Ann _ a) -> p (nodeName a) <+> ":" <+> p (_varType a)) args
 
-instance Pretty UCallable where
+instance Pretty CallableType where
   pretty callableType = case callableType of
     Axiom -> "axiom"
     Function -> "function"

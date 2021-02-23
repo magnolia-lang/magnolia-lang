@@ -179,17 +179,17 @@ satisfaction = annot satisfaction'
       return $ USatisfaction name initialModule withModule modeledModule
 
 declaration :: Parser ParsedDecl
-declaration = annot declaration' <* many semi
-  where declaration' =  typeDecl
-                    <|> callable
+declaration = declaration' <* many semi
+  where declaration' =  (TypeDecl <$> annot typeDecl)
+                    <|> (CallableDecl <$> annot callable)
 
-typeDecl :: Parser (UDecl' PhParse)
+typeDecl :: Parser (TypeDecl' PhParse)
 typeDecl = do
   keyword TypeKW
   name <- typeName <* semi -- TODO: make expr
-  return $ UType name
+  return $ Type name
 
-callable :: Parser (UDecl' PhParse)
+callable :: Parser (CallableDecl' PhParse)
 callable = do
   callableType <- (keyword AxiomKW >> return Axiom)
               <|> (keyword TheoremKW >> return Axiom)
@@ -209,7 +209,7 @@ callable = do
   body <- optional (blockExpr
                 <|> (symbol "=" *> (blockExpr <|> (expr <* semi))))
   when (isNothing body) semi
-  return $ UCallable callableType name args retType guard body
+  return $ Callable callableType name args retType guard body
 
 annVar :: UVarMode -> Parser ParsedVar
 annVar mode = annot annVar'

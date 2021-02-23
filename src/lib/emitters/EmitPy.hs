@@ -16,7 +16,6 @@ import Util
 
 type PythonSource = String
 
-type TCDecl' = UDecl' PhCheck
 type TCExpr' = UExpr' PhCheck
 
 emitPyGlobalEnv :: GlobalEnv PhCheck -> PythonSource
@@ -40,15 +39,16 @@ emitPyModule modul = intercalate "\n\n" $ map (emitPyDecl 0) firstModuleDecls
   where firstModuleDecls = snd $ head $ M.toList (moduleDecls modul)
 
 emitPyDecl :: Int -> TCDecl -> PythonSource
-emitPyDecl indent (Ann _ decl) = case decl of
+emitPyDecl indent decl = case decl of
   -- TODO: add type annotations?
-  UType _ -> noEmit
-  UCallable _ _ _ _ _ Nothing -> noEmit -- Ignore prototypes
+  TypeDecl (Ann _ (Type _)) -> noEmit
+  -- Ignore prototypes
+  CallableDecl (Ann _ (Callable _ _ _ _ _ Nothing)) -> noEmit
   -- In Python, it is not possible to have side-effects on all the types of
   -- arguments. Therefore, procedures are turned into functions returning
   -- tuples.
-  UCallable callableType _ args _ _ (Just body) ->
-      emitProto decl <> mkIndent bodyIndent <> case callableType of
+  CallableDecl cdecl@(Ann _ (Callable callableType _ args _ _ (Just body))) ->
+      emitProto cdecl <> mkIndent bodyIndent <> case callableType of
         Axiom     -> emitPyExpr bodyIndent body <> "\n"
         -- TODO: what to do with this?
         Procedure -> emitPyExpr bodyIndent body <> mkIndent bodyIndent <>
@@ -112,9 +112,9 @@ noEmit = ""
 emitName :: Name -> PythonSource
 emitName (Name _ s) = mkPythonSource s
 
-emitProto :: TCDecl' -> PythonSource
-emitProto ~(UCallable _ name args _ _ _) = "def " <> emitName name <> "(" <>
-  intercalate ", " (map emitVarName args) <> "):\n"
+emitProto :: TCCallableDecl -> PythonSource
+emitProto (Ann _ (Callable _ name args _ _ _)) = "def " <> emitName name
+  <> "(" <> intercalate ", " (map emitVarName args) <> "):\n"
 
 emitVarName :: TCVar -> PythonSource
 emitVarName (Ann _ v) = emitName $ _varName v

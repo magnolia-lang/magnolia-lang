@@ -106,12 +106,12 @@ mkInlineRenamings (Ann _ (URenamingBlock renamings)) =
 
 -- UCallable UCallable Name [UVar p] UType (CGuard p) (CBody p)
 -- TODO: avoid partiality
-replaceGuard :: UDecl' p -> CGuard p -> UDecl' p
-replaceGuard ~(UCallable callableType name args retType _ mbody) mguard =
-  UCallable callableType name args retType mguard mbody
+replaceGuard :: CallableDecl' p -> CGuard p -> CallableDecl' p
+replaceGuard (Callable callableType name args retType _ mbody) mguard =
+  Callable callableType name args retType mguard mbody
 
 -- TODO: avoid partiality
-callableIsImplemented :: UDecl p -> Bool
-callableIsImplemented ~(Ann _ (UCallable _ _ _ _ _ mbody)) = case mbody of
+callableIsImplemented :: CallableDecl p -> Bool
+callableIsImplemented (Ann _ (Callable _ _ _ _ _ mbody)) = case mbody of
   Nothing -> False
   _ -> True
