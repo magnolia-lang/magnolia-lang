@@ -76,6 +76,19 @@ instance Pretty ErrType where
 instance Pretty Name where
   pretty (Name _ str) = p str
 
+instance Pretty NameSpace where
+  pretty ns = (case ns of
+    NSFunction -> "function"
+    NSGenerated -> "generated"
+    NSModule -> "module"
+    NSPackage -> "package"
+    NSProcedure -> "procedure"
+    NSRenaming -> "renaming"
+    NSSatisfaction -> "satisfaction"
+    NSType -> "type"
+    NSUnspecified -> "unspecified"
+    NSVariable -> "variable") <+> "namespace"
+
 instance (Show (e p), Pretty (e p)) => Pretty (Ann p e) where
   pretty = p . _elem
 

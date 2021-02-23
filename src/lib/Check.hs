@@ -1,10 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Check (checkModule) where
 
 import Control.Applicative
-import Control.Monad.Except
+import Control.Monad.Except hiding (guard)
 import Control.Monad.Trans.State
 --import Debug.Trace (trace)
 import Data.Foldable (traverse_)
@@ -63,12 +64,21 @@ checkModule tlDecls (Ann modSrc (UModule moduleType moduleName decls deps)) = do
   let modules = M.map getModules tlDecls
       namedRenamings = M.map getNamedRenamings tlDecls
   -- Step 1: expand uses
-  (depScope, checkedDeps) <- foldl joinTuple (M.empty, M.empty) <$>
-      mapM (buildModuleFromDependency namedRenamings modules) deps
+  (depScope, checkedDeps) <- do
+      (depScopeList, checkedDepsList) <- unzip <$>
+        mapM (buildModuleFromDependency namedRenamings modules) deps
+      depScope <- foldM mergeModules M.empty depScopeList
+      let checkedDeps = foldl (M.unionWith (<>)) M.empty checkedDepsList
+      return (depScope, checkedDeps)
   -- Step 2: register types
-  let baseScope = M.unionWith (<>) depScope $ M.fromList types
+  baseScope <- foldM insertAndMergeDecl depScope types
   -- Step 3: check and register protos
-  protoScope <- foldM registerProto baseScope callables
+  protoScope <- do
+    -- we first register all the protos without checking the guards
+    protoScopeWithoutGuards <- foldM (registerProto False) baseScope callables
+    -- now that we have access to all the functions in scope, we can check the
+    -- guard
+    foldM (registerProto True) protoScopeWithoutGuards callables
   -- Step 4: check bodies if allowed
   (finalScope, callablesTC) <- mapAccumM checkBody protoScope callables
   -- Step 5: check that everything is resolved if program
@@ -83,14 +93,12 @@ checkModule tlDecls (Ann modSrc (UModule moduleType moduleName decls deps)) = do
             } -- :: TCModule
   return $ M.insertWith (<>) moduleName [resultModuleDecl] tlDecls
   where
-    types :: [(Name, [UDecl PhCheck])]
-    types = [ (typeName, [Ann { _ann = [LocalDecl srcAnn]
-                              , _elem = UType typeName
-                              }])
+    types :: [(Name, UDecl PhCheck)]
+    types = [ (typeName, Ann { _ann = [LocalDecl srcAnn]
+                             , _elem = UType typeName
+                             })
             | Ann srcAnn (UType typeName) <- decls]
     callables = [d | d@(Ann _ UCallable {}) <- decls]
-
-    joinTuple (a, b) (a', b') = (M.unionWith (<>) a a', M.unionWith (<>) b b')
 
     -- TODO: deal with guards (unify, check)
     -- TODO: improve error messages
@@ -99,7 +107,7 @@ checkModule tlDecls (Ann modSrc (UModule moduleType moduleName decls deps)) = do
       -> UDecl PhParse
       -> Except Err (ModuleScope, UDecl PhCheck)
     checkBody env decl@(~(Ann src (UCallable ctype fname args retType
-                                             mguard body)))
+                                             _ body)))
       | moduleType /= Concept, Axiom <- ctype =
           throwLocatedE DeclContextErr src
             "axioms can only be declared in concepts"
@@ -110,17 +118,17 @@ checkModule tlDecls (Ann modSrc (UModule moduleType moduleName decls deps)) = do
           throwLocatedE InvalidDeclErr src $ pshow ctype <>
             " can not have a body in " <> pshow moduleType
       -- TODO: handle case for programs
-      | Nothing <- body = (,) env <$> checkProto env decl
+      | Nothing <- body = (,) env <$> checkProto True env decl
       | Just expr <- body = do
           -- TODO: fix, propagate required type forward?
           bodyTC <- annotateScopedExpr env (initScope args) (Just retType) expr
           ~(Ann typAnn (UCallable _ declName argsTC _ guardTC _)) <-
-              checkProto env decl
+              checkProto True env decl
           let annDeclTC = Ann typAnn $
                 UCallable ctype declName argsTC retType guardTC
                           (Just bodyTC)
           if _ann bodyTC == retType
-          then return (M.insertWith (<>) fname [annDeclTC] env, annDeclTC)
+          then (, annDeclTC) <$> insertAndMergeDecl env (fname, annDeclTC)
           else throwLocatedE TypeErr src $
             "expected return type to be " <> pshow retType <> " in " <>
             pshow ctype <> "but return value has type " <>
@@ -133,7 +141,7 @@ checkModule tlDecls (Ann modSrc (UModule moduleType moduleName decls deps)) = do
       | Nothing <- body = do
           let ~(Just matches) = M.lookup callableName env
               anonDefinedMatches =
-                map (mkAnonProto <$$>) $ filter isDefined matches
+                map (mkAnonProto <$$>) $ filter callableIsImplemented matches
               src = srcCtx $ head declO -- TODO: is head the best one to get?
           when ((mkAnonProto <$$> callable) `notElem` anonDefinedMatches) $
             throwLocatedE InvalidDeclErr src $ pshow callable <>
@@ -143,7 +151,6 @@ checkModule tlDecls (Ann modSrc (UModule moduleType moduleName decls deps)) = do
       UCallable ctype callableName (map (mkAnonVar <$$>) args) retType
                 mguard mbody
     mkAnonVar (Var mode _ typ) = Var mode (GenName "#anon#") typ
-    isDefined ~(Ann _ (UCallable _ _ _ _ _ mbody)) = isJust mbody
 
 -- TODO: finish module casting.
 castModule
@@ -231,7 +238,8 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
         argsTC <- traverse (annotateScopedExpr modul scope Nothing) args
         let argTypes = map _ann argsTC
             -- TODO: deal with modes here
-            candidates = filter (isCompatibleFunctionDecl argTypes) $
+            -- TODO: change with passing cast as parameter & whatever that implies
+            candidates = filter (prototypeMatchesTypeConstraints argTypes Nothing) $
               M.findWithDefault [] name modul
             exprTC = UCall name argsTC maybeCallCast
         -- TODO: stop using list to reach return val, maybe use Data.Sequence?
@@ -412,11 +420,109 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
 
   getReturnType ~(Ann _ (UCallable _ _ _ returnType _ _)) = returnType
 
-  isCompatibleFunctionDecl :: [UType] -> UDecl PhCheck -> Bool
-  isCompatibleFunctionDecl typeConstraints (Ann _ (UCallable _ _ args _ _ _))
-    | length args /= length typeConstraints = False
-    | otherwise = and $ zipWith (\x y -> x == _ann y) typeConstraints args
-  isCompatibleFunctionDecl _ _ = False
+prototypeMatchesTypeConstraints :: [UType] -> Maybe UType -> TCDecl -> Bool
+prototypeMatchesTypeConstraints argTypeConstraints mreturnTypeConstraint
+  ~(Ann _ (UCallable _ _ declArgs declReturnType _ _))
+  | length declArgs /= length argTypeConstraints = False
+  | otherwise =
+      let ~(Just returnTypeConstraint) = mreturnTypeConstraint
+          fitsArgTypeConstraints =
+            and $ zipWith (\x y -> x == _ann y) argTypeConstraints declArgs
+          fitsReturnTypeConstraints = isNothing mreturnTypeConstraint ||
+            returnTypeConstraint == declReturnType
+      in fitsArgTypeConstraints && fitsReturnTypeConstraints
+
+insertAndMergeDecl
+  :: ModuleScope -> (Name, TCDecl) -> Except Err ModuleScope
+insertAndMergeDecl env (name, decl) = do
+  newDeclList <- mkNewDeclList
+  return $ M.insert name newDeclList env
+  where
+    mkNewDeclList = case name of
+      TypeName _ -> return [mergeTypes decl (head <$> M.lookup name env)] -- TODO: ensure this is always correct?
+      FuncName _ -> mergePrototypes decl (M.lookup name env)
+      ProcName _ -> mergePrototypes decl (M.lookup name env)
+      Name ns s  ->
+        throwLocatedE NotImplementedErr (srcCtx . head $ _ann decl) $
+          "insertAndMergeDecl for " <> pshow ns <> " (called for '" <>
+          pshow s <> "')"
+
+    mergeTypes :: TCDecl -> Maybe TCDecl -> TCDecl
+    mergeTypes annT1@(Ann declO1 t1@(~(UType _))) mannT2 = case mannT2 of
+      Nothing                      -> annT1
+      Just ~(Ann declO2 (UType _)) -> Ann (mergeAnns declO1 declO2) t1
+
+    mergePrototypes :: TCDecl -> Maybe [TCDecl] -> Except Err [TCDecl]
+    mergePrototypes anninpProto@(Ann _ inpProto@(~UCallable {})) mprotos
+      | Nothing <- mprotos = return [anninpProto]
+      | Just protos <- mprotos = do
+        let ~(UCallable ctype _ args returnType mguard mbody) = inpProto
+            argTypes = map (fromJust . _varType . _elem) args
+            (matches, nonMatches) = L.partition
+              (prototypeMatchesTypeConstraints argTypes (Just returnType)) protos
+            (matchesWithBody, matchesWithoutBody) =
+              L.partition callableIsImplemented matches
+        if not (null matches) then do
+          when (isJust mbody && not (null matchesWithBody)) $
+            throwLocatedE InvalidDeclErr (srcCtx . head $ _ann decl) $ -- TODO: how to add src info better here?
+              "attempting to import two different implementations for " <>
+              pshow ctype <> " " <> pshow name
+          when (length matchesWithBody > 1 || length matchesWithoutBody > 1) $
+            throwLocatedE CompilerErr (srcCtx . head $ _ann decl) $
+              "context contains several definitions of the same prototype in " <>
+              "AST for " <> pshow ctype <> " " <> pshow name
+          when (length matchesWithBody == 1 && length matchesWithoutBody == 1 &&
+                  extractGuard (head matchesWithBody) /=
+                  extractGuard (head matchesWithoutBody)) $
+            throwLocatedE CompilerErr (srcCtx . head $ _ann decl) $
+              "existing prototype and implementation have inconsistent " <>
+              "guards for " <> pshow ctype <> " " <> pshow name
+          when (null matchesWithoutBody) $
+            throwLocatedE CompilerErr (srcCtx . head $ _ann decl) $
+              "expected prototype to be registered in scope for " <>
+              pshow ctype <> " " <> pshow name
+          -- From here on out, we know that we have at least an existing match,
+          -- and that the guard is the same for all the matches. Therefore, we
+          -- generate a unique new guard based on the new prototype, and insert
+          -- it into all the matches we have.
+          newGuard <- mergeGuards mguard (extractGuard (head matches))
+          let newMatches = map (flip replaceGuard newGuard <$$>) matches
+          -- We know that we have exactly one of two possible configurations
+          -- here:
+          -- (1) anninpProto does not have a body, and we already have
+          --     an equivalent prototype in scope
+          -- (2) anninpProto has a body, and we already have the relevant
+          --     prototype in scope
+          -- TODO: clean out irrelevant protos where possible, and
+          --       remove reliance on the existence of a prototype without body
+          --       in scope (not sure if absolutely needed here, but either way)
+          if callableIsImplemented anninpProto
+          then return $ anninpProto : newMatches <> nonMatches
+          else return $ newMatches <> nonMatches
+        else return (anninpProto : nonMatches)
+
+    mergeGuards :: CGuard p -> CGuard p -> Except Err (CGuard p)
+    mergeGuards mguard1 mguard2 = case (mguard1, mguard2) of
+      (Nothing, _)  -> return mguard2
+      (_ , Nothing) -> return mguard1
+      (Just guard1, Just guard2) ->
+        -- We consider two guards as equivalent only if they are
+        -- syntactically equal.
+        if guard1 == guard2 then return $ Just guard1
+        else throwLocatedE NotImplementedErr Nothing -- TODO: make guard1 && guard2 + add right srcctx
+          "merging of two callables with different guards"
+
+    mergeAnns :: t ~ XAnn PhCheck UDecl' => t -> t -> t
+    mergeAnns declOs1 declOs2 = S.toList $ S.fromList (declOs1 <> declOs2)
+
+    extractGuard ~(Ann _ (UCallable _ _ _ _ mguard _)) = mguard
+
+mergeModules :: ModuleScope -> ModuleScope -> Except Err ModuleScope
+mergeModules mod1 mod2 =
+  foldM insertAndMergeDeclList mod1 $ M.toList mod2
+  where
+    insertAndMergeDeclList initEnv (name, declList) =
+      foldM (\env decl -> insertAndMergeDecl env (name, decl)) initEnv declList
 
 checkTypeExists ::
   ModuleScope ->
@@ -435,24 +541,31 @@ checkTypeExists modul (WithSrc src name)
 -- by parsing.
 
 registerProto ::
+  Bool -> -- whether to register/check guards or not
   ModuleScope ->
   UDecl PhParse ->
   Except Err ModuleScope
-registerProto modul annDecl
+registerProto checkGuards modul annDecl
   | Ann _ (UCallable _ name _ _ _ _) <- annDecl = do
       -- TODO: ensure bodies are registered later on
-      checkedProto <- checkProto modul annDecl
-      return $ M.insertWith (<>) name [checkedProto] modul
+      checkedProto <- checkProto checkGuards modul annDecl
+      insertAndMergeDecl modul (name, checkedProto)
   | otherwise = return modul
 
 -- TODO: check for procedures, predicates, axioms (this is only for func)?
 -- TODO: check guard
-checkProto :: ModuleScope -> UDecl PhParse -> Except Err (UDecl PhCheck)
-checkProto modul ~(Ann src (UCallable ctype name args retType mguard _)) = do
-  checkedArgs <- checkArgs args
-  checkTypeExists modul (WithSrc src retType)
+checkProto :: Bool -> ModuleScope -> UDecl PhParse -> Except Err (UDecl PhCheck)
+checkProto checkGuards env
+    ~(Ann src (UCallable ctype name args retType mguard _)) = do
+  tcArgs <- checkArgs args
+  checkTypeExists env (WithSrc src retType)
+  tcGuard <- case mguard of
+    Nothing -> return Nothing
+    Just guard -> if checkGuards
+      then Just <$> annotateScopedExpr env (initScope args) (Just Pred) guard
+      else return Nothing
   return Ann { _ann = [LocalDecl src]
-             , _elem = UCallable ctype name checkedArgs retType Nothing Nothing -- TODO: reinsert guard
+             , _elem = UCallable ctype name tcArgs retType tcGuard Nothing
              }
   where checkArgs :: [UVar PhParse] -> Except Err [UVar PhCheck]
         checkArgs vars = do
@@ -470,7 +583,7 @@ checkProto modul ~(Ann src (UCallable ctype name args retType mguard _)) = do
         checkArgType :: UVar PhParse -> Except Err (UVar PhCheck)
         checkArgType var
           | Ann argSrc (Var mode varName (Just typ)) <- var = do
-              checkTypeExists modul (WithSrc argSrc typ)
+              checkTypeExists env (WithSrc argSrc typ)
               return $ Ann typ (Var mode varName (Just typ))
           | otherwise = error "unreachable (checkArgs)"
 

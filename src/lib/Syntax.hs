@@ -10,6 +10,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Syntax (
     UCallable (..), UDecl, UDecl' (..), UExpr, UExpr' (..), UModule,
@@ -20,6 +21,7 @@ module Syntax (
     UTopLevelDecl (..), UType, UVar, UVar' (..), UVarMode (..), WithSrc (..),
     GlobalEnv, InlineRenaming, PackageHead (..), RenamedModule (..),
     URenaming' (..), URenaming,
+    CBody, CGuard,
     TCDecl, TCExpr, TCModule, TCModuleDep, TCPackage, TCTopLevelDecl, TCVar,
     HasSrcCtx (..), NamedNode (..),
     Command (..),
@@ -174,6 +176,7 @@ data UExpr' p = UVar (UVar p)
               | USkip
               deriving (Eq, Show)
 
+-- TODO: make sure only typed vars can be declared when parsing function protos
 type UVar p = Ann p UVar'
 data UVar' p = Var { _varMode :: UVarMode
                    , _varName :: Name
@@ -229,7 +232,7 @@ data ErrType = AmbiguousFunctionRefErr
 -- TODO: External
 -- TODO: actually deal with ImportedDecl
 data DeclOrigin = LocalDecl SrcCtx | ImportedDecl Name Name SrcCtx -- or | External Name
-                  deriving (Eq, Show)
+                  deriving (Eq, Ord, Show)
 
 -- === compilation phases ===
 
@@ -356,6 +359,9 @@ instance HasSrcCtx (SrcCtx, a) where
 
 instance HasSrcCtx (WithSrc a) where
   srcCtx = _srcCtx
+
+instance HasSrcCtx (XAnn p e) => HasSrcCtx (Ann p e) where
+  srcCtx = srcCtx . _ann
 
 -- === useful patterns ===
 

@@ -4,7 +4,8 @@
 module Util (
     throwLocatedE, throwNonLocatedE,
     mkPkgNameFromPath, mkPkgPathFromName, mkPkgPathFromStr, isPkgPath,
-    mkInlineRenamings, expandRenaming, expandRenamingBlock, checkRenamingBlock)
+    mkInlineRenamings, expandRenaming, expandRenamingBlock, checkRenamingBlock,
+    callableIsImplemented, replaceGuard)
   where
 
 import Control.Monad
@@ -100,3 +101,17 @@ mkInlineRenamings (Ann _ (URenamingBlock renamings)) =
     mkInlineRenaming (Ann _ renaming) = case renaming of
       InlineRenaming ir -> ir
       RefRenaming v -> absurd v
+
+-- === declarations manipulation ===
+
+-- UCallable UCallable Name [UVar p] UType (CGuard p) (CBody p)
+-- TODO: avoid partiality
+replaceGuard :: UDecl' p -> CGuard p -> UDecl' p
+replaceGuard ~(UCallable callableType name args retType _ mbody) mguard =
+  UCallable callableType name args retType mguard mbody
+
+-- TODO: avoid partiality
+callableIsImplemented :: UDecl p -> Bool
+callableIsImplemented ~(Ann _ (UCallable _ _ _ _ _ mbody)) = case mbody of
+  Nothing -> False
+  _ -> True
