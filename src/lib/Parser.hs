@@ -22,7 +22,8 @@ type Parser = Parsec Void String
 type ParsedPackage = UPackage PhParse
 type ParsedDecl = UDecl PhParse
 type ParsedExpr = UExpr PhParse
-type ParsedVar = UVar PhParse
+type ParsedTypedVar = TypedVar PhParse
+type ParsedMaybeTypedVar = MaybeTypedVar PhParse
 
 -- === exception handling utils ===
 
@@ -211,19 +212,20 @@ callable = do
   when (isNothing body) semi
   return $ Callable callableType name args retType guard body
 
-annVar :: UVarMode -> Parser ParsedVar
+annVar :: UVarMode -> Parser ParsedTypedVar
 annVar mode = annot annVar'
   where
     annVar' = do
       name <- varName
-      ann <- symbol ":" *> typeName
-      return $ Var mode name (Just ann)
+      typAnn <- symbol ":" *> typeName
+      return $ Var mode name typAnn
 
-nameVar :: UVarMode -> Parser ParsedVar
+nameVar :: UVarMode -> Parser ParsedMaybeTypedVar
 nameVar mode = annot ((\name -> Var mode name Nothing) <$> varName)
 
-var :: UVarMode -> Parser ParsedVar
-var mode = try (annVar mode) <|> nameVar mode
+var :: UVarMode -> Parser ParsedMaybeTypedVar
+var mode = try ((partialize <$$>) <$> annVar mode) <|> nameVar mode
+  where partialize v = v { _varType = Just (_varType v) }
 
 varMode :: Parser UVarMode
 varMode = try (keyword ObsKW >> return UObs)

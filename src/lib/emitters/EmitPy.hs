@@ -59,7 +59,7 @@ emitPyDecl indent decl = case decl of
         _         -> emitPrefixedPyExpr bodyIndent
                                         (mkIndent bodyIndent <> "return ") body
   where
-    emitProcReturn :: [TCVar] -> PythonSource
+    emitProcReturn :: [TCTypedVar] -> PythonSource
     emitProcReturn args =
       case filter (\(Ann _ (Var mode _ _)) -> mode /= UObs) args of
         [] -> "return None"
@@ -116,7 +116,7 @@ emitProto :: TCCallableDecl -> PythonSource
 emitProto (Ann _ (Callable _ name args _ _ _)) = "def " <> emitName name
   <> "(" <> intercalate ", " (map emitVarName args) <> "):\n"
 
-emitVarName :: TCVar -> PythonSource
+emitVarName :: TCTypedVar -> PythonSource
 emitVarName (Ann _ v) = emitName $ _varName v
 
 mkPythonSource :: String -> PythonSource

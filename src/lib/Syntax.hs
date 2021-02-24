@@ -13,19 +13,19 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Syntax (
-    CallableDecl, CallableDecl' (..), CallableType (..), TypeDecl,
-    TypeDecl' (..),
+    CallableDecl, CallableDecl' (..), CallableType (..), MaybeTypedVar,
+    MaybeTypedVar', TypeDecl, TypeDecl' (..), TypedVar, TypedVar',
     UDecl (..), UExpr, UExpr' (..), UModule,
     UModule' (..), UModuleDep, UModuleDep' (..), UModuleType (..),
     UNamedRenaming, UNamedRenaming' (..),
     UPackage, UPackage' (..), UPackageDep, UPackageDep' (..), URenamingBlock,
     URenamingBlock' (..), USatisfaction, USatisfaction' (..),
-    UTopLevelDecl (..), UType, UVar, UVar' (..), UVarMode (..), WithSrc (..),
+    UTopLevelDecl (..), UType, UVar (..), UVarMode (..), WithSrc (..),
     GlobalEnv, InlineRenaming, PackageHead (..), RenamedModule (..),
     URenaming' (..), URenaming,
     CBody, CGuard,
-    TCCallableDecl, TCDecl, TCExpr, TCModule, TCModuleDep, TCPackage,
-    TCTopLevelDecl, TCTypeDecl, TCVar,
+    TCCallableDecl, TCDecl, TCExpr, TCMaybeTypedVar, TCModule, TCModuleDep,
+    TCPackage, TCTopLevelDecl, TCTypeDecl, TCTypedVar,
     HasSrcCtx (..), NamedNode (..),
     Command (..),
     DeclOrigin (..), Err (..), ErrType (..),
@@ -80,7 +80,8 @@ type TCDecl = UDecl PhCheck
 type TCCallableDecl = CallableDecl PhCheck
 type TCTypeDecl = TypeDecl PhCheck
 type TCExpr = UExpr PhCheck
-type TCVar = UVar PhCheck
+type TCTypedVar = TypedVar PhCheck
+type TCMaybeTypedVar = MaybeTypedVar PhCheck
 
 -- Ann [compilation phase] [node type]
 data Ann p e = Ann { _ann :: XAnn p e
@@ -153,11 +154,11 @@ data UDecl p = TypeDecl (TypeDecl p)
 
 type TypeDecl p = Ann p TypeDecl'
 newtype TypeDecl' p = Type UType
-                     deriving (Eq, Show)
+                      deriving (Eq, Show)
 
 type CallableDecl p = Ann p CallableDecl'
 data CallableDecl' p =
-  Callable CallableType Name [UVar p] UType (CGuard p) (CBody p)
+  Callable CallableType Name [TypedVar p] UType (CGuard p) (CBody p)
   deriving (Eq, Show)
 
 type CBody p = Maybe (UExpr p)
@@ -178,8 +179,9 @@ pattern Unit = GenName "Unit"
 data CallableType = Axiom | Function | Predicate | Procedure
                     deriving (Eq, Show)
 
+-- TODO: make a constructor for coercedexpr to remove (Maybe UType) from calls
 type UExpr p = Ann p UExpr'
-data UExpr' p = UVar (UVar p)
+data UExpr' p = UVar (MaybeTypedVar p)
               -- TODO: add Procedure/FunctionLike namespaces to Name?
               | UCall Name [UExpr p] (Maybe UType)
               | UBlockExpr (NE.NonEmpty (UExpr p))
@@ -189,13 +191,17 @@ data UExpr' p = UVar (UVar p)
               | USkip
               deriving (Eq, Show)
 
--- TODO: make sure only typed vars can be declared when parsing function protos
-type UVar p = Ann p UVar'
-data UVar' p = Var { _varMode :: UVarMode
-                   , _varName :: Name
-                   , _varType :: Maybe UType
-                   }
-               deriving (Eq, Show)
+type TypedVar p = Ann p TypedVar'
+type TypedVar' = UVar UType
+
+type MaybeTypedVar p = Ann p MaybeTypedVar'
+type MaybeTypedVar' = UVar (Maybe UType)
+
+data UVar typAnnType p = Var { _varMode :: UVarMode
+                             , _varName :: Name
+                             , _varType :: typAnnType
+                             }
+                          deriving (Eq, Show)
 
 -- Mode is either Obs (const), Out (unset ref), Upd (ref), or Unk(nown)
 data UVarMode = UObs | UOut | UUnk | UUpd
@@ -289,8 +295,8 @@ type family XAnn p (e :: * -> *) where
   XAnn PhParse UExpr' = SrcCtx
   XAnn PhCheck UExpr' = UType
 
-  XAnn PhParse UVar' = SrcCtx
-  XAnn PhCheck UVar' = UType
+  XAnn PhParse (UVar _) = SrcCtx
+  XAnn PhCheck (UVar _) = UType
 
 -- === other useful type families ===
 
@@ -361,7 +367,7 @@ instance NamedNode (TypeDecl' p) where
 instance NamedNode (CallableDecl' p) where
   nodeName (Callable _ name _ _ _ _) = name
 
-instance NamedNode (UVar' p) where
+instance NamedNode (UVar typAnnType p) where
   nodeName (Var _ name _) = name
 
 
@@ -410,19 +416,23 @@ pattern UImpl
   -> UModule' p
 pattern UImpl name decls deps = UModule Implementation name decls deps
 
-pattern UAxiom :: Name -> [UVar p] -> UType -> CGuard p -> CBody p -> CallableDecl' p
+pattern UAxiom
+  :: Name -> [TypedVar p] -> UType -> CGuard p -> CBody p -> CallableDecl' p
 pattern UAxiom name args retType guard body =
   Callable Axiom name args retType guard body
 
-pattern UFunc :: Name -> [UVar p] -> UType -> CGuard p -> CBody p -> CallableDecl' p
+pattern UFunc
+  :: Name -> [TypedVar p] -> UType -> CGuard p -> CBody p -> CallableDecl' p
 pattern UFunc name args retType guard body =
   Callable Function name args retType guard body
 
-pattern UPred :: Name -> [UVar p] -> UType -> CGuard p -> CBody p -> CallableDecl' p
+pattern UPred
+  :: Name -> [TypedVar p] -> UType -> CGuard p -> CBody p -> CallableDecl' p
 pattern UPred name args retType guard body =
   Callable Predicate name args retType guard body
 
-pattern UProc :: Name -> [UVar p] -> UType -> CGuard p -> CBody p -> CallableDecl' p
+pattern UProc
+  :: Name -> [TypedVar p] -> UType -> CGuard p -> CBody p -> CallableDecl' p
 pattern UProc name args retType guard body =
   Callable Procedure name args retType guard body
 

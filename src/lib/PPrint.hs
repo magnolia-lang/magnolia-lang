@@ -208,10 +208,13 @@ instance Pretty (UExpr' p) where
         UAssert aexpr -> "assert" <+> pNoSemi (_elem aexpr)
         USkip -> "skip"
 
-instance Pretty (UVar' p) where
+instance Pretty (MaybeTypedVar' p) where
   pretty (Var mode name mtyp) = case mtyp of
     Nothing -> p mode <+> p name
     Just typ -> p mode <+> p name <+> ":" <+> p typ
+
+instance Pretty (TypedVar' p) where
+  pretty (Var mode name typ) = p mode <+> p name <+> ":" <+> p typ
 
 instance Pretty UVarMode where
   pretty mode = case mode of

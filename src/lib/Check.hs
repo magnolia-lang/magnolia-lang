@@ -25,14 +25,15 @@ import PPrint
 import Syntax
 import Util
 
-type VarScope = Env (UVar PhCheck)
+type VarScope = Env (MaybeTypedVar PhCheck)
 type ModuleScope = Env [UDecl PhCheck] --ModuleEnv PhCheck
 
-initScope :: [UVar p] -> VarScope
+-- TODO: enforce type in scope?
+initScope :: [TypedVar p] -> VarScope
 initScope = M.fromList . map mkScopeVar
   where
-    mkScopeVar :: UVar p -> (Name, UVar PhCheck)
-    mkScopeVar ~(Ann _ (Var mode name (Just typ))) =
+    mkScopeVar :: TypedVar p -> (Name, MaybeTypedVar PhCheck)
+    mkScopeVar (Ann _ (Var mode name typ)) =
       (name, Ann { _ann = typ, _elem = Var mode name (Just typ) })
 
 -- TODO: can variables exist without a type in the scope?
@@ -458,7 +459,7 @@ insertAndMergeDecl env decl = do
       | Just decls <- mdecls = do
         let protos = getCallableDecls decls
             (Callable ctype _ args returnType mguard mbody) = callableDecl
-            argTypes = map (fromJust . _varType . _elem) args
+            argTypes = map (_varType . _elem) args
             (matches, nonMatches) = L.partition
               (prototypeMatchesTypeConstraints argTypes (Just returnType)) protos
             (matchesWithBody, matchesWithoutBody) =
@@ -567,7 +568,7 @@ checkProto checkGuards env
   return Ann { _ann = [LocalDecl src]
              , _elem = Callable ctype name tcArgs retType tcGuard Nothing
              }
-  where checkArgs :: [UVar PhParse] -> Except Err [UVar PhCheck]
+  where checkArgs :: [TypedVar PhParse] -> Except Err [TypedVar PhCheck]
         checkArgs vars = do
           -- TODO: make sure there is no need to check
           --when (ctype /= Function) $ error "TODO: proc/axiom/pred"
@@ -575,17 +576,12 @@ checkProto checkGuards env
           if S.size varSet /= L.length vars
           then throwLocatedE MiscErr src $
             "duplicate argument names in declaration of " <> pshow name
-          else if not $ null [v | v@(Ann _ (Var _ _ Nothing)) <- vars]
-          then throwLocatedE CompilerErr src
-            "argument missing accompanying type binding in function prototype"
           else mapM checkArgType vars
 
-        checkArgType :: UVar PhParse -> Except Err (UVar PhCheck)
-        checkArgType var
-          | Ann argSrc (Var mode varName (Just typ)) <- var = do
-              checkTypeExists env (WithSrc argSrc typ)
-              return $ Ann typ (Var mode varName (Just typ))
-          | otherwise = error "unreachable (checkArgs)"
+        checkArgType :: TypedVar PhParse -> Except Err (TypedVar PhCheck)
+        checkArgType (Ann argSrc (Var mode varName typ)) = do
+          checkTypeExists env (WithSrc argSrc typ)
+          return $ Ann typ (Var mode varName typ)
 
 buildModuleFromDependency
   :: Env [UNamedRenaming PhCheck]
@@ -689,17 +685,20 @@ applyRenaming decl renaming = case decl of
     applyRenamingInTypeDecl (Type typ) = Type $ replaceName' typ
     applyRenamingInCallableDecl (Callable ctyp name vars retType mguard mbody) =
       Callable ctyp (replaceName' name)
-        (map applyRenamingInVar vars) (replaceName' retType)
+        (map applyRenamingInTypedVar vars) (replaceName' retType)
         (applyRenamingInExpr <$> mguard)
         (applyRenamingInExpr <$> mbody)
-    applyRenamingInVar :: UVar PhCheck -> UVar PhCheck
-    applyRenamingInVar (Ann typAnn (Var mode name typ)) =
+    applyRenamingInTypedVar :: TypedVar PhCheck -> TypedVar PhCheck
+    applyRenamingInTypedVar (Ann typAnn (Var mode name typ)) =
+      Ann (replaceName' typAnn) $ Var mode name (replaceName' typ)
+    applyRenamingInMaybeTypedVar :: MaybeTypedVar PhCheck -> MaybeTypedVar PhCheck
+    applyRenamingInMaybeTypedVar (Ann typAnn (Var mode name typ)) =
       Ann (replaceName' typAnn) $ Var mode name (replaceName' <$> typ)
     applyRenamingInExpr :: UExpr PhCheck -> UExpr PhCheck
     applyRenamingInExpr (Ann typAnn expr) =
       Ann (replaceName' typAnn) (applyRenamingInExpr' expr)
     applyRenamingInExpr' expr = case expr of
-      UVar var -> UVar $ applyRenamingInVar var
+      UVar var -> UVar $ applyRenamingInMaybeTypedVar var
       UCall name vars typ -> UCall (replaceName' name)
         (map applyRenamingInExpr vars) (replaceName' <$> typ)
       UBlockExpr stmts -> UBlockExpr $ NE.map applyRenamingInExpr stmts
