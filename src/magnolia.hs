@@ -42,8 +42,10 @@ main = do
     BuildMode filename -> build filename >>= pprint
 
 codegen :: String -> TopEnv -> IO String -- TODO: return instead source code type or smth
-codegen filename env = case M.lookup (PkgName filename) env of
-  Nothing -> error "Compiler bug!" -- TODO: handle dir paths better
+codegen filename env = case M.lookup (mkPkgNameFromPath filename) env of
+  Nothing -> error $ "Compiler bug! Package for file " <> filename <>
+    " not found."
+  -- TODO: handle dir paths better
   Just pkg -> return (emitPyPackage pkg)
 
 -- TODO: add existing env, and move "compile" to Make module

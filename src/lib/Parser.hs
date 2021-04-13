@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Parser (parsePackage, parsePackageHead, parseReplCommand) where
@@ -180,7 +181,11 @@ satisfaction = annot satisfaction'
       return $ USatisfaction name initialModule withModule modeledModule
 
 declaration :: Parser ParsedDecl
-declaration = declaration' <* many semi
+declaration = do
+  -- TODO: we consider 'require' to be a no-op in this case.
+  -- I do not believe that there are cases in which it is not. However, we
+  -- might want to keep it as a part of the AST, so this might change.
+  optional (keyword RequireKW) *> declaration' <* many semi
   where declaration' =  (TypeDecl <$> annot typeDecl)
                     <|> (CallableDecl <$> annot callable)
 
@@ -276,11 +281,14 @@ moduleDependency :: Parser (UModuleDep PhParse)
 moduleDependency = annot moduleDependency'
   where
     moduleDependency' = do
-      keyword UseKW
-      name <- ModName <$> nameString
+      choice [keyword UseKW, keyword RequireKW]
+      (castToSignature, name) <-
+        try (keyword SignatureKW *>
+             ((True,) . ModName <$> parens nameString))
+          <|> (False,) . ModName <$> nameString
       renamings <- many renamingBlock
       semi
-      return $ UModuleDep name renamings
+      return $ UModuleDep name renamings castToSignature
 
 renamingBlock :: Parser (URenamingBlock PhParse)
 renamingBlock = annot renamingBlock'
@@ -381,7 +389,7 @@ data Keyword = ConceptKW | ImplementationKW | ProgramKW | SignatureKW
              | ModelsKW | WithKW
              | AxiomKW | FunctionKW | PredicateKW | ProcedureKW | TheoremKW
              | TypeKW
-             | UseKW
+             | RequireKW | UseKW
              | ObsKW | OutKW | UpdKW
              | GuardKW
              | AssertKW | CallKW | IfKW | ThenKW | ElseKW | LetKW | SkipKW
@@ -405,6 +413,7 @@ keyword kw = (lexeme . try) $ string s *> notFollowedBy nameChar
       ProcedureKW      -> "procedure"
       TheoremKW        -> "theorem"
       TypeKW           -> "type"
+      RequireKW        -> "require"
       UseKW            -> "use"
       ObsKW            -> "obs"
       OutKW            -> "out"

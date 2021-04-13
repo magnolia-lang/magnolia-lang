@@ -133,7 +133,9 @@ data UModule' p = UModule UModuleType Name (XPhasedContainer p (UDecl p)) (XPhas
 
 -- Expose out for DAG building
 type UModuleDep p = Ann p UModuleDep'
-data UModuleDep' p = UModuleDep Name [URenamingBlock p]
+-- Represents a dependency to a module with an associated list of renaming
+-- blocks, as well as whether to only extract the signature of the dependency.
+data UModuleDep' p = UModuleDep Name [URenamingBlock p] Bool
 
 type URenamingBlock p = Ann p URenamingBlock'
 newtype URenamingBlock' p = URenamingBlock [URenaming p]
@@ -354,7 +356,7 @@ instance NamedNode (USatisfaction' p) where
   nodeName (USatisfaction name _ _ _) = name
 
 instance NamedNode (UModuleDep' p) where
-  nodeName (UModuleDep name _) = name
+  nodeName (UModuleDep name _ _) = name
 
 instance NamedNode (UDecl p) where
   nodeName decl = case decl of
