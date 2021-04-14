@@ -28,6 +28,22 @@ import Util
 type VarScope = Env (MaybeTypedVar PhCheck)
 type ModuleScope = Env [UDecl PhCheck] --ModuleEnv PhCheck
 
+-- TODO: this is a hacky declaration for predicate operators, which should
+-- be available in any module scope. We are still thinking about what is the
+-- right way to do this. For now, we hardcode these functions here.
+
+hackyPrelude :: [TCDecl]
+hackyPrelude = map (CallableDecl . Ann [LocalDecl Nothing]) (unOps <> binOps)
+  where
+    lhsVar = Ann Pred $ Var UObs (VarName "#pred1#") Pred
+    rhsVar = Ann Pred $ Var UObs (VarName "#pred2#") Pred
+    mkFn args nameStr =
+      Callable Function (FuncName nameStr) args Pred Nothing Nothing
+    unOps = [mkFn [lhsVar] "!_"]
+    binOps = map (\s -> mkFn [lhsVar, rhsVar] ("_" <> s <> "_"))
+      ["&&", "||", "!=", "=>", "<=>"]
+
+
 -- TODO: enforce type in scope?
 initScope :: [TypedVar p] -> VarScope
 initScope = M.fromList . map mkScopeVar
@@ -67,24 +83,30 @@ checkModule tlDecls (Ann modSrc (UModule moduleType moduleName decls deps)) = do
       callables = getCallableDecls decls
   -- Step 1: expand uses
   (depScope, checkedDeps) <- do
+      -- TODO: check here that we are only importing valid types of modules.
+      -- For instance, a program can not be imported into a concept, unless
+      -- downcasted explicitly to a signature/concept.
       (depScopeList, checkedDepsList) <- unzip <$>
         mapM (buildModuleFromDependency namedRenamings modules) deps
       depScope <- foldM mergeModules M.empty depScopeList
       let checkedDeps = foldl (M.unionWith (<>)) M.empty checkedDepsList
       return (depScope, checkedDeps)
-  -- Step 2: register types
+  -- TODO: hacky step, make prelude.
+  -- Step 2: register predicate functions if needed
+  hackyScope <- foldM insertAndMergeDecl depScope hackyPrelude
+  -- Step 3: register types
   -- TODO: remove name as parameter to "insertAndMergeDecl"
-  baseScope <- foldM insertAndMergeDecl depScope (map TypeDecl types)
-  -- Step 3: check and register protos
+  baseScope <- foldM registerType hackyScope types
+  -- Step 4: check and register protos
   protoScope <- do
     -- we first register all the protos without checking the guards
     protoScopeWithoutGuards <- foldM (registerProto False) baseScope callables
     -- now that we have access to all the functions in scope, we can check the
     -- guard
     foldM (registerProto True) protoScopeWithoutGuards callables
-  -- Step 4: check bodies if allowed
+  -- Step 5: check bodies if allowed
   (finalScope, callablesTC) <- mapAccumM checkBody protoScope callables
-  -- Step 5: check that everything is resolved if program
+  -- Step 6: check that everything is resolved if program
   -- TODO: return typechecked elements here.
   when (moduleType == Program) $
       traverse_ (checkImplemented finalScope) callablesTC
@@ -155,18 +177,19 @@ castModule
   -> ExceptT Err t (UModule PhCheck)
 castModule dstTyp origModule@(Ann declO (UModule srcTyp _ _ _)) = do
   let moduleWithSwappedType = return $ swapTyp <$$> origModule
+      moduleAsSig = return $ mkSignature <$$> origModule
   case (srcTyp, dstTyp) of
     (Signature, Concept) -> moduleWithSwappedType
     (Signature, Implementation) -> moduleWithSwappedType
     (Signature, Program) -> noCast
-    (Concept, Signature) -> undefined -- TODO: strip axioms
+    (Concept, Signature) -> moduleAsSig -- TODO: strip axioms
     (Concept, Implementation) -> undefined -- TODO: strip axioms?
     (Concept, Program) -> noCast
-    (Implementation, Signature) -> undefined -- TODO: mkSignature
-    (Implementation, Concept) -> undefined -- TODO: mkSignature?
+    (Implementation, Signature) -> moduleAsSig
+    (Implementation, Concept) -> moduleAsSig
     (Implementation, Program) -> undefined -- TODO: check if valid program?
-    (Program, Signature) -> undefined -- TODO: mkSignature
-    (Program, Concept) -> undefined -- TODO: mkSignature?
+    (Program, Signature) -> moduleAsSig
+    (Program, Concept) -> undefined -- TODO: moduleAsSig?
     (Program, Implementation) -> moduleWithSwappedType
     _ -> return origModule
   where
@@ -175,6 +198,24 @@ castModule dstTyp origModule@(Ann declO (UModule srcTyp _ _ _)) = do
     swapTyp :: UModule' PhCheck -> UModule' PhCheck
     swapTyp (UModule _ name decls deps) = UModule dstTyp name decls deps
     swapTyp (RefModule _ _ v) = absurd v
+
+    mkSignature :: UModule' PhCheck -> UModule' PhCheck
+    mkSignature (UModule _ name decls deps) =
+      -- TODO: should we do something with deps?
+      UModule Signature name (M.map mkSigDecls decls) deps
+    mkSignature (RefModule _ _ v) = absurd v
+
+    -- TODO: make the lists non-empty in AST
+    mkSigDecls :: [TCDecl] -> [TCDecl]
+    mkSigDecls decls = map mkSigDecl decls
+
+    mkSigDecl :: TCDecl -> TCDecl
+    mkSigDecl decl@(TypeDecl _) = decl
+    mkSigDecl (CallableDecl d) = CallableDecl $ prototypize <$$> d
+
+    prototypize :: CallableDecl' p -> CallableDecl' p
+    prototypize (Callable ctype name args retType guard _) =
+      Callable ctype name args retType guard Nothing
 
 castModule _ (Ann _ (RefModule _ _ v)) = absurd v
 -- TODO: sanity check modes
@@ -240,7 +281,9 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
         -- TODO: stop using list to reach return val, maybe use Data.Sequence?
         -- TODO: do something with procedures and axioms here?
         case candidates of
-          []  -> throwLocatedE UnboundFunctionErr src $ pshow name
+          []  -> throwLocatedE UnboundFunctionErr src $ pshow name <>
+            " with arguments of type (" <>
+            T.intercalate ", " (map pshow argTypes) <> ")"
           -- In this case, we have 1+ matches. We can have more than one match
           -- for several reasons:
           -- (1) the arguments are fully specified but the function can be
@@ -479,10 +522,7 @@ insertAndMergeDecl env decl = do
             throwLocatedE CompilerErr (srcCtx . head $ declO) $
               "existing prototype and implementation have inconsistent " <>
               "guards for " <> pshow ctype <> " " <> pshow name
-          when (null matchesWithoutBody) $
-            throwLocatedE CompilerErr (srcCtx . head $ declO) $
-              "expected prototype to be registered in scope for " <>
-              pshow ctype <> " " <> pshow name
+
           -- From here on out, we know that we have at least an existing match,
           -- and that the guard is the same for all the matches. Therefore, we
           -- generate a unique new guard based on the new prototype, and insert
@@ -539,6 +579,23 @@ checkTypeExists modul (WithSrc src name)
                       then return ()
                       else throwLocatedE UnboundTypeErr src (pshow name)
 
+registerType
+  :: ModuleScope
+  -> TypeDecl PhCheck
+  -> Except Err ModuleScope
+registerType modul annType = do
+  modul' <- insertAndMergeDecl modul (TypeDecl annType)
+  -- All types are equipped with an equality function. We generate it here.
+  insertAndMergeDecl modul' (CallableDecl (Ann (_ann annType) equalityFnDecl))
+  -- TODO: eventually, we might want to also generate a if-then-else function
+  -- for the declared type here.
+  where
+    mkVar nameStr =
+      Ann (nodeName annType) $ Var UObs (VarName nameStr) (nodeName annType)
+    equalityFnDecl =
+      Callable Function (FuncName "_==_") [mkVar "e1", mkVar "e2"] Pred
+               Nothing Nothing
+
 -- TODO: ensure functions have a return type defined, though should be handled
 -- by parsing.
 
@@ -589,17 +646,20 @@ buildModuleFromDependency
   -> UModuleDep PhParse
   -> Except Err (Env [TCDecl], Env [TCModuleDep])
 buildModuleFromDependency namedRenamings pkg
-                          (Ann src (UModuleDep name renamings)) =
+                          (Ann src (UModuleDep name renamings castToSig)) =
   case M.lookup name pkg of
     Nothing -> throwLocatedE UnboundModuleErr src $ pshow name
     -- TODO: make NonEmpty elements in Env?
     Just [] -> throwLocatedE CompilerErr src "module has been removed from env"
     Just [m] -> do
+      -- TODO: strip non-signature elements here.
+      decls <- moduleDecls <$> (if castToSig then castModule Signature m
+                                else return  m)
       -- TODO: gather here env of known renamings
       checkedRenamings <- mapM (expandRenamingBlock namedRenamings) renamings
-      renamedDecls <- foldM applyRenamingBlock (moduleDecls m) checkedRenamings
+      renamedDecls <- foldM applyRenamingBlock decls checkedRenamings
       -- TODO: do this well
-      let checkedDep = Ann src (UModuleDep name checkedRenamings)
+      let checkedDep = Ann src (UModuleDep name checkedRenamings castToSig)
       return (renamedDecls, M.singleton name [checkedDep])
     Just _ -> throwLocatedE NotImplementedErr src
       "do not yet deal with ambiguous module names"

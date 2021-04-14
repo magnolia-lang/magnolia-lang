@@ -133,8 +133,10 @@ instance Pretty (UModule' PhCheck) where
   pretty (RefModule _ _ v) = absurd v
 
 instance Pretty (UModuleDep' PhCheck) where
-  pretty (UModuleDep name renamingBlocks) =
-    p name <+> align (vsep (map p renamingBlocks)) <> ";"
+  pretty (UModuleDep name renamingBlocks castToSig) =
+    let pName = if castToSig then "signature(" <+> p name <+> ")"
+                             else p name
+    in pName <+> align (vsep (map p renamingBlocks)) <> ";"
 
 instance Pretty (URenamingBlock' PhCheck) where
   pretty (URenamingBlock renamings) =
