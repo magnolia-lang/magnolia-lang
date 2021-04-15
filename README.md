@@ -70,6 +70,7 @@ we can discuss them.
 - [ ] Code generation
 - [ ] Documentation (*the code base is small, so it is not yet critical*)
 - [ ] Distinction between "normal" blocks and value blocks
+- [ ] Assignment out of the AST, and related type inference
 
 #### Partially implemented features
 
