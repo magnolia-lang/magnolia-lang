@@ -179,11 +179,6 @@ checkModule tlDecls (Ann modSrc (UModule moduleType moduleName decls deps)) = do
               " was left unimplemented in program"
         _ -> return ()
 
-    mkAnonProto (Callable ctype callableName args retType mguard _) =
-      Callable ctype callableName (map (mkAnonVar <$$>) args) retType
-               mguard EmptyBody
-    mkAnonVar (Var mode _ typ) = Var mode (GenName "#anon#") typ
-
 -- TODO: finish module casting.
 castModule
   :: Monad t

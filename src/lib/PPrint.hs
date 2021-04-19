@@ -123,13 +123,33 @@ instance Pretty (RenamedModule PhCheck) where
     in p modul <> renamingTrailer
 
 instance Pretty (UModule' PhCheck) where
-  pretty (UModule moduleType name decls deps) =
+  pretty (UModule moduleType name declMap depMap) =
     vsep [ nest 4 (vsep (  p moduleType <+> p name <+> "= {"
-                        :  map p (join (M.elems deps))
-                        <> map p (join (M.elems decls))
+                        :  map p (join (M.elems depMap))
+                        <> map p (join (M.elems (M.map cleanUp declMap)))
                         ))
          , "};"
          ]
+    where
+      cleanUp :: [TCDecl] -> [TCDecl]
+      cleanUp = foldl deDup []
+
+      deDup :: [TCDecl] -> TCDecl -> [TCDecl]
+      deDup decls d = case d of
+        TypeDecl _ -> if d `elem` decls then decls else d : decls
+        CallableDecl cd ->
+          let anonD = mkAnonProto <$$> cd in
+          if any (matchAnonProtoDecl anonD) decls
+          then if callableIsImplemented cd
+               then d : filter (not . matchAnonProtoDecl anonD) decls
+               else decls
+          else d : decls
+
+      matchAnonProtoDecl target decl = case decl of
+        TypeDecl _ -> False
+        CallableDecl cd -> mkAnonProto <$$> cd == target
+
+
   pretty (RefModule _ _ v) = absurd v
 
 instance Pretty (UModuleDep' PhCheck) where

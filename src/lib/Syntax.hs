@@ -38,7 +38,8 @@ module Syntax (
     pattern UAxiom, pattern UFunc, pattern UPred, pattern UProc,
     getModules, getNamedRenamings,
     moduleDecls, moduleDepNames,
-    getTypeDecls, getCallableDecls)
+    getTypeDecls, getCallableDecls,
+    callableIsImplemented, mkAnonProto, replaceGuard)
   where
 
 import qualified Data.List.NonEmpty as NE
@@ -492,3 +493,21 @@ getCallableDecls = foldl extractCallable []
     extractCallable acc decl = case decl of
       CallableDecl cdecl -> cdecl:acc
       _ -> acc
+
+-- === declarations manipulation ===
+
+replaceGuard :: CallableDecl' p -> CGuard p -> CallableDecl' p
+replaceGuard (Callable callableType name args retType _ mbody) mguard =
+  Callable callableType name args retType mguard mbody
+
+-- TODO: avoid partiality
+callableIsImplemented :: CallableDecl p -> Bool
+callableIsImplemented (Ann _ (Callable _ _ _ _ _ mbody)) = case mbody of
+  EmptyBody -> False
+  _ -> True
+
+mkAnonProto :: CallableDecl' p -> CallableDecl' p
+mkAnonProto (Callable ctype callableName args retType mguard _) =
+      Callable ctype callableName (map (mkAnonVar <$$>) args) retType
+               mguard EmptyBody
+  where mkAnonVar (Var mode _ typ) = Var mode (GenName "#anon#") typ
