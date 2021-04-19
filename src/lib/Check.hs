@@ -38,7 +38,7 @@ hackyPrelude = map (CallableDecl . Ann [LocalDecl Nothing]) (unOps <> binOps)
     lhsVar = Ann Pred $ Var UObs (VarName "#pred1#") Pred
     rhsVar = Ann Pred $ Var UObs (VarName "#pred2#") Pred
     mkFn args nameStr =
-      Callable Function (FuncName nameStr) args Pred Nothing Nothing
+      Callable Function (FuncName nameStr) args Pred Nothing ExternalBody
     unOps = [mkFn [lhsVar] "!_"]
     binOps = map (\s -> mkFn [lhsVar, rhsVar] ("_" <> s <> "_"))
       ["&&", "||", "!=", "=>", "<=>"]
@@ -55,7 +55,8 @@ initScope = M.fromList . map mkScopeVar
 -- TODO: can variables exist without a type in the scope?
 -- TODO: replace things with relevant sets
 -- TODO: handle circular dependencies
-checkModule :: Env [TCTopLevelDecl]
+checkModule
+  :: Env [TCTopLevelDecl]
   -> UModule PhParse
   -> Except Err (Env [TCTopLevelDecl])
 checkModule tlDecls (Ann src (RefModule typ name refName)) =
@@ -105,11 +106,12 @@ checkModule tlDecls (Ann modSrc (UModule moduleType moduleName decls deps)) = do
     -- guard
     foldM (registerProto True) protoScopeWithoutGuards callables
   -- Step 5: check bodies if allowed
-  (finalScope, callablesTC) <- mapAccumM checkBody protoScope callables
+  finalScope <- foldM checkBody protoScope callables
   -- Step 6: check that everything is resolved if program
   -- TODO: return typechecked elements here.
   when (moduleType == Program) $
-      traverse_ (checkImplemented finalScope) callablesTC
+      traverse_ (traverse_ (checkImplemented finalScope) . getCallableDecls)
+                finalScope
   -- TODO: check that name is unique?
   -- TODO: make module
   let resultModuleDecl = UModuleDecl $
@@ -125,37 +127,49 @@ checkModule tlDecls (Ann modSrc (UModule moduleType moduleName decls deps)) = do
     checkBody
       :: ModuleScope
       -> CallableDecl PhParse
-      -> Except Err (ModuleScope, CallableDecl PhCheck)
-    checkBody env decl@(Ann src (Callable ctype fname args retType _ mbody))
+      -> Except Err ModuleScope
+    checkBody env decl@(Ann src (Callable ctype fname args retType _ cbody))
       | moduleType /= Concept, Axiom <- ctype =
           throwLocatedE DeclContextErr src
             "axioms can only be declared in concepts"
-      | Nothing <- mbody, Axiom <- ctype =
+      | EmptyBody <- cbody, Axiom <- ctype =
           throwLocatedE InvalidDeclErr src "axiom without a body"
-      | moduleType `notElem` [Implementation, Program], Just _ <- mbody,
+      | moduleType /= External, ExternalBody <- cbody =
+          throwLocatedE CompilerErr src $ pshow ctype <>
+            " can not be declared external in " <> pshow moduleType
+      | moduleType `notElem` [Implementation, Program], MagnoliaBody _ <- cbody,
         ctype `elem` [Function, Procedure] =
           throwLocatedE InvalidDeclErr src $ pshow ctype <>
             " can not have a body in " <> pshow moduleType
-      -- TODO: handle case for programs
-      | Nothing <- mbody = (,) env <$> checkProto True env decl
-      | Just expr <- mbody = do
-          -- TODO: fix, propagate required type forward?
-          bodyTC <- annotateScopedExpr env (initScope args) (Just retType) expr
-          Ann typAnn (Callable _ _ argsTC _ guardTC _) <- checkProto True env decl
+      | EmptyBody <- cbody = checkProto True env decl >> return env
+      -- In this case, the body of the function is not empty. It is either
+      -- external (in which case, we only check the proto with the guard once
+      -- again), or internal (in which case we need to type check it).
+      | otherwise = do
+          (bodyTC, bodyRetType) <- case cbody of
+            MagnoliaBody expr -> do
+              tcExpr <-
+                annotateScopedExpr env (initScope args) (Just retType) expr
+              return (MagnoliaBody tcExpr, _ann tcExpr)
+            ExternalBody -> return (ExternalBody, retType)
+            EmptyBody -> throwLocatedE CompilerErr src $
+              "pattern matching fail in callable body check for " <> pshow fname
+          Ann typAnn (Callable _ _ argsTC _ guardTC _) <-
+            checkProto True env decl
           let annDeclTC = Ann typAnn $
-                Callable ctype fname argsTC retType guardTC (Just bodyTC)
-          if _ann bodyTC == retType
-          then (,annDeclTC) <$> insertAndMergeDecl env (CallableDecl annDeclTC)
+                Callable ctype fname argsTC retType guardTC bodyTC
+          if bodyRetType == retType
+          then insertAndMergeDecl env (CallableDecl annDeclTC)
           else throwLocatedE TypeErr src $
             "expected return type to be " <> pshow retType <> " in " <>
             pshow ctype <> "but return value has type " <>
-            pshow (_ann bodyTC)
+            pshow bodyRetType
+
 
     checkImplemented :: ModuleScope -> CallableDecl PhCheck -> Except Err ()
     checkImplemented env callable@(Ann declO
-      (Callable _ callableName _ _ _ body)) = case body of
-        Just _ -> return ()
-        Nothing -> do
+      (Callable _ callableName _ _ _ cbody)) = case cbody of
+        EmptyBody -> do
           let ~(Just matches) = getCallableDecls <$> M.lookup callableName env
               anonDefinedMatches =
                 map (mkAnonProto <$$>) $ filter callableIsImplemented matches
@@ -163,10 +177,11 @@ checkModule tlDecls (Ann modSrc (UModule moduleType moduleName decls deps)) = do
           when ((mkAnonProto <$$> callable) `notElem` anonDefinedMatches) $
             throwLocatedE InvalidDeclErr src $ pshow callable <>
               " was left unimplemented in program"
+        _ -> return ()
 
-    mkAnonProto (Callable ctype callableName args retType mguard mbody) =
+    mkAnonProto (Callable ctype callableName args retType mguard _) =
       Callable ctype callableName (map (mkAnonVar <$$>) args) retType
-               mguard mbody
+               mguard EmptyBody
     mkAnonVar (Var mode _ typ) = Var mode (GenName "#anon#") typ
 
 -- TODO: finish module casting.
@@ -207,15 +222,18 @@ castModule dstTyp origModule@(Ann declO (UModule srcTyp _ _ _)) = do
 
     -- TODO: make the lists non-empty in AST
     mkSigDecls :: [TCDecl] -> [TCDecl]
-    mkSigDecls decls = map mkSigDecl decls
+    mkSigDecls decls = foldl handleSigDecl [] decls
 
-    mkSigDecl :: TCDecl -> TCDecl
-    mkSigDecl decl@(TypeDecl _) = decl
-    mkSigDecl (CallableDecl d) = CallableDecl $ prototypize <$$> d
+    handleSigDecl :: [TCDecl] -> TCDecl -> [TCDecl]
+    handleSigDecl acc decl@(TypeDecl _) = decl : acc
+    handleSigDecl acc (CallableDecl d) = case d of
+      -- When casting to signature, axioms are stripped away.
+      Ann _ UAxiom {} -> acc
+      _ -> CallableDecl (prototypize <$$> d) : acc
 
     prototypize :: CallableDecl' p -> CallableDecl' p
     prototypize (Callable ctype name args retType guard _) =
-      Callable ctype name args retType guard Nothing
+      Callable ctype name args retType guard EmptyBody
 
 castModule _ (Ann _ (RefModule _ _ v)) = absurd v
 -- TODO: sanity check modes
@@ -501,14 +519,17 @@ insertAndMergeDecl env decl = do
       | Nothing <- mdecls = return [anncallableDecl]
       | Just decls <- mdecls = do
         let protos = getCallableDecls decls
-            (Callable ctype _ args returnType mguard mbody) = callableDecl
+            (Callable ctype _ args returnType mguard cbody) = callableDecl
             argTypes = map (_varType . _elem) args
             (matches, nonMatches) = L.partition
               (prototypeMatchesTypeConstraints argTypes (Just returnType)) protos
             (matchesWithBody, matchesWithoutBody) =
               L.partition callableIsImplemented matches
-        if not (null matches) then do
-          when (isJust mbody && not (null matchesWithBody)) $
+        -- If the callable is already in the environment, we do not insert it
+        -- a second time.
+        if anncallableDecl `elem` matches then return $ matches <> nonMatches
+        else if not (null matches) then do
+          when (cbody /= EmptyBody && not (null matchesWithBody)) $
             throwLocatedE InvalidDeclErr (srcCtx . head $ declO) $ -- TODO: how to add src info better here?
               "attempting to import two different implementations for " <>
               pshow ctype <> " " <> pshow name
@@ -583,18 +604,20 @@ registerType
   :: ModuleScope
   -> TypeDecl PhCheck
   -> Except Err ModuleScope
-registerType modul annType = do
-  modul' <- insertAndMergeDecl modul (TypeDecl annType)
-  -- All types are equipped with an equality function. We generate it here.
-  insertAndMergeDecl modul' (CallableDecl (Ann (_ann annType) equalityFnDecl))
-  -- TODO: eventually, we might want to also generate a if-then-else function
-  -- for the declared type here.
+registerType modul annType =
+  foldM insertAndMergeDecl modul (mkTypeUtils annType)
+
+mkTypeUtils
+  :: TypeDecl PhCheck
+  -> [UDecl PhCheck]
+mkTypeUtils annType =
+  [TypeDecl annType, CallableDecl (Ann (_ann annType) equalityFnDecl)]
   where
     mkVar nameStr =
       Ann (nodeName annType) $ Var UObs (VarName nameStr) (nodeName annType)
     equalityFnDecl =
       Callable Function (FuncName "_==_") [mkVar "e1", mkVar "e2"] Pred
-               Nothing Nothing
+               Nothing ExternalBody
 
 -- TODO: ensure functions have a return type defined, though should be handled
 -- by parsing.
@@ -612,7 +635,10 @@ registerProto checkGuards modul annCallable =
 -- TODO: check for procedures, predicates, axioms (this is only for func)?
 -- TODO: check guard
 checkProto
-  :: Bool -> ModuleScope -> CallableDecl PhParse -> Except Err (CallableDecl PhCheck)
+  :: Bool
+  -> ModuleScope
+  -> CallableDecl PhParse
+  -> Except Err (CallableDecl PhCheck)
 checkProto checkGuards env
     (Ann src (Callable ctype name args retType mguard _)) = do
   tcArgs <- checkArgs args
@@ -623,7 +649,7 @@ checkProto checkGuards env
       then Just <$> annotateScopedExpr env (initScope args) (Just Pred) guard
       else return Nothing
   return Ann { _ann = [LocalDecl src]
-             , _elem = Callable ctype name tcArgs retType tcGuard Nothing
+             , _elem = Callable ctype name tcArgs retType tcGuard EmptyBody
              }
   where checkArgs :: [TypedVar PhParse] -> Except Err [TypedVar PhCheck]
         checkArgs vars = do
@@ -653,8 +679,16 @@ buildModuleFromDependency namedRenamings pkg
     Just [] -> throwLocatedE CompilerErr src "module has been removed from env"
     Just [m] -> do
       -- TODO: strip non-signature elements here.
-      decls <- moduleDecls <$> (if castToSig then castModule Signature m
-                                else return  m)
+      decls <-
+        if castToSig then do
+          decls' <- moduleDecls <$> castModule Signature m
+          -- When casting to signature, external definitions are discarded.
+          -- Because some external functions are registered initially for each
+          -- type (e.g. _==_), we make sure to register them again.
+          let typeDecls = foldl (\acc d -> acc <> getTypeDecls d) [] decls'
+          foldM registerType decls' typeDecls
+        else return $ moduleDecls m
+
       -- TODO: gather here env of known renamings
       checkedRenamings <- mapM (expandRenamingBlock namedRenamings) renamings
       renamedDecls <- foldM applyRenamingBlock decls checkedRenamings
@@ -743,11 +777,13 @@ applyRenaming decl renaming = case decl of
   where
     replaceName' = flip replaceName renaming
     applyRenamingInTypeDecl (Type typ) = Type $ replaceName' typ
-    applyRenamingInCallableDecl (Callable ctyp name vars retType mguard mbody) =
+    applyRenamingInCallableDecl (Callable ctyp name vars retType mguard cbody) =
       Callable ctyp (replaceName' name)
         (map applyRenamingInTypedVar vars) (replaceName' retType)
         (applyRenamingInExpr <$> mguard)
-        (applyRenamingInExpr <$> mbody)
+        (case cbody of
+          MagnoliaBody body -> MagnoliaBody (applyRenamingInExpr body)
+          _ -> cbody)
     applyRenamingInTypedVar :: TypedVar PhCheck -> TypedVar PhCheck
     applyRenamingInTypedVar (Ann typAnn (Var mode name typ)) =
       Ann (replaceName' typAnn) $ Var mode name (replaceName' typ)

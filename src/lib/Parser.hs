@@ -134,6 +134,7 @@ moduleType = (keyword ConceptKW >> return Concept)
           <|> (keyword ImplementationKW >> return Implementation)
           <|> (keyword SignatureKW >> return Signature)
           <|> (keyword ProgramKW >> return Program)
+          <|> (keyword ExternalKW >> return External)
 
 moduleRef :: UModuleType -> Name -> Parser (UModule' PhParse)
 moduleRef typ name = do
@@ -142,7 +143,7 @@ moduleRef typ name = do
 
 inlineModule :: UModuleType -> Name -> Parser (UModule' PhParse)
 inlineModule typ name = do
-  declsAndDeps <- braces $ many (try (Left <$> declaration)
+  declsAndDeps <- braces $ many (try (Left <$> declaration typ)
                                  <|> (Right <$> moduleDependency))
   let decls = [decl | (Left decl) <- declsAndDeps]
       deps  = [dep  | (Right dep) <- declsAndDeps]
@@ -180,14 +181,14 @@ satisfaction = annot satisfaction'
       modeledModule <- keyword ModelsKW >> renamedModule
       return $ USatisfaction name initialModule withModule modeledModule
 
-declaration :: Parser ParsedDecl
-declaration = do
+declaration :: UModuleType -> Parser ParsedDecl
+declaration mtyp = do
   -- TODO: we consider 'require' to be a no-op in this case.
   -- I do not believe that there are cases in which it is not. However, we
   -- might want to keep it as a part of the AST, so this might change.
   optional (keyword RequireKW) *> declaration' <* many semi
   where declaration' =  (TypeDecl <$> annot typeDecl)
-                    <|> (CallableDecl <$> annot callable)
+                    <|> (CallableDecl <$> annot (callable mtyp))
 
 typeDecl :: Parser (TypeDecl' PhParse)
 typeDecl = do
@@ -195,8 +196,8 @@ typeDecl = do
   name <- typeName <* semi -- TODO: make expr
   return $ Type name
 
-callable :: Parser (CallableDecl' PhParse)
-callable = do
+callable :: UModuleType -> Parser (CallableDecl' PhParse)
+callable mtyp = do
   callableType <- (keyword AxiomKW >> return Axiom)
               <|> (keyword TheoremKW >> return Axiom)
               <|> (keyword FunctionKW >> return Function)
@@ -212,9 +213,11 @@ callable = do
       Predicate -> return Pred
       _         -> return Unit
   guard <- optional (keyword GuardKW >> expr)
-  body <- optional (blockExpr
+  mBody <- optional (blockExpr
                 <|> (symbol "=" *> (blockExpr <|> (expr <* semi))))
-  when (isNothing body) semi
+  when (isNothing mBody) semi
+  let body = maybe (if mtyp == External then ExternalBody else EmptyBody)
+                   MagnoliaBody mBody
   return $ Callable callableType name args retType guard body
 
 annVar :: UVarMode -> Parser ParsedTypedVar
@@ -384,7 +387,7 @@ symOpName = choice $ map (try . mkSymOpNameParser) symOps
           symbol s <* notFollowedBy nameChar
           return $ FuncName s
 
-data Keyword = ConceptKW | ImplementationKW | ProgramKW | SignatureKW
+data Keyword = ConceptKW | ImplementationKW | ProgramKW | SignatureKW | ExternalKW
              | RenamingKW | SatisfactionKW
              | ModelsKW | WithKW
              | AxiomKW | FunctionKW | PredicateKW | ProcedureKW | TheoremKW
@@ -403,6 +406,7 @@ keyword kw = (lexeme . try) $ string s *> notFollowedBy nameChar
       ImplementationKW -> "implementation"
       ProgramKW        -> "program"
       SignatureKW      -> "signature"
+      ExternalKW       -> "external"
       RenamingKW       -> "renaming"
       SatisfactionKW   -> "satisfaction"
       ModelsKW         -> "models"

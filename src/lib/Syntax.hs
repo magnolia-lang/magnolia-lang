@@ -23,7 +23,7 @@ module Syntax (
     UTopLevelDecl (..), UType, UVar (..), UVarMode (..), WithSrc (..),
     GlobalEnv, InlineRenaming, PackageHead (..), RenamedModule (..),
     URenaming' (..), URenaming,
-    CBody, CGuard,
+    CBody (..), CGuard,
     TCCallableDecl, TCDecl, TCExpr, TCMaybeTypedVar, TCModule, TCModuleDep,
     TCPackage, TCTopLevelDecl, TCTypeDecl, TCTypedVar,
     HasSrcCtx (..), NamedNode (..),
@@ -128,7 +128,8 @@ data USatisfaction' p =
 data RenamedModule p = RenamedModule (UModule p) [URenamingBlock p]
 
 type UModule p = Ann p UModule'
-data UModule' p = UModule UModuleType Name (XPhasedContainer p (UDecl p)) (XPhasedContainer p (UModuleDep p))
+data UModule' p = UModule UModuleType Name (XPhasedContainer p (UDecl p))
+                                           (XPhasedContainer p (UModuleDep p))
                 | RefModule UModuleType Name (XRef p)
 
 -- Expose out for DAG building
@@ -147,7 +148,7 @@ data URenaming' p = InlineRenaming InlineRenaming
 
 type InlineRenaming = (Name, Name)
 
-data UModuleType = Signature | Concept | Implementation | Program
+data UModuleType = Signature | Concept | Implementation | Program | External
                    deriving (Eq, Show)
 
 data UDecl p = TypeDecl (TypeDecl p)
@@ -163,7 +164,8 @@ data CallableDecl' p =
   Callable CallableType Name [TypedVar p] UType (CGuard p) (CBody p)
   deriving (Eq, Show)
 
-type CBody p = Maybe (UExpr p)
+data CBody p = ExternalBody | EmptyBody | MagnoliaBody (UExpr p)
+  deriving (Eq, Show)
 type CGuard p = Maybe (UExpr p)
 
 type UType = Name
@@ -208,6 +210,10 @@ data UVar typAnnType p = Var { _varMode :: UVarMode
 -- Mode is either Obs (const), Out (unset ref), Upd (ref), or Unk(nown)
 data UVarMode = UObs | UOut | UUnk | UUpd
                 deriving (Eq, Show)
+
+-- == code generation utils ==
+
+--data Backend = Cxx | JavaScript | Python
 
 -- == annotation utils ==
 

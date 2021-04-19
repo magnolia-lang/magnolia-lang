@@ -113,5 +113,5 @@ replaceGuard (Callable callableType name args retType _ mbody) mguard =
 -- TODO: avoid partiality
 callableIsImplemented :: CallableDecl p -> Bool
 callableIsImplemented (Ann _ (Callable _ _ _ _ _ mbody)) = case mbody of
-  Nothing -> False
+  EmptyBody -> False
   _ -> True

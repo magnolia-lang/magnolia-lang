@@ -153,6 +153,7 @@ instance Pretty UModuleType where
     Concept -> "concept"
     Implementation -> "implementation"
     Program -> "program"
+    External -> "external"
 
 instance Pretty (UDecl PhCheck) where
   pretty decl = case decl of
@@ -163,9 +164,11 @@ instance Pretty (TypeDecl' p) where
   pretty (Type typ) = "type" <+> p typ <> ";"
 
 instance Pretty (CallableDecl' p) where
-  pretty (Callable callableType name args ret mguard mbody) =
+  pretty (Callable callableType name args ret mguard cbody) =
     let pret = if callableType == Function then " : " <> p ret else ""
-        pbody = case mbody of Nothing -> ";"; Just body -> " = " <> p body
+        pbody = case cbody of EmptyBody -> ";"
+                              MagnoliaBody body -> " = " <> p body
+                              ExternalBody -> " = <external impl>;"
         pguard = case mguard of Nothing -> ""
                                 Just guard -> " guard " <> p guard
     in p callableType <+> p name <+> prettyArgs <>

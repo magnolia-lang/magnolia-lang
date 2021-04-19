@@ -42,12 +42,11 @@ emitPyDecl :: Int -> TCDecl -> PythonSource
 emitPyDecl indent decl = case decl of
   -- TODO: add type annotations?
   TypeDecl (Ann _ (Type _)) -> noEmit
-  -- Ignore prototypes
-  CallableDecl (Ann _ (Callable _ _ _ _ _ Nothing)) -> noEmit
   -- In Python, it is not possible to have side-effects on all the types of
   -- arguments. Therefore, procedures are turned into functions returning
   -- tuples.
-  CallableDecl cdecl@(Ann _ (Callable callableType _ args _ _ (Just body))) ->
+  CallableDecl cdecl@(Ann _ (Callable callableType _ args _ _
+                                      (MagnoliaBody body))) ->
       emitProto cdecl <> mkIndent bodyIndent <> case callableType of
         Axiom     -> emitPyExpr bodyIndent body <> "\n"
         -- TODO: what to do with this?
@@ -58,6 +57,9 @@ emitPyDecl indent decl = case decl of
         -- TODO: make sure the chosen return name is free.
         _         -> emitPrefixedPyExpr bodyIndent
                                         (mkIndent bodyIndent <> "return ") body
+  -- Ignore prototypes and external functions
+  CallableDecl (Ann _ (Callable _ _ _ _ _ EmptyBody)) -> noEmit
+  CallableDecl (Ann _ (Callable _ _ _ _ _ ExternalBody)) -> noEmit
   where
     emitProcReturn :: [TCTypedVar] -> PythonSource
     emitProcReturn args =
