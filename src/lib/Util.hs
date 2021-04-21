@@ -51,6 +51,7 @@ lookupTopLevelRef
      , XAnn PhCheck e ~ DeclOrigin
      , Show (e PhCheck)
      , Pretty (e PhCheck)
+     , NamedNode (e PhCheck)
      )
   => SrcCtx
   -> Env [Ann PhCheck e]
@@ -89,7 +90,7 @@ lookupTopLevelRef src env ref@(FullyQualifiedName mscopeName targetName) =
           throwLocatedE UnboundTopLevelErr src $ pshow ref
         unless (null $ tail compatibleMatches) $ -- more than one match
           throwLocatedE AmbiguousTopLevelRefErr src $ pshow ref <>
-            "'. Candidates are: " <> pshow compatibleMatches
+            "'. Candidates are: " <> pshow (map mkFQName compatibleMatches)
         return $ head compatibleMatches
   where
     matchesImportScope
@@ -98,6 +99,13 @@ lookupTopLevelRef src env ref@(FullyQualifiedName mscopeName targetName) =
       ImportedDecl (FullyQualifiedName (Just scopeName') _) _ ->
         scopeName == scopeName'
       _ -> False
+
+    mkFQName
+      :: (XAnn PhCheck e ~ DeclOrigin, NamedNode (e PhCheck))
+      => Ann PhCheck e -> Name
+    mkFQName (Ann declO node) = case declO of
+      LocalDecl _ -> nodeName node
+      ImportedDecl fqn _ -> fromFullyQualifiedName fqn
 
 -- === renamings manipulation ===
 

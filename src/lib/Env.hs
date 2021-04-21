@@ -24,7 +24,8 @@ data FullyQualifiedName = FullyQualifiedName { _scopeName :: Maybe Name
 
 fromFullyQualifiedName :: FullyQualifiedName -> Name
 fromFullyQualifiedName (FullyQualifiedName scopeName targetName) =
-  Name (_namespace targetName) (maybe "" _name scopeName <> _name targetName)
+  Name (_namespace targetName)
+       (maybe "" _name scopeName <> "." <> _name targetName)
 
 -- TODO: align instances of Eq, Ord for soundness.
 
