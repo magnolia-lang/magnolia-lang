@@ -36,7 +36,7 @@ pshow = render
 
 instance Pretty Err where -- TODO: change error to have error types
   pretty (Err errType srcInfo txt) = case srcInfo of
-    Nothing -> "<no context>:" <+> p txt
+    Nothing -> "<no context>:" <+> p errType <+> p txt
     Just ((filename, startLine, startColumn), _) ->
       p filename <> ":" <> p startLine <> ":" <> p startColumn <>
       ":" <+> p errType <+> p txt
@@ -44,8 +44,7 @@ instance Pretty Err where -- TODO: change error to have error types
 instance Pretty ErrType where
   pretty e = case e of
     AmbiguousFunctionRefErr -> ambiguous "functions"
-    AmbiguousModuleRefErr -> ambiguous "modules"
-    AmbiguousNamedRenamingRefErr -> ambiguous "named renamings"
+    AmbiguousTopLevelRefErr -> ambiguous "top-level references"
     AmbiguousProcedureRefErr -> ambiguous "procedures"
     CompilerErr -> "Compiler bug!" <> line
       <> "Please report this at github.com/magnolia-lang/magnolia-lang"
@@ -62,11 +61,10 @@ instance Pretty ErrType where
     ParseErr -> "Parse error:"
     TypeErr -> "Type error:"
     UnboundFunctionErr -> unbound "function"
-    UnboundModuleErr -> unbound "module"
+    UnboundTopLevelErr -> unbound "top-level reference"
     UnboundNameErr -> unbound "name"
     UnboundProcedureErr -> unbound "procedure"
     UnboundTypeErr -> unbound "type"
-    UnboundNamedRenamingErr -> unbound "named renaming"
     UnboundVarErr -> unbound "variable"
     where
       ambiguous s = "Error: could not disambiguate between" <+> s <> ":"
@@ -88,6 +86,10 @@ instance Pretty NameSpace where
     NSType -> "type"
     NSUnspecified -> "unspecified"
     NSVariable -> "variable") <+> "namespace"
+
+instance Pretty FullyQualifiedName where
+  pretty (FullyQualifiedName mscopeName targetName) =
+    maybe "" (\n -> p n <+> ".") mscopeName <+> p targetName
 
 instance (Show (e p), Pretty (e p)) => Pretty (Ann p e) where
   pretty = p . _elem

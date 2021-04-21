@@ -6,11 +6,12 @@ module Parser (parsePackage, parsePackageHead, parseReplCommand) where
 import Control.Monad.Combinators.Expr
 import Control.Monad.Except (void, when, ExceptT, throwError)
 import Data.Functor (($>))
-import Data.Maybe (isNothing)
+import Data.Maybe (fromMaybe, isNothing)
 import Data.Void
 import Text.Megaparsec
 import Text.Megaparsec.Char
 
+import qualified Data.List as L
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Text.Lazy as T
 import qualified Text.Megaparsec.Char.Lexer as L
@@ -47,6 +48,7 @@ replCommand =  loadPackageCommand
            <|> listPackageCommand
            <|> showMenuCommand
 
+-- TODO: fix repl to use fully qualified names
 loadPackageCommand :: Parser Command
 loadPackageCommand = do
   symbol "load"
@@ -138,7 +140,7 @@ moduleType = (keyword ConceptKW >> return Concept)
 
 moduleRef :: UModuleType -> Name -> Parser (UModule' PhParse)
 moduleRef typ name = do
-  refName <- ModName <$> nameString
+  refName <- fullyQualifiedName NSPackage NSModule
   return $ RefModule typ name refName
 
 inlineModule :: UModuleType -> Name -> Parser (UModule' PhParse)
@@ -287,8 +289,8 @@ moduleDependency = annot moduleDependency'
       choice [keyword UseKW, keyword RequireKW]
       (castToSignature, name) <-
         try (keyword SignatureKW *>
-             ((True,) . ModName <$> parens nameString))
-          <|> (False,) . ModName <$> nameString
+             ((True,) <$> fullyQualifiedName NSPackage NSModule))
+          <|> (False,) <$> fullyQualifiedName NSPackage NSModule
       renamings <- many renamingBlock
       semi
       return $ UModuleDep name renamings castToSignature
@@ -299,7 +301,8 @@ renamingBlock = annot renamingBlock'
     renamingBlock' = URenamingBlock <$> brackets (renaming `sepBy` symbol ",")
 
 renaming :: Parser (URenaming PhParse)
-renaming = try inlineRenaming <|> annot (RefRenaming . RenamingName <$> nameString)
+renaming = try inlineRenaming
+        <|> annot (RefRenaming <$> fullyQualifiedName NSPackage NSRenaming)
 
 inlineRenaming :: Parser (URenaming PhParse)
 inlineRenaming = annot inlineRenaming'
@@ -460,9 +463,25 @@ varName = VarName <$> nameString
 packageName :: Parser Name
 packageName = PkgName <$> packageString
 
+-- TODO: remove
 packageString :: Parser String
-packageString =
-  lexeme . try $ (:) <$> nameChar <*> many (nameChar <|> char '.')
+packageString = do
+  (scopeS, nameS) <- fullyQualifiedNameString
+  return $ fromMaybe "" scopeS <> nameS
+
+fullyQualifiedName :: NameSpace -> NameSpace -> Parser FullyQualifiedName
+fullyQualifiedName scopeNS nameNS = do
+  (scopeS, nameS) <- fullyQualifiedNameString
+  return $ FullyQualifiedName (Name scopeNS <$> scopeS) (Name nameNS nameS)
+
+fullyQualifiedNameString :: Parser (Maybe String, String)
+fullyQualifiedNameString = do
+  nameStrings <- nameString `sepBy1` char '.'
+  -- nameStrings *must* contain at least one element here. Therefore, we can
+  -- safely call last.
+  case init nameStrings of
+    [] -> return (Nothing, last nameStrings)
+    ss -> return (Just $ L.intercalate "." ss, last nameStrings)
 
 sourceFileString :: Parser String
 sourceFileString =

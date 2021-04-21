@@ -104,6 +104,7 @@ instance Show (e p) => Show (Ann p e) where
 
 -- === AST ===
 
+-- TODO: use fully qualified names consistently at the package level
 type UPackage p = Ann p UPackage'
 data UPackage' p = UPackage { _packageName :: Name
                             , _packageDecls :: XPhasedContainer p (UTopLevelDecl p)
@@ -137,7 +138,10 @@ data UModule' p = UModule UModuleType Name (XPhasedContainer p (UDecl p))
 type UModuleDep p = Ann p UModuleDep'
 -- Represents a dependency to a module with an associated list of renaming
 -- blocks, as well as whether to only extract the signature of the dependency.
-data UModuleDep' p = UModuleDep Name [URenamingBlock p] Bool
+data UModuleDep' p = UModuleDep { _depName :: FullyQualifiedName
+                                , _depRenamingBlock :: [URenamingBlock p]
+                                , _depCastToSig :: Bool
+                                }
 
 type URenamingBlock p = Ann p URenamingBlock'
 newtype URenamingBlock' p = URenamingBlock [URenaming p]
@@ -233,9 +237,8 @@ data Err = Err ErrType SrcCtx T.Text --WithSrc T.Text
            deriving Show
 
 data ErrType = AmbiguousFunctionRefErr
-             | AmbiguousModuleRefErr
-             | AmbiguousNamedRenamingRefErr
              | AmbiguousProcedureRefErr
+             | AmbiguousTopLevelRefErr
              | CompilerErr
              | CyclicCallableErr
              | CyclicModuleErr
@@ -249,17 +252,16 @@ data ErrType = AmbiguousFunctionRefErr
              | ParseErr
              | TypeErr
              | UnboundFunctionErr
-             | UnboundModuleErr
              | UnboundNameErr
              | UnboundProcedureErr
+             | UnboundTopLevelErr
              | UnboundTypeErr
-             | UnboundNamedRenamingErr
              | UnboundVarErr
                deriving Show
 
 -- TODO: External
 -- TODO: actually deal with ImportedDecl
-data DeclOrigin = LocalDecl SrcCtx | ImportedDecl Name Name SrcCtx -- or | External Name
+data DeclOrigin = LocalDecl SrcCtx | ImportedDecl FullyQualifiedName SrcCtx -- or | External Name
                   deriving (Eq, Ord, Show)
 
 -- === compilation phases ===
@@ -316,7 +318,7 @@ type family XPhasedContainer p e where
 -- The goal of XRef is to statically prevent the existence of references to
 -- named top level elements after the consistency/type checking phase.
 type family XRef p where
-  XRef PhParse = Name
+  XRef PhParse = FullyQualifiedName
   XRef PhCheck = Void
 
 -- TODO: move?
@@ -363,7 +365,7 @@ instance NamedNode (USatisfaction' p) where
   nodeName (USatisfaction name _ _ _) = name
 
 instance NamedNode (UModuleDep' p) where
-  nodeName (UModuleDep name _ _) = name
+  nodeName (UModuleDep name _ _) = fromFullyQualifiedName name
 
 instance NamedNode (UDecl p) where
   nodeName decl = case decl of
@@ -389,7 +391,7 @@ instance HasSrcCtx SrcCtx where
 instance HasSrcCtx DeclOrigin where
   srcCtx declO = case declO of
     LocalDecl src -> src
-    ImportedDecl _ _ src -> src
+    ImportedDecl _ src -> src
 
 instance HasSrcCtx (SrcCtx, a) where
   srcCtx (src, _) = src
@@ -471,9 +473,9 @@ moduleDecls (Ann _ modul) = case modul of
   UModule _ _ decls _ -> decls
   RefModule _ _ v -> absurd v
 
-moduleDepNames :: UModule PhParse -> [Name]
+moduleDepNames :: UModule PhParse -> [FullyQualifiedName]
 moduleDepNames (Ann _ modul) = case modul of
-  UModule _ _ _ deps -> map nodeName deps
+  UModule _ _ _ deps -> map (_depName . _elem) deps
   RefModule _ _ refName -> [refName]
 
 -- === module declarations manipulation ===

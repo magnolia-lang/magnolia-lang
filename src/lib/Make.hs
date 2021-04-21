@@ -37,43 +37,53 @@ upsweep = foldM go M.empty
       -- TODO: add local/external ann for nodes
       importedEnv <- foldM (loadPackageDependency globalEnv) M.empty deps
       -- 1. Renamings
-      envWithRenamings <-
-        upsweepRenamings importedEnv $ topSortRenamingDecls (getNamedRenamings decls)
+      envWithRenamings <- upsweepRenamings importedEnv $
+        topSortRenamingDecls name (getNamedRenamings decls)
       -- TODO: deal with renamings first, then modules, then satisfactions
       -- 2. Modules
-      checkedModulesNOTFINISHED <-
-        upsweepModules envWithRenamings $ topSortModules (getModules decls)
+      checkedModulesNOTFINISHED <- upsweepModules envWithRenamings $
+        topSortModules name (getModules decls)
       -- 3. Satisfactions
       -- TODO: ^
       -- TODO: deal with deps and other tld types
       let checkedPackage = Ann ann (UPackage name checkedModulesNOTFINISHED [])
       return $ M.insert name checkedPackage globalEnv
 
-topSortModules :: [UModule PhParse] -> [G.SCC (UModule PhParse)]
-topSortModules modules = G.stronglyConnComp
+topSortModules :: Name -> [UModule PhParse] -> [G.SCC (UModule PhParse)]
+topSortModules pkgName modules = G.stronglyConnComp
     [ ( modul
       , nodeName modul
-      , moduleDepNames modul
+      , map _targetName $
+          filter (isLocalFQName pkgName) $
+            moduleDepNames modul
       )
     | modul <- modules
     ]
 
 -- TODO: does that work for imported nodes? Non-existing dependencies?
 topSortRenamingDecls
-  :: [UNamedRenaming PhParse] -> [G.SCC (UNamedRenaming PhParse)]
-topSortRenamingDecls namedRenamings = G.stronglyConnComp
+  :: Name -> [UNamedRenaming PhParse] -> [G.SCC (UNamedRenaming PhParse)]
+topSortRenamingDecls pkgName namedRenamings = G.stronglyConnComp
     [ ( node
       , name
-      , getRenamingDependencies renamingBlocks
+      , map _targetName $
+          filter (isLocalFQName pkgName) $
+            getRenamingDependencies renamingBlocks
       )
     | node@(Ann _ (UNamedRenaming name renamingBlocks)) <- namedRenamings
     ]
 
-getRenamingDependencies :: URenamingBlock PhParse -> [Name]
+isLocalFQName :: Name -> FullyQualifiedName -> Bool
+isLocalFQName pkgName (FullyQualifiedName mscopeName _) =
+  case mscopeName of Nothing -> True
+                     Just scopeName -> scopeName == pkgName
+
+getRenamingDependencies :: URenamingBlock PhParse -> [FullyQualifiedName]
 getRenamingDependencies (Ann _ (URenamingBlock renamings)) =
     foldl extractRenamingRef [] renamings
 
-extractRenamingRef :: [Name] -> URenaming PhParse -> [Name]
+extractRenamingRef
+  :: [FullyQualifiedName] -> URenaming PhParse -> [FullyQualifiedName]
 extractRenamingRef acc (Ann _ r) = case r of
   InlineRenaming _ -> acc
   RefRenaming name -> name:acc
@@ -100,12 +110,16 @@ importLocal
   -> [TCTopLevelDecl]
 importLocal name acc decl = case decl of
   UNamedRenamingDecl (Ann (LocalDecl src) node) ->
-    UNamedRenamingDecl (Ann (ImportedDecl name (nodeName node) src) node):acc
+    UNamedRenamingDecl (Ann (mkImportedDecl src node) node):acc
   UModuleDecl (Ann (LocalDecl src) node) ->
-    UModuleDecl (Ann (ImportedDecl name (nodeName node) src) node):acc
+    UModuleDecl (Ann (mkImportedDecl src node) node):acc
   USatisfactionDecl (Ann (LocalDecl src) node) ->
-    USatisfactionDecl (Ann (ImportedDecl name (nodeName node) src) node):acc
+    USatisfactionDecl (Ann (mkImportedDecl src node) node):acc
+  -- We do not import non-local decls from other packages.
   _ -> acc -- Ann (src, ImportedDecl name (nodeName modul)) modul:acc
+  where
+    mkImportedDecl src node =
+      ImportedDecl (FullyQualifiedName (Just name) (nodeName node)) src
 
 
 -- TODO: optimize as needed, could be more elegant.

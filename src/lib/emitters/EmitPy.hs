@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module EmitPy (PythonSource (..), emitPyPackage) where
+module EmitPy (PythonSource, emitPyPackage) where
 
 import Data.List (intercalate)
 import qualified Data.List.NonEmpty as NE
@@ -8,7 +8,6 @@ import qualified Data.Map as M
 
 import Env
 import Syntax
-import Util
 
 --data PythonSource = PythonSourceFile String PythonSource
 --                  | PythonSourceBlock [PythonSource]
@@ -17,9 +16,6 @@ import Util
 type PythonSource = String
 
 type TCExpr' = UExpr' PhCheck
-
-emitPyGlobalEnv :: GlobalEnv PhCheck -> PythonSource
-emitPyGlobalEnv = undefined
 
 -- TODO: actually implement
 emitPyPackage :: TCPackage -> PythonSource

@@ -1,7 +1,8 @@
 {-# LANGUAGE PatternSynonyms #-}
 
 module Env (
-  Env, Name (..), NameSpace (..),
+  Env, FullyQualifiedName (..), Name (..), NameSpace (..),
+  fromFullyQualifiedName,
   pattern FuncName, pattern GenName, pattern ModName, pattern PkgName,
   pattern ProcName, pattern RenamingName, pattern SatName, pattern TypeName,
   pattern UnspecName, pattern VarName)
@@ -15,6 +16,15 @@ data Name = Name { _namespace :: NameSpace
                  , _name :: String
                  }
             deriving (Eq, Ord, Show)
+
+data FullyQualifiedName = FullyQualifiedName { _scopeName :: Maybe Name
+                                             , _targetName :: Name
+                                             }
+                        deriving (Eq, Ord, Show)
+
+fromFullyQualifiedName :: FullyQualifiedName -> Name
+fromFullyQualifiedName (FullyQualifiedName scopeName targetName) =
+  Name (_namespace targetName) (maybe "" _name scopeName <> _name targetName)
 
 -- TODO: align instances of Eq, Ord for soundness.
 

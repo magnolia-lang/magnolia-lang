@@ -59,36 +59,27 @@ checkModule
   :: Env [TCTopLevelDecl]
   -> UModule PhParse
   -> Except Err (Env [TCTopLevelDecl])
-checkModule tlDecls (Ann src (RefModule typ name refName)) =
-  case M.lookup refName (M.map getModules tlDecls) of
-    Nothing -> throwLocatedE UnboundModuleErr src $ pshow refName
-    Just refs -> case refs of
-      -- TODO: NE.NonEmpty instead of []? Checking [] is annoying.
-      []  -> throwLocatedE CompilerErr src
-        "module name exists but is not bound in module expansion"
-      _   -> do
-         -- TODO: add disambiguation attempts
-        when (length refs /= 1) $
-          throwLocatedE AmbiguousNamedRenamingRefErr src $
-            pshow refName <> "'. Candidates are: " <> pshow refs
-        -- cast module: do we need to check out the deps?
-        ~(Ann _ (UModule _ _ decls deps)) <- castModule typ (head refs)
-        let renamedModule = UModule typ name decls deps :: UModule' PhCheck
-            renamedModuleDecl =
-              UModuleDecl $ Ann (LocalDecl src) renamedModule
-        return $ M.insertWith (<>) name [renamedModuleDecl] tlDecls
+checkModule tlDecls (Ann src (RefModule typ name ref)) = do
+  -- TODO: cast module: do we need to check out the deps?
+  ~(Ann _ (UModule _ _ decls deps)) <-
+    lookupTopLevelRef src (M.map getModules tlDecls) ref >>= castModule typ
+  let renamedModule = UModule typ name decls deps :: UModule' PhCheck
+      renamedModuleDecl = UModuleDecl $ Ann (LocalDecl src) renamedModule
+  return $ M.insertWith (<>) name [renamedModuleDecl] tlDecls
 
 checkModule tlDecls (Ann modSrc (UModule moduleType moduleName decls deps)) = do
-  let modules = M.map getModules tlDecls
-      namedRenamings = M.map getNamedRenamings tlDecls
-      callables = getCallableDecls decls
+  when (maybe False (any isLocalDecl . getModules)
+              (M.lookup moduleName tlDecls)) $
+    throwLocatedE MiscErr modSrc $ "duplicate local module name " <>
+      pshow moduleName <> " in package."
+  let callables = getCallableDecls decls
   -- Step 1: expand uses
   (depScope, checkedDeps) <- do
       -- TODO: check here that we are only importing valid types of modules.
       -- For instance, a program can not be imported into a concept, unless
       -- downcasted explicitly to a signature/concept.
       (depScopeList, checkedDepsList) <- unzip <$>
-        mapM (buildModuleFromDependency namedRenamings modules) deps
+        mapM (buildModuleFromDependency tlDecls) deps
       depScope <- foldM mergeModules M.empty depScopeList
       let checkedDeps = foldl (M.unionWith (<>)) M.empty checkedDepsList
       return (depScope, checkedDeps)
@@ -662,37 +653,29 @@ checkProto checkGuards env
           return $ Ann typ (Var mode varName typ)
 
 buildModuleFromDependency
-  :: Env [UNamedRenaming PhCheck]
-  -> Env [TCModule]
+  :: Env [TCTopLevelDecl]
   -> UModuleDep PhParse
   -> Except Err (Env [TCDecl], Env [TCModuleDep])
-buildModuleFromDependency namedRenamings pkg
-                          (Ann src (UModuleDep name renamings castToSig)) =
-  case M.lookup name pkg of
-    Nothing -> throwLocatedE UnboundModuleErr src $ pshow name
-    -- TODO: make NonEmpty elements in Env?
-    Just [] -> throwLocatedE CompilerErr src "module has been removed from env"
-    Just [m] -> do
+buildModuleFromDependency env (Ann src (UModuleDep ref renamings castToSig)) =
+  do  match <- lookupTopLevelRef src (M.map getModules env) ref
       -- TODO: strip non-signature elements here.
-      decls <-
-        if castToSig then do
-          decls' <- moduleDecls <$> castModule Signature m
+      decls <- if castToSig
+        then do
+          decls' <- moduleDecls <$> castModule Signature match
           -- When casting to signature, external definitions are discarded.
           -- Because some external functions are registered initially for each
           -- type (e.g. _==_), we make sure to register them again.
           let typeDecls = foldl (\acc d -> acc <> getTypeDecls d) [] decls'
           foldM registerType decls' typeDecls
-        else return $ moduleDecls m
-
+        else return $ moduleDecls match
       -- TODO: gather here env of known renamings
-      checkedRenamings <- mapM (expandRenamingBlock namedRenamings) renamings
+      checkedRenamings <-
+        mapM (expandRenamingBlock (M.map getNamedRenamings env)) renamings
       renamedDecls <- foldM applyRenamingBlock decls checkedRenamings
       -- TODO: do this well
-      let checkedDep = Ann src (UModuleDep name checkedRenamings castToSig)
-      return (renamedDecls, M.singleton name [checkedDep])
-    Just _ -> throwLocatedE NotImplementedErr src
-      "do not yet deal with ambiguous module names"
-      -- TODO: implement fully qualified use names"
+      let checkedDep = Ann src (UModuleDep ref checkedRenamings castToSig)
+      -- TODO: hold checkedModuleDeps in M.Map FQN Deps (change key type)
+      return (renamedDecls, M.singleton (_targetName ref) [checkedDep])
 
 -- TODO: cleanup duplicates, make a set of UDecl instead of a list?
 -- TODO: finish renamings
