@@ -467,7 +467,7 @@ packageName = PkgName <$> packageString
 packageString :: Parser String
 packageString = do
   (scopeS, nameS) <- fullyQualifiedNameString
-  return $ fromMaybe "" scopeS <> nameS
+  return $ fromMaybe "" scopeS <> "." <> nameS
 
 fullyQualifiedName :: NameSpace -> NameSpace -> Parser FullyQualifiedName
 fullyQualifiedName scopeNS nameNS = do
