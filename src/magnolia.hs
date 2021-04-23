@@ -28,15 +28,18 @@ parseCompilerMode :: ParserInfo CompilerMode
 parseCompilerMode = mkInfo compilerMode
   where
     compilerMode :: Parser CompilerMode
-    compilerMode = subparser $
-         command "repl" (info (pure ReplMode) (progDesc "Start Magnolia repl"))
-      <> command "build" (mkInfo (BuildMode <$>
-                                    argument str (metavar "FILE"
-                                                    <> help "Source program")))
+    compilerMode = subparser $ replCmd <> buildCmd
+    
+    replCmd = command "repl"
+      (info (helper <*> pure ReplMode) (progDesc "Start Magnolia repl"))
+    buildCmd = command "build"
+      (info (helper <*> buildArgs) (progDesc "Compile a package"))
+    buildArgs = BuildMode <$>
+      argument str (metavar "FILE" <> help "Source program")
 
 main :: IO ()
 main = do
-  compilerMode <- execParser parseCompilerMode
+  compilerMode <- customExecParser (prefs showHelpOnEmpty) parseCompilerMode
   case compilerMode of
     ReplMode -> repl `runStateT` M.empty >> return ()
     BuildMode filename -> build filename >>= pprint
