@@ -1,0 +1,7 @@
+<no context>: Parse error: tests/inputs/parsing-recovery.mg:2:1:
+  |
+2 | <empty line>
+  | ^
+unexpected end of input
+expecting '_' or alphanumeric character
+

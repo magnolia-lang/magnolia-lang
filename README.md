@@ -9,9 +9,9 @@ A very simplistic Makefile is provided, and the following should be sufficient
 to get going:
 
 ```bash
-$ make build
-$ # to get a symlink to the executable at the root of the repo, you can run
-$ find dist-newstyle/ -name magnolia -type f | xargs -I % sh -c 'ln -s % magnolia'
+make build
+# For convenience, you may define an alias for the compiler
+alias magnolia='cabal exec magnolia --'
 ```
 
 ## How to build Magnolia programs
@@ -20,7 +20,7 @@ Right now, code generation is very much incomplete; the output is pretty much
 useless. However, running
 
 ```bash
-$ ./magnolia build <path/to/package.mg>
+magnolia build <path/to/package.mg>
 ```
 
 will go through the compilation steps, and will output typechecking/parsing
@@ -30,7 +30,7 @@ Another option to explore Magnolia source files is to explore them using the
 `repl` option instead:
 
 ```bash
-$ ./magnolia repl
+magnolia repl
 mgn> help
 Available commands are:
         help: show this help menu
@@ -66,7 +66,7 @@ we can discuss them.
 #### Missing features
 
 - [ ] Satisfactions handling
-- [ ] Tests for the code and CI
+- [ ] Extensive testing of the compiler
 - [ ] Code generation
 - [ ] Documentation (*the code base is small, so it is not yet critical*)
 - [ ] Distinction between "normal" blocks and value blocks

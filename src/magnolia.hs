@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 import Control.Monad (join)
 import Control.Monad.Except (runExceptT)
 import Control.Monad.IO.Class (liftIO)
@@ -29,7 +31,7 @@ parseCompilerMode = mkInfo compilerMode
   where
     compilerMode :: Parser CompilerMode
     compilerMode = subparser $ replCmd <> buildCmd
-    
+
     replCmd = command "repl"
       (info (helper <*> pure ReplMode) (progDesc "Start Magnolia repl"))
     buildCmd = command "build"
@@ -42,7 +44,9 @@ main = do
   compilerMode <- customExecParser (prefs showHelpOnEmpty) parseCompilerMode
   case compilerMode of
     ReplMode -> repl `runStateT` M.empty >> return ()
-    BuildMode filename -> build filename >>= pprint
+    BuildMode filename -> build filename >>= \case
+        Nothing   -> return ()
+        Just code -> pprint code
 
 codegen :: String -> TopEnv -> IO String -- TODO: return instead source code type or smth
 codegen filename env = case M.lookup (mkPkgNameFromPath filename) env of
@@ -60,12 +64,12 @@ compile filename = do
     Left e -> pprint e >> return (Failure, M.empty)
     Right env -> return (Success, env)
 
-build :: String -> IO String -- TODO: return instead source code type or smth
+build :: String -> IO (Maybe String) -- TODO: return instead source code type or smth
 build filename = do
   (status, compiledPackages) <- compile filename
   case status of
-    Failure -> error "Exiting"
-    Success -> codegen filename compiledPackages
+    Failure -> return Nothing
+    Success -> Just <$> codegen filename compiledPackages
 
 repl :: StateT TopEnv IO () --InputT (StateT s IO) ()
 repl = runInputT defaultSettings go
