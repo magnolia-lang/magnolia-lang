@@ -1,5 +1,8 @@
 # The Magnolia Programming Language
 
+![Continuous
+integration](https://github.com/magnolia-lang/magnolia-lang/actions/workflows/ci.yml/badge.svg)
+
 Magnolia is a research programming language based on the theory of institutions.
 
 ## How to compile
