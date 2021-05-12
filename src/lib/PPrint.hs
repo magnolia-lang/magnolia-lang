@@ -94,28 +94,28 @@ instance Pretty FullyQualifiedName where
 instance (Show (e p), Pretty (e p)) => Pretty (Ann p e) where
   pretty = p . _elem
 
-instance Pretty (UPackage' PhCheck) where
-  pretty (UPackage name decls deps) =
+instance Pretty (MPackage' PhCheck) where
+  pretty (MPackage name decls deps) =
     let importHeader = case deps of
           [] -> ""
           _  -> "imports" <+> align (vsep (punctuate comma (map p deps)))
     in "package" <+> p name <+> importHeader <+> ";" <> "\n\n"
         <> vsep (map p (join (M.elems decls)))
 
-instance Pretty (UPackageDep' PhCheck) where
-  pretty (UPackageDep name) = p name
+instance Pretty (MPackageDep' PhCheck) where
+  pretty (MPackageDep name) = p name
 
-instance Pretty (UTopLevelDecl PhCheck) where
+instance Pretty (MTopLevelDecl PhCheck) where
   pretty decl = case decl of
-    UNamedRenamingDecl namedRenaming -> p namedRenaming
-    UModuleDecl modul -> p modul
-    USatisfactionDecl satisfaction -> p satisfaction
+    MNamedRenamingDecl namedRenaming -> p namedRenaming
+    MModuleDecl modul -> p modul
+    MSatisfactionDecl satisfaction -> p satisfaction
 
-instance Pretty (UNamedRenaming' PhCheck) where
-  pretty (UNamedRenaming name block) =
+instance Pretty (MNamedRenaming' PhCheck) where
+  pretty (MNamedRenaming name block) =
     "renaming" <+> p name <+> "=" <+> p block
 
-instance Pretty (USatisfaction' PhCheck) where
+instance Pretty (MSatisfaction' PhCheck) where
   pretty = undefined -- TODO
 
 instance Pretty (RenamedModule PhCheck) where
@@ -124,8 +124,8 @@ instance Pretty (RenamedModule PhCheck) where
                           else align (vsep (map p renamingBlocks))
     in p modul <> renamingTrailer
 
-instance Pretty (UModule' PhCheck) where
-  pretty (UModule moduleType name declMap depMap) =
+instance Pretty (MModule' PhCheck) where
+  pretty (MModule moduleType name declMap depMap) =
     vsep [ nest 4 (vsep (  p moduleType <+> p name <+> "= {"
                         :  map p (join (M.elems depMap))
                         <> map p (join (M.elems (M.map cleanUp declMap)))
@@ -154,22 +154,22 @@ instance Pretty (UModule' PhCheck) where
 
   pretty (RefModule _ _ v) = absurd v
 
-instance Pretty (UModuleDep' PhCheck) where
-  pretty (UModuleDep name renamingBlocks castToSig) =
+instance Pretty (MModuleDep' PhCheck) where
+  pretty (MModuleDep name renamingBlocks castToSig) =
     let pName = if castToSig then "signature(" <+> p name <+> ")"
                              else p name
     in pName <+> align (vsep (map p renamingBlocks)) <> ";"
 
-instance Pretty (URenamingBlock' PhCheck) where
-  pretty (URenamingBlock renamings) =
+instance Pretty (MRenamingBlock' PhCheck) where
+  pretty (MRenamingBlock renamings) =
     brackets $ hsep (punctuate comma (map p renamings))
 
-instance Pretty (URenaming' PhCheck) where
+instance Pretty (MRenaming' PhCheck) where
   pretty renaming = case renaming of
     InlineRenaming (src, tgt) -> p src <+> "=>" <+> p tgt
     RefRenaming v -> absurd v
 
-instance Pretty UModuleType where
+instance Pretty MModuleType where
   pretty typ = case typ of
     Signature -> "signature"
     Concept -> "concept"
@@ -177,7 +177,7 @@ instance Pretty UModuleType where
     Program -> "program"
     External -> "external"
 
-instance Pretty (UDecl PhCheck) where
+instance Pretty (MDecl PhCheck) where
   pretty decl = case decl of
     TypeDecl tdecl -> pretty tdecl
     CallableDecl cdecl -> pretty cdecl
@@ -209,31 +209,31 @@ instance Pretty CallableType where
     Predicate -> "predicate"
     Procedure -> "procedure"
 
-instance Pretty (UExpr' p) where
+instance Pretty (MExpr' p) where
   pretty e = pNoSemi e <> semi
     where
-      pNoSemi :: UExpr' p -> Doc ann
+      pNoSemi :: MExpr' p -> Doc ann
       pNoSemi expr = case expr of
-        UVar v -> p (nodeName v)
-        UCall name args mcast -> let parglist = map (pNoSemi . _elem) args in
+        MVar v -> p (nodeName v)
+        MCall name args mcast -> let parglist = map (pNoSemi . _elem) args in
           p name <> parens (hsep (punctuate comma parglist)) <>
           (case mcast of Nothing -> ""; Just cast -> " : " <> p cast)
-        UBlockExpr block ->
+        MBlockExpr block ->
           vsep [ nest 4 (vsep ( "{" : map p (NE.toList block)))
                , "}"
                ]
-        -- TODO: modes are for now ignore in ULet
-        ULet _ name mcast mass ->
+        -- TODO: modes are for now ignore in MLet
+        MLet _ name mcast mass ->
           let pcast = case mcast of Nothing -> ""; Just cast -> " : " <> p cast
               pass = case mass of Nothing -> ""
                                   Just ass -> " = " <> pNoSemi (_elem ass)
           in "var" <+> p name <> pcast <> pass
-        UIf cond etrue efalse -> align $ vsep [ "if" <+> p cond
+        MIf cond etrue efalse -> align $ vsep [ "if" <+> p cond
                                               , "then" <+> p etrue
                                               , "else" <+> p efalse <+> "end"
                                               ]
-        UAssert aexpr -> "assert" <+> pNoSemi (_elem aexpr)
-        USkip -> "skip"
+        MAssert aexpr -> "assert" <+> pNoSemi (_elem aexpr)
+        MSkip -> "skip"
 
 instance Pretty (MaybeTypedVar' p) where
   pretty (Var mode name mtyp) = case mtyp of
@@ -243,9 +243,9 @@ instance Pretty (MaybeTypedVar' p) where
 instance Pretty (TypedVar' p) where
   pretty (Var mode name typ) = p mode <+> p name <+> ":" <+> p typ
 
-instance Pretty UVarMode where
+instance Pretty MVarMode where
   pretty mode = case mode of
-    UObs -> "obs"
-    UOut -> "out"
-    UUnk -> "unk"
-    UUpd -> "upd"
+    MObs -> "obs"
+    MOut -> "out"
+    MUnk -> "unk"
+    MUpd -> "upd"

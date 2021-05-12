@@ -26,7 +26,7 @@ import Syntax
 import Util
 
 type VarScope = Env (TypedVar PhCheck)
-type ModuleScope = Env [UDecl PhCheck] --ModuleEnv PhCheck
+type ModuleScope = Env [MDecl PhCheck] --ModuleEnv PhCheck
 
 -- TODO: this is a hacky declaration for predicate operators, which should
 -- be available in any module scope. We are still thinking about what is the
@@ -35,8 +35,8 @@ type ModuleScope = Env [UDecl PhCheck] --ModuleEnv PhCheck
 hackyPrelude :: [TCDecl]
 hackyPrelude = map (CallableDecl . Ann [LocalDecl Nothing]) (unOps <> binOps)
   where
-    lhsVar = Ann Pred $ Var UObs (VarName "#pred1#") Pred
-    rhsVar = Ann Pred $ Var UObs (VarName "#pred2#") Pred
+    lhsVar = Ann Pred $ Var MObs (VarName "#pred1#") Pred
+    rhsVar = Ann Pred $ Var MObs (VarName "#pred2#") Pred
     mkFn args nameStr =
       Callable Function (FuncName nameStr) args Pred Nothing ExternalBody
     unOps = [mkFn [lhsVar] "!_"]
@@ -57,17 +57,17 @@ initScope = M.fromList . map mkScopeVar
 -- TODO: handle circular dependencies
 checkModule
   :: Env [TCTopLevelDecl]
-  -> UModule PhParse
+  -> MModule PhParse
   -> Except Err (Env [TCTopLevelDecl])
 checkModule tlDecls (Ann src (RefModule typ name ref)) = do
   -- TODO: cast module: do we need to check out the deps?
-  ~(Ann _ (UModule _ _ decls deps)) <-
+  ~(Ann _ (MModule _ _ decls deps)) <-
     lookupTopLevelRef src (M.map getModules tlDecls) ref >>= castModule typ
-  let renamedModule = UModule typ name decls deps :: UModule' PhCheck
-      renamedModuleDecl = UModuleDecl $ Ann (LocalDecl src) renamedModule
+  let renamedModule = MModule typ name decls deps :: MModule' PhCheck
+      renamedModuleDecl = MModuleDecl $ Ann (LocalDecl src) renamedModule
   return $ M.insertWith (<>) name [renamedModuleDecl] tlDecls
 
-checkModule tlDecls (Ann modSrc (UModule moduleType moduleName decls deps)) = do
+checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) = do
   when (maybe False (any isLocalDecl . getModules)
               (M.lookup moduleName tlDecls)) $
     throwLocatedE MiscErr modSrc $ "duplicate local module name " <>
@@ -105,9 +105,9 @@ checkModule tlDecls (Ann modSrc (UModule moduleType moduleName decls deps)) = do
                 finalScope
   -- TODO: check that name is unique?
   -- TODO: make module
-  let resultModuleDecl = UModuleDecl $
+  let resultModuleDecl = MModuleDecl $
         Ann { _ann = LocalDecl modSrc
-            , _elem = UModule moduleType moduleName finalScope checkedDeps
+            , _elem = MModule moduleType moduleName finalScope checkedDeps
             } -- :: TCModule
   return $ M.insertWith (<>) moduleName [resultModuleDecl] tlDecls
   where
@@ -173,10 +173,10 @@ checkModule tlDecls (Ann modSrc (UModule moduleType moduleName decls deps)) = do
 -- TODO: finish module casting.
 castModule
   :: Monad t
-  => UModuleType
-  -> UModule PhCheck
-  -> ExceptT Err t (UModule PhCheck)
-castModule dstTyp origModule@(Ann declO (UModule srcTyp _ _ _)) = do
+  => MModuleType
+  -> MModule PhCheck
+  -> ExceptT Err t (MModule PhCheck)
+castModule dstTyp origModule@(Ann declO (MModule srcTyp _ _ _)) = do
   let moduleWithSwappedType = return $ swapTyp <$$> origModule
       moduleAsSig = return $ mkSignature <$$> origModule
   case (srcTyp, dstTyp) of
@@ -196,14 +196,14 @@ castModule dstTyp origModule@(Ann declO (UModule srcTyp _ _ _)) = do
   where
     noCast = throwLocatedE MiscErr (srcCtx declO) $
       pshow srcTyp <> " can not be casted to " <> pshow dstTyp
-    swapTyp :: UModule' PhCheck -> UModule' PhCheck
-    swapTyp (UModule _ name decls deps) = UModule dstTyp name decls deps
+    swapTyp :: MModule' PhCheck -> MModule' PhCheck
+    swapTyp (MModule _ name decls deps) = MModule dstTyp name decls deps
     swapTyp (RefModule _ _ v) = absurd v
 
-    mkSignature :: UModule' PhCheck -> UModule' PhCheck
-    mkSignature (UModule _ name decls deps) =
+    mkSignature :: MModule' PhCheck -> MModule' PhCheck
+    mkSignature (MModule _ name decls deps) =
       -- TODO: should we do something with deps?
-      UModule Signature name (M.map mkSigDecls decls) deps
+      MModule Signature name (M.map mkSigDecls decls) deps
     mkSignature (RefModule _ _ v) = absurd v
 
     -- TODO: make the lists non-empty in AST
@@ -214,7 +214,7 @@ castModule dstTyp origModule@(Ann declO (UModule srcTyp _ _ _)) = do
     handleSigDecl acc decl@(TypeDecl _) = decl : acc
     handleSigDecl acc (CallableDecl d) = case d of
       -- When casting to signature, axioms are stripped away.
-      Ann _ UAxiom {} -> acc
+      Ann _ MAxiom {} -> acc
       _ -> CallableDecl (prototypize <$$> d) : acc
 
     prototypize :: CallableDecl' p -> CallableDecl' p
@@ -227,9 +227,9 @@ castModule _ (Ann _ (RefModule _ _ v)) = absurd v
 annotateScopedExpr ::
   ModuleScope ->
   VarScope ->
-  Maybe UType ->
-  UExpr PhParse ->
-  Except Err (UExpr PhCheck)
+  Maybe MType ->
+  MExpr PhParse ->
+  Except Err (MExpr PhCheck)
 annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
   snd <$> go inputModule inputScope inputMaybeExprType e
   where
@@ -238,23 +238,23 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
   -- without it, and there is thus no guarantee that the resulting annotated
   -- expression will carry the specified type annotation. If this is important,
   -- it must be checked outside the call.
-  go :: ModuleScope -> VarScope -> Maybe UType -> UExpr PhParse
-     -> Except Err (VarScope, UExpr PhCheck)
+  go :: ModuleScope -> VarScope -> Maybe MType -> MExpr PhParse
+     -> Except Err (VarScope, MExpr PhCheck)
   go modul scope maybeExprType (Ann src expr) = case expr of
     -- TODO: annotate type and mode on variables
     -- TODO: deal with mode
-    UVar (Ann _ (Var mode name typ)) -> case M.lookup name scope of
+    MVar (Ann _ (Var mode name typ)) -> case M.lookup name scope of
         Nothing -> throwLocatedE UnboundVarErr src (pshow name)
         Just (Ann varType _) -> let typAnn = fromJust typ in
           if isNothing typ || typAnn == varType
-          then let tcVar = UVar (Ann varType (Var mode name (Just varType)))
+          then let tcVar = MVar (Ann varType (Var mode name (Just varType)))
                in return (scope, Ann { _ann = varType, _elem = tcVar })
           else throwLocatedE MiscErr src $ "got conflicting type " <>
             "annotation for var " <> pshow name <> ": " <> pshow name <>
             " has type " <> pshow varType <> " but type annotation is " <>
             pshow typAnn
     -- TODO: deal with casting
-    UCall name args maybeCallCast -> do
+    MCall name args maybeCallCast -> do
         -- Type inference is fairly basic. We assume that for variables, either
         -- the type has been specified/previously inferred, or the variable is
         -- unset and also untyped. The only way to restrict an unknown variable
@@ -282,7 +282,7 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
             -- TODO: change with passing cast as parameter & whatever that implies
             candidates = filter (prototypeMatchesTypeConstraints argTypes Nothing) $
               getCallableDecls (M.findWithDefault [] name modul)
-            exprTC = UCall name argsTC maybeCallCast
+            exprTC = MCall name argsTC maybeCallCast
         -- TODO: stop using list to reach return val, maybe use Data.Sequence?
         -- TODO: do something with procedures and axioms here?
         case candidates of
@@ -333,7 +333,7 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
                         , Ann { _ann = cast, _elem = exprTC }
                         )
               -- TODO: ignore modes when overloading functions
-    UBlockExpr exprStmts -> do
+    MBlockExpr exprStmts -> do
       (intermediateScope, initExprStmtsTC) <-
           mapAccumM (flip (go modul) Nothing) scope (NE.init exprStmts)
       -- The last exprStmt must be treated differently because it's potentially
@@ -345,10 +345,10 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
       -- Note that we do not yet have nested scopes; this means that it is
       -- never possible to shadow names from an outer scope.
       let endScope = M.fromList $ map (\k -> (k, scope' M.! k)) (M.keys scope)
-          newBlock = UBlockExpr $ NE.fromList (initExprStmtsTC <>
+          newBlock = MBlockExpr $ NE.fromList (initExprStmtsTC <>
                                                [lastExprStmtTC])
       return (endScope, Ann { _ann = _ann lastExprStmtTC, _elem = newBlock })
-    ULet mode name maybeType maybeExpr -> do
+    MLet mode name maybeType maybeExpr -> do
       unless (isNothing $ M.lookup name scope) $
         throwLocatedE MiscErr src $ "variable already defined in scope: " <>
           pshow name
@@ -360,19 +360,19 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
               "expression"
           let (Just typ) = maybeType
           checkTypeExists modul (WithSrc src typ)
-          unless (mode == UOut) $
+          unless (mode == MOut) $
             throwLocatedE ModeMismatchErr src $ "variable " <> pshow name <>
               " is declared with mode " <> pshow mode <> " but is not " <>
               "initialized"
-          -- Variable is unset, therefore has to be UOut.
-          let newVar = Var UOut name typ
+          -- Variable is unset, therefore has to be MOut.
+          let newVar = Var MOut name typ
           return ( M.insert name Ann { _ann = typ, _elem = newVar } scope
-                 , Ann Unit (ULet mode name maybeType Nothing)
+                 , Ann Unit (MLet mode name maybeType Nothing)
                  )
         Just rhsExpr -> do
           (scope', rhsExprTC) <- go modul scope
               (maybeType <|> maybeExprType) rhsExpr
-          let exprTC = ULet mode name maybeType (Just rhsExprTC)
+          let exprTC = MLet mode name maybeType (Just rhsExprTC)
               rhsType = _ann rhsExprTC
           case maybeType of
             Nothing -> do
@@ -385,7 +385,7 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
                 throwLocatedE TypeErr src $ "variable " <> pshow name <>
                   " has type annotation " <> pshow typ <> " but type " <>
                   "of assignment expression is " <> pshow rhsType
-              when (mode == UOut) $
+              when (mode == MOut) $
                 throwLocatedE CompilerErr src $ "mode of variable " <>
                   "declaration can not be " <> pshow mode <> " if an " <>
                   "assignment expression is provided"
@@ -393,7 +393,7 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
               return ( M.insert name Ann { _ann = typ, _elem = newVar } scope'
                      , Ann { _ann = Unit, _elem = exprTC }
                      )
-    UIf cond bTrue bFalse -> do
+    MIf cond bTrue bFalse -> do
       let statefulBranches = map snd $ filter (isStateful . fst)
             [(cond, "condition"), (bTrue, "true branch"),
              (bFalse, "false branch")] :: [T.Text]
@@ -412,7 +412,7 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
         throwLocatedE TypeErr src $ "expected branches of conditional to " <>
           "have the same type but got " <> pshow (_ann trueExprTC) <>
           " and " <> pshow (_ann falseExprTC)
-      let exprTC = UIf condExprTC trueExprTC falseExprTC
+      let exprTC = MIf condExprTC trueExprTC falseExprTC
       -- TODO: join scopes. Description below:
       -- TODO: add sets of possible types to variables for type inference.
       -- TODO: can we set a variable to be "linearly assigned to" (only one
@@ -452,19 +452,19 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
                   "in call to if function" -- TODO: someday they might
               return (n, Ann { _ann = typ1, _elem = v1 }))
       return (resultScope, Ann { _ann = _ann trueExprTC, _elem = exprTC })
-    UAssert cond -> do
+    MAssert cond -> do
       (scope', newCond) <- go modul scope (Just Pred) cond
       when (_ann newCond /= Pred) $
         throwLocatedE TypeErr src $ "expected expression to have type " <>
           pshow Pred <> " in predicate but got " <> pshow (_ann newCond)
-      return (scope', Ann { _ann = Unit, _elem = UAssert newCond })
-    USkip -> return (scope, Ann { _ann = Unit, _elem = USkip })
+      return (scope', Ann { _ann = Unit, _elem = MAssert newCond })
+    MSkip -> return (scope, Ann { _ann = Unit, _elem = MSkip })
     -- TODO: use for annotating AST
 
   getReturnType (Ann _ (Callable _ _ _ returnType _ _)) = returnType
 
 prototypeMatchesTypeConstraints
-  :: [UType] -> Maybe UType -> TCCallableDecl -> Bool
+  :: [MType] -> Maybe MType -> TCCallableDecl -> Bool
 prototypeMatchesTypeConstraints argTypeConstraints mreturnTypeConstraint
   (Ann _ (Callable _ _ declArgs declReturnType _ _))
   | length declArgs /= length argTypeConstraints = False
@@ -596,12 +596,12 @@ registerType modul annType =
 
 mkTypeUtils
   :: TypeDecl PhCheck
-  -> [UDecl PhCheck]
+  -> [MDecl PhCheck]
 mkTypeUtils annType =
   [TypeDecl annType, CallableDecl (Ann (_ann annType) equalityFnDecl)]
   where
     mkVar nameStr =
-      Ann (nodeName annType) $ Var UObs (VarName nameStr) (nodeName annType)
+      Ann (nodeName annType) $ Var MObs (VarName nameStr) (nodeName annType)
     equalityFnDecl =
       Callable Function (FuncName "_==_") [mkVar "e1", mkVar "e2"] Pred
                Nothing ExternalBody
@@ -655,9 +655,9 @@ checkProto checkGuards env
 
 buildModuleFromDependency
   :: Env [TCTopLevelDecl]
-  -> UModuleDep PhParse
+  -> MModuleDep PhParse
   -> Except Err (Env [TCDecl], Env [TCModuleDep])
-buildModuleFromDependency env (Ann src (UModuleDep ref renamings castToSig)) =
+buildModuleFromDependency env (Ann src (MModuleDep ref renamings castToSig)) =
   do  match <- lookupTopLevelRef src (M.map getModules env) ref
       -- TODO: strip non-signature elements here.
       decls <- if castToSig
@@ -674,20 +674,20 @@ buildModuleFromDependency env (Ann src (UModuleDep ref renamings castToSig)) =
         mapM (expandRenamingBlock (M.map getNamedRenamings env)) renamings
       renamedDecls <- foldM applyRenamingBlock decls checkedRenamings
       -- TODO: do this well
-      let checkedDep = Ann src (UModuleDep ref checkedRenamings castToSig)
+      let checkedDep = Ann src (MModuleDep ref checkedRenamings castToSig)
       -- TODO: hold checkedModuleDeps in M.Map FQN Deps (change key type)
       return (renamedDecls, M.singleton (_targetName ref) [checkedDep])
 
--- TODO: cleanup duplicates, make a set of UDecl instead of a list?
+-- TODO: cleanup duplicates, make a set of MDecl instead of a list?
 -- TODO: finish renamings
 -- TODO: add annotations to renamings, work with something better than just
 --       name.
 -- TODO: improve error diagnostics
 applyRenamingBlock
   :: ModuleScope
-  -> URenamingBlock PhCheck
+  -> MRenamingBlock PhCheck
   -> Except Err ModuleScope
-applyRenamingBlock modul renamingBlock@(Ann src (URenamingBlock renamings)) = do
+applyRenamingBlock modul renamingBlock@(Ann src (MRenamingBlock renamings)) = do
   -- TODO: pass renaming decls to expand them
   let inlineRenamings = mkInlineRenamings renamingBlock
       renamingMap = M.fromList inlineRenamings
@@ -732,7 +732,7 @@ applyRenamingBlock modul renamingBlock@(Ann src (URenamingBlock renamings)) = do
         "sources: " <> pshow unknownSources
       else if not (null occurOnBothSides)
       then let annR' = map (Ann (LocalDecl Nothing) . InlineRenaming) r' in
-           applyRenamingBlock modul (URenamingBlock annR' <$$ renamingBlock)
+           applyRenamingBlock modul (MRenamingBlock annR' <$$ renamingBlock)
            >>= \modul' -> return (modul', r'')
       else return (modul, inlineRenamings))
   return $ M.fromListWith (<>) $ L.map (\(k, decls) ->
@@ -748,7 +748,7 @@ replaceName origName@(Name ns nameStr) (Name _ sourceStr, Name _ targetStr) =
 
 -- Applies a renaming to a declaration. Renamings only affect names defined at
 -- declaration level; this means that they do not affect local variables.
-applyRenaming :: UDecl PhCheck -> InlineRenaming -> UDecl PhCheck
+applyRenaming :: MDecl PhCheck -> InlineRenaming -> MDecl PhCheck
 applyRenaming decl renaming = case decl of
   TypeDecl typeDecl -> TypeDecl $ applyRenamingInTypeDecl <$$> typeDecl
   CallableDecl callableDecl ->
@@ -769,20 +769,20 @@ applyRenaming decl renaming = case decl of
     applyRenamingInMaybeTypedVar :: MaybeTypedVar PhCheck -> MaybeTypedVar PhCheck
     applyRenamingInMaybeTypedVar (Ann typAnn (Var mode name typ)) =
       Ann (replaceName' typAnn) $ Var mode name (replaceName' <$> typ)
-    applyRenamingInExpr :: UExpr PhCheck -> UExpr PhCheck
+    applyRenamingInExpr :: MExpr PhCheck -> MExpr PhCheck
     applyRenamingInExpr (Ann typAnn expr) =
       Ann (replaceName' typAnn) (applyRenamingInExpr' expr)
     applyRenamingInExpr' expr = case expr of
-      UVar var -> UVar $ applyRenamingInMaybeTypedVar var
-      UCall name vars typ -> UCall (replaceName' name)
+      MVar var -> MVar $ applyRenamingInMaybeTypedVar var
+      MCall name vars typ -> MCall (replaceName' name)
         (map applyRenamingInExpr vars) (replaceName' <$> typ)
-      UBlockExpr stmts -> UBlockExpr $ NE.map applyRenamingInExpr stmts
-      ULet mode name typ assignmentExpr -> ULet mode name
+      MBlockExpr stmts -> MBlockExpr $ NE.map applyRenamingInExpr stmts
+      MLet mode name typ assignmentExpr -> MLet mode name
         (replaceName' <$> typ) (applyRenamingInExpr <$> assignmentExpr)
-      UIf cond bTrue bFalse -> UIf (applyRenamingInExpr cond)
+      MIf cond bTrue bFalse -> MIf (applyRenamingInExpr cond)
         (applyRenamingInExpr bTrue) (applyRenamingInExpr bFalse)
-      UAssert cond -> UAssert (applyRenamingInExpr cond)
-      USkip -> USkip
+      MAssert cond -> MAssert (applyRenamingInExpr cond)
+      MSkip -> MSkip
 
 
 -- === utils ===
@@ -795,18 +795,18 @@ mapAccumM f a tb = swap <$> mapM go tb `runStateT` a
                   put s'
                   return r
 
-isStateful :: UExpr p -> Bool
+isStateful :: MExpr p -> Bool
 isStateful (Ann _ expr) = case expr of
   -- Operations that can affect the scope are:
   -- - variable declarations/variable assignments
   -- - calls to procedures
-  UVar _ -> False
-  UCall (FuncName _) args _ -> any isStateful args
-  UCall (ProcName _) _ _ -> True
-  UCall {} -> error $ "call to something that is neither a type " <>
+  MVar _ -> False
+  MCall (FuncName _) args _ -> any isStateful args
+  MCall (ProcName _) _ _ -> True
+  MCall {} -> error $ "call to something that is neither a type " <>
                       "of function nor a procedure."
-  UBlockExpr stmts -> or $ NE.map isStateful stmts
-  ULet {} -> True
-  UIf cond bTrue bFalse -> any isStateful [cond, bTrue, bFalse]
-  UAssert cond -> isStateful cond
-  USkip -> False
+  MBlockExpr stmts -> or $ NE.map isStateful stmts
+  MLet {} -> True
+  MIf cond bTrue bFalse -> any isStateful [cond, bTrue, bFalse]
+  MAssert cond -> isStateful cond
+  MSkip -> False

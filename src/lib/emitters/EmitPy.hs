@@ -15,7 +15,7 @@ import Syntax
 
 type PythonSource = String
 
-type TCExpr' = UExpr' PhCheck
+type TCExpr' = MExpr' PhCheck
 
 -- TODO: actually implement
 emitPyPackage :: TCPackage -> PythonSource
@@ -26,7 +26,7 @@ emitPyPackage pkg =
     extractModuleList moduleList pkgDeclList =
       moduleList <> foldl extractModule [] pkgDeclList
     extractModule moduleList pkgDecl = case pkgDecl of
-      UModuleDecl modul -> modul:moduleList
+      MModuleDecl modul -> modul:moduleList
       _ -> moduleList
 
 -- TODO: actually implement
@@ -48,7 +48,7 @@ emitPyDecl indent decl = case decl of
         -- TODO: what to do with this?
         Procedure -> emitPyExpr bodyIndent body <> mkIndent bodyIndent <>
                      emitProcReturn args <> "\n"
-        -- Predicates are functions, so UCallable {Function,Predicate} requires
+        -- Predicates are functions, so MCallable {Function,Predicate} requires
         -- one unique behavior.
         -- TODO: make sure the chosen return name is free.
         _         -> emitPrefixedPyExpr bodyIndent
@@ -74,27 +74,27 @@ emitPrefixedPyExpr ind prefixPySrc (Ann _ inputExpr) =
   where
     go :: Int -> PythonSource -> TCExpr' -> PythonSource
     go indent prefix expr = let strIndent = mkIndent indent in case expr of
-      UVar (Ann _ v) -> prefix <> emitName (_varName v)
-      UCall name args _ -> prefix <> emitName name <> "(" <>
+      MVar (Ann _ v) -> prefix <> emitName (_varName v)
+      MCall name args _ -> prefix <> emitName name <> "(" <>
           intercalate "," (map (emitPyExpr 0) args) <> ")"
-      UBlockExpr stmts ->
+      MBlockExpr stmts ->
         intercalate ("\n" <> strIndent)
                     (map (emitPyExpr indent) (NE.init stmts)) <> "\n" <>
         emitPrefixedPyExpr indent prefix (NE.last stmts)
       -- TODO: prefix == "" or error?
-      ULet _ name _ maybeAssignmentExpr -> prefix <> case maybeAssignmentExpr of
+      MLet _ name _ maybeAssignmentExpr -> prefix <> case maybeAssignmentExpr of
         Nothing -> emitName name <> " = None"
         Just assignmentExpr ->
           emitPrefixedPyExpr indent (emitName name <> " = ") assignmentExpr
-      UIf cond bTrue bFalse ->
+      MIf cond bTrue bFalse ->
         emitPrefixedPyExpr indent "if " cond <> ":\n" <>
         emitPrefixedPyExpr (incIndent indent) prefix bTrue <> "\n" <>
         strIndent <> "else:\n" <>
         emitPrefixedPyExpr (incIndent indent) prefix bFalse <> "\n"
       -- TODO: prefix == "" or error?
-      UAssert cond -> prefix <> emitPrefixedPyExpr indent "assert " cond
-      USkip -> "pass"
-      --UTypedExpr expr' _ -> emitPyExpr indent expr'
+      MAssert cond -> prefix <> emitPrefixedPyExpr indent "assert " cond
+      MSkip -> "pass"
+      --MTypedExpr expr' _ -> emitPyExpr indent expr'
 
 -- === utils ===
 

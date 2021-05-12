@@ -112,16 +112,16 @@ lookupTopLevelRef src env ref@(FullyQualifiedName mscopeName targetName) =
 -- TODO: coercion w/o RefRenaming type?
 checkRenamingBlock
   :: Monad t
-  => URenamingBlock PhParse
-  -> ExceptT Err t (URenamingBlock PhCheck)
-checkRenamingBlock (Ann blockSrc (URenamingBlock renamings)) = do
+  => MRenamingBlock PhParse
+  -> ExceptT Err t (MRenamingBlock PhCheck)
+checkRenamingBlock (Ann blockSrc (MRenamingBlock renamings)) = do
   checkedRenamings <- traverse checkInlineRenaming renamings
-  return $ Ann blockSrc $ URenamingBlock checkedRenamings
+  return $ Ann blockSrc $ MRenamingBlock checkedRenamings
   where
     checkInlineRenaming
       :: Monad t
-      => URenaming PhParse
-      -> ExceptT Err t (URenaming PhCheck)
+      => MRenaming PhParse
+      -> ExceptT Err t (MRenaming PhCheck)
     checkInlineRenaming (Ann src renaming) = case renaming of
       -- It seems that the below pattern matching can not be avoided, due to
       -- coercion concerns (https://gitlab.haskell.org/ghc/ghc/-/issues/15683).
@@ -131,30 +131,30 @@ checkRenamingBlock (Ann blockSrc (URenamingBlock renamings)) = do
 
 expandRenamingBlock
   :: Monad t
-  => Env [UNamedRenaming PhCheck]
-  -> URenamingBlock PhParse
-  -> ExceptT Err t (URenamingBlock PhCheck)
-expandRenamingBlock env (Ann src (URenamingBlock renamings)) =
-  Ann src . URenamingBlock <$>
+  => Env [MNamedRenaming PhCheck]
+  -> MRenamingBlock PhParse
+  -> ExceptT Err t (MRenamingBlock PhCheck)
+expandRenamingBlock env (Ann src (MRenamingBlock renamings)) =
+  Ann src . MRenamingBlock <$>
     (foldl (<>) [] <$> mapM (expandRenaming env) renamings)
 
 expandRenaming
   :: Monad t
-  => Env [UNamedRenaming PhCheck]
-  -> URenaming PhParse
-  -> ExceptT Err t [URenaming PhCheck]
+  => Env [MNamedRenaming PhCheck]
+  -> MRenaming PhParse
+  -> ExceptT Err t [MRenaming PhCheck]
 expandRenaming env (Ann src renaming) = case renaming of
   InlineRenaming ir -> return [Ann (LocalDecl src) (InlineRenaming ir)]
   RefRenaming ref -> do
-    Ann _ (UNamedRenaming _ (Ann _ (URenamingBlock renamings))) <-
+    Ann _ (MNamedRenaming _ (Ann _ (MRenamingBlock renamings))) <-
       lookupTopLevelRef src env ref
     return renamings
 
-mkInlineRenamings :: URenamingBlock PhCheck -> [InlineRenaming]
-mkInlineRenamings (Ann _ (URenamingBlock renamings)) =
+mkInlineRenamings :: MRenamingBlock PhCheck -> [InlineRenaming]
+mkInlineRenamings (Ann _ (MRenamingBlock renamings)) =
     map mkInlineRenaming renamings
   where
-    mkInlineRenaming :: URenaming PhCheck -> InlineRenaming
+    mkInlineRenaming :: MRenaming PhCheck -> InlineRenaming
     mkInlineRenaming (Ann _ renaming) = case renaming of
       InlineRenaming ir -> ir
       RefRenaming v -> absurd v
