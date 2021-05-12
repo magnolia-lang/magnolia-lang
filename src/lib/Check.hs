@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Check (checkModule) where
@@ -249,7 +248,7 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
           if isNothing typ || typAnn == varType
           then let tcVar = MVar (Ann varType (Var mode name (Just varType)))
                in return (scope, Ann { _ann = varType, _elem = tcVar })
-          else throwLocatedE MiscErr src $ "got conflicting type " <>
+          else throwLocatedE TypeErr src $ "got conflicting type " <>
             "annotation for var " <> pshow name <> ": " <> pshow name <>
             " has type " <> pshow varType <> " but type annotation is " <>
             pshow typAnn
@@ -597,14 +596,19 @@ registerType modul annType =
 mkTypeUtils
   :: TypeDecl PhCheck
   -> [MDecl PhCheck]
-mkTypeUtils annType =
-  [TypeDecl annType, CallableDecl (Ann (_ann annType) equalityFnDecl)]
+mkTypeUtils annType = [ TypeDecl annType
+                      , CallableDecl (Ann (_ann annType) equalityFnDecl)
+                      , CallableDecl (Ann (_ann annType) assignProcDecl)
+                      ]
   where
-    mkVar nameStr =
-      Ann (nodeName annType) $ Var MObs (VarName nameStr) (nodeName annType)
+    mkVar mode nameStr =
+      Ann (nodeName annType) $ Var mode (VarName nameStr) (nodeName annType)
     equalityFnDecl =
-      Callable Function (FuncName "_==_") [mkVar "e1", mkVar "e2"] Pred
+      Callable Function (FuncName "_==_") (map (mkVar MObs) ["e1", "e2"]) Pred
                Nothing ExternalBody
+    assignProcDecl =
+      Callable Procedure (ProcName "_=_")
+              [mkVar MOut "var", mkVar MObs "expr"] Unit Nothing ExternalBody
 
 -- TODO: ensure functions have a return type defined, though should be handled
 -- by parsing.
@@ -777,8 +781,8 @@ applyRenaming decl renaming = case decl of
       MCall name vars typ -> MCall (replaceName' name)
         (map applyRenamingInExpr vars) (replaceName' <$> typ)
       MBlockExpr stmts -> MBlockExpr $ NE.map applyRenamingInExpr stmts
-      MLet mode name typ assignmentExpr -> MLet mode name
-        (replaceName' <$> typ) (applyRenamingInExpr <$> assignmentExpr)
+      MLet mode name typ rhsExpr -> MLet mode name (replaceName' <$> typ)
+        (applyRenamingInExpr <$> rhsExpr)
       MIf cond bTrue bFalse -> MIf (applyRenamingInExpr cond)
         (applyRenamingInExpr bTrue) (applyRenamingInExpr bFalse)
       MAssert cond -> MAssert (applyRenamingInExpr cond)

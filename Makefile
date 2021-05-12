@@ -1,4 +1,4 @@
-mgn := cabal exec magnolia --
+mgn := cabal exec -v0 magnolia --
 
 build:
 	cabal new-build
@@ -9,7 +9,7 @@ clean:
 lint:
 	hlint src
 
-test-targets = parsing-recovery
+test-targets = parsing-recovery stmtErrors
 
 tests: $(test-targets:%=check-output-%)
 

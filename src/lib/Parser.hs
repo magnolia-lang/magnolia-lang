@@ -6,7 +6,7 @@ module Parser (parsePackage, parsePackageHead, parseReplCommand) where
 import Control.Monad.Combinators.Expr
 import Control.Monad.Except (void, when, ExceptT, throwError)
 import Data.Functor (($>))
-import Data.Maybe (fromMaybe, isNothing)
+import Data.Maybe (isNothing)
 import Data.Void
 import Text.Megaparsec
 import Text.Megaparsec.Char
@@ -314,7 +314,7 @@ inlineRenaming = annot inlineRenaming'
       return $ InlineRenaming (source, target)
 
 exprStmt :: Parser ParsedExpr
-exprStmt = assertStmt <|> try letStmt <|> expr
+exprStmt = assertStmt <|> try letStmt <|> try assignStmt <|> expr
 
 assertStmt :: Parser ParsedExpr
 assertStmt = keyword AssertKW *> annot (MAssert <$> expr)
@@ -332,6 +332,15 @@ letStmt = annot letStmt'
                | isNothing value = MOut
                | otherwise = MUpd
       return $ MLet mode name ann value
+
+assignStmt :: Parser ParsedExpr
+assignStmt = annot assignStmt'
+  where
+    assignStmt' = do
+      lhsVarExpr <- annot (nameVar MUnk >>= \v -> return $ MVar v)
+      symbol "="
+      rhsExpr <- expr
+      return $ MCall (ProcName "_=_") [lhsVarExpr, rhsExpr] Nothing
 
 ops :: [[Operator Parser ParsedExpr]]
 ops = [ map unOp ["+", "-", "!", "~"]                -- unary ops
