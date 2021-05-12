@@ -25,7 +25,7 @@ import PPrint
 import Syntax
 import Util
 
-type VarScope = Env (MaybeTypedVar PhCheck)
+type VarScope = Env (TypedVar PhCheck)
 type ModuleScope = Env [UDecl PhCheck] --ModuleEnv PhCheck
 
 -- TODO: this is a hacky declaration for predicate operators, which should
@@ -48,9 +48,9 @@ hackyPrelude = map (CallableDecl . Ann [LocalDecl Nothing]) (unOps <> binOps)
 initScope :: [TypedVar p] -> VarScope
 initScope = M.fromList . map mkScopeVar
   where
-    mkScopeVar :: TypedVar p -> (Name, MaybeTypedVar PhCheck)
+    mkScopeVar :: TypedVar p -> (Name, TypedVar PhCheck)
     mkScopeVar (Ann _ (Var mode name typ)) =
-      (name, Ann { _ann = typ, _elem = Var mode name (Just typ) })
+      (name, Ann { _ann = typ, _elem = Var mode name typ })
 
 -- TODO: can variables exist without a type in the scope?
 -- TODO: replace things with relevant sets
@@ -243,11 +243,12 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
   go modul scope maybeExprType (Ann src expr) = case expr of
     -- TODO: annotate type and mode on variables
     -- TODO: deal with mode
-    UVar (Ann _ (Var _ name typ)) -> case M.lookup name scope of
+    UVar (Ann _ (Var mode name typ)) -> case M.lookup name scope of
         Nothing -> throwLocatedE UnboundVarErr src (pshow name)
-        Just annScopeVar@(Ann varType _) -> let typAnn = fromJust typ in
+        Just (Ann varType _) -> let typAnn = fromJust typ in
           if isNothing typ || typAnn == varType
-          then return (scope, Ann { _ann = varType, _elem = UVar annScopeVar })
+          then let tcVar = UVar (Ann varType (Var mode name (Just varType)))
+               in return (scope, Ann { _ann = varType, _elem = tcVar })
           else throwLocatedE MiscErr src $ "got conflicting type " <>
             "annotation for var " <> pshow name <> ": " <> pshow name <>
             " has type " <> pshow varType <> " but type annotation is " <>
@@ -364,7 +365,7 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
               " is declared with mode " <> pshow mode <> " but is not " <>
               "initialized"
           -- Variable is unset, therefore has to be UOut.
-          let newVar = Var UOut name (Just typ)
+          let newVar = Var UOut name typ
           return ( M.insert name Ann { _ann = typ, _elem = newVar } scope
                  , Ann Unit (ULet mode name maybeType Nothing)
                  )
@@ -375,7 +376,7 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
               rhsType = _ann rhsExprTC
           case maybeType of
             Nothing -> do
-              let newVar = Var mode name (Just rhsType)
+              let newVar = Var mode name rhsType
               return ( M.insert name (Ann rhsType newVar) scope'
                      , Ann { _ann = Unit, _elem = exprTC }
                      )
@@ -388,7 +389,7 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
                 throwLocatedE CompilerErr src $ "mode of variable " <>
                   "declaration can not be " <> pshow mode <> " if an " <>
                   "assignment expression is provided"
-              let newVar = Var mode name (Just typ)
+              let newVar = Var mode name typ
               return ( M.insert name Ann { _ann = typ, _elem = newVar } scope'
                      , Ann { _ann = Unit, _elem = exprTC }
                      )
