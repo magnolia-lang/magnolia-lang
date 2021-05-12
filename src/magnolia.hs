@@ -11,7 +11,7 @@ import Debug.Trace (trace)
 import Options.Applicative hiding (Success, Failure)
 import System.Console.Haskeline --(InputT, runInputT)
 
-import EmitPy
+--import EmitPy
 import Env
 import Make
 import Parser
@@ -53,7 +53,7 @@ codegen filename env = case M.lookup (mkPkgNameFromPath filename) env of
   Nothing -> error $ "Compiler bug! Package for file " <> filename <>
     " not found."
   -- TODO: handle dir paths better
-  Just pkg -> return (emitPyPackage pkg)
+  Just _ -> return "Sorry! Codegen is unimplemented!" --(emitPyPackage pkg)
 
 -- TODO: add existing env, and move "compile" to Make module
 compile :: String -> IO (Status, TopEnv)
