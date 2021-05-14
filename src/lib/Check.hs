@@ -4,7 +4,8 @@
 module Check (checkModule) where
 
 import Control.Applicative
-import Control.Monad.Except hiding (guard)
+import Control.Monad.Except
+    ( when, foldM, unless, ExceptT, Except, MonadTrans(lift) )
 import Control.Monad.Trans.State
 --import Debug.Trace (trace)
 import Data.Foldable (traverse_)
@@ -77,10 +78,9 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) = do
       -- TODO: check here that we are only importing valid types of modules.
       -- For instance, a program can not be imported into a concept, unless
       -- downcasted explicitly to a signature/concept.
-      (depScopeList, checkedDepsList) <- unzip <$>
+      (depScopeList, checkedDeps) <- unzip <$>
         mapM (buildModuleFromDependency tlDecls) deps
       depScope <- foldM mergeModules M.empty depScopeList
-      let checkedDeps = foldl (M.unionWith (<>)) M.empty checkedDepsList
       return (depScope, checkedDeps)
   -- TODO: hacky step, make prelude.
   -- Step 2: register predicate functions if needed
@@ -660,7 +660,7 @@ checkProto checkGuards env
 buildModuleFromDependency
   :: Env [TCTopLevelDecl]
   -> MModuleDep PhParse
-  -> Except Err (Env [TCDecl], Env [TCModuleDep])
+  -> Except Err (Env [TCDecl], TCModuleDep)
 buildModuleFromDependency env (Ann src (MModuleDep ref renamings castToSig)) =
   do  match <- lookupTopLevelRef src (M.map getModules env) ref
       -- TODO: strip non-signature elements here.
@@ -680,7 +680,7 @@ buildModuleFromDependency env (Ann src (MModuleDep ref renamings castToSig)) =
       -- TODO: do this well
       let checkedDep = Ann src (MModuleDep ref checkedRenamings castToSig)
       -- TODO: hold checkedModuleDeps in M.Map FQN Deps (change key type)
-      return (renamedDecls, M.singleton (_targetName ref) [checkedDep])
+      return (renamedDecls, checkedDep)
 
 -- TODO: cleanup duplicates, make a set of MDecl instead of a list?
 -- TODO: finish renamings

@@ -59,7 +59,7 @@ codegen filename env = case M.lookup (mkPkgNameFromPath filename) env of
 compile :: String -> IO (Status, TopEnv)
 compile filename = do
   -- TODO: replace "ExceptT" with (Status, TopEnv) to allow partial success
-  eenv <- runExceptT (load filename >>= upsweep)
+  eenv <- runExceptT (loadDependencyGraph filename >>= upsweep)
   case eenv of
     Left e -> pprint e >> return (Failure, M.empty)
     Right env -> return (Success, env)

@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Make (
-  load, upsweep) where
+  loadDependencyGraph, upsweep) where
 
 import Control.Monad (foldM, unless, when)
 import Control.Monad.Trans.Class (lift)
@@ -55,7 +55,7 @@ topSortModules pkgName modules = G.stronglyConnComp
       , nodeName modul
       , map _targetName $
           filter (isLocalFQName pkgName) $
-            moduleDepNames modul
+            dependencies modul
       )
     | modul <- modules
     ]
@@ -172,8 +172,8 @@ upsweepModules = foldM go
         Right newEnv -> return newEnv
 
 -- TODO: cache and choose what to reload with granularity
-load :: FilePath -> ExceptT Err IO [G.SCC PackageHead]
-load = (topSortPackages <$>) . go M.empty
+loadDependencyGraph :: FilePath -> ExceptT Err IO [G.SCC PackageHead]
+loadDependencyGraph = (topSortPackages <$>) . go M.empty
   where
     go loadedHeads filePath = case M.lookup filePath loadedHeads of
       Just _ -> return loadedHeads
@@ -185,6 +185,8 @@ load = (topSortPackages <$>) . go M.empty
                     let pkgStr = _name $ _packageHeadName packageHead
                         expectedPkgStr = _name $ mkPkgNameFromPath filePath
                         newHeads = M.insert filePath packageHead loadedHeads
+                        -- TODO: make instance of "HasDependencies" for
+                        --       PackageHead
                         imports = map (mkPkgPathFromName . _fromSrc)
                             (_packageHeadImports packageHead)
                     when (expectedPkgStr /= pkgStr) $

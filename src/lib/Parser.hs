@@ -111,10 +111,12 @@ package = annot package'
   where
     package' = do
       pkgName <- keyword PackageKW *> packageName
-      deps <- choice [ keyword ImportKW >>
-                       (annot (MPackageDep <$> packageName) `sepBy1` symbol ",")
-                     , return []
-                     ] <* semi
+      deps <- choice
+        [ do keyword ImportKW ;
+             annot (MPackageDep <$> fullyQualifiedName NSDirectory NSPackage)
+                      `sepBy1` symbol ","
+        , return []
+        ] <* semi
       decls <- manyTill (many semi *>
                          topLevelDecl <* many semi) eof
       return $ MPackage pkgName decls deps

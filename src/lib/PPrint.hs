@@ -125,9 +125,9 @@ instance Pretty (RenamedModule PhCheck) where
     in p modul <> renamingTrailer
 
 instance Pretty (MModule' PhCheck) where
-  pretty (MModule moduleType name declMap depMap) =
+  pretty (MModule moduleType name declMap depList) =
     vsep [ nest 4 (vsep (  p moduleType <+> p name <+> "= {"
-                        :  map p (join (M.elems depMap))
+                        :  map p depList
                         <> map p (join (M.elems (M.map cleanUp declMap)))
                         ))
          , "};"

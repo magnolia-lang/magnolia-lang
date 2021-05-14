@@ -29,7 +29,8 @@ fromFullyQualifiedName (FullyQualifiedName scopeName targetName) =
 
 -- TODO: align instances of Eq, Ord for soundness.
 
-data NameSpace = NSFunction
+data NameSpace = NSDirectory
+               | NSFunction
                | NSGenerated
                | NSModule
                | NSPackage

@@ -26,7 +26,7 @@ module Syntax (
     CBody (..), CGuard,
     TCCallableDecl, TCDecl, TCExpr, TCMaybeTypedVar, TCModule, TCModuleDep,
     TCPackage, TCTopLevelDecl, TCTypeDecl, TCTypedVar,
-    HasSrcCtx (..), NamedNode (..),
+    HasDependencies (..), HasSrcCtx (..), NamedNode (..),
     Command (..),
     DeclOrigin (..), Err (..), ErrType (..),
     PhParse, PhCheck, PhCodeGen, SrcCtx,
@@ -37,7 +37,7 @@ module Syntax (
     pattern MCon, pattern MProg, pattern MImpl, pattern MSig,
     pattern MAxiom, pattern MFunc, pattern MPred, pattern MProc,
     getModules, getNamedRenamings,
-    moduleDecls, moduleDepNames,
+    moduleDecls,
     getTypeDecls, getCallableDecls,
     callableIsImplemented, mkAnonProto, replaceGuard)
   where
@@ -112,7 +112,7 @@ data MPackage' p = MPackage { _packageName :: Name
                             }
 
 type MPackageDep p = Ann p MPackageDep'
-newtype MPackageDep' p = MPackageDep Name -- Renaming blocks?
+newtype MPackageDep' p = MPackageDep FullyQualifiedName
                          deriving (Eq, Show)
 
 -- TODO: split in package?
@@ -131,7 +131,7 @@ data RenamedModule p = RenamedModule (MModule p) [MRenamingBlock p]
 
 type MModule p = Ann p MModule'
 data MModule' p = MModule MModuleType Name (XPhasedContainer p (MDecl p))
-                                           (XPhasedContainer p (MModuleDep p))
+                                           [MModuleDep p]
                 | RefModule MModuleType Name (XRef p)
 
 -- Expose out for DAG building
@@ -346,7 +346,7 @@ instance NamedNode (MPackage' p) where
   nodeName = _packageName
 
 instance NamedNode (MPackageDep' p) where
-  nodeName (MPackageDep name) = name
+  nodeName (MPackageDep name) = fromFullyQualifiedName name
 
 instance NamedNode (MTopLevelDecl p) where
   nodeName topLevelDecl = case topLevelDecl of
@@ -381,6 +381,22 @@ instance NamedNode (CallableDecl' p) where
 instance NamedNode (MVar typAnnType p) where
   nodeName (Var _ name _) = name
 
+class HasDependencies a where
+  dependencies :: a -> [FullyQualifiedName]
+
+instance HasDependencies (MModule PhParse) where
+  dependencies (Ann _ modul) = case modul of
+    MModule _ _ _ deps -> map (_depName . _elem) deps
+    RefModule _ _ refName -> [refName]
+
+instance HasDependencies (MModule PhCheck) where
+  dependencies (Ann _ modul) = case modul of
+    MModule _ _ _ deps -> map (_depName . _elem) deps
+    RefModule _ _ v -> absurd v
+
+instance HasDependencies (MPackage p) where
+  dependencies (Ann _ (MPackage _ _ deps)) =
+    map (\(Ann _ (MPackageDep depName)) -> depName) deps
 
 class HasSrcCtx a where
   srcCtx :: a -> SrcCtx
@@ -408,22 +424,22 @@ pattern NoCtx :: a -> WithSrc a
 pattern NoCtx item = WithSrc Nothing item
 
 pattern MSig
-  :: Name -> XPhasedContainer p (MDecl p) -> XPhasedContainer p (MModuleDep p)
+  :: Name -> XPhasedContainer p (MDecl p) -> [MModuleDep p]
   -> MModule' p
 pattern MSig name decls deps = MModule Signature name decls deps
 
 pattern MCon
-  :: Name -> XPhasedContainer p (MDecl p) -> XPhasedContainer p (MModuleDep p)
+  :: Name -> XPhasedContainer p (MDecl p) -> [MModuleDep p]
   -> MModule' p
 pattern MCon name decls deps = MModule Concept name decls deps
 
 pattern MProg
-  :: Name -> XPhasedContainer p (MDecl p) -> XPhasedContainer p (MModuleDep p)
+  :: Name -> XPhasedContainer p (MDecl p) -> [MModuleDep p]
   -> MModule' p
 pattern MProg name decls deps = MModule Program name decls deps
 
 pattern MImpl
-  :: Name -> XPhasedContainer p (MDecl p) -> XPhasedContainer p (MModuleDep p)
+  :: Name -> XPhasedContainer p (MDecl p) -> [MModuleDep p]
   -> MModule' p
 pattern MImpl name decls deps = MModule Implementation name decls deps
 
@@ -472,11 +488,6 @@ moduleDecls :: MModule PhCheck -> Env [MDecl PhCheck]
 moduleDecls (Ann _ modul) = case modul of
   MModule _ _ decls _ -> decls
   RefModule _ _ v -> absurd v
-
-moduleDepNames :: MModule PhParse -> [FullyQualifiedName]
-moduleDepNames (Ann _ modul) = case modul of
-  MModule _ _ _ deps -> map (_depName . _elem) deps
-  RefModule _ _ refName -> [refName]
 
 -- === module declarations manipulation ===
 
