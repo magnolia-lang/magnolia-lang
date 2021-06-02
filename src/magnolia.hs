@@ -12,10 +12,10 @@ import System.Console.Haskeline
 
 import Env
 import Make
-import Parser
-import PPrint
-import Syntax
-import Util
+import Magnolia.Parser
+import Magnolia.PPrint
+import Magnolia.Syntax
+import Magnolia.Util
 
 type TopEnv = Env (MPackage PhCheck)
 data CompilerMode = ReplMode | BuildMode FilePath | TestMode TestConfig FilePath
@@ -37,7 +37,9 @@ runTest config filePath = case _testPass config of
   DepAnalPass -> runAndLogErrs $ depAnalPass filePath
   ParsePass -> runAndLogErrs $ depAnalPass filePath >>= parsePass
   CheckPass -> runAndLogErrs $ depAnalPass filePath >>= parsePass >>= checkPass
-  CodegenPass -> error "codegen not yet implemented"
+  CodegenPass -> case _testBackend config of
+    Cxx -> undefined
+    _ -> error "codegen not yet implemented"
 
 -- === debugging utils ===
 

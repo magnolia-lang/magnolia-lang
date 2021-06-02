@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Check (
+module Magnolia.Check (
     checkModule
   , checkPackage
   ) where
@@ -25,9 +25,9 @@ import qualified Data.Set as S
 import qualified Data.Text.Lazy as T
 
 import Env
-import PPrint
-import Syntax
-import Util
+import Magnolia.PPrint
+import Magnolia.Syntax
+import Magnolia.Util
 
 -- | Typechecks a Magnolia package based on a pre-typechecked environment.
 -- Within 'checkPackage', we assume that all the other packages on which the

@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Util (
+module Magnolia.Util (
   -- * MgMonad utils
     MgMonad
   , runMgMonad
@@ -50,8 +50,8 @@ import qualified Data.Text.Lazy as T
 import Data.Void (absurd)
 
 import Env
-import PPrint
-import Syntax
+import Magnolia.PPrint
+import Magnolia.Syntax
 
 -- === magnolia monad utils ===
 

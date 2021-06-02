@@ -1,7 +1,7 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Parser (parsePackage, parsePackageHead, parseReplCommand) where
+module Magnolia.Parser (parsePackage, parsePackageHead, parseReplCommand) where
 
 import Control.Monad.Combinators.Expr
 import Control.Monad.Except (void, when)
@@ -17,8 +17,8 @@ import qualified Data.Text.Lazy as T
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import Env
-import Syntax
-import Util
+import Magnolia.Syntax
+import Magnolia.Util
 
 type Parser = Parsec Void String
 
@@ -327,7 +327,6 @@ letStmt = annot $ do
   value <- optional (symbol "=" *> expr)
   let mode = if isNothing value then MOut else declMode
   return $ MLet (Ann ann (Var mode name mty)) value
-
 
 assignStmt :: Parser ParsedExpr
 assignStmt = annot $ do
