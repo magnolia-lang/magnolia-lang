@@ -11,7 +11,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Syntax (
+module Magnolia.Syntax (
   -- * AST nodes
   --
   -- $mgAst
@@ -201,6 +201,9 @@ data Ann p e = Ann { _ann :: XAnn p e
 instance Eq (e p) => Eq (Ann p e) where
   Ann _ e1 == Ann _ e2 = e1 == e2
 
+instance Ord (e p) => Ord (Ann p e) where
+  Ann _ e1 `compare` Ann _ e2 = e1 `compare` e2
+
 -- TODO: display annotation using UndecidableInstances?
 instance Show (e p) => Show (Ann p e) where
   show = show . _elem
@@ -259,7 +262,7 @@ type MModuleDep p = Ann p MModuleDep'
 -- Represents a dependency to a module with an associated list of renaming
 -- blocks, as well as whether to only extract the signature of the dependency.
 data MModuleDep' p = MModuleDep { _depName :: FullyQualifiedName
-                                , _depRenamingBlock :: [MRenamingBlock p]
+                                , _depRenamingBlocks :: [MRenamingBlock p]
                                 , _depCastToSig :: Bool
                                 }
 
@@ -285,7 +288,7 @@ data MDecl p = MTypeDecl (MTypeDecl p)
 
 type MTypeDecl p = Ann p MTypeDecl'
 data MTypeDecl' p = Type { _typeName :: MType, _typeIsRequired :: Bool }
-                   deriving (Eq, Show)
+                   deriving (Eq, Ord, Show)
 
 type MCallableDecl p = Ann p MCallableDecl'
 data MCallableDecl' p =
@@ -312,12 +315,10 @@ pattern Pred = GenName "Predicate"
 pattern Unit :: MType
 pattern Unit = GenName "Unit"
 
--- TODO: can I simplify? Axioms and Predicates are function, except with a
---       predefined return type.
 data MCallableType = Axiom | Function | Predicate | Procedure
                     deriving (Eq, Show)
 
--- TODO: make a constructor for coercedexpr to remove (Maybe MType) from calls
+-- TODO: make a constructor for coercedexpr to remove (Maybe MType) from calls?
 type MExpr p = Ann p MExpr'
 data MExpr' p = MVar (MaybeTypedVar p)
               -- TODO: add Procedure/FunctionLike namespaces to Name?
@@ -471,7 +472,7 @@ type family XAnn p (e :: * -> *) where
   XAnn PhCheck MExpr' = MType
 
   XAnn PhParse (MVar _) = SrcCtx
-  XAnn PhCheck (MVar _) = MType
+  XAnn PhCheck (_ _) = MType
 
 -- === other useful type families ===
 
@@ -575,8 +576,8 @@ instance HasDependencies (MRenamingBlock' PhParse) where
     foldr (\(Ann _ r) acc -> case r of RefRenaming n -> n:acc ; _ -> acc) []
           renamings
 
-instance HasDependencies (MPackage p) where
-  dependencies (Ann _ (MPackage _ _ deps)) =
+instance HasDependencies (MPackage' p) where
+  dependencies (MPackage _ _ deps) =
     map (\(Ann _ (MPackageDep depName)) -> depName) deps
 
 class HasSrcCtx a where

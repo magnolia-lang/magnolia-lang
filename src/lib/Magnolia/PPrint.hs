@@ -4,7 +4,7 @@
 
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module PPrint (pprint, pprintList, pshow, render) where
+module Magnolia.PPrint (pprint, pprintList, pshow, render) where
 
 import Control.Monad (join)
 import qualified Data.List.NonEmpty as NE
@@ -16,7 +16,7 @@ import Data.Text.Prettyprint.Doc.Render.Text
 import Data.Void (absurd)
 
 import Env
-import Syntax
+import Magnolia.Syntax
 
 -- The below pprinting and error-handling related utils are directly inspired
 -- from their equivalent in https://github.com/google-research/dex-lang.
