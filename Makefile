@@ -9,7 +9,7 @@ clean:
 lint:
 	hlint src
 
-test-targets = declScopeTests parsing-recovery stmtErrors
+test-targets = declScopeTests modeCheck parsing-recovery stmtErrors
 
 tests: $(test-targets:%=check-output-%)
 

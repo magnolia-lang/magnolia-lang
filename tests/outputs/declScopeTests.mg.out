@@ -1,3 +1,9 @@
+[]
+[]
+[]
+[]
+[]
+[]
 tests/inputs/declScopeTests.mg:16:5: Declaration error: function can not have a body in signature
 
 tests/inputs/declScopeTests.mg:17:5: Declaration error: procedure can not have a body in signature
