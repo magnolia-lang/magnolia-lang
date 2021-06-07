@@ -24,8 +24,14 @@ import PPrint
 import Syntax
 import Util
 
+-- In a given callable scope in Magnolia, the following variable-related rules
+-- apply:
+--   (1) variables tagged as MUnk exist, but can not be used
+--   (2) shadowing of variables is forbidden
+-- TODO: hold names in scope to avoid inconsistencies (like order of decls
+--       mattering
 type VarScope = Env (TypedVar PhCheck)
-type ModuleScope = Env [MDecl PhCheck] --ModuleEnv PhCheck
+type ModuleScope = Env [MDecl PhCheck]
 
 -- TODO: this is a hacky declaration for predicate operators, which should
 -- be available in any module scope. We are still thinking about what is the
@@ -50,6 +56,13 @@ initScope = M.fromList . map mkScopeVar
     mkScopeVar :: TypedVar p -> (Name, TypedVar PhCheck)
     mkScopeVar (Ann _ (Var mode name typ)) =
       (name, Ann { _ann = typ, _elem = Var mode name typ })
+
+mkScopeVarsImmutable :: VarScope -> VarScope
+mkScopeVarsImmutable = M.map mkImmutable
+  where
+    mkImmutable (Ann src (Var mode name ty)) =
+      let newMode = case mode of MOut -> MUnk ; _ -> MObs
+      in Ann src (Var newMode name ty)
 
 -- TODO: can variables exist without a type in the scope?
 -- TODO: replace things with relevant sets
@@ -155,7 +168,7 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) = do
           then insertAndMergeDecl env (CallableDecl annDeclTC)
           else throwLocatedE TypeErr src $
             "expected return type to be " <> pshow retType <> " in " <>
-            pshow ctype <> "but return value has type " <>
+            pshow ctype <> " but return value has type " <>
             pshow bodyRetType
 
 
@@ -231,17 +244,17 @@ annotateScopedExpr ::
   Maybe MType ->
   MExpr PhParse ->
   MgMonad (MExpr PhCheck)
-annotateScopedExpr inputModule inputScope inputMaybeExprType e =
-  snd <$> go inputModule inputScope inputMaybeExprType e
+annotateScopedExpr modul inputScope inputMaybeExprType e =
+  snd <$> go inputScope inputMaybeExprType e
   where
   -- maybeExprType is a parameter to disambiguate function calls overloaded
   -- solely on return types. It will *not* be used if the type can be inferred
   -- without it, and there is thus no guarantee that the resulting annotated
   -- expression will carry the specified type annotation. If this is important,
   -- it must be checked outside the call.
-  go :: ModuleScope -> VarScope -> Maybe MType -> MExpr PhParse
+  go :: VarScope -> Maybe MType -> MExpr PhParse
      -> MgMonad (VarScope, MExpr PhCheck)
-  go modul scope maybeExprType (Ann src expr) = case expr of
+  go scope maybeExprType (Ann src expr) = case expr of
     -- TODO: annotate type and mode on variables
     -- TODO: deal with mode
     MVar (Ann _ (Var _ name typ)) -> case M.lookup name scope of
@@ -300,7 +313,6 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e =
           --     of how the environment is implemented.
           --     TODO: use sets, and hash arguments ignoring their type to fix
           --     (2).
-
           matches -> do
             scopeAndTcExpr <-
               let possibleTypes = S.fromList $ map getReturnType matches in
@@ -357,21 +369,30 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e =
             checkArgModes (head matches) argsTC
             return scopeAndTcExpr
             -- TODO: ignore modes when overloading functions
-    MBlockExpr exprStmts -> do
-      (intermediateScope, initExprStmtsTC) <-
-          mapAccumM (flip (go modul) Nothing) scope (NE.init exprStmts)
-      -- The last exprStmt must be treated differently because it's potentially
-      -- annotated.
-      (scope', lastExprStmtTC) <-
-          go modul intermediateScope maybeExprType (NE.last exprStmts)
-      -- Return the old scope with potential new annotations; this makes sure
-      -- that variables declared in the current scope are eliminated.
-      -- Note that we do not yet have nested scopes; this means that it is
-      -- never possible to shadow names from an outer scope.
-      let endScope = M.fromList $ map (\k -> (k, scope' M.! k)) (M.keys scope)
-          newBlock = MBlockExpr $ NE.fromList (initExprStmtsTC <>
-                                               [lastExprStmtTC])
-      return (endScope, Ann { _ann = _ann lastExprStmtTC, _elem = newBlock })
+    MBlockExpr blockType exprStmts -> case blockType of
+      MEffectfulBlock -> do
+        when (any isValueExpr exprStmts) $
+          throwLocatedE CompilerErr src
+            "effectful block contains value expressions"
+        (scope', tcExprStmts) <- mapAccumM (`go` Nothing) scope exprStmts
+        let endScope = M.fromList $ map (\k -> (k, scope' M.! k)) (M.keys scope)
+        return (endScope, Ann Unit (MBlockExpr blockType tcExprStmts))
+      MValueBlock -> do
+        unless (any isValueExpr exprStmts) $
+          throwLocatedE CompilerErr src
+            "value block does not contain any value expression"
+        let immutableScope = mkScopeVarsImmutable scope
+        (_, tcExprStmts) <- mapAccumM (`go` Nothing) immutableScope exprStmts
+        let retTypes = S.fromList $ map _ann (NE.filter isValueExpr tcExprStmts)
+            ~(Just retType) = S.lookupMin retTypes
+        unless (S.size retTypes == 1) $
+          throwLocatedE TypeErr src $
+            "value block has conflicting return types (found " <>
+            T.intercalate ", " (map pshow (S.toList retTypes)) <> ")"
+        return (scope, Ann retType (MBlockExpr blockType tcExprStmts))
+    MValue expr' -> do
+      (_, tcExpr) <- go (mkScopeVarsImmutable scope) maybeExprType expr'
+      return (scope, Ann (_ann tcExpr) (MValue tcExpr))
     MLet mode name maybeType maybeExpr -> do
       unless (isNothing $ M.lookup name scope) $
         throwLocatedE MiscErr src $ "variable already defined in scope: " <>
@@ -394,8 +415,7 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e =
                  , Ann Unit (MLet mode name maybeType Nothing)
                  )
         Just rhsExpr -> do
-          (scope', rhsExprTC) <- go modul scope
-              (maybeType <|> maybeExprType) rhsExpr
+          (scope', rhsExprTC) <- go scope (maybeType <|> maybeExprType) rhsExpr
           let exprTC = MLet mode name maybeType (Just rhsExprTC)
               rhsType = _ann rhsExprTC
           case maybeType of
@@ -425,13 +445,13 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e =
         throwLocatedE MiscErr src $ "expected if-then-else nodes to be " <>
           "stateless computations but " <> pshow (head statefulBranches) <>
           "is stateful"
-      (condScope, condExprTC) <- go modul scope (Just Pred) cond
+      (condScope, condExprTC) <- go scope (Just Pred) cond
       when (_ann condExprTC /= Pred) $
         throwLocatedE TypeErr src $ "expected condition to have type " <>
           pshow Pred <> " but got " <> pshow (_ann condExprTC)
-      (trueScope, trueExprTC) <- go modul condScope maybeExprType bTrue
+      (trueScope, trueExprTC) <- go condScope maybeExprType bTrue
       (falseScope, falseExprTC) <-
-        go modul condScope (Just (_ann trueExprTC)) bFalse
+        go condScope (Just (_ann trueExprTC)) bFalse
       when (_ann trueExprTC /= _ann falseExprTC) $
         throwLocatedE TypeErr src $ "expected branches of conditional to " <>
           "have the same type but got " <> pshow (_ann trueExprTC) <>
@@ -477,7 +497,7 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e =
               return (n, Ann { _ann = typ1, _elem = v1 }))
       return (resultScope, Ann { _ann = _ann trueExprTC, _elem = exprTC })
     MAssert cond -> do
-      (scope', newCond) <- go modul scope (Just Pred) cond
+      (scope', newCond) <- go scope (Just Pred) cond
       when (_ann newCond /= Pred) $
         throwLocatedE TypeErr src $ "expected expression to have type " <>
           pshow Pred <> " in predicate but got " <> pshow (_ann newCond)
@@ -826,7 +846,9 @@ applyRenaming decl renaming = case decl of
       MVar var -> MVar $ applyRenamingInMaybeTypedVar var
       MCall name vars typ -> MCall (replaceName' name)
         (map applyRenamingInExpr vars) (replaceName' <$> typ)
-      MBlockExpr stmts -> MBlockExpr $ NE.map applyRenamingInExpr stmts
+      MBlockExpr blockTy stmts ->
+        MBlockExpr blockTy $ NE.map applyRenamingInExpr stmts
+      MValue expr' -> MValue $ applyRenamingInExpr expr'
       MLet mode name typ rhsExpr -> MLet mode name (replaceName' <$> typ)
         (applyRenamingInExpr <$> rhsExpr)
       MIf cond bTrue bFalse -> MIf (applyRenamingInExpr cond)
@@ -855,8 +877,10 @@ isStateful (Ann _ expr) = case expr of
   MCall (ProcName _) _ _ -> True
   MCall {} -> error $ "call to something that is neither a type " <>
                       "of function nor a procedure."
-  MBlockExpr stmts -> or $ NE.map isStateful stmts
+  MBlockExpr blockTy _ -> blockTy == MEffectfulBlock
+  MValue _ -> False
   MLet {} -> True
+  -- TODO: cond can NOT be stateful in principle
   MIf cond bTrue bFalse -> any isStateful [cond, bTrue, bFalse]
   MAssert cond -> isStateful cond
   MSkip -> False

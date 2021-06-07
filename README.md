@@ -72,7 +72,7 @@ we can discuss them.
 - [ ] Extensive testing of the compiler
 - [ ] Code generation
 - [ ] Documentation (*the code base is small, so it is not yet critical*)
-- [ ] Distinction between "normal" blocks and value blocks
+- [x] Distinction between "normal" blocks and value blocks
 - [ ] Assignment out of the AST, and related type inference
 
 #### Partially implemented features

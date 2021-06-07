@@ -15,7 +15,7 @@
 module Syntax (
     CallableDecl, CallableDecl' (..), CallableType (..), MaybeTypedVar,
     MaybeTypedVar', TypeDecl, TypeDecl' (..), TypedVar, TypedVar',
-    MDecl (..), MExpr, MExpr' (..), MModule,
+    MBlockType (..), MDecl (..), MExpr, MExpr' (..), MModule,
     MModule' (..), MModuleDep, MModuleDep' (..), MModuleType (..),
     MNamedRenaming, MNamedRenaming' (..),
     MPackage, MPackage' (..), MPackageDep, MPackageDep' (..), MRenamingBlock,
@@ -193,12 +193,16 @@ type MExpr p = Ann p MExpr'
 data MExpr' p = MVar (MaybeTypedVar p)
               -- TODO: add Procedure/FunctionLike namespaces to Name?
               | MCall Name [MExpr p] (Maybe MType)
-              | MBlockExpr (NE.NonEmpty (MExpr p))
+              | MBlockExpr MBlockType (NE.NonEmpty (MExpr p))
+              | MValue (MExpr p)
               | MLet MVarMode Name (Maybe MType) (Maybe (MExpr p))
               | MIf (MExpr p) (MExpr p) (MExpr p)
               | MAssert (MExpr p)
               | MSkip
-              deriving (Eq, Show)
+                deriving (Eq, Show)
+
+data MBlockType = MValueBlock | MEffectfulBlock
+                  deriving (Eq, Show)
 
 type TypedVar p = Ann p TypedVar'
 type TypedVar' = MVar MType

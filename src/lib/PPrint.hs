@@ -225,10 +225,11 @@ instance Pretty (MExpr' p) where
         MCall name args mcast -> let parglist = map (pNoSemi . _elem) args in
           p name <> parens (hsep (punctuate comma parglist)) <>
           (case mcast of Nothing -> ""; Just cast -> " : " <> p cast)
-        MBlockExpr block ->
+        MBlockExpr _ block ->
           vsep [ nest 4 (vsep ( "{" : map p (NE.toList block)))
                , "}"
                ]
+        MValue expr' -> "value" <+> p expr'
         -- TODO: modes are for now ignore in MLet
         MLet _ name mcast mass ->
           let pcast = case mcast of Nothing -> ""; Just cast -> " : " <> p cast
