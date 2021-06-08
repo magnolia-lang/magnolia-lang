@@ -131,7 +131,7 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) = do
           throwLocatedE CompilerErr src $ pshow ctype <>
             " can not be declared external in " <> pshow moduleType
       | moduleType `notElem` [Implementation, Program], MagnoliaBody _ <- cbody,
-        ctype `elem` [Function, Procedure] =
+        ctype `elem` [Function, Predicate, Procedure] =
           throwLocatedE InvalidDeclErr src $ pshow ctype <>
             " can not have a body in " <> pshow moduleType
       | EmptyBody <- cbody = checkProto True env decl >> return env
