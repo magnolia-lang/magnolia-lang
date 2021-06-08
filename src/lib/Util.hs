@@ -1,7 +1,10 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Util (
+    MgMonad, runMgMonad,
+    foldMAccumErrors, foldMAccumErrorsAndFail, recover, recoverWithDefault,
     throwLocatedE, throwNonLocatedE,
     mkPkgNameFromPath, mkPkgPathFromName, mkPkgPathFromStr, isPkgPath,
     lookupTopLevelRef,
@@ -10,10 +13,14 @@ module Util (
   where
 
 import Control.Monad
-import Control.Monad.Trans.Except
+import Control.Monad.IO.Class (MonadIO (..))
+import Control.Monad.Trans.Class (lift)
+import qualified Control.Monad.Trans.Except as E
+import qualified Control.Monad.Trans.State as St
 import qualified Data.List as L
 import qualified Data.Map as M
 import Data.Maybe (fromJust, isNothing)
+import qualified Data.Set as S
 import Data.Text.Prettyprint.Doc (Pretty)
 import qualified Data.Text.Lazy as T
 import Data.Void
@@ -22,10 +29,59 @@ import Env
 import PPrint
 import Syntax
 
-throwLocatedE :: Monad t => ErrType -> SrcCtx -> T.Text -> ExceptT Err t e
-throwLocatedE errType src err = throwE $ Err errType src err
 
-throwNonLocatedE :: Monad t => ErrType -> T.Text -> ExceptT Err t e
+-- === magnolia monad utils ===
+
+newtype MgMonadT e s m a = MgMonadT { unMg :: E.ExceptT e (St.StateT s m) a }
+                           deriving (Functor, Applicative, Monad)
+
+instance MonadIO m => MonadIO (MgMonadT e s m) where
+  liftIO = MgMonadT . liftIO
+
+type MgMonad = MgMonadT () (S.Set Err) IO
+
+runMgMonadT :: MgMonadT e s m a -> s -> m (Either e a, s)
+runMgMonadT mgm s = (`St.runStateT` s) . E.runExceptT $ unMg mgm
+
+runMgMonad :: MgMonad a -> IO (Either () a, S.Set Err)
+runMgMonad = (`runMgMonadT` S.empty)
+
+get :: Monad m => MgMonadT e s m s
+get = MgMonadT (lift St.get)
+
+modify :: Monad m => (s -> s) -> MgMonadT e s m ()
+modify f = MgMonadT (lift (St.modify f))
+
+throwE :: Monad m => e -> MgMonadT e s m a
+throwE = MgMonadT . E.throwE
+
+catchE
+  :: Monad m => MgMonadT e s m a -> (e -> MgMonadT e s m a) -> MgMonadT e s m a
+catchE me f = MgMonadT (unMg me `E.catchE` (unMg . f))
+
+-- === error handling utils ===
+
+foldMAccumErrors :: Foldable t => (b -> a -> MgMonad b) -> b -> t a -> MgMonad b
+foldMAccumErrors f = foldM (\b a -> f b a `catchE` const (return b))
+
+foldMAccumErrorsAndFail
+  :: Foldable t => (b -> a -> MgMonad b) -> b -> t a -> MgMonad b
+foldMAccumErrorsAndFail f initialValue elems = do
+    foldMRes <- foldMAccumErrors f initialValue elems
+    errs <- get
+    maybe (return foldMRes) (const (throwE ())) (S.lookupMin errs)
+
+recover :: Monoid b => (a -> MgMonad b) -> (a -> MgMonad b)
+recover f a = f a `catchE` const (return mempty)
+
+recoverWithDefault :: (a -> MgMonad b) -> b -> (a -> MgMonad b)
+recoverWithDefault f b a = f a `catchE` const (return b)
+
+throwLocatedE :: ErrType -> SrcCtx -> T.Text -> MgMonad b
+throwLocatedE errType src err =
+  modify (S.insert (Err errType src err)) >> throwE ()
+
+throwNonLocatedE :: ErrType -> T.Text -> MgMonad b
 throwNonLocatedE errType = throwLocatedE errType Nothing
 
 -- === package name manipulation ===
@@ -47,8 +103,7 @@ isPkgPath s = ".mg" `L.isSuffixOf` s
 -- === top-level manipulation ===
 
 lookupTopLevelRef
-  :: ( Monad t
-     , XAnn PhCheck e ~ DeclOrigin
+  :: ( XAnn PhCheck e ~ DeclOrigin
      , Show (e PhCheck)
      , Pretty (e PhCheck)
      , NamedNode (e PhCheck)
@@ -56,7 +111,7 @@ lookupTopLevelRef
   => SrcCtx
   -> Env [Ann PhCheck e]
   -> FullyQualifiedName
-  -> ExceptT Err t (Ann PhCheck e)
+  -> MgMonad (Ann PhCheck e)
 lookupTopLevelRef src env ref@(FullyQualifiedName mscopeName targetName) =
   case M.lookup targetName env of
     Nothing -> throwLocatedE UnboundTopLevelErr src $ pshow ref
@@ -111,17 +166,15 @@ lookupTopLevelRef src env ref@(FullyQualifiedName mscopeName targetName) =
 
 -- TODO: coercion w/o RefRenaming type?
 checkRenamingBlock
-  :: Monad t
-  => MRenamingBlock PhParse
-  -> ExceptT Err t (MRenamingBlock PhCheck)
+  :: MRenamingBlock PhParse
+  -> MgMonad (MRenamingBlock PhCheck)
 checkRenamingBlock (Ann blockSrc (MRenamingBlock renamings)) = do
   checkedRenamings <- traverse checkInlineRenaming renamings
   return $ Ann blockSrc $ MRenamingBlock checkedRenamings
   where
     checkInlineRenaming
-      :: Monad t
-      => MRenaming PhParse
-      -> ExceptT Err t (MRenaming PhCheck)
+      :: MRenaming PhParse
+      -> MgMonad (MRenaming PhCheck)
     checkInlineRenaming (Ann src renaming) = case renaming of
       -- It seems that the below pattern matching can not be avoided, due to
       -- coercion concerns (https://gitlab.haskell.org/ghc/ghc/-/issues/15683).
@@ -130,19 +183,17 @@ checkRenamingBlock (Ann blockSrc (MRenamingBlock renamings)) = do
         "in renaming block at checking time"
 
 expandRenamingBlock
-  :: Monad t
-  => Env [MNamedRenaming PhCheck]
+  :: Env [MNamedRenaming PhCheck]
   -> MRenamingBlock PhParse
-  -> ExceptT Err t (MRenamingBlock PhCheck)
+  -> MgMonad (MRenamingBlock PhCheck)
 expandRenamingBlock env (Ann src (MRenamingBlock renamings)) =
   Ann src . MRenamingBlock <$>
     (foldl (<>) [] <$> mapM (expandRenaming env) renamings)
 
 expandRenaming
-  :: Monad t
-  => Env [MNamedRenaming PhCheck]
+  :: Env [MNamedRenaming PhCheck]
   -> MRenaming PhParse
-  -> ExceptT Err t [MRenaming PhCheck]
+  -> MgMonad [MRenaming PhCheck]
 expandRenaming env (Ann src renaming) = case renaming of
   InlineRenaming ir -> return [Ann (LocalDecl src) (InlineRenaming ir)]
   RefRenaming ref -> do

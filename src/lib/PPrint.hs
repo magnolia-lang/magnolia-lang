@@ -4,7 +4,7 @@
 
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module PPrint (pprint, pshow, render) where -- TODO: remove pshow?
+module PPrint (pprint, pprintList, pshow, render) where
 
 import Control.Monad (join)
 import qualified Data.List.NonEmpty as NE
@@ -26,13 +26,19 @@ p = pretty
 
 -- TODO: Text.Lazy -> Text.Strict (renderLazy -> renderStrict)
 pprint :: Pretty a => a -> IO ()
-pprint = TIO.putStrLn . render
+pprint = printDoc . p
 
-render :: Pretty a => a -> T.Text
-render = renderLazy . layoutPretty defaultLayoutOptions . p
+printDoc :: Doc ann -> IO ()
+printDoc = TIO.putStrLn . render
+
+render :: Doc ann -> T.Text
+render = renderLazy . layoutPretty defaultLayoutOptions
 
 pshow :: Pretty a => a -> T.Text
-pshow = render
+pshow = render . p
+
+pprintList :: Pretty a => [a] -> IO ()
+pprintList =  printDoc . vsep . punctuate line . map p
 
 instance Pretty Err where -- TODO: change error to have error types
   pretty (Err errType srcInfo txt) = case srcInfo of
@@ -76,6 +82,7 @@ instance Pretty Name where
 
 instance Pretty NameSpace where
   pretty ns = (case ns of
+    NSDirectory -> "directory"
     NSFunction -> "function"
     NSGenerated -> "generated"
     NSModule -> "module"

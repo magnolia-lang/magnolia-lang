@@ -233,8 +233,12 @@ data WithSrc a = WithSrc { _srcCtx :: SrcCtx
 instance Eq a => Eq (WithSrc a) where
   (WithSrc _ x) == (WithSrc _ y) = x == y
 
-data Err = Err ErrType SrcCtx T.Text --WithSrc T.Text
-           deriving Show
+data Err = Err ErrType SrcCtx T.Text
+           deriving (Eq, Show)
+
+instance Ord Err where
+  Err e1 src1 txt1 `compare` Err e2 src2 txt2 = (src1 `compare` src2) <>
+    (txt1 `compare` txt2) <> (e1 `compare` e2)
 
 data ErrType = AmbiguousFunctionRefErr
              | AmbiguousProcedureRefErr
@@ -257,7 +261,7 @@ data ErrType = AmbiguousFunctionRefErr
              | UnboundTopLevelErr
              | UnboundTypeErr
              | UnboundVarErr
-               deriving Show
+               deriving (Eq, Ord, Show)
 
 -- TODO: External
 -- TODO: actually deal with ImportedDecl

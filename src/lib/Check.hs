@@ -4,8 +4,7 @@
 module Check (checkModule) where
 
 import Control.Applicative
-import Control.Monad.Except
-    ( when, foldM, unless, ExceptT, Except, MonadTrans(lift) )
+import Control.Monad.Except (foldM, lift, unless, when)
 import Control.Monad.Trans.State
 --import Debug.Trace (trace)
 import Data.Foldable (traverse_)
@@ -58,7 +57,7 @@ initScope = M.fromList . map mkScopeVar
 checkModule
   :: Env [TCTopLevelDecl]
   -> MModule PhParse
-  -> Except Err (Env [TCTopLevelDecl])
+  -> MgMonad (Env [TCTopLevelDecl])
 checkModule tlDecls (Ann src (RefModule typ name ref)) = do
   -- TODO: cast module: do we need to check out the deps?
   ~(Ann _ (MModule _ _ decls deps)) <-
@@ -87,21 +86,24 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) = do
   hackyScope <- foldM insertAndMergeDecl depScope hackyPrelude
   -- Step 3: register types
   -- TODO: remove name as parameter to "insertAndMergeDecl"
-  baseScope <- foldM registerType hackyScope types
+  baseScope <- foldMAccumErrors registerType hackyScope types
   -- Step 4: check and register protos
   protoScope <- do
     -- we first register all the protos without checking the guards
-    protoScopeWithoutGuards <- foldM (registerProto False) baseScope callables
+    protoScopeWithoutGuards <-
+      foldMAccumErrors (registerProto False) baseScope callables
     -- now that we have access to all the functions in scope, we can check the
     -- guard
-    foldM (registerProto True) protoScopeWithoutGuards callables
+    foldMAccumErrors (registerProto True) protoScopeWithoutGuards callables
   -- Step 5: check bodies if allowed
-  finalScope <- foldM checkBody protoScope callables
+  finalScope <- foldMAccumErrors checkBody protoScope callables
   -- Step 6: check that everything is resolved if program
   -- TODO: return typechecked elements here.
+  -- TODO: accumulate here too
   when (moduleType == Program) $
-      traverse_ (traverse_ (checkImplemented finalScope) . getCallableDecls)
-                finalScope
+    traverse_
+      (traverse_ (recover (checkImplemented finalScope)) . getCallableDecls)
+      finalScope
   -- TODO: check that name is unique?
   -- TODO: make module
   let resultModuleDecl = MModuleDecl $
@@ -117,8 +119,9 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) = do
     checkBody
       :: ModuleScope
       -> CallableDecl PhParse
-      -> Except Err ModuleScope
+      -> MgMonad ModuleScope
     checkBody env decl@(Ann src (Callable ctype fname args retType _ cbody))
+      -- TODO: move consistency check here to another function, for clarity.
       | moduleType /= Concept, Axiom <- ctype =
           throwLocatedE DeclContextErr src
             "axioms can only be declared in concepts"
@@ -156,7 +159,7 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) = do
             pshow bodyRetType
 
 
-    checkImplemented :: ModuleScope -> CallableDecl PhCheck -> Except Err ()
+    checkImplemented :: ModuleScope -> CallableDecl PhCheck -> MgMonad ()
     checkImplemented env callable@(Ann declO
       (Callable _ callableName _ _ _ cbody)) = case cbody of
         EmptyBody -> do
@@ -171,10 +174,9 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) = do
 
 -- TODO: finish module casting.
 castModule
-  :: Monad t
-  => MModuleType
+  :: MModuleType
   -> MModule PhCheck
-  -> ExceptT Err t (MModule PhCheck)
+  -> MgMonad (MModule PhCheck)
 castModule dstTyp origModule@(Ann declO (MModule srcTyp _ _ _)) = do
   let moduleWithSwappedType = return $ swapTyp <$$> origModule
       moduleAsSig = return $ mkSignature <$$> origModule
@@ -228,7 +230,7 @@ annotateScopedExpr ::
   VarScope ->
   Maybe MType ->
   MExpr PhParse ->
-  Except Err (MExpr PhCheck)
+  MgMonad (MExpr PhCheck)
 annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
   snd <$> go inputModule inputScope inputMaybeExprType e
   where
@@ -238,7 +240,7 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
   -- expression will carry the specified type annotation. If this is important,
   -- it must be checked outside the call.
   go :: ModuleScope -> VarScope -> Maybe MType -> MExpr PhParse
-     -> Except Err (VarScope, MExpr PhCheck)
+     -> MgMonad (VarScope, MExpr PhCheck)
   go modul scope maybeExprType (Ann src expr) = case expr of
     -- TODO: annotate type and mode on variables
     -- TODO: deal with mode
@@ -476,7 +478,7 @@ prototypeMatchesTypeConstraints argTypeConstraints mreturnTypeConstraint
       in fitsArgTypeConstraints && fitsReturnTypeConstraints
 
 insertAndMergeDecl
-  :: ModuleScope -> TCDecl -> Except Err ModuleScope
+  :: ModuleScope -> TCDecl -> MgMonad ModuleScope
 insertAndMergeDecl env decl = do
   newDeclList <- mkNewDeclList
   return $ M.insert name newDeclList env
@@ -490,7 +492,7 @@ insertAndMergeDecl env decl = do
 
     -- TODO: is this motivation for storing types and callables in different
     -- scopes?
-    mergeTypes :: TCTypeDecl -> Maybe TCDecl -> Except Err TCTypeDecl
+    mergeTypes :: TCTypeDecl -> Maybe TCDecl -> MgMonad TCTypeDecl
     mergeTypes annT1@(Ann declO1 t1) mannT2 = case mannT2 of
       Nothing                        -> return annT1
       Just (TypeDecl (Ann declO2 _)) -> return $ Ann (mergeAnns declO1 declO2) t1
@@ -500,7 +502,7 @@ insertAndMergeDecl env decl = do
         pshow (nodeName cdecl) <> " belongs to the type namespace"
 
     mergePrototypes
-      :: TCCallableDecl -> Maybe [TCDecl] -> Except Err [TCCallableDecl]
+      :: TCCallableDecl -> Maybe [TCDecl] -> MgMonad [TCCallableDecl]
     mergePrototypes anncallableDecl@(Ann declO callableDecl) mdecls
       | Nothing <- mdecls = return [anncallableDecl]
       | Just decls <- mdecls = do
@@ -550,7 +552,7 @@ insertAndMergeDecl env decl = do
           else return $ newMatches <> nonMatches
         else return $ anncallableDecl : nonMatches
 
-    mergeGuards :: CGuard p -> CGuard p -> Except Err (CGuard p)
+    mergeGuards :: CGuard p -> CGuard p -> MgMonad (CGuard p)
     mergeGuards mguard1 mguard2 = case (mguard1, mguard2) of
       (Nothing, _)  -> return mguard2
       (_ , Nothing) -> return mguard1
@@ -566,7 +568,7 @@ insertAndMergeDecl env decl = do
 
     extractGuard ~(Ann _ (Callable _ _ _ _ mguard _)) = mguard
 
-mergeModules :: ModuleScope -> ModuleScope -> Except Err ModuleScope
+mergeModules :: ModuleScope -> ModuleScope -> MgMonad ModuleScope
 mergeModules mod1 mod2 =
   foldM insertAndMergeDeclList mod1 (map snd $ M.toList mod2)
   where
@@ -576,7 +578,7 @@ mergeModules mod1 mod2 =
 checkTypeExists ::
   ModuleScope ->
   WithSrc Name ->
-  Except Err ()
+  MgMonad ()
 checkTypeExists modul (WithSrc src name)
   | Unit <- name = return ()
   | Pred <- name = return ()
@@ -589,7 +591,7 @@ checkTypeExists modul (WithSrc src name)
 registerType
   :: ModuleScope
   -> TypeDecl PhCheck
-  -> Except Err ModuleScope
+  -> MgMonad ModuleScope
 registerType modul annType =
   foldM insertAndMergeDecl modul (mkTypeUtils annType)
 
@@ -617,7 +619,7 @@ registerProto ::
   Bool -> -- whether to register/check guards or not
   ModuleScope ->
   CallableDecl PhParse ->
-  Except Err ModuleScope
+  MgMonad ModuleScope
 registerProto checkGuards modul annCallable =
   do -- TODO: ensure bodies are registered later on
     checkedProto <- checkProto checkGuards modul annCallable
@@ -629,7 +631,7 @@ checkProto
   :: Bool
   -> ModuleScope
   -> CallableDecl PhParse
-  -> Except Err (CallableDecl PhCheck)
+  -> MgMonad (CallableDecl PhCheck)
 checkProto checkGuards env
     (Ann src (Callable ctype name args retType mguard _)) = do
   tcArgs <- checkArgs args
@@ -642,7 +644,7 @@ checkProto checkGuards env
   return Ann { _ann = [LocalDecl src]
              , _elem = Callable ctype name tcArgs retType tcGuard EmptyBody
              }
-  where checkArgs :: [TypedVar PhParse] -> Except Err [TypedVar PhCheck]
+  where checkArgs :: [TypedVar PhParse] -> MgMonad [TypedVar PhCheck]
         checkArgs vars = do
           -- TODO: make sure there is no need to check
           --when (ctype /= Function) $ error "TODO: proc/axiom/pred"
@@ -652,7 +654,7 @@ checkProto checkGuards env
             "duplicate argument names in declaration of " <> pshow name
           else mapM checkArgType vars
 
-        checkArgType :: TypedVar PhParse -> Except Err (TypedVar PhCheck)
+        checkArgType :: TypedVar PhParse -> MgMonad (TypedVar PhCheck)
         checkArgType (Ann argSrc (Var mode varName typ)) = do
           checkTypeExists env (WithSrc argSrc typ)
           return $ Ann typ (Var mode varName typ)
@@ -660,7 +662,7 @@ checkProto checkGuards env
 buildModuleFromDependency
   :: Env [TCTopLevelDecl]
   -> MModuleDep PhParse
-  -> Except Err (Env [TCDecl], TCModuleDep)
+  -> MgMonad (Env [TCDecl], TCModuleDep)
 buildModuleFromDependency env (Ann src (MModuleDep ref renamings castToSig)) =
   do  match <- lookupTopLevelRef src (M.map getModules env) ref
       -- TODO: strip non-signature elements here.
@@ -690,7 +692,7 @@ buildModuleFromDependency env (Ann src (MModuleDep ref renamings castToSig)) =
 applyRenamingBlock
   :: ModuleScope
   -> MRenamingBlock PhCheck
-  -> Except Err ModuleScope
+  -> MgMonad ModuleScope
 applyRenamingBlock modul renamingBlock@(Ann src (MRenamingBlock renamings)) = do
   -- TODO: pass renaming decls to expand them
   let inlineRenamings = mkInlineRenamings renamingBlock
