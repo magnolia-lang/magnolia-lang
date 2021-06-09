@@ -1,11 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Make (
-  loadDependencyGraph, upsweep) where
+module Make (loadDependencyGraph, upsweep) where
 
 import Control.Monad (foldM, unless, when)
-import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.Except
+import Control.Monad.IO.Class (liftIO)
 import qualified Data.Graph as G
 import qualified Data.List as L
 import qualified Data.Map as M
@@ -19,14 +17,14 @@ import Syntax
 import Util
 
 -- TODO: recover when tcing?
-upsweep :: [G.SCC PackageHead] -> ExceptT Err IO (GlobalEnv PhCheck)
-upsweep = foldM go M.empty
+upsweep :: [G.SCC PackageHead] -> MgMonad (GlobalEnv PhCheck)
+upsweep = foldMAccumErrorsAndFail go M.empty
   where
     -- TODO: keep going?
     go
       :: GlobalEnv PhCheck
       -> G.SCC PackageHead
-      -> ExceptT Err IO (GlobalEnv PhCheck)
+      -> MgMonad (GlobalEnv PhCheck)
     go _ (G.CyclicSCC pkgHeads) =
       let pCycle = T.intercalate ", " $ map (pshow . _packageHeadName) pkgHeads
       in throwNonLocatedE CyclicPackageErr pCycle
@@ -35,7 +33,8 @@ upsweep = foldM go M.empty
       Ann ann (MPackage name decls deps) <-
         parsePackage (_packageHeadPath pkgHead) (_packageHeadStr pkgHead)
       -- TODO: add local/external ann for nodes
-      importedEnv <- foldM (loadPackageDependency globalEnv) M.empty deps
+      importedEnv <-
+        foldMAccumErrors (loadPackageDependency globalEnv) M.empty deps
       -- 1. Renamings
       envWithRenamings <- upsweepRenamings importedEnv $
         topSortRenamingDecls name (getNamedRenamings decls)
@@ -92,7 +91,7 @@ loadPackageDependency
   :: GlobalEnv PhCheck
   -> Env [TCTopLevelDecl]
   -> MPackageDep PhParse
-  -> ExceptT Err IO (Env [TCTopLevelDecl])
+  -> MgMonad (Env [TCTopLevelDecl])
 loadPackageDependency globalEnv localEnv (Ann src dep) =
   case M.lookup (nodeName dep) globalEnv of
     Nothing -> throwLocatedE MiscErr src $ "attempted to load package " <>
@@ -127,60 +126,55 @@ importLocal name acc decl = case decl of
 upsweepRenamings
   :: Env [TCTopLevelDecl]
   -> [G.SCC (MNamedRenaming PhParse)]
-  -> ExceptT Err IO (Env [TCTopLevelDecl])
-upsweepRenamings = foldM go
+  -> MgMonad (Env [TCTopLevelDecl])
+upsweepRenamings = foldMAccumErrors go
   where
     go
       :: Env [TCTopLevelDecl]
       -> G.SCC (MNamedRenaming PhParse)
-      -> ExceptT Err IO (Env [TCTopLevelDecl])
+      -> MgMonad (Env [TCTopLevelDecl])
     go _ (G.CyclicSCC namedBlock) =
       let rCycle = T.intercalate ", " $ map (pshow . nodeName) namedBlock in
       throwNonLocatedE CyclicNamedRenamingErr rCycle
 
-    go env (G.AcyclicSCC (Ann src (MNamedRenaming name renamingBlock))) =
-      let eitherExpandedBlock = runExcept $
-            expandRenamingBlock (M.map getNamedRenamings env) renamingBlock in -- TODO: expand named renamings
-      case eitherExpandedBlock of
-        Left e -> throwE e -- just passing along the error for now --lift (pprint e) >> throwE e
-        Right expandedBlock ->
-          let tcNamedRenaming = Ann (LocalDecl src)
-                                    (MNamedRenaming name expandedBlock) in
-          return $ M.insertWith (<>) name [MNamedRenamingDecl tcNamedRenaming]
-                                env
+    go env (G.AcyclicSCC (Ann src (MNamedRenaming name renamingBlock))) = do
+      expandedBlock <-
+        expandRenamingBlock (M.map getNamedRenamings env) renamingBlock
+        -- TODO: expand named renamings
+      let tcNamedRenaming = Ann (LocalDecl src)
+                                (MNamedRenaming name expandedBlock)
+      return $ M.insertWith (<>) name [MNamedRenamingDecl tcNamedRenaming]
+                            env
 
 
 upsweepModules
   :: Env [TCTopLevelDecl]
   -> [G.SCC (MModule PhParse)]
-  -> ExceptT Err IO (Env [TCTopLevelDecl])
-upsweepModules = foldM go
+  -> MgMonad (Env [TCTopLevelDecl])
+upsweepModules = foldMAccumErrors go
   where
     go
       :: Env [TCTopLevelDecl]
       -> G.SCC (MModule PhParse)
-      -> ExceptT Err IO (Env [TCTopLevelDecl])
+      -> MgMonad (Env [TCTopLevelDecl])
     go _ (G.CyclicSCC modules) =
       let mCycle = T.intercalate ", " $ map (pshow . nodeName) modules in
       throwNonLocatedE CyclicModuleErr mCycle
 
     -- TODO: error catching & recovery
-    go env (G.AcyclicSCC modul) =
-      let eitherNewEnv = runExcept $ checkModule env modul in
-      case eitherNewEnv of
-        Left e -> throwE e -- TODO: error catching: --lift (pprint e) >> throwE e
-        Right newEnv -> return newEnv
+    go env (G.AcyclicSCC modul) = checkModule env modul
 
 -- TODO: cache and choose what to reload with granularity
-loadDependencyGraph :: FilePath -> ExceptT Err IO [G.SCC PackageHead]
-loadDependencyGraph = (topSortPackages <$>) . go M.empty
+loadDependencyGraph :: FilePath -> MgMonad [G.SCC PackageHead]
+loadDependencyGraph = recover ((topSortPackages <$>) . go M.empty)
   where
+    go :: M.Map String PackageHead -> FilePath -> MgMonad (M.Map String PackageHead)
     go loadedHeads filePath = case M.lookup filePath loadedHeads of
       Just _ -> return loadedHeads
       Nothing -> do unless (".mg" `L.isSuffixOf` filePath) $
                       throwNonLocatedE MiscErr $ "Magnolia source code " <>
                         "files must have the \".mg\" extension"
-                    input <- lift $ readFile filePath
+                    input <- liftIO $ readFile filePath
                     packageHead <- parsePackageHead filePath input
                     let pkgStr = _name $ _packageHeadName packageHead
                         expectedPkgStr = _name $ mkPkgNameFromPath filePath

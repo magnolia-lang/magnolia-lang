@@ -1,10 +1,10 @@
 {-# LANGUAGE LambdaCase #-}
 
 import Control.Monad (join)
-import Control.Monad.Except (runExceptT)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.State
+import Data.Foldable (toList)
 import qualified Data.List as L
 import qualified Data.Map as M
 import Debug.Trace (trace)
@@ -59,10 +59,12 @@ codegen filename env = case M.lookup (mkPkgNameFromPath filename) env of
 compile :: String -> IO (Status, TopEnv)
 compile filename = do
   -- TODO: replace "ExceptT" with (Status, TopEnv) to allow partial success
-  eenv <- runExceptT (loadDependencyGraph filename >>= upsweep)
-  case eenv of
-    Left e -> pprint e >> return (Failure, M.empty)
-    Right env -> return (Success, env)
+  (result, errs) <- runMgMonad (loadDependencyGraph filename >>= upsweep)
+  case result of
+    Left _ -> pprintList (L.sort (toList errs)) >> return (Failure, M.empty)
+    Right env -> if null errs then return (Success, env)
+                 else error $ "Compiler bug! Compile succeeded but had " <>
+                              "errors: " <> show errs
 
 build :: String -> IO (Maybe String) -- TODO: return instead source code type or smth
 build filename = do
@@ -81,9 +83,11 @@ repl = runInputT defaultSettings go
         Nothing -> return ()
         Just "q" -> return ()
         Just input -> do
-          mcmd <- liftIO $ runExceptT (parseReplCommand input)
-          case mcmd of Left e -> liftIO $ pprint e
-                       Right cmd -> lift $ execCmd cmd
+          (eitherCmd, errs) <-
+            liftIO $ runMgMonad (parseReplCommand input)
+          case eitherCmd of
+            Left _ -> liftIO $ pprintList (L.sort (toList errs))
+            Right cmd -> lift $ execCmd cmd
           go
 
 execCmd :: Command -> StateT TopEnv IO ()

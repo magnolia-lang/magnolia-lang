@@ -4,7 +4,7 @@
 module Parser (parsePackage, parsePackageHead, parseReplCommand) where
 
 import Control.Monad.Combinators.Expr
-import Control.Monad.Except (void, when, ExceptT, throwError)
+import Control.Monad.Except (void, when)
 import Data.Functor (($>))
 import Data.Maybe (isNothing)
 import Data.Void
@@ -18,6 +18,7 @@ import qualified Text.Megaparsec.Char.Lexer as L
 
 import Env
 import Syntax
+import Util
 
 type Parser = Parsec Void String
 
@@ -29,13 +30,14 @@ type ParsedMaybeTypedVar = MaybeTypedVar PhParse
 
 -- === exception handling utils ===
 
-throwNonLocatedParseError :: ParseErrorBundle String Void -> ExceptT Err IO b
+throwNonLocatedParseError
+  :: ParseErrorBundle String Void -> MgMonad b
 throwNonLocatedParseError =
-  throwError . Err ParseErr Nothing . T.pack . errorBundlePretty
+  throwNonLocatedE ParseErr . T.pack . errorBundlePretty
 
 -- === repl parsing utils ===
 
-parseReplCommand :: String -> ExceptT Err IO Command
+parseReplCommand :: String -> MgMonad Command
 parseReplCommand s = case parse (replCommand <* eof) "repl" s of
   Left e -> throwNonLocatedParseError e
   Right com -> return com
@@ -78,7 +80,7 @@ showMenuCommand = symbol "help" >> return ShowMenu
 -- === package head parsing utils ===
 
 -- TODO: find type for imports
-parsePackageHead :: FilePath -> String -> ExceptT Err IO PackageHead
+parsePackageHead :: FilePath -> String -> MgMonad PackageHead
 parsePackageHead filePath s =
   case parse (sc >> packageHead filePath s) filePath s of
     Left e -> throwNonLocatedParseError e
@@ -100,7 +102,7 @@ packageHead filePath s = do
 
 -- === package parsing utils ===
 
-parsePackage :: FilePath -> String -> ExceptT Err IO ParsedPackage
+parsePackage :: FilePath -> String -> MgMonad ParsedPackage
 parsePackage filePath s =
   case parse (sc >> package) filePath s of
     Left e -> throwNonLocatedParseError e
