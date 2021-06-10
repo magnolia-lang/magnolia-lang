@@ -1,40 +1,33 @@
 package tests.inputs.modeCheck;
 
-
-concept ModeCheck = {
-
+implementation modeCheck_I = {
     type T;
 
-    //TODO this should not work, overloading on mode 
-    procedure foo (upd a:T);
-    //procedure foo (obs a:T);
+    // TODO: overloading on mode should not work. Uncomment when error is
+    //       correctly thrown.
+    // procedure foo(out in: T);
+    // procedure foo(obs in: T);
 
-};
+    procedure in_obs(obs in: T);
+    procedure in_out(out in: T);
+    procedure in_upd(upd in: T);
 
-implementation Check = {
-    use ModeCheck;
-    type X;
-    procedure in_obs (obs a:T);
+    // obs input
+    procedure call_obs_obs(obs in: T) = call in_obs(in); // should succeed
+    procedure call_obs_out(obs in: T) = call in_out(in); // should fail
+    procedure call_obs_upd(obs in: T) = call in_upd(in); // should fail
 
-    procedure in_upd (upd a:T);
+    // out input
+    procedure call_out_obs(out in: T) = call in_obs(in); // should fail
+    procedure call_out_out(out in: T) = call in_out(in); // should succeed
+    procedure call_out_upd(out in: T) = call in_upd(in); // should fail
 
-    procedure in_out (out a:T);
+    // upd input
+    procedure call_upd_obs(upd in: T) = call in_obs(in); // should succeed
+    procedure call_upd_out(upd in: T) = call in_out(in); // should succeed
+    procedure call_upd_upd(upd in: T) = call in_upd(in); // should succeed
 
-    procedure call_obs_obs(obs n:T) = call in_obs(n);
-    procedure call_obs_upd(obs n:T) = call in_upd(n); 
-    procedure call_obs_out(obs n:T) = call in_out(n);
-
-
-    procedure call_upd_obs(upd n:T) = call in_obs(n);
-    procedure call_upd_upd(upd n:T) = call in_upd(n);
-    procedure call_upd_out(upd n:T) = call in_out(n);
-
-
-    procedure call_out_obs(out n:T) = call in_obs(n);
-    procedure call_out_upd(out n:T) = call in_upd(n);
-    procedure call_out_out(out n:T) = call in_out(n);
-
+    // test mismatch across several arguments
+    procedure in_2_obs(obs in1: T, obs in2: T);
+    procedure call_out_2_obs(out in: T) = call in_2_obs(in, in);
 }
-
-
-
