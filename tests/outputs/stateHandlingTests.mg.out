@@ -1,0 +1,5 @@
+tests/inputs/stateHandlingTests.mg:8:5: Type error: expected return type to be Unit in procedure but return value has type T
+
+tests/inputs/stateHandlingTests.mg:14:60: Mode error: incompatible modes in call to _=_: expected out but got unk for argument #1
+
+tests/inputs/stateHandlingTests.mg:23:60: Type error: value block has conflicting return types (found T, U)

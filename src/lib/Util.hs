@@ -9,7 +9,8 @@ module Util (
     mkPkgNameFromPath, mkPkgPathFromName, mkPkgPathFromStr, isPkgPath,
     lookupTopLevelRef,
     mkInlineRenamings, expandRenaming, expandRenamingBlock, checkRenamingBlock,
-    isLocalDecl)
+    isLocalDecl,
+    isValueExpr)
   where
 
 import Control.Monad
@@ -28,7 +29,6 @@ import Data.Void
 import Env
 import PPrint
 import Syntax
-
 
 -- === magnolia monad utils ===
 
@@ -214,3 +214,11 @@ mkInlineRenamings (Ann _ (MRenamingBlock renamings)) =
 
 isLocalDecl :: XAnn p e ~ DeclOrigin => Ann p e -> Bool
 isLocalDecl (Ann ann _) = case ann of LocalDecl _ -> True ; _ -> False
+
+-- === expression manipulation ===
+
+isValueExpr :: MExpr p -> Bool
+isValueExpr (Ann _ e) = case e of
+  MValue _ -> True
+  MIf _ eTrue eFalse -> isValueExpr eTrue || isValueExpr eFalse
+  _ -> False

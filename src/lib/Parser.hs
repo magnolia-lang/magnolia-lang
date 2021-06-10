@@ -253,6 +253,7 @@ expr = makeExprParser leafExpr ops
            <|> try ifExpr
            <|> try (callableCall FuncName)
            <|> try (keyword CallKW *> callableCall ProcName)
+           <|> annot (keyword ValueKW >> MValue <$> expr)
            <|> annot (keyword SkipKW >> return MSkip)
            <|> annot (var MUnk >>= \v -> return $ MVar v)
            <|> parens expr
@@ -264,7 +265,9 @@ blockExpr = annot blockExpr'
       block <- braces (many (exprStmt <* some semi))
       block' <- if null block then (:[]) <$> annot (return MSkip)
                 else return block
-      return $ MBlockExpr (NE.fromList block')
+      let blockType = if any isValueExpr block' then MValueBlock
+                      else MEffectfulBlock
+      return $ MBlockExpr blockType (NE.fromList block')
 
 ifExpr :: Parser ParsedExpr
 ifExpr = annot ifExpr'
@@ -412,6 +415,7 @@ data Keyword = ConceptKW | ImplementationKW | ProgramKW | SignatureKW | External
              | ObsKW | OutKW | UpdKW
              | GuardKW
              | AssertKW | CallKW | IfKW | ThenKW | ElseKW | LetKW | SkipKW
+             | ValueKW
              | PackageKW | ImportKW
 
 keyword :: Keyword -> Parser ()
@@ -446,6 +450,7 @@ keyword kw = (lexeme . try) $ string s *> notFollowedBy nameChar
       ElseKW           -> "else"
       LetKW            -> "var"
       SkipKW           -> "skip"
+      ValueKW          -> "value"
       PackageKW        -> "package"
       ImportKW         -> "imports"
 
