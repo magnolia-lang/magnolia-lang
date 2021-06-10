@@ -61,7 +61,7 @@ mkScopeVarsImmutable :: VarScope -> VarScope
 mkScopeVarsImmutable = M.map mkImmutable
   where
     mkImmutable (Ann src (Var mode name ty)) =
-      let newMode = case mode of MOut -> MUnk ; _ -> MObs
+      let newMode = case mode of MOut -> MUnk ; MUnk -> MUnk ; _ -> MObs
       in Ann src (Var newMode name ty)
 
 -- TODO: can variables exist without a type in the scope?
@@ -155,8 +155,9 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) = do
           (tcBody, bodyRetType) <- case cbody of
             MagnoliaBody expr -> do
               tcExpr <-
-                annotateScopedExpr env (initScope args) (Just retType) expr
+                annotateScopedExprStmt env (initScope args) (Just retType) expr
               return (MagnoliaBody tcExpr, _ann tcExpr)
+            -- TODO: check whether final scope satisfies mode contract
             ExternalBody -> return (ExternalBody, retType)
             EmptyBody -> throwLocatedE CompilerErr src $
               "pattern matching fail in callable body check for " <> pshow fname
@@ -238,23 +239,23 @@ castModule dstTyp origModule@(Ann declO (MModule srcTyp _ _ _)) = do
 castModule _ (Ann _ (RefModule _ _ v)) = absurd v
 -- TODO: sanity check modes
 
-annotateScopedExpr ::
+annotateScopedExprStmt ::
   ModuleScope ->
   VarScope ->
   Maybe MType ->
   MExpr PhParse ->
   MgMonad (MExpr PhCheck)
-annotateScopedExpr modul inputScope inputMaybeExprType e =
+annotateScopedExprStmt modul inputScope inputMaybeExprType e =
   snd <$> go inputScope inputMaybeExprType e
   where
-  -- maybeExprType is a parameter to disambiguate function calls overloaded
+  -- mExprTy is a parameter to disambiguate function calls overloaded
   -- solely on return types. It will *not* be used if the type can be inferred
   -- without it, and there is thus no guarantee that the resulting annotated
   -- expression will carry the specified type annotation. If this is important,
   -- it must be checked outside the call.
   go :: VarScope -> Maybe MType -> MExpr PhParse
      -> MgMonad (VarScope, MExpr PhCheck)
-  go scope maybeExprType (Ann src expr) = case expr of
+  go scope mExprTy (Ann src expr) = case expr of
     -- TODO: annotate type and mode on variables
     -- TODO: deal with mode
     MVar (Ann _ (Var _ name typ)) -> case M.lookup name scope of
@@ -262,7 +263,7 @@ annotateScopedExpr modul inputScope inputMaybeExprType e =
         Just (Ann varType v) -> let typAnn = fromJust typ in
           if isNothing typ || typAnn == varType
           then let tcVar = MVar (Ann varType (Var (_varMode v) name (Just varType)))
-               in return (scope, Ann { _ann = varType, _elem = tcVar })
+               in return (scope, Ann varType tcVar)
           else throwLocatedE TypeErr src $ "got conflicting type " <>
             "annotation for var " <> pshow name <> ": " <> pshow name <>
             " has type " <> pshow varType <> " but type annotation is " <>
@@ -281,16 +282,17 @@ annotateScopedExpr modul inputScope inputMaybeExprType e =
         -- has multiple possible corresponding bindings, and 'a' is unset
         -- before the call. This will be improved upon later on.
         --
-        -- First, check that all the arguments contain only computations that
-        -- are without effects on the environment. This is because evaluation
-        -- order might otherwise affect the result of the computation.
-        when (any isStateful args) $
-          let argNo = fst . head $ filter (isStateful . snd) $ zip [1..] args
-                :: Int in
-          throwLocatedE MiscErr src $ "expected stateless computations " <>
-            "as call arguments but argument #" <> pshow argNo <> " was " <>
-            "stateful in call to " <> pshow name
-        tcArgs <- traverse (annotateScopedExpr modul scope Nothing) args
+        -- We typecheck arguments expressions that are *not* variable
+        -- references with an immutable scope, to ensure they do not affect
+        -- the outer environment. This is because the evaluation order of
+        -- arguments is not necessarily defined, and side effects may otherwise
+        -- affect the result of the computation.
+        -- Argument expressions that are variable references are however
+        -- typechecked using the normal scope; this is because they then need
+        -- to carry their corresponding mode, as opposed to other expressions
+        -- which are anyway always "obs". "annotateScopedExpr" takes care of
+        -- this distinction.
+        tcArgs <- traverse (annotateScopedExpr scope Nothing) args
         let argTypes = map _ann tcArgs
             -- TODO: deal with modes here
             -- TODO: change with passing cast as parameter & whatever that implies
@@ -314,13 +316,12 @@ annotateScopedExpr modul inputScope inputMaybeExprType e =
           --     TODO: use sets, and hash arguments ignoring their type to fix
           --     (2).
           matches -> do
-            scopeAndTcExpr <-
+            tcAnnExpr <-
               let possibleTypes = S.fromList $ map getReturnType matches in
-              case maybeCallCast <|> maybeExprType of
+              case maybeCallCast <|> mExprTy of
                 Nothing ->
                   if S.size possibleTypes == 1
-                  then let typAnn = getReturnType (L.head matches) in
-                      return (scope, Ann typAnn tcExpr)
+                  then return $ Ann (getReturnType (L.head matches)) tcExpr
                   else throwLocatedE TypeErr src $ "could not deduce return " <>
                     "type of call to " <> pshow name <> ". Possible " <>
                     "candidates have return types " <>
@@ -334,7 +335,7 @@ annotateScopedExpr modul inputScope inputMaybeExprType e =
                       throwLocatedE TypeErr src $ "no matching candidate " <>
                         "for call to " <> pshow name <> " with type " <>
                         "annotation '" <> pshow cast <> "'"
-                    return (scope, Ann typAnn tcExpr)
+                    return $ Ann typAnn tcExpr
                   else do
                     unless (cast `S.member` possibleTypes) $
                       throwLocatedE TypeErr src $ "could not deduce return " <>
@@ -342,7 +343,7 @@ annotateScopedExpr modul inputScope inputMaybeExprType e =
                         "candidates have return types " <>
                         pshow (S.toList possibleTypes) <> ". Consider " <>
                         "adding a type annotation"
-                    return (scope, Ann cast tcExpr)
+                    return $ Ann cast tcExpr
             -- Here, using "head matches" is good enough, even though it can
             -- (and will) return the "wrong" candidate, in cases when several
             -- callables are overloaded solely on their return type. However:
@@ -366,8 +367,14 @@ annotateScopedExpr modul inputScope inputMaybeExprType e =
             -- account the current bug allowing overloading procedures on
             -- modes. Once this is appropriately forbidden, however, this
             -- should always work. Remove this comment once fixed.
-            checkArgModes (head matches) tcArgs
-            return scopeAndTcExpr
+            checkArgModes src (L.head matches) tcArgs
+            -- TODO: update modes here
+            let vArgs = foldr
+                  (\a l -> case _elem a of MVar v -> v:l ; _ -> l) [] tcArgs
+                updateMode (Ann vty v) = case _varMode v of
+                  MOut -> Ann vty (v { _varMode = MUpd }) ; _ -> Ann vty v
+                endScope = foldr (M.adjust updateMode . nodeName) scope vArgs
+            return (endScope, tcAnnExpr)
             -- TODO: ignore modes when overloading functions
     MBlockExpr blockType exprStmts -> case blockType of
       MEffectfulBlock -> do
@@ -391,141 +398,141 @@ annotateScopedExpr modul inputScope inputMaybeExprType e =
             T.intercalate ", " (map pshow (S.toList retTypes)) <> ")"
         return (scope, Ann retType (MBlockExpr blockType tcExprStmts))
     MValue expr' -> do
-      (_, tcExpr) <- go (mkScopeVarsImmutable scope) maybeExprType expr'
+      tcExpr <- annotateScopedExpr scope mExprTy expr'
+      checkExprMode src tcExpr MObs
       return (scope, Ann (_ann tcExpr) (MValue tcExpr))
-    MLet mode name maybeType maybeExpr -> do
+    MLet mode name mTy mExpr -> do
       unless (isNothing $ M.lookup name scope) $
         throwLocatedE MiscErr src $ "variable already defined in scope: " <>
           pshow name
-      case maybeExpr of
+      case mExpr of
         Nothing -> do
-          when (isNothing maybeType) $
+          when (isNothing mTy) $
             throwLocatedE NotImplementedErr src $ "can not yet declare a " <>
               "variable without specifying its type or an assignment " <>
               "expression"
-          let (Just typ) = maybeType
-          checkTypeExists modul (WithSrc src typ)
+          let (Just ty) = mTy
+          checkTypeExists modul (WithSrc src ty)
           unless (mode == MOut) $
             throwLocatedE ModeMismatchErr src $ "variable " <> pshow name <>
               " is declared with mode " <> pshow mode <> " but is not " <>
               "initialized"
           -- Variable is unset, therefore has to be MOut.
-          let newVar = Var MOut name typ
-          return ( M.insert name Ann { _ann = typ, _elem = newVar } scope
-                 , Ann Unit (MLet mode name maybeType Nothing)
+          let newVar = Var MOut name ty
+          return ( M.insert name (Ann ty newVar) scope
+                 , Ann Unit (MLet MOut name mTy Nothing)
                  )
         Just rhsExpr -> do
-          (scope', tcRhsExpr) <- go scope (maybeType <|> maybeExprType) rhsExpr
-          let tcExpr = MLet mode name maybeType (Just tcRhsExpr)
+          tcRhsExpr <- annotateScopedExpr scope (mTy <|> mExprTy) rhsExpr
+          checkExprMode src tcRhsExpr MObs
+          let tcExpr = MLet mode name mTy (Just tcRhsExpr)
               rhsType = _ann tcRhsExpr
-          case maybeType of
+          case mTy of
             Nothing -> do
               let newVar = Var mode name rhsType
-              return ( M.insert name (Ann rhsType newVar) scope'
-                     , Ann { _ann = Unit, _elem = tcExpr }
-                     )
-            Just typ -> do
-              unless (typ == rhsType) $
+              return (M.insert name (Ann rhsType newVar) scope, Ann Unit tcExpr)
+            Just ty -> do
+              unless (ty == rhsType) $
                 throwLocatedE TypeErr src $ "variable " <> pshow name <>
-                  " has type annotation " <> pshow typ <> " but type " <>
+                  " has type annotation " <> pshow ty <> " but type " <>
                   "of assignment expression is " <> pshow rhsType
               when (mode == MOut) $
                 throwLocatedE CompilerErr src $ "mode of variable " <>
                   "declaration can not be " <> pshow mode <> " if an " <>
                   "assignment expression is provided"
-              let newVar = Var mode name typ
-              return ( M.insert name Ann { _ann = typ, _elem = newVar } scope'
-                     , Ann { _ann = Unit, _elem = tcExpr }
-                     )
-    MIf cond bTrue bFalse -> do
-      let statefulBranches = map snd $ filter (isStateful . fst)
-            [(cond, "condition"), (bTrue, "true branch"),
-             (bFalse, "false branch")] :: [T.Text]
-      unless (null statefulBranches) $
-        throwLocatedE MiscErr src $ "expected if-then-else nodes to be " <>
-          "stateless computations but " <> pshow (head statefulBranches) <>
-          "is stateful"
-      (condScope, tcCondExpr) <- go scope (Just Pred) cond
-      when (_ann tcCondExpr /= Pred) $
+              let newVar = Var mode name ty
+              return (M.insert name (Ann ty newVar) scope, Ann Unit tcExpr)
+    MIf cond trueExpr falseExpr -> do
+      tcCond <- annotateScopedExpr scope (Just Pred) cond
+      unless (_ann tcCond == Pred) $
         throwLocatedE TypeErr src $ "expected condition to have type " <>
-          pshow Pred <> " but got " <> pshow (_ann tcCondExpr)
-      (trueScope, tcTrueExpr) <- go condScope maybeExprType bTrue
-      (falseScope, tcFalseExpr) <-
-        go condScope (Just (_ann tcTrueExpr)) bFalse
-      when (_ann tcTrueExpr /= _ann tcFalseExpr) $
+          pshow Pred <> " but got " <> pshow (_ann tcCond)
+      checkExprMode src tcCond MObs
+      (trueScope, tcTrueExpr) <- go scope mExprTy trueExpr
+      checkExprMode src tcTrueExpr MObs
+      (falseScope, tcFalseExpr) <- go scope (Just (_ann tcTrueExpr)) falseExpr
+      checkExprMode src tcFalseExpr MObs
+      unless (_ann tcTrueExpr == _ann tcFalseExpr) $
         throwLocatedE TypeErr src $ "expected branches of conditional to " <>
           "have the same type but got " <> pshow (_ann tcTrueExpr) <>
           " and " <> pshow (_ann tcFalseExpr)
-      let tcExpr = MIf tcCondExpr tcTrueExpr tcFalseExpr
-      -- TODO: join scopes. Description below:
+      unless (  _ann tcTrueExpr == Unit
+             && (scope /= falseScope || scope /= trueScope)) $
+        throwLocatedE CompilerErr src $
+          "if statement performed stateful computations in one of its " <>
+          "and also returned a value"
+      let tcExpr = MIf tcCond tcTrueExpr tcFalseExpr
       -- TODO: add sets of possible types to variables for type inference.
       -- TODO: can we set a variable to be "linearly assigned to" (only one
       --       time)?
       -- Modes are either upgraded in both branches, or we should throw an
       -- error. Each variable v in the parent scope has to satisfy one of the
-      -- following properties: (TODO: (1), (2) and (4) are invalid now).
-      --   (1) v's type is unknown in the condition and the 2 branches
-      --   (2) v's type is unknown in the condition, and set to the same value
-      --       in the 2 branches (TODO: an intersection exists?)
-      --   (3) v's type is known in the initial scope
-      --   (4) v's type is set in the condition.
-      -- Additionally, they also must satisfy one of the following properties:
-      --   (5) v's mode is initially out, but updated to upd in the condition
-      --   (6) v's mode is initially out, but updated to upd in both branches
-      --   (7) v's mode is not updated throughout the computation (always true
+      -- following properties:
+      --   (1) v's mode is initially out, but updated to upd in the condition
+      --   (2) v's mode is initially out, but updated to upd in both branches
+      --   (3) v's mode is not updated throughout the computation (always true
       --       if the initial mode is not out).
-      -- Note: all variables from the initial scope should exist in all scopes.
       -- TODO: deal with short circuiting when emitting C++
       -- TODO: we can actually use the "least permissive variable mode"
       --       constraint to allow var to only be set in one branch; do we want
       --       to allow that?
-      -- TODO: this will become irrelevant logic once if is implemented as a
-      --       function call. Modes should actually *not* change, as arguments
-      --       should be stateless computations.
-      let scopeVars = M.toList $ M.map (\(Ann _ (Var _ name _)) ->
-               let findVar = fromJust . M.lookup name in
-               (findVar trueScope, findVar falseScope)) scope
+      let scopeVars = M.toList $ M.mapWithKey (\k -> const $
+            let f = fromJust . M.lookup k in (f trueScope, f falseScope)) scope
       resultScope <- M.fromList <$> for scopeVars (
-          \(n, (Ann typ1 v1, Ann typ2 v2)) -> do
-              -- (5) || (6) || (7) <=> _varMode v1 == _varMode v2
-              when (_varMode v1 /= _varMode v2) $
-                throwLocatedE CompilerErr src $ "modes should not change " <>
-                  "in call to if function"
-              when (typ1 /= typ2) $
+          \(n, (Ann ty1 v1, Ann ty2 v2)) -> do
+              -- (1) || (2) || (3) <=> _varMode v1 == _varMode v2
+              unless (_varMode v1 == _varMode v2) $
+                throwLocatedE CompilerErr src $ "modes should be updated in " <>
+                  "the same way in if node"
+              unless (ty1 == ty2) $
                 throwLocatedE CompilerErr src $ "types should not change " <>
-                  "in call to if function" -- TODO: someday they might
-              return (n, Ann { _ann = typ1, _elem = v1 }))
-      return (resultScope, Ann { _ann = _ann tcTrueExpr, _elem = tcExpr })
+                  "in call to if function"
+              return (n, Ann ty1 v1))
+      return (resultScope, Ann (_ann tcTrueExpr) tcExpr)
     MAssert cond -> do
-      (scope', newCond) <- go scope (Just Pred) cond
-      when (_ann newCond /= Pred) $
+      tcCond <- annotateScopedExpr scope (Just Pred) cond
+      when (_ann tcCond /= Pred) $
         throwLocatedE TypeErr src $ "expected expression to have type " <>
-          pshow Pred <> " in predicate but got " <> pshow (_ann newCond)
-      return (scope', Ann { _ann = Unit, _elem = MAssert newCond })
-    MSkip -> return (scope, Ann { _ann = Unit, _elem = MSkip })
+          pshow Pred <> " in predicate but got " <> pshow (_ann tcCond)
+      checkExprMode src tcCond MObs
+      return (scope, Ann Unit (MAssert tcCond))
+    MSkip -> return (scope, Ann Unit MSkip)
     -- TODO: use for annotating AST
 
   getReturnType (Ann _ (Callable _ _ _ returnType _ _)) = returnType
 
-  checkArgModes :: CallableDecl p -> [MExpr p] -> MgMonad ()
-  checkArgModes (Ann _ (Callable _ name callableArgs _ _ _)) callArgs = do
-    let getExprMode (Ann _ expr) = case expr of MVar v -> _varMode $ _elem v
-                                                _      -> MObs
-        callableArgModes = map (_varMode . _elem) callableArgs
-        callArgModes = map getExprMode callArgs
+  checkArgModes :: SrcCtx -> CallableDecl p -> [MExpr p] -> MgMonad ()
+  checkArgModes src (Ann _ (Callable _ name callableArgs _ _ _)) callArgs = do
+    let callableArgModes = map (_varMode . _elem) callableArgs
+        callArgModes = map exprMode callArgs
         modeMismatches = filter (\(_, cand, call) -> not $ call `fitsMode` cand)
                                 (zip3 [1::Int ..] callableArgModes callArgModes)
-    unless (null modeMismatches) $ throwLocatedE ModeMismatchErr (_ann e) $
+    unless (null modeMismatches) $ throwLocatedE ModeMismatchErr src $
       "incompatible modes in call to " <> pshow name <> ": " <>
       T.intercalate "; " (map (\(argNo, expected, mismatch) ->
         "expected " <> pshow expected <> " but got " <> pshow mismatch <>
         " for argument #" <> pshow argNo) modeMismatches)
+
+  exprMode :: MExpr p -> MVarMode
+  exprMode (Ann _ expr) = case expr of MVar v -> _varMode (_elem v) ; _ -> MObs
+
+  checkExprMode :: SrcCtx -> MExpr p -> MVarMode -> MgMonad ()
+  checkExprMode src expr mode =
+    unless (exprMode expr `fitsMode` mode) $
+        throwLocatedE ModeMismatchErr src $ "expected expression to have " <>
+          "mode obs but it has mode " <> pshow (exprMode expr)
 
   fitsMode :: MVarMode -> MVarMode -> Bool
   fitsMode instanceMode targetedMode  = case instanceMode of
     MUnk -> False
     MUpd -> True
     _ -> instanceMode == targetedMode
+
+  annotateScopedExpr :: VarScope -> Maybe MType -> MExpr PhParse
+                     -> MgMonad (MExpr PhCheck)
+  annotateScopedExpr sc mTy' e' =
+    let inScope = case _elem e' of MVar _ -> sc ; _ -> mkScopeVarsImmutable sc
+    in annotateScopedExprStmt modul inScope mTy' e'
 
 
 prototypeMatchesTypeConstraints
@@ -703,7 +710,7 @@ checkProto checkGuards env
   tcGuard <- case mguard of
     Nothing -> return Nothing
     Just guard -> if checkGuards
-      then Just <$> annotateScopedExpr env (initScope args) (Just Pred) guard
+      then Just <$> annotateScopedExprStmt env (initScope args) (Just Pred) guard
       else return Nothing
   return Ann { _ann = [LocalDecl src]
              , _elem = Callable ctype name tcArgs retType tcGuard EmptyBody
@@ -851,8 +858,8 @@ applyRenaming decl renaming = case decl of
       MValue expr' -> MValue $ applyRenamingInExpr expr'
       MLet mode name typ rhsExpr -> MLet mode name (replaceName' <$> typ)
         (applyRenamingInExpr <$> rhsExpr)
-      MIf cond bTrue bFalse -> MIf (applyRenamingInExpr cond)
-        (applyRenamingInExpr bTrue) (applyRenamingInExpr bFalse)
+      MIf cond trueExpr falseExpr -> MIf (applyRenamingInExpr cond)
+        (applyRenamingInExpr trueExpr) (applyRenamingInExpr falseExpr)
       MAssert cond -> MAssert (applyRenamingInExpr cond)
       MSkip -> MSkip
 
@@ -866,21 +873,3 @@ mapAccumM f a tb = swap <$> mapM go tb `runStateT` a
                   (s', r) <- lift $ f s b
                   put s'
                   return r
-
-isStateful :: MExpr p -> Bool
-isStateful (Ann _ expr) = case expr of
-  -- Operations that can affect the scope are:
-  -- - variable declarations/variable assignments
-  -- - calls to procedures
-  MVar _ -> False
-  MCall (FuncName _) args _ -> any isStateful args
-  MCall (ProcName _) _ _ -> True
-  MCall {} -> error $ "call to something that is neither a type " <>
-                      "of function nor a procedure."
-  MBlockExpr blockTy _ -> blockTy == MEffectfulBlock
-  MValue _ -> False
-  MLet {} -> True
-  -- TODO: cond can NOT be stateful in principle
-  MIf cond bTrue bFalse -> any isStateful [cond, bTrue, bFalse]
-  MAssert cond -> isStateful cond
-  MSkip -> False

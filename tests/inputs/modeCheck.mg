@@ -28,6 +28,16 @@ implementation modeCheck_I = {
     procedure call_upd_upd(upd in: T) = call in_upd(in); // should succeed
 
     // test mismatch across several arguments
-    procedure in_2_obs(obs in1: T, obs in2: T);
-    procedure call_out_2_obs(out in: T) = call in_2_obs(in, in);
+    procedure in_2_obs(obs in1: T, obs in2: T); // should fail
+    procedure call_out_2_obs(out in: T) = call in_2_obs(in, in); // should fail
+
+    // various attempts to read out variables
+    procedure value_out(out in: T) { value in; } // should fail
+    procedure assign_out(out in: T) { var v = in; } // should fail
+
+    // check that after being set, previously out variables can be set
+    procedure read_from_assigned_out(out in: T) { // should succeed
+        call in_out(in);
+        var v = in;
+    }
 }
