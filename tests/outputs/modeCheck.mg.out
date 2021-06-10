@@ -1,0 +1,9 @@
+tests/inputs/modeCheck.mg:17:46: Mode error: incompatible modes in call to in_out: expected out but got obs for argument #1
+
+tests/inputs/modeCheck.mg:18:46: Mode error: incompatible modes in call to in_upd: expected upd but got obs for argument #1
+
+tests/inputs/modeCheck.mg:21:46: Mode error: incompatible modes in call to in_obs: expected obs but got out for argument #1
+
+tests/inputs/modeCheck.mg:23:46: Mode error: incompatible modes in call to in_upd: expected upd but got out for argument #1
+
+tests/inputs/modeCheck.mg:32:48: Mode error: incompatible modes in call to in_2_obs: expected obs but got out for argument #1; expected obs but got out for argument #2

@@ -231,7 +231,7 @@ annotateScopedExpr ::
   Maybe MType ->
   MExpr PhParse ->
   MgMonad (MExpr PhCheck)
-annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
+annotateScopedExpr inputModule inputScope inputMaybeExprType e =
   snd <$> go inputModule inputScope inputMaybeExprType e
   where
   -- maybeExprType is a parameter to disambiguate function calls overloaded
@@ -244,11 +244,11 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
   go modul scope maybeExprType (Ann src expr) = case expr of
     -- TODO: annotate type and mode on variables
     -- TODO: deal with mode
-    MVar (Ann _ (Var mode name typ)) -> case M.lookup name scope of
+    MVar (Ann _ (Var _ name typ)) -> case M.lookup name scope of
         Nothing -> throwLocatedE UnboundVarErr src (pshow name)
-        Just (Ann varType _) -> let typAnn = fromJust typ in
+        Just (Ann varType v) -> let typAnn = fromJust typ in
           if isNothing typ || typAnn == varType
-          then let tcVar = MVar (Ann varType (Var mode name (Just varType)))
+          then let tcVar = MVar (Ann varType (Var (_varMode v) name (Just varType)))
                in return (scope, Ann { _ann = varType, _elem = tcVar })
           else throwLocatedE TypeErr src $ "got conflicting type " <>
             "annotation for var " <> pshow name <> ": " <> pshow name <>
@@ -300,40 +300,63 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
           --     of how the environment is implemented.
           --     TODO: use sets, and hash arguments ignoring their type to fix
           --     (2).
-          matches ->
-            let possibleTypes = S.fromList $ map getReturnType matches in
-            case maybeCallCast <|> maybeExprType of
-              Nothing ->
-                if S.size possibleTypes == 1
-                then let typAnn = getReturnType (L.head matches) in
-                     return (scope, Ann { _ann = typAnn, _elem = exprTC })
-                else throwLocatedE TypeErr src $ "could not deduce return " <>
-                  "type of call to " <> pshow name <> ". Possible " <>
-                  "candidates have return types " <>
-                  pshow (S.toList possibleTypes) <> ". Consider adding a " <>
-                  "type annotation"
-              Just cast ->
-                if S.size possibleTypes == 1
-                then do
-                  let typAnn = getReturnType (L.head matches)
-                  when (isJust maybeCallCast && typAnn /= cast) $
-                    throwLocatedE TypeErr src $ "no matching candidate " <>
-                      "for call to " <> pshow name <> " with type " <>
-                      "annotation '" <> pshow cast <> "'"
-                  return ( scope
-                        , Ann { _ann = typAnn, _elem = exprTC }
-                        )
-                else do
-                  unless (cast `S.member` possibleTypes) $
-                    throwLocatedE TypeErr src $ "could not deduce return " <>
-                      "type of call to " <> pshow name <> ". Possible " <>
-                      "candidates have return types " <>
-                      pshow (S.toList possibleTypes) <> ". Consider " <>
-                      "adding a type annotation"
-                  return ( scope
-                        , Ann { _ann = cast, _elem = exprTC }
-                        )
-              -- TODO: ignore modes when overloading functions
+
+          matches -> do
+            scopeAndTcExpr <-
+              let possibleTypes = S.fromList $ map getReturnType matches in
+              case maybeCallCast <|> maybeExprType of
+                Nothing ->
+                  if S.size possibleTypes == 1
+                  then let typAnn = getReturnType (L.head matches) in
+                      return (scope, Ann typAnn exprTC)
+                  else throwLocatedE TypeErr src $ "could not deduce return " <>
+                    "type of call to " <> pshow name <> ". Possible " <>
+                    "candidates have return types " <>
+                    pshow (S.toList possibleTypes) <> ". Consider adding a " <>
+                    "type annotation"
+                Just cast ->
+                  if S.size possibleTypes == 1
+                  then do
+                    let typAnn = getReturnType (L.head matches)
+                    when (isJust maybeCallCast && typAnn /= cast) $
+                      throwLocatedE TypeErr src $ "no matching candidate " <>
+                        "for call to " <> pshow name <> " with type " <>
+                        "annotation '" <> pshow cast <> "'"
+                    return (scope, Ann typAnn exprTC)
+                  else do
+                    unless (cast `S.member` possibleTypes) $
+                      throwLocatedE TypeErr src $ "could not deduce return " <>
+                        "type of call to " <> pshow name <> ". Possible " <>
+                        "candidates have return types " <>
+                        pshow (S.toList possibleTypes) <> ". Consider " <>
+                        "adding a type annotation"
+                    return (scope, Ann cast exprTC)
+            -- Here, using "head matches" is good enough, even though it can
+            -- (and will) return the "wrong" candidate, in cases when several
+            -- callables are overloaded solely on their return type. However:
+            --
+            -- (1) callables can only have a non-Unit return type if they are
+            --     `function`s (i.e. all their arguments have mode `obs`)
+            -- (2) there can be no ambiguity regarding whether we are calling a
+            --     `function` or a `procedure`; we always know which type of
+            --     callable we are invoking.
+            --
+            -- The compiler uses different namespaces for functions and
+            -- procedures, ensuring therefore that all candidates are either
+            -- functions (all their args are `obs`), or procedures (there is a
+            -- single possible return type, therefore no overloading on return
+            -- type is possible).
+            --
+            -- This means that checking the modes and names with a random
+            -- candidate works, but checking other properties may fail.
+            --
+            -- TODO(bchetioui, 2021/06/10): note that this does not take into
+            -- account the current bug allowing overloading procedures on
+            -- modes. Once this is appropriately forbidden, however, this
+            -- should always work. Remove this comment once fixed.
+            checkArgModes (head matches) argsTC
+            return scopeAndTcExpr
+            -- TODO: ignore modes when overloading functions
     MBlockExpr exprStmts -> do
       (intermediateScope, initExprStmtsTC) <-
           mapAccumM (flip (go modul) Nothing) scope (NE.init exprStmts)
@@ -463,6 +486,27 @@ annotateScopedExpr inputModule inputScope inputMaybeExprType e = do
     -- TODO: use for annotating AST
 
   getReturnType (Ann _ (Callable _ _ _ returnType _ _)) = returnType
+
+  checkArgModes :: CallableDecl p -> [MExpr p] -> MgMonad ()
+  checkArgModes (Ann _ (Callable _ name callableArgs _ _ _)) callArgs = do
+    let getExprMode (Ann _ expr) = case expr of MVar v -> _varMode $ _elem v
+                                                _      -> MObs
+        callableArgModes = map (_varMode . _elem) callableArgs
+        callArgModes = map getExprMode callArgs
+        modeMismatches = filter (\(_, cand, call) -> not $ call `fitsMode` cand)
+                                (zip3 [1::Int ..] callableArgModes callArgModes)
+    unless (null modeMismatches) $ throwLocatedE ModeMismatchErr (_ann e) $
+      "incompatible modes in call to " <> pshow name <> ": " <>
+      T.intercalate "; " (map (\(argNo, expected, mismatch) ->
+        "expected " <> pshow expected <> " but got " <> pshow mismatch <>
+        " for argument #" <> pshow argNo) modeMismatches)
+
+  fitsMode :: MVarMode -> MVarMode -> Bool
+  fitsMode instanceMode targetedMode  = case instanceMode of
+    MUnk -> False
+    MUpd -> True
+    _ -> instanceMode == targetedMode
+
 
 prototypeMatchesTypeConstraints
   :: [MType] -> Maybe MType -> TCCallableDecl -> Bool
