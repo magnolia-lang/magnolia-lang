@@ -152,7 +152,7 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) = do
       -- external (in which case, we only check the proto with the guard once
       -- again), or internal (in which case we need to type check it).
       | otherwise = do
-          (bodyTC, bodyRetType) <- case cbody of
+          (tcBody, bodyRetType) <- case cbody of
             MagnoliaBody expr -> do
               tcExpr <-
                 annotateScopedExpr env (initScope args) (Just retType) expr
@@ -160,12 +160,12 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) = do
             ExternalBody -> return (ExternalBody, retType)
             EmptyBody -> throwLocatedE CompilerErr src $
               "pattern matching fail in callable body check for " <> pshow fname
-          Ann typAnn (Callable _ _ argsTC _ guardTC _) <-
+          Ann typAnn (Callable _ _ tcArgs _ tcGuard _) <-
             checkProto True env decl
-          let annDeclTC = Ann typAnn $
-                Callable ctype fname argsTC retType guardTC bodyTC
+          let tcAnnDecl = Ann typAnn $
+                Callable ctype fname tcArgs retType tcGuard tcBody
           if bodyRetType == retType
-          then insertAndMergeDecl env (CallableDecl annDeclTC)
+          then insertAndMergeDecl env (CallableDecl tcAnnDecl)
           else throwLocatedE TypeErr src $
             "expected return type to be " <> pshow retType <> " in " <>
             pshow ctype <> " but return value has type " <>
@@ -290,13 +290,13 @@ annotateScopedExpr modul inputScope inputMaybeExprType e =
           throwLocatedE MiscErr src $ "expected stateless computations " <>
             "as call arguments but argument #" <> pshow argNo <> " was " <>
             "stateful in call to " <> pshow name
-        argsTC <- traverse (annotateScopedExpr modul scope Nothing) args
-        let argTypes = map _ann argsTC
+        tcArgs <- traverse (annotateScopedExpr modul scope Nothing) args
+        let argTypes = map _ann tcArgs
             -- TODO: deal with modes here
             -- TODO: change with passing cast as parameter & whatever that implies
             candidates = filter (prototypeMatchesTypeConstraints argTypes Nothing) $
               getCallableDecls (M.findWithDefault [] name modul)
-            exprTC = MCall name argsTC maybeCallCast
+            tcExpr = MCall name tcArgs maybeCallCast
         -- TODO: stop using list to reach return val, maybe use Data.Sequence?
         -- TODO: do something with procedures and axioms here?
         case candidates of
@@ -320,7 +320,7 @@ annotateScopedExpr modul inputScope inputMaybeExprType e =
                 Nothing ->
                   if S.size possibleTypes == 1
                   then let typAnn = getReturnType (L.head matches) in
-                      return (scope, Ann typAnn exprTC)
+                      return (scope, Ann typAnn tcExpr)
                   else throwLocatedE TypeErr src $ "could not deduce return " <>
                     "type of call to " <> pshow name <> ". Possible " <>
                     "candidates have return types " <>
@@ -334,7 +334,7 @@ annotateScopedExpr modul inputScope inputMaybeExprType e =
                       throwLocatedE TypeErr src $ "no matching candidate " <>
                         "for call to " <> pshow name <> " with type " <>
                         "annotation '" <> pshow cast <> "'"
-                    return (scope, Ann typAnn exprTC)
+                    return (scope, Ann typAnn tcExpr)
                   else do
                     unless (cast `S.member` possibleTypes) $
                       throwLocatedE TypeErr src $ "could not deduce return " <>
@@ -342,7 +342,7 @@ annotateScopedExpr modul inputScope inputMaybeExprType e =
                         "candidates have return types " <>
                         pshow (S.toList possibleTypes) <> ". Consider " <>
                         "adding a type annotation"
-                    return (scope, Ann cast exprTC)
+                    return (scope, Ann cast tcExpr)
             -- Here, using "head matches" is good enough, even though it can
             -- (and will) return the "wrong" candidate, in cases when several
             -- callables are overloaded solely on their return type. However:
@@ -366,7 +366,7 @@ annotateScopedExpr modul inputScope inputMaybeExprType e =
             -- account the current bug allowing overloading procedures on
             -- modes. Once this is appropriately forbidden, however, this
             -- should always work. Remove this comment once fixed.
-            checkArgModes (head matches) argsTC
+            checkArgModes (head matches) tcArgs
             return scopeAndTcExpr
             -- TODO: ignore modes when overloading functions
     MBlockExpr blockType exprStmts -> case blockType of
@@ -415,14 +415,14 @@ annotateScopedExpr modul inputScope inputMaybeExprType e =
                  , Ann Unit (MLet mode name maybeType Nothing)
                  )
         Just rhsExpr -> do
-          (scope', rhsExprTC) <- go scope (maybeType <|> maybeExprType) rhsExpr
-          let exprTC = MLet mode name maybeType (Just rhsExprTC)
-              rhsType = _ann rhsExprTC
+          (scope', tcRhsExpr) <- go scope (maybeType <|> maybeExprType) rhsExpr
+          let tcExpr = MLet mode name maybeType (Just tcRhsExpr)
+              rhsType = _ann tcRhsExpr
           case maybeType of
             Nothing -> do
               let newVar = Var mode name rhsType
               return ( M.insert name (Ann rhsType newVar) scope'
-                     , Ann { _ann = Unit, _elem = exprTC }
+                     , Ann { _ann = Unit, _elem = tcExpr }
                      )
             Just typ -> do
               unless (typ == rhsType) $
@@ -435,7 +435,7 @@ annotateScopedExpr modul inputScope inputMaybeExprType e =
                   "assignment expression is provided"
               let newVar = Var mode name typ
               return ( M.insert name Ann { _ann = typ, _elem = newVar } scope'
-                     , Ann { _ann = Unit, _elem = exprTC }
+                     , Ann { _ann = Unit, _elem = tcExpr }
                      )
     MIf cond bTrue bFalse -> do
       let statefulBranches = map snd $ filter (isStateful . fst)
@@ -445,18 +445,18 @@ annotateScopedExpr modul inputScope inputMaybeExprType e =
         throwLocatedE MiscErr src $ "expected if-then-else nodes to be " <>
           "stateless computations but " <> pshow (head statefulBranches) <>
           "is stateful"
-      (condScope, condExprTC) <- go scope (Just Pred) cond
-      when (_ann condExprTC /= Pred) $
+      (condScope, tcCondExpr) <- go scope (Just Pred) cond
+      when (_ann tcCondExpr /= Pred) $
         throwLocatedE TypeErr src $ "expected condition to have type " <>
-          pshow Pred <> " but got " <> pshow (_ann condExprTC)
-      (trueScope, trueExprTC) <- go condScope maybeExprType bTrue
-      (falseScope, falseExprTC) <-
-        go condScope (Just (_ann trueExprTC)) bFalse
-      when (_ann trueExprTC /= _ann falseExprTC) $
+          pshow Pred <> " but got " <> pshow (_ann tcCondExpr)
+      (trueScope, tcTrueExpr) <- go condScope maybeExprType bTrue
+      (falseScope, tcFalseExpr) <-
+        go condScope (Just (_ann tcTrueExpr)) bFalse
+      when (_ann tcTrueExpr /= _ann tcFalseExpr) $
         throwLocatedE TypeErr src $ "expected branches of conditional to " <>
-          "have the same type but got " <> pshow (_ann trueExprTC) <>
-          " and " <> pshow (_ann falseExprTC)
-      let exprTC = MIf condExprTC trueExprTC falseExprTC
+          "have the same type but got " <> pshow (_ann tcTrueExpr) <>
+          " and " <> pshow (_ann tcFalseExpr)
+      let tcExpr = MIf tcCondExpr tcTrueExpr tcFalseExpr
       -- TODO: join scopes. Description below:
       -- TODO: add sets of possible types to variables for type inference.
       -- TODO: can we set a variable to be "linearly assigned to" (only one
@@ -495,7 +495,7 @@ annotateScopedExpr modul inputScope inputMaybeExprType e =
                 throwLocatedE CompilerErr src $ "types should not change " <>
                   "in call to if function" -- TODO: someday they might
               return (n, Ann { _ann = typ1, _elem = v1 }))
-      return (resultScope, Ann { _ann = _ann trueExprTC, _elem = exprTC })
+      return (resultScope, Ann { _ann = _ann tcTrueExpr, _elem = tcExpr })
     MAssert cond -> do
       (scope', newCond) <- go scope (Just Pred) cond
       when (_ann newCond /= Pred) $
