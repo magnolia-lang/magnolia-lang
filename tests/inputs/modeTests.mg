@@ -40,4 +40,10 @@ implementation modeTests_I = {
         call in_out(in);
         var v = in;
     }
+
+    // updating the out variable in the body
+    procedure not_updating_out(obs in_obs: T, out in_out: T) {} // should fail
+    procedure updating_out(obs in_obs: T, out in_out: T) { // should succeed
+        in_out = in_obs;
+    }
 }

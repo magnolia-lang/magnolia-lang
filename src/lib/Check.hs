@@ -154,8 +154,9 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) = do
       | otherwise = do
           (tcBody, bodyRetType) <- case cbody of
             MagnoliaBody expr -> do
-              tcExpr <-
+              (finalScope, tcExpr) <-
                 annotateScopedExprStmt env (initScope args) (Just retType) expr
+              mapM_ (checkArgIsUpdated finalScope) args
               return (MagnoliaBody tcExpr, _ann tcExpr)
             -- TODO: check whether final scope satisfies mode contract
             ExternalBody -> return (ExternalBody, retType)
@@ -171,6 +172,17 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) = do
             "expected return type to be " <> pshow retType <> " in " <>
             pshow ctype <> " but return value has type " <>
             pshow bodyRetType
+
+    checkArgIsUpdated :: VarScope -> TypedVar PhParse -> MgMonad ()
+    checkArgIsUpdated scope (Ann src arg) = case _varMode arg of
+      MOut -> case M.lookup (nodeName arg) scope of
+        Nothing -> throwLocatedE CompilerErr src $ "argument " <>
+          pshow (nodeName arg) <> " is out of scope after consistency checks "
+        Just v -> unless (_varMode (_elem v) == MUpd) $
+          throwLocatedE ModeMismatchErr src $ "argument " <>
+          pshow (nodeName arg) <> " is 'out' but is not populated by the " <>
+          "procedure body"
+      _ -> return ()
 
 
     checkImplemented :: ModuleScope -> CallableDecl PhCheck -> MgMonad ()
@@ -244,9 +256,9 @@ annotateScopedExprStmt ::
   VarScope ->
   Maybe MType ->
   MExpr PhParse ->
-  MgMonad (MExpr PhCheck)
+  MgMonad (VarScope, MExpr PhCheck)
 annotateScopedExprStmt modul inputScope inputMaybeExprType e =
-  snd <$> go inputScope inputMaybeExprType e
+  go inputScope inputMaybeExprType e
   where
   -- mExprTy is a parameter to disambiguate function calls overloaded
   -- solely on return types. It will *not* be used if the type can be inferred
@@ -532,7 +544,7 @@ annotateScopedExprStmt modul inputScope inputMaybeExprType e =
                      -> MgMonad (MExpr PhCheck)
   annotateScopedExpr sc mTy' e' =
     let inScope = case _elem e' of MVar _ -> sc ; _ -> mkScopeVarsImmutable sc
-    in annotateScopedExprStmt modul inScope mTy' e'
+    in snd <$> annotateScopedExprStmt modul inScope mTy' e'
 
 
 prototypeMatchesTypeConstraints
@@ -710,7 +722,8 @@ checkProto checkGuards env
   tcGuard <- case mguard of
     Nothing -> return Nothing
     Just guard -> if checkGuards
-      then Just <$> annotateScopedExprStmt env (initScope args) (Just Pred) guard
+      then Just . snd <$>
+        annotateScopedExprStmt env (initScope args) (Just Pred) guard
       else return Nothing
   return Ann { _ann = [LocalDecl src]
              , _elem = Callable ctype name tcArgs retType tcGuard EmptyBody

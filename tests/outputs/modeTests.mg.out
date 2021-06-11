@@ -11,3 +11,5 @@ tests/inputs/modeTests.mg:32:48: Mode error: incompatible modes in call to in_2_
 tests/inputs/modeTests.mg:35:38: Mode error: expected expression to have mode obs but it has mode unk
 
 tests/inputs/modeTests.mg:36:39: Mode error: expected expression to have mode obs but it has mode out
+
+tests/inputs/modeTests.mg:45:51: Mode error: argument in_out is 'out' but is not populated by the procedure body
