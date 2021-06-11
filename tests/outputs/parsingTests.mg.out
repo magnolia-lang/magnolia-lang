@@ -1,4 +1,4 @@
-<no context>: Parse error: tests/inputs/parsing-recovery.mg:2:1:
+<no context>: Parse error: tests/inputs/parsingTests.mg:2:1:
   |
 2 | <empty line>
   | ^

@@ -10,10 +10,10 @@ lint:
 	hlint src
 
 test-targets = declScopeTests \
-		modeCheck \
-		parsing-recovery \
+		modeTests \
+		parsingTests \
 	       	stateHandlingTests \
-	       	stmtErrors
+		stmtTests
 
 tests: $(test-targets:%=check-output-%)
 

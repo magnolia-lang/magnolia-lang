@@ -1,4 +1,4 @@
-package tests.inputs.stmtErrors;
+package tests.inputs.stmtTests;
 
 // TODO: expand with tests for all the statements/expressions
 

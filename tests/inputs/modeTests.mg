@@ -1,6 +1,6 @@
-package tests.inputs.modeCheck;
+package tests.inputs.modeTests;
 
-implementation modeCheck_I = {
+implementation modeTests_I = {
     type T;
 
     // TODO: overloading on mode should not work. Uncomment when error is

@@ -1,0 +1,1 @@
+tests/inputs/stmtTests.mg:18:9: Error: function not in scope: _=_ with arguments of type (T1, T2)

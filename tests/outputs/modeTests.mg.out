@@ -1,0 +1,13 @@
+tests/inputs/modeTests.mg:17:46: Mode error: incompatible modes in call to in_out: expected out but got obs for argument #1
+
+tests/inputs/modeTests.mg:18:46: Mode error: incompatible modes in call to in_upd: expected upd but got obs for argument #1
+
+tests/inputs/modeTests.mg:21:46: Mode error: incompatible modes in call to in_obs: expected obs but got out for argument #1
+
+tests/inputs/modeTests.mg:23:46: Mode error: incompatible modes in call to in_upd: expected upd but got out for argument #1
+
+tests/inputs/modeTests.mg:32:48: Mode error: incompatible modes in call to in_2_obs: expected obs but got out for argument #1; expected obs but got out for argument #2
+
+tests/inputs/modeTests.mg:35:38: Mode error: expected expression to have mode obs but it has mode unk
+
+tests/inputs/modeTests.mg:36:39: Mode error: expected expression to have mode obs but it has mode out
