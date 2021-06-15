@@ -231,7 +231,7 @@ instance Pretty (MExpr' p) where
                ]
         MValue expr' -> "value" <+> p expr'
         -- TODO: modes are for now ignore in MLet
-        MLet _ name mcast mass ->
+        MLet (Ann _ (Var _ name mcast)) mass ->
           let pcast = case mcast of Nothing -> ""; Just cast -> " : " <> p cast
               pass = case mass of Nothing -> ""
                                   Just ass -> " = " <> pNoSemi (_elem ass)
