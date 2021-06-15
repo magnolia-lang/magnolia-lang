@@ -195,7 +195,7 @@ data MExpr' p = MVar (MaybeTypedVar p)
               | MCall Name [MExpr p] (Maybe MType)
               | MBlockExpr MBlockType (NE.NonEmpty (MExpr p))
               | MValue (MExpr p)
-              | MLet MVarMode Name (Maybe MType) (Maybe (MExpr p))
+              | MLet (MaybeTypedVar p) (Maybe (MExpr p))
               | MIf (MExpr p) (MExpr p) (MExpr p)
               | MAssert (MExpr p)
               | MSkip

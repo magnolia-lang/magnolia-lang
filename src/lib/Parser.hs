@@ -331,14 +331,15 @@ letStmt = annot letStmt'
   where
     letStmt' = do
       keyword LetKW
-      isConst <- option False (keyword ObsKW $> True)
-      name <- varName
-      ann <- optional (symbol ":" *> typeName)
+      ~(Ann ann (Var declMode name mty)) <- letVar
       value <- optional (symbol "=" *> expr)
-      let mode | isConst = MObs
-               | isNothing value = MOut
-               | otherwise = MUpd
-      return $ MLet mode name ann value
+      let mode = if isNothing value then MOut else declMode
+      return $ MLet (Ann ann (Var mode name mty)) value
+
+    letVar = do
+      mode <- option MUpd (keyword ObsKW $> MObs)
+      var mode
+
 
 assignStmt :: Parser ParsedExpr
 assignStmt = annot assignStmt'

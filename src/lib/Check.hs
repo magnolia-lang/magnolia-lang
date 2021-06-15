@@ -413,7 +413,7 @@ annotateScopedExprStmt modul inputScope inputMaybeExprType e =
       tcExpr <- annotateScopedExpr scope mExprTy expr'
       checkExprMode src tcExpr MObs
       return (scope, Ann (_ann tcExpr) (MValue tcExpr))
-    MLet mode name mTy mExpr -> do
+    MLet (Ann _ (Var mode name mTy)) mExpr -> do
       unless (isNothing $ M.lookup name scope) $
         throwLocatedE MiscErr src $ "variable already defined in scope: " <>
           pshow name
@@ -432,12 +432,13 @@ annotateScopedExprStmt modul inputScope inputMaybeExprType e =
           -- Variable is unset, therefore has to be MOut.
           let newVar = Var MOut name ty
           return ( M.insert name (Ann ty newVar) scope
-                 , Ann Unit (MLet MOut name mTy Nothing)
+                 , Ann Unit (MLet (Ann ty (Var MOut name mTy)) Nothing)
                  )
         Just rhsExpr -> do
           tcRhsExpr <- annotateScopedExpr scope (mTy <|> mExprTy) rhsExpr
           checkExprMode src tcRhsExpr MObs
-          let tcExpr = MLet mode name mTy (Just tcRhsExpr)
+          let tcExpr =
+                MLet (Ann (_ann tcRhsExpr) (Var mode name mTy)) (Just tcRhsExpr)
               rhsType = _ann tcRhsExpr
           case mTy of
             Nothing -> do
@@ -856,7 +857,8 @@ applyRenaming decl renaming = case decl of
     applyRenamingInTypedVar :: TypedVar PhCheck -> TypedVar PhCheck
     applyRenamingInTypedVar (Ann typAnn (Var mode name typ)) =
       Ann (replaceName' typAnn) $ Var mode name (replaceName' typ)
-    applyRenamingInMaybeTypedVar :: MaybeTypedVar PhCheck -> MaybeTypedVar PhCheck
+    applyRenamingInMaybeTypedVar
+      :: MaybeTypedVar PhCheck -> MaybeTypedVar PhCheck
     applyRenamingInMaybeTypedVar (Ann typAnn (Var mode name typ)) =
       Ann (replaceName' typAnn) $ Var mode name (replaceName' <$> typ)
     applyRenamingInExpr :: MExpr PhCheck -> MExpr PhCheck
@@ -869,7 +871,7 @@ applyRenaming decl renaming = case decl of
       MBlockExpr blockTy stmts ->
         MBlockExpr blockTy $ NE.map applyRenamingInExpr stmts
       MValue expr' -> MValue $ applyRenamingInExpr expr'
-      MLet mode name typ rhsExpr -> MLet mode name (replaceName' <$> typ)
+      MLet v rhsExpr -> MLet (applyRenamingInMaybeTypedVar v)
         (applyRenamingInExpr <$> rhsExpr)
       MIf cond trueExpr falseExpr -> MIf (applyRenamingInExpr cond)
         (applyRenamingInExpr trueExpr) (applyRenamingInExpr falseExpr)
