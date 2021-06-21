@@ -3,10 +3,12 @@ package tests.inputs.modeTests;
 implementation modeTests_I = {
     type T;
 
-    // TODO: overloading on mode should not work. Uncomment when error is
-    //       correctly thrown.
-    // procedure foo(out in: T);
-    // procedure foo(obs in: T);
+    // overloading on mode should not work
+    procedure overload_one_param(out in: T); // should succeed
+    procedure overload_one_param(obs in: T); // should fail
+
+    procedure overload_two_param (obs t:T, upd in: T); // should succeed
+    procedure overload_two_param (obs t:T, out in: T); // should fail
 
     procedure in_obs(obs in: T);
     procedure in_out(out in: T);

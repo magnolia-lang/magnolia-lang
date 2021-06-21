@@ -166,7 +166,13 @@ newtype TypeDecl' p = Type MType
 
 type CallableDecl p = Ann p CallableDecl'
 data CallableDecl' p =
-  Callable CallableType Name [TypedVar p] MType (CGuard p) (CBody p)
+  Callable { _callableType :: CallableType
+           , _callableName :: Name
+           , _callableArgs :: [TypedVar p]
+           , _callableReturnType :: MType
+           , _callableGuard :: CGuard p
+           , _callableBody :: CBody p
+           }
   deriving (Eq, Show)
 
 data CBody p = ExternalBody | EmptyBody | MagnoliaBody (MExpr p)

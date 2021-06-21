@@ -616,6 +616,24 @@ insertAndMergeDecl env decl = do
               "existing prototype and implementation have inconsistent " <>
               "guards for " <> pshow ctype <> " " <> pshow name
 
+          let argModes = map (_varMode . _elem) args
+              matchesModes =
+                map (map (_varMode . _elem ) . _callableArgs . _elem) matches
+
+          unless (all (== head matchesModes) (tail matchesModes)) $
+            throwLocatedE CompilerErr (srcCtx . head $ declO) $
+              "conflicting modes in registered prototypes " <>
+              T.intercalate ", " (map pshow matches)
+
+          when (any (/= argModes) matchesModes) $
+            throwLocatedE ModeMismatchErr (srcCtx . head $ declO) $
+              "attempting to overload modes in definition of " <>
+              pshow (_callableType callableDecl) <> " " <> pshow name <> ": " <>
+              "have modes (" <> T.intercalate ", " (map pshow argModes) <>
+              "), but a declaration with modes (" <>
+              T.intercalate ", " (map pshow (head matchesModes)) <>
+              ") is already in scope"
+
           -- From here on out, we know that we have at least an existing match,
           -- and that the guard is the same for all the matches. Therefore, we
           -- generate a unique new guard based on the new prototype, and insert
