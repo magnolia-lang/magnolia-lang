@@ -1,6 +1,6 @@
 # Guidelines on testing
 
-**Tests are caregorized by error type.**
+**Tests should target specific features and their behavior.**
 
 Naming convension: `<descriptiveTestName>Tests.mg`
 
