@@ -6,7 +6,7 @@ module Parser (parsePackage, parsePackageHead, parseReplCommand) where
 import Control.Monad.Combinators.Expr
 import Control.Monad.Except (void, when)
 import Data.Functor (($>))
-import Data.Maybe (isNothing)
+import Data.Maybe (fromMaybe, isNothing)
 import Data.Void
 import Text.Megaparsec
 import Text.Megaparsec.Char
@@ -133,14 +133,13 @@ moduleDecl = do
   typ <- moduleType
   name <- ModName <$> nameString
   symbol "="
-  annot $ try (moduleRef typ name) <|> inlineModule typ name
+  annot $ inlineModule typ name <|> moduleRef typ name
 
 moduleType :: Parser MModuleType
 moduleType = (keyword ConceptKW >> return Concept)
           <|> (keyword ImplementationKW >> return Implementation)
           <|> (keyword SignatureKW >> return Signature)
           <|> (keyword ProgramKW >> return Program)
-          <|> (keyword ExternalKW >> return External)
 
 moduleRef :: MModuleType -> Name -> Parser (MModule' PhParse)
 moduleRef typ name = do
@@ -148,7 +147,15 @@ moduleRef typ name = do
   return $ RefModule typ name refName
 
 inlineModule :: MModuleType -> Name -> Parser (MModule' PhParse)
-inlineModule typ name = do
+inlineModule inTyp name = do
+  mexternal <- option Nothing (
+          do keyword ExternalKW
+             backend <- choice [ keyword CxxKW >> return Cxx
+                               , keyword JavaScriptKW >> return JavaScript
+                               , keyword PythonKW >> return Python]
+             externalName <- fullyQualifiedName NSDirectory NSPackage
+             return . Just $ External backend externalName)
+  let typ = fromMaybe inTyp mexternal
   declsAndDeps <- braces $ many (try (Left <$> declaration typ)
                                  <|> (Right <$> moduleDependency))
   let decls = [decl | (Left decl) <- declsAndDeps]
@@ -189,18 +196,23 @@ satisfaction = annot satisfaction'
 
 declaration :: MModuleType -> Parser ParsedDecl
 declaration mtyp = do
-  -- TODO: we consider 'require' to be a no-op in this case.
-  -- I do not believe that there are cases in which it is not. However, we
-  -- might want to keep it as a part of the AST, so this might change.
-  optional (keyword RequireKW) *> declaration' <* many semi
-  where declaration' =  (TypeDecl <$> annot typeDecl)
-                    <|> (CallableDecl <$> annot (callable mtyp))
+  -- TODO: should we carry around the 'require' keyword for callables too?
+  choice [ keyword RequireKW *> declaration' True
+           -- By default, type declarations are specifications in all modules,
+           -- except in external block, where they must are concrete
+           -- instantiations unless RequireKW is specified.
+         , case mtyp of External {} -> declaration' False
+                        _           -> declaration' True
+         ] <* many semi
+  where
+    declaration' isRequired =  (TypeDecl <$> annot (typeDecl isRequired))
+                           <|> (CallableDecl <$> annot (callable mtyp))
 
-typeDecl :: Parser (TypeDecl' PhParse)
-typeDecl = do
+typeDecl :: Bool -> Parser (TypeDecl' PhParse)
+typeDecl isRequired = do
   keyword TypeKW
   name <- typeName <* semi -- TODO: make expr
-  return $ Type name
+  return $ Type name isRequired
 
 callable :: MModuleType -> Parser (CallableDecl' PhParse)
 callable mtyp = do
@@ -222,7 +234,7 @@ callable mtyp = do
   mBody <- optional (blockExpr
                 <|> (symbol "=" *> (blockExpr <|> (expr <* semi))))
   when (isNothing mBody) semi
-  let body = maybe (if mtyp == External then ExternalBody else EmptyBody)
+  let body = maybe (case mtyp of External {} -> ExternalBody ; _ -> EmptyBody)
                    MagnoliaBody mBody
   return $ Callable callableType name args retType guard body
 
@@ -407,7 +419,9 @@ symOpName = choice $ map (try . mkSymOpNameParser) symOps
           symbol s <* notFollowedBy nameChar
           return $ FuncName s
 
-data Keyword = ConceptKW | ImplementationKW | ProgramKW | SignatureKW | ExternalKW
+data Keyword = ConceptKW | ImplementationKW | ProgramKW | SignatureKW
+             | ExternalKW
+             | CxxKW | JavaScriptKW | PythonKW
              | RenamingKW | SatisfactionKW
              | ModelsKW | WithKW
              | AxiomKW | FunctionKW | PredicateKW | ProcedureKW | TheoremKW
@@ -428,6 +442,9 @@ keyword kw = (lexeme . try) $ string s *> notFollowedBy nameChar
       ProgramKW        -> "program"
       SignatureKW      -> "signature"
       ExternalKW       -> "external"
+      CxxKW            -> "C++"
+      JavaScriptKW     -> "JavaScript"
+      PythonKW         -> "Python"
       RenamingKW       -> "renaming"
       SatisfactionKW   -> "satisfaction"
       ModelsKW         -> "models"

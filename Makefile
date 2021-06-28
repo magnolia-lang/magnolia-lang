@@ -10,6 +10,7 @@ lint:
 	hlint src
 
 test-targets = declScopeTests \
+		externals \
 		modeTests \
 		parsingTests \
 	       	stateHandlingTests \

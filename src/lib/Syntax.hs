@@ -13,9 +13,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Syntax (
-    CallableDecl, CallableDecl' (..), CallableType (..), MaybeTypedVar,
-    MaybeTypedVar', TypeDecl, TypeDecl' (..), TypedVar, TypedVar',
-    MBlockType (..), MDecl (..), MExpr, MExpr' (..), MModule,
+    Backend (..), CallableDecl, CallableDecl' (..), CallableType (..),
+    MaybeTypedVar, MaybeTypedVar', TypeDecl, TypeDecl' (..), TypedVar,
+    TypedVar', MBlockType (..), MDecl (..), MExpr, MExpr' (..), MModule,
     MModule' (..), MModuleDep, MModuleDep' (..), MModuleType (..),
     MNamedRenaming, MNamedRenaming' (..),
     MPackage, MPackage' (..), MPackageDep, MPackageDep' (..), MRenamingBlock,
@@ -28,7 +28,7 @@ module Syntax (
     TCPackage, TCTopLevelDecl, TCTypeDecl, TCTypedVar,
     HasDependencies (..), HasSrcCtx (..), NamedNode (..),
     Command (..),
-    DeclOrigin (..), Err (..), ErrType (..),
+    DeclOrigin (..), DeclType (..), Err (..), ErrType (..),
     PhParse, PhCheck, PhCodeGen, SrcCtx,
     Ann (..), XAnn, (<$$>), (<$$),
     XRef,
@@ -36,6 +36,8 @@ module Syntax (
     pattern NoCtx,
     pattern MCon, pattern MProg, pattern MImpl, pattern MSig,
     pattern MAxiom, pattern MFunc, pattern MPred, pattern MProc,
+    pattern AbstractImportedDecl, pattern AbstractLocalDecl,
+    pattern ConcreteImportedDecl, pattern ConcreteLocalDecl,
     getModules, getNamedRenamings,
     moduleDecls,
     getTypeDecls, getCallableDecls,
@@ -153,7 +155,11 @@ data MRenaming' p = InlineRenaming InlineRenaming
 
 type InlineRenaming = (Name, Name)
 
-data MModuleType = Signature | Concept | Implementation | Program | External
+data MModuleType = Signature
+                 | Concept
+                 | Implementation
+                 | Program
+                 | External Backend FullyQualifiedName
                    deriving (Eq, Show)
 
 data MDecl p = TypeDecl (TypeDecl p)
@@ -161,8 +167,8 @@ data MDecl p = TypeDecl (TypeDecl p)
                deriving (Eq, Show)
 
 type TypeDecl p = Ann p TypeDecl'
-newtype TypeDecl' p = Type MType
-                      deriving (Eq, Show)
+data TypeDecl' p = Type { _typeName :: MType, _typeIsRequired :: Bool }
+                   deriving (Eq, Show)
 
 type CallableDecl p = Ann p CallableDecl'
 data CallableDecl' p =
@@ -228,7 +234,8 @@ data MVarMode = MObs | MOut | MUnk | MUpd
 
 -- == code generation utils ==
 
---data Backend = Cxx | JavaScript | Python
+data Backend = Cxx | JavaScript | Python
+               deriving (Eq, Show)
 
 -- == annotation utils ==
 
@@ -275,8 +282,14 @@ data ErrType = AmbiguousFunctionRefErr
 
 -- TODO: External
 -- TODO: actually deal with ImportedDecl
-data DeclOrigin = LocalDecl SrcCtx | ImportedDecl FullyQualifiedName SrcCtx -- or | External Name
+data DeclOrigin = LocalDecl DeclType SrcCtx
+                | ImportedDecl FullyQualifiedName DeclType SrcCtx
                   deriving (Eq, Ord, Show)
+
+-- TODO: clean up concrete/{required,abstract} abstraction in core compiler
+--       language.
+data DeclType = ConcreteDecl | AbstractDecl
+                deriving (Eq, Ord, Show)
 
 -- === compilation phases ===
 
@@ -387,7 +400,7 @@ instance NamedNode (MDecl p) where
     CallableDecl cdecl -> nodeName cdecl
 
 instance NamedNode (TypeDecl' p) where
-  nodeName (Type name) = name
+  nodeName (Type name _) = name
 
 instance NamedNode (CallableDecl' p) where
   nodeName (Callable _ name _ _ _ _) = name
@@ -420,8 +433,8 @@ instance HasSrcCtx SrcCtx where
 
 instance HasSrcCtx DeclOrigin where
   srcCtx declO = case declO of
-    LocalDecl src -> src
-    ImportedDecl _ src -> src
+    LocalDecl _ src -> src
+    ImportedDecl _ _ src -> src
 
 instance HasSrcCtx (SrcCtx, a) where
   srcCtx (src, _) = src
@@ -476,6 +489,18 @@ pattern MProc
   :: Name -> [TypedVar p] -> MType -> CGuard p -> CBody p -> CallableDecl' p
 pattern MProc name args retType guard body =
   Callable Procedure name args retType guard body
+
+pattern AbstractImportedDecl :: FullyQualifiedName -> SrcCtx -> DeclOrigin
+pattern AbstractImportedDecl fqn src = ImportedDecl fqn AbstractDecl src
+
+pattern AbstractLocalDecl :: SrcCtx -> DeclOrigin
+pattern AbstractLocalDecl src = LocalDecl AbstractDecl src
+
+pattern ConcreteImportedDecl :: FullyQualifiedName -> SrcCtx -> DeclOrigin
+pattern ConcreteImportedDecl fqn src = ImportedDecl fqn ConcreteDecl src
+
+pattern ConcreteLocalDecl :: SrcCtx -> DeclOrigin
+pattern ConcreteLocalDecl src = LocalDecl ConcreteDecl src
 
 -- === top level declarations manipulation ===
 

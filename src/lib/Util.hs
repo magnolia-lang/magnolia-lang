@@ -9,7 +9,7 @@ module Util (
     mkPkgNameFromPath, mkPkgPathFromName, mkPkgPathFromStr, isPkgPath,
     lookupTopLevelRef,
     mkInlineRenamings, expandRenaming, expandRenamingBlock, checkRenamingBlock,
-    isLocalDecl,
+    isConcreteDeclO, isLocalDecl,
     isValueExpr)
   where
 
@@ -151,7 +151,7 @@ lookupTopLevelRef src env ref@(FullyQualifiedName mscopeName targetName) =
     matchesImportScope
       :: XAnn PhCheck e ~ DeclOrigin => Name -> Ann PhCheck e -> Bool
     matchesImportScope scopeName (Ann declO _) = case declO of
-      ImportedDecl (FullyQualifiedName (Just scopeName') _) _ ->
+      ImportedDecl (FullyQualifiedName (Just scopeName') _) _ _ ->
         scopeName == scopeName'
       _ -> False
 
@@ -159,8 +159,8 @@ lookupTopLevelRef src env ref@(FullyQualifiedName mscopeName targetName) =
       :: (XAnn PhCheck e ~ DeclOrigin, NamedNode (e PhCheck))
       => Ann PhCheck e -> Name
     mkFQName (Ann declO node) = case declO of
-      LocalDecl _ -> nodeName node
-      ImportedDecl fqn _ -> fromFullyQualifiedName fqn
+      LocalDecl {} -> nodeName node
+      ImportedDecl fqn _ _ -> fromFullyQualifiedName fqn
 
 -- === renamings manipulation ===
 
@@ -178,7 +178,8 @@ checkRenamingBlock (Ann blockSrc (MRenamingBlock renamings)) = do
     checkInlineRenaming (Ann src renaming) = case renaming of
       -- It seems that the below pattern matching can not be avoided, due to
       -- coercion concerns (https://gitlab.haskell.org/ghc/ghc/-/issues/15683).
-      InlineRenaming r -> return $ Ann (LocalDecl src) (InlineRenaming r)
+      InlineRenaming r -> return $
+        Ann (ConcreteLocalDecl src) (InlineRenaming r)
       RefRenaming _ -> throwLocatedE CompilerErr src $ "references left " <>
         "in renaming block at checking time"
 
@@ -195,7 +196,8 @@ expandRenaming
   -> MRenaming PhParse
   -> MgMonad [MRenaming PhCheck]
 expandRenaming env (Ann src renaming) = case renaming of
-  InlineRenaming ir -> return [Ann (LocalDecl src) (InlineRenaming ir)]
+  InlineRenaming ir -> return
+    [Ann (LocalDecl ConcreteDecl src) (InlineRenaming ir)]
   RefRenaming ref -> do
     Ann _ (MNamedRenaming _ (Ann _ (MRenamingBlock renamings))) <-
       lookupTopLevelRef src env ref
@@ -213,7 +215,12 @@ mkInlineRenamings (Ann _ (MRenamingBlock renamings)) =
 -- === declaration manipulation ===
 
 isLocalDecl :: XAnn p e ~ DeclOrigin => Ann p e -> Bool
-isLocalDecl (Ann ann _) = case ann of LocalDecl _ -> True ; _ -> False
+isLocalDecl (Ann declO _) = case declO of LocalDecl {} -> True ; _ -> False
+
+isConcreteDeclO :: DeclOrigin -> Bool
+isConcreteDeclO declO = case declO of ConcreteImportedDecl {} -> True
+                                      ConcreteLocalDecl {} -> True
+                                      _ -> False
 
 -- === expression manipulation ===
 
