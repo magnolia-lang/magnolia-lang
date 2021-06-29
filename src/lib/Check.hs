@@ -37,7 +37,7 @@ type ModuleScope = Env [MDecl PhCheck]
 -- be available in any module scope. We are still thinking about what is the
 -- right way to do this. For now, we hardcode these functions here.
 
-hackyPrelude :: [TCDecl]
+hackyPrelude :: [TcDecl]
 -- TODO: figure out if this is an AbstractDecl or a ConcreteDecl.
 --       Once this prelude is not hacky anymore, the ideal thing to do would be
 --       to derive all these concrete implementations from some initial module.
@@ -73,9 +73,9 @@ mkScopeVarsImmutable = M.map mkImmutable
 -- TODO: replace things with relevant sets
 -- TODO: handle circular dependencies
 checkModule
-  :: Env [TCTopLevelDecl]
+  :: Env [TcTopLevelDecl]
   -> MModule PhParse
-  -> MgMonad (Env [TCTopLevelDecl])
+  -> MgMonad (Env [TcTopLevelDecl])
 checkModule tlDecls (Ann src (RefModule typ name ref)) = do
   -- TODO: cast module: do we need to check out the deps?
   ~(Ann _ (MModule _ _ decls deps)) <-
@@ -128,7 +128,7 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) = do
   let resultModuleDecl = MModuleDecl $
         Ann { _ann = ConcreteLocalDecl modSrc
             , _elem = MModule moduleType moduleName finalScope checkedDeps
-            } -- :: TCModule
+            } -- :: TcModule
   return $ M.insertWith (<>) moduleName [resultModuleDecl] tlDecls
   where
     types :: [TypeDecl PhCheck]
@@ -245,10 +245,10 @@ castModule dstTyp origModule@(Ann declO (MModule srcTyp _ _ _)) = do
     mkSignature (RefModule _ _ v) = absurd v
 
     -- TODO: make the lists non-empty in AST
-    mkSigDecls :: [TCDecl] -> [TCDecl]
+    mkSigDecls :: [TcDecl] -> [TcDecl]
     mkSigDecls decls = foldl handleSigDecl [] decls
 
-    handleSigDecl :: [TCDecl] -> TCDecl -> [TCDecl]
+    handleSigDecl :: [TcDecl] -> TcDecl -> [TcDecl]
     handleSigDecl acc decl@(TypeDecl _) = decl : acc
     handleSigDecl acc (CallableDecl d) = case d of
       -- When casting to signature, axioms are stripped away.
@@ -559,7 +559,7 @@ annotateScopedExprStmt modul = go
 
 
 prototypeMatchesTypeConstraints
-  :: [MType] -> Maybe MType -> TCCallableDecl -> Bool
+  :: [MType] -> Maybe MType -> TcCallableDecl -> Bool
 prototypeMatchesTypeConstraints argTypeConstraints mreturnTypeConstraint
   (Ann _ (Callable _ _ declArgs declReturnType _ _))
   | length declArgs /= length argTypeConstraints = False
@@ -572,7 +572,7 @@ prototypeMatchesTypeConstraints argTypeConstraints mreturnTypeConstraint
       in fitsArgTypeConstraints && fitsReturnTypeConstraints
 
 insertAndMergeDecl
-  :: ModuleScope -> TCDecl -> MgMonad ModuleScope
+  :: ModuleScope -> TcDecl -> MgMonad ModuleScope
 insertAndMergeDecl env decl = do
   newDeclList <- mkNewDeclList
   return $ M.insert name newDeclList env
@@ -586,7 +586,7 @@ insertAndMergeDecl env decl = do
 
     -- TODO: is this motivation for storing types and callables in different
     -- scopes?
-    mergeTypes :: TCTypeDecl -> Maybe TCDecl -> MgMonad TCTypeDecl
+    mergeTypes :: TcTypeDecl -> Maybe TcDecl -> MgMonad TcTypeDecl
     mergeTypes annT1@(Ann declOs1 (Type n isReqT1)) mannT2 = case mannT2 of
       Nothing                        -> return annT1
       Just (TypeDecl (Ann declOs2 (Type _ isReqT2))) -> do
@@ -625,7 +625,7 @@ insertAndMergeDecl env decl = do
         pshow (nodeName cdecl) <> " belongs to the type namespace"
 
     mergePrototypes
-      :: TCCallableDecl -> Maybe [TCDecl] -> MgMonad [TCCallableDecl]
+      :: TcCallableDecl -> Maybe [TcDecl] -> MgMonad [TcCallableDecl]
     mergePrototypes anncallableDecl@(Ann declOs callableDecl) mdecls
       | Nothing <- mdecls = return [anncallableDecl]
       | Just decls <- mdecls = do
@@ -802,9 +802,9 @@ checkProto checkGuards env
           return $ Ann typ (Var mode varName typ)
 
 buildModuleFromDependency
-  :: Env [TCTopLevelDecl]
+  :: Env [TcTopLevelDecl]
   -> MModuleDep PhParse
-  -> MgMonad (Env [TCDecl], TCModuleDep)
+  -> MgMonad (Env [TcDecl], TcModuleDep)
 buildModuleFromDependency env (Ann src (MModuleDep ref renamings castToSig)) =
   do  match <- lookupTopLevelRef src (M.map getModules env) ref
       -- TODO: strip non-signature elements here.

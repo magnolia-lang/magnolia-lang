@@ -24,8 +24,8 @@ module Syntax (
     GlobalEnv, InlineRenaming, PackageHead (..), RenamedModule (..),
     MRenaming' (..), MRenaming,
     CBody (..), CGuard,
-    TCCallableDecl, TCDecl, TCExpr, TCMaybeTypedVar, TCModule, TCModuleDep,
-    TCPackage, TCTopLevelDecl, TCTypeDecl, TCTypedVar,
+    TcCallableDecl, TcDecl, TcExpr, TcMaybeTypedVar, TcModule, TcModuleDep,
+    TcPackage, TcTopLevelDecl, TcTypeDecl, TcTypedVar,
     HasDependencies (..), HasSrcCtx (..), NamedNode (..),
     Command (..),
     DeclOrigin (..), DeclType (..), Err (..), ErrType (..),
@@ -75,16 +75,16 @@ type GlobalEnv p = Env (MPackage p)
 
 --type GlobalEnv p = Env (Env (Env [MDecl p]))
 
-type TCPackage = MPackage PhCheck
-type TCTopLevelDecl = MTopLevelDecl PhCheck
-type TCModule = MModule PhCheck
-type TCModuleDep = MModuleDep PhCheck
-type TCDecl = MDecl PhCheck
-type TCCallableDecl = CallableDecl PhCheck
-type TCTypeDecl = TypeDecl PhCheck
-type TCExpr = MExpr PhCheck
-type TCTypedVar = TypedVar PhCheck
-type TCMaybeTypedVar = MaybeTypedVar PhCheck
+type TcPackage = MPackage PhCheck
+type TcTopLevelDecl = MTopLevelDecl PhCheck
+type TcModule = MModule PhCheck
+type TcModuleDep = MModuleDep PhCheck
+type TcDecl = MDecl PhCheck
+type TcCallableDecl = CallableDecl PhCheck
+type TcTypeDecl = TypeDecl PhCheck
+type TcExpr = MExpr PhCheck
+type TcTypedVar = TypedVar PhCheck
+type TcMaybeTypedVar = MaybeTypedVar PhCheck
 
 -- Ann [compilation phase] [node type]
 data Ann p e = Ann { _ann :: XAnn p e

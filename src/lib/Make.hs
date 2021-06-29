@@ -89,9 +89,9 @@ extractRenamingRef acc (Ann _ r) = case r of
 
 loadPackageDependency
   :: GlobalEnv PhCheck
-  -> Env [TCTopLevelDecl]
+  -> Env [TcTopLevelDecl]
   -> MPackageDep PhParse
-  -> MgMonad (Env [TCTopLevelDecl])
+  -> MgMonad (Env [TcTopLevelDecl])
 loadPackageDependency globalEnv localEnv (Ann src dep) =
   case M.lookup (nodeName dep) globalEnv of
     Nothing -> throwLocatedE MiscErr src $ "attempted to load package " <>
@@ -104,9 +104,9 @@ loadPackageDependency globalEnv localEnv (Ann src dep) =
 
 importLocal
   :: Name -- ^ Name of the package
-  -> [TCTopLevelDecl]
-  -> TCTopLevelDecl
-  -> [TCTopLevelDecl]
+  -> [TcTopLevelDecl]
+  -> TcTopLevelDecl
+  -> [TcTopLevelDecl]
 importLocal name acc decl = case decl of
   MNamedRenamingDecl (Ann (LocalDecl dty src) node) ->
     MNamedRenamingDecl (Ann (mkImportedDecl dty src node) node):acc
@@ -124,15 +124,15 @@ importLocal name acc decl = case decl of
 -- TODO: optimize as needed, could be more elegant.
 -- Checks and expands renamings.
 upsweepRenamings
-  :: Env [TCTopLevelDecl]
+  :: Env [TcTopLevelDecl]
   -> [G.SCC (MNamedRenaming PhParse)]
-  -> MgMonad (Env [TCTopLevelDecl])
+  -> MgMonad (Env [TcTopLevelDecl])
 upsweepRenamings = foldMAccumErrors go
   where
     go
-      :: Env [TCTopLevelDecl]
+      :: Env [TcTopLevelDecl]
       -> G.SCC (MNamedRenaming PhParse)
-      -> MgMonad (Env [TCTopLevelDecl])
+      -> MgMonad (Env [TcTopLevelDecl])
     go _ (G.CyclicSCC namedBlock) =
       let rCycle = T.intercalate ", " $ map (pshow . nodeName) namedBlock in
       throwNonLocatedE CyclicNamedRenamingErr rCycle
@@ -148,15 +148,15 @@ upsweepRenamings = foldMAccumErrors go
 
 
 upsweepModules
-  :: Env [TCTopLevelDecl]
+  :: Env [TcTopLevelDecl]
   -> [G.SCC (MModule PhParse)]
-  -> MgMonad (Env [TCTopLevelDecl])
+  -> MgMonad (Env [TcTopLevelDecl])
 upsweepModules = foldMAccumErrors go
   where
     go
-      :: Env [TCTopLevelDecl]
+      :: Env [TcTopLevelDecl]
       -> G.SCC (MModule PhParse)
-      -> MgMonad (Env [TCTopLevelDecl])
+      -> MgMonad (Env [TcTopLevelDecl])
     go _ (G.CyclicSCC modules) =
       let mCycle = T.intercalate ", " $ map (pshow . nodeName) modules in
       throwNonLocatedE CyclicModuleErr mCycle

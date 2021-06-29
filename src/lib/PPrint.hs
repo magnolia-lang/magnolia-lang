@@ -140,10 +140,10 @@ instance Pretty (MModule' PhCheck) where
          , "};"
          ]
     where
-      cleanUp :: [TCDecl] -> [TCDecl]
+      cleanUp :: [TcDecl] -> [TcDecl]
       cleanUp = foldl deDup []
 
-      deDup :: [TCDecl] -> TCDecl -> [TCDecl]
+      deDup :: [TcDecl] -> TcDecl -> [TcDecl]
       deDup decls d = case d of
         TypeDecl _ -> if d `elem` decls then decls else d : decls
         CallableDecl cd ->
