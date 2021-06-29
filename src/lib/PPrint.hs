@@ -182,7 +182,13 @@ instance Pretty MModuleType where
     Concept -> "concept"
     Implementation -> "implementation"
     Program -> "program"
-    External -> "external"
+    External backend fqn -> "external" <+> p backend <+> p fqn
+
+instance Pretty Backend where
+  pretty backend = case backend of
+    Cxx -> "C++"
+    JavaScript -> "JavaScript"
+    Python -> "Python"
 
 instance Pretty (MDecl PhCheck) where
   pretty decl = case decl of
@@ -190,7 +196,8 @@ instance Pretty (MDecl PhCheck) where
     CallableDecl cdecl -> pretty cdecl
 
 instance Pretty (TypeDecl' p) where
-  pretty (Type typ) = "type" <+> p typ <> ";"
+  pretty (Type typ isRequired) = (if isRequired then "require" else "") <>
+    "type" <+> p typ <> ";"
 
 instance Pretty (CallableDecl' p) where
   pretty (Callable callableType name args ret mguard cbody) =

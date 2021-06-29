@@ -108,17 +108,17 @@ importLocal
   -> TCTopLevelDecl
   -> [TCTopLevelDecl]
 importLocal name acc decl = case decl of
-  MNamedRenamingDecl (Ann (LocalDecl src) node) ->
-    MNamedRenamingDecl (Ann (mkImportedDecl src node) node):acc
-  MModuleDecl (Ann (LocalDecl src) node) ->
-    MModuleDecl (Ann (mkImportedDecl src node) node):acc
-  MSatisfactionDecl (Ann (LocalDecl src) node) ->
-    MSatisfactionDecl (Ann (mkImportedDecl src node) node):acc
+  MNamedRenamingDecl (Ann (LocalDecl dty src) node) ->
+    MNamedRenamingDecl (Ann (mkImportedDecl dty src node) node):acc
+  MModuleDecl (Ann (LocalDecl dty src) node) ->
+    MModuleDecl (Ann (mkImportedDecl dty src node) node):acc
+  MSatisfactionDecl (Ann (LocalDecl dty src) node) ->
+    MSatisfactionDecl (Ann (mkImportedDecl dty src node) node):acc
   -- We do not import non-local decls from other packages.
   _ -> acc -- Ann (src, ImportedDecl name (nodeName modul)) modul:acc
   where
-    mkImportedDecl src node =
-      ImportedDecl (FullyQualifiedName (Just name) (nodeName node)) src
+    mkImportedDecl dty src node =
+      ImportedDecl (FullyQualifiedName (Just name) (nodeName node)) dty src
 
 
 -- TODO: optimize as needed, could be more elegant.
@@ -141,7 +141,7 @@ upsweepRenamings = foldMAccumErrors go
       expandedBlock <-
         expandRenamingBlock (M.map getNamedRenamings env) renamingBlock
         -- TODO: expand named renamings
-      let tcNamedRenaming = Ann (LocalDecl src)
+      let tcNamedRenaming = Ann (LocalDecl ConcreteDecl src)
                                 (MNamedRenaming name expandedBlock)
       return $ M.insertWith (<>) name [MNamedRenamingDecl tcNamedRenaming]
                             env

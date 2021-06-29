@@ -38,7 +38,12 @@ type ModuleScope = Env [MDecl PhCheck]
 -- right way to do this. For now, we hardcode these functions here.
 
 hackyPrelude :: [TCDecl]
-hackyPrelude = map (CallableDecl . Ann [LocalDecl Nothing]) (unOps <> binOps)
+-- TODO: figure out if this is an AbstractDecl or a ConcreteDecl.
+--       Once this prelude is not hacky anymore, the ideal thing to do would be
+--       to derive all these concrete implementations from some initial module.
+--       Then, these could be safely merged when imported in scope.
+hackyPrelude = map (CallableDecl . Ann [AbstractLocalDecl Nothing])
+                   (unOps <> binOps)
   where
     lhsVar = Ann Pred $ Var MObs (VarName "#pred1#") Pred
     rhsVar = Ann Pred $ Var MObs (VarName "#pred2#") Pred
@@ -76,7 +81,8 @@ checkModule tlDecls (Ann src (RefModule typ name ref)) = do
   ~(Ann _ (MModule _ _ decls deps)) <-
     lookupTopLevelRef src (M.map getModules tlDecls) ref >>= castModule typ
   let renamedModule = MModule typ name decls deps :: MModule' PhCheck
-      renamedModuleDecl = MModuleDecl $ Ann (LocalDecl src) renamedModule
+      renamedModuleDecl = MModuleDecl $
+        Ann (ConcreteLocalDecl src) renamedModule
   return $ M.insertWith (<>) name [renamedModuleDecl] tlDecls
 
 checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) = do
@@ -120,14 +126,18 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) = do
   -- TODO: check that name is unique?
   -- TODO: make module
   let resultModuleDecl = MModuleDecl $
-        Ann { _ann = LocalDecl modSrc
+        Ann { _ann = ConcreteLocalDecl modSrc
             , _elem = MModule moduleType moduleName finalScope checkedDeps
             } -- :: TCModule
   return $ M.insertWith (<>) moduleName [resultModuleDecl] tlDecls
   where
     types :: [TypeDecl PhCheck]
-    types = map (\t -> Ann [LocalDecl (_ann t)] (Type (nodeName t)))
-      (getTypeDecls decls)
+    types = map mkTypeDecl (getTypeDecls decls)
+
+    mkTypeDecl :: TypeDecl PhParse -> TypeDecl PhCheck
+    mkTypeDecl (Ann src (Type n isReq)) = (if isReq
+      then Ann [AbstractLocalDecl src]
+      else Ann [ConcreteLocalDecl src]) (Type n isReq)
 
     checkBody
       :: ModuleScope
@@ -140,7 +150,8 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) = do
             "axioms can only be declared in concepts"
       | EmptyBody <- cbody, Axiom <- ctype =
           throwLocatedE InvalidDeclErr src "axiom without a body"
-      | moduleType /= External, ExternalBody <- cbody =
+      | moduleType `elem` [Signature, Concept, Implementation, Program],
+        ExternalBody <- cbody =
           throwLocatedE CompilerErr src $ pshow ctype <>
             " can not be declared external in " <> pshow moduleType
       | moduleType `notElem` [Implementation, Program], MagnoliaBody _ <- cbody,
@@ -257,8 +268,7 @@ annotateScopedExprStmt ::
   Maybe MType ->
   MExpr PhParse ->
   MgMonad (VarScope, MExpr PhCheck)
-annotateScopedExprStmt modul inputScope inputMaybeExprType e =
-  go inputScope inputMaybeExprType e
+annotateScopedExprStmt modul = go
   where
   -- mExprTy is a parameter to disambiguate function calls overloaded
   -- solely on return types. It will *not* be used if the type can be inferred
@@ -577,17 +587,46 @@ insertAndMergeDecl env decl = do
     -- TODO: is this motivation for storing types and callables in different
     -- scopes?
     mergeTypes :: TCTypeDecl -> Maybe TCDecl -> MgMonad TCTypeDecl
-    mergeTypes annT1@(Ann declO1 t1) mannT2 = case mannT2 of
+    mergeTypes annT1@(Ann declOs1 (Type n isReqT1)) mannT2 = case mannT2 of
       Nothing                        -> return annT1
-      Just (TypeDecl (Ann declO2 _)) -> return $ Ann (mergeAnns declO1 declO2) t1
+      Just (TypeDecl (Ann declOs2 (Type _ isReqT2))) -> do
+        -- When attempting to merge two existing types, we have 3 distinct
+        -- cases:
+        --   (1) both types are required
+        --   (2) one of the type is required, and the other one is "concrete"
+        --   (3) both types are concrete
+        -- In case (1), since none of the types are concrete, we can simply
+        -- produce a new required type.
+        -- In case (2), the types can be safely merged, but since one of the
+        -- types being merged is concrete, the resulting type becomes concrete
+        -- as well.
+        -- Case (3) is the trickier test. Two concrete types can be merged if
+        -- they correspond to the same type. This holds only if they have
+        -- been instantiated in the same place, and are then imported through
+        -- potentially different paths.
+        let annsT = mergeAnns declOs1 declOs2
+            isReqT = isReqT1 && isReqT2
+            resultType = return $ Ann annsT (Type n isReqT)
+            concreteDeclOs = filter isConcreteDeclO annsT
+        if isReqT1 || isReqT2
+           then resultType
+           else case concreteDeclOs of
+              [] -> throwLocatedE CompilerErr (srcCtx (head declOs1)) $
+                "concrete type " <> pshow n <> " was caught without a " <>
+                "concrete annotation"
+              [_] -> resultType
+              _ -> throwLocatedE InvalidDeclErr (srcCtx (head declOs1)) $
+                "attempting to define concrete type " <> pshow n <> " but " <>
+                "a concrete type with name " <> pshow n <> " is already " <>
+                "in scope"
       Just (CallableDecl cdecl) ->
-        throwLocatedE CompilerErr (srcCtx (head declO1)) $ "a callable " <>
+        throwLocatedE CompilerErr (srcCtx (head declOs1)) $ "a callable " <>
         "was registered with name " <> pshow (nodeName cdecl) <> "but " <>
         pshow (nodeName cdecl) <> " belongs to the type namespace"
 
     mergePrototypes
       :: TCCallableDecl -> Maybe [TCDecl] -> MgMonad [TCCallableDecl]
-    mergePrototypes anncallableDecl@(Ann declO callableDecl) mdecls
+    mergePrototypes anncallableDecl@(Ann declOs callableDecl) mdecls
       | Nothing <- mdecls = return [anncallableDecl]
       | Just decls <- mdecls = do
         let protos = getCallableDecls decls
@@ -602,17 +641,17 @@ insertAndMergeDecl env decl = do
         if anncallableDecl `elem` matches then return $ matches <> nonMatches
         else if not (null matches) then do
           when (cbody /= EmptyBody && not (null matchesWithBody)) $
-            throwLocatedE InvalidDeclErr (srcCtx . head $ declO) $ -- TODO: how to add src info better here?
+            throwLocatedE InvalidDeclErr (srcCtx . head $ declOs) $ -- TODO: how to add src info better here?
               "attempting to import two different implementations for " <>
               pshow ctype <> " " <> pshow name
           when (length matchesWithBody > 1 || length matchesWithoutBody > 1) $
-            throwLocatedE CompilerErr (srcCtx . head $ declO) $
+            throwLocatedE CompilerErr (srcCtx . head $ declOs) $
               "context contains several definitions of the same prototype " <>
               "in AST for " <> pshow ctype <> " " <> pshow name
           when (length matchesWithBody == 1 && length matchesWithoutBody == 1 &&
                   extractGuard (head matchesWithBody) /=
                   extractGuard (head matchesWithoutBody)) $
-            throwLocatedE CompilerErr (srcCtx . head $ declO) $
+            throwLocatedE CompilerErr (srcCtx . head $ declOs) $
               "existing prototype and implementation have inconsistent " <>
               "guards for " <> pshow ctype <> " " <> pshow name
 
@@ -621,12 +660,12 @@ insertAndMergeDecl env decl = do
                 map (map (_varMode . _elem ) . _callableArgs . _elem) matches
 
           unless (all (== head matchesModes) (tail matchesModes)) $
-            throwLocatedE CompilerErr (srcCtx . head $ declO) $
+            throwLocatedE CompilerErr (srcCtx . head $ declOs) $
               "conflicting modes in registered prototypes " <>
               T.intercalate ", " (map pshow matches)
 
           when (any (/= argModes) matchesModes) $
-            throwLocatedE ModeMismatchErr (srcCtx . head $ declO) $
+            throwLocatedE ModeMismatchErr (srcCtx . head $ declOs) $
               "attempting to overload modes in definition of " <>
               pshow (_callableType callableDecl) <> " " <> pshow name <> ": " <>
               "have modes (" <> T.intercalate ", " (map pshow argModes) <>
@@ -744,7 +783,7 @@ checkProto checkGuards env
       then Just . snd <$>
         annotateScopedExprStmt env (initScope args) (Just Pred) guard
       else return Nothing
-  return Ann { _ann = [LocalDecl src]
+  return Ann { _ann = [AbstractLocalDecl src]
              , _elem = Callable ctype name tcArgs retType tcGuard EmptyBody
              }
   where checkArgs :: [TypedVar PhParse] -> MgMonad [TypedVar PhCheck]
@@ -778,10 +817,20 @@ buildModuleFromDependency env (Ann src (MModuleDep ref renamings castToSig)) =
           let typeDecls = foldl (\acc d -> acc <> getTypeDecls d) [] decls'
           foldM registerType decls' typeDecls
         else return $ moduleDecls match
+      -- We add a new local annotation, where the source information comes from
+      -- the dependency declaration.
+      let mkLocalDecl d = case d of
+            TypeDecl (Ann declOs td) -> if _typeIsRequired td
+                then TypeDecl $ Ann (ConcreteLocalDecl src:declOs) td
+                else TypeDecl $ Ann (AbstractLocalDecl src:declOs) td
+            CallableDecl (Ann declOs cd) -> if _callableBody cd /= EmptyBody
+                then CallableDecl $ Ann (ConcreteLocalDecl src:declOs) cd
+                else CallableDecl $ Ann (AbstractLocalDecl src:declOs) cd
+          localDecls = M.map (map mkLocalDecl) decls
       -- TODO: gather here env of known renamings
       checkedRenamings <-
         mapM (expandRenamingBlock (M.map getNamedRenamings env)) renamings
-      renamedDecls <- foldM applyRenamingBlock decls checkedRenamings
+      renamedDecls <- foldM applyRenamingBlock localDecls checkedRenamings
       -- TODO: do this well
       let checkedDep = Ann src (MModuleDep ref checkedRenamings castToSig)
       -- TODO: hold checkedModuleDeps in M.Map FQN Deps (change key type)
@@ -840,8 +889,9 @@ applyRenamingBlock modul renamingBlock@(Ann src (MRenamingBlock renamings)) = do
       then throwLocatedE MiscErr src $ "renaming block has unknown " <>
         "sources: " <> pshow unknownSources
       else if not (null occurOnBothSides)
-      then let annR' = map (Ann (LocalDecl Nothing) . InlineRenaming) r' in
-           applyRenamingBlock modul (MRenamingBlock annR' <$$ renamingBlock)
+      then
+        let annR' = map (Ann (ConcreteLocalDecl Nothing) . InlineRenaming) r'
+        in applyRenamingBlock modul (MRenamingBlock annR' <$$ renamingBlock)
            >>= \modul' -> return (modul', r'')
       else return (modul, inlineRenamings))
   return $ M.fromListWith (<>) $ L.map (\(k, decls) ->
@@ -864,7 +914,8 @@ applyRenaming decl renaming = case decl of
     CallableDecl $ applyRenamingInCallableDecl <$$> callableDecl
   where
     replaceName' = flip replaceName renaming
-    applyRenamingInTypeDecl (Type typ) = Type $ replaceName' typ
+    applyRenamingInTypeDecl (Type typ isRequired) =
+      Type (replaceName' typ) isRequired
     applyRenamingInCallableDecl (Callable ctyp name vars retType mguard cbody) =
       Callable ctyp (replaceName' name)
         (map applyRenamingInTypedVar vars) (replaceName' retType)
