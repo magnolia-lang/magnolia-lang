@@ -55,19 +55,27 @@ implementation I = {
     axiom axiomBody() = {};
 };
 
+implementation IExt = external C++ Ext {
+    type U;
+}
+
 program P = {
     /* A Magnolia program can contain anything, except for axioms.
      * However, callables *MUST* eventually be given a body.
      */
 
     // Valid declarations
-    type T;
+    type T; // errors without external definition, but is valid in itself
     function funProto(): T; // errors without body, but is valid in itself
     procedure procProto();  // errors without body, but is valid in itself
     predicate predProto();  // errors without body, but is valid in itself
     function funBody(): T = funProto();
     procedure procBody() = call procProto();
     predicate predBody() = predProto();
+    // Requiring a type is fine, as long as we provide an external
+    // implementation (here, it comes from IExt).
+    require type U;
+    use IExt;
 
     // Invalid declarations
     axiom axiomBody() = {}; // TODO: unimplemented error should be removed

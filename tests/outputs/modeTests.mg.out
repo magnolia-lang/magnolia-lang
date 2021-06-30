@@ -1,6 +1,6 @@
-tests/inputs/modeTests.mg:7:5: Mode error: attempting to overload modes in definition of procedure overload_one_param: have modes (out), but a declaration with modes (obs) is already in scope
+tests/inputs/modeTests.mg:8:5: Mode error: attempting to overload modes in definition of procedure overload_one_param: have modes (obs), but a declaration with modes (out) is already in scope
 
-tests/inputs/modeTests.mg:10:5: Mode error: attempting to overload modes in definition of procedure overload_two_param: have modes (obs, upd), but a declaration with modes (obs, out) is already in scope
+tests/inputs/modeTests.mg:11:5: Mode error: attempting to overload modes in definition of procedure overload_two_param: have modes (obs, out), but a declaration with modes (obs, upd) is already in scope
 
 tests/inputs/modeTests.mg:19:46: Mode error: incompatible modes in call to in_out: expected out but got obs for argument #1
 

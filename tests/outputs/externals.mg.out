@@ -1,1 +1,0 @@
-tests/inputs/externals.mg:25:5: Declaration error: attempting to define concrete type T but a concrete type with name T is already in scope

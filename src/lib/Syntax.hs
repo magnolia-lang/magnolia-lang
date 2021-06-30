@@ -28,8 +28,9 @@ module Syntax (
     TcPackage, TcTopLevelDecl, TcTypeDecl, TcTypedVar,
     HasDependencies (..), HasSrcCtx (..), NamedNode (..),
     Command (..),
-    DeclOrigin (..), DeclType (..), Err (..), ErrType (..),
-    PhParse, PhCheck, PhCodeGen, SrcCtx,
+    AbstractDeclOrigin, ConcreteDeclOrigin, DeclOrigin (..),
+    Err (..), ErrType (..),
+    PhParse, PhCheck, PhCodeGen, SrcCtx (..),
     Ann (..), XAnn, (<$$>), (<$$),
     XRef,
     pattern Pred, pattern Unit,
@@ -241,7 +242,8 @@ data Backend = Cxx | JavaScript | Python
 
 type SrcPos = (String, Int, Int)
 
-type SrcCtx = Maybe (SrcPos, SrcPos)
+newtype SrcCtx = SrcCtx (Maybe (SrcPos, SrcPos))
+                 deriving (Eq, Ord, Show)
 data WithSrc a = WithSrc { _srcCtx :: SrcCtx
                          , _fromSrc :: a
                          }
@@ -280,16 +282,28 @@ data ErrType = AmbiguousFunctionRefErr
              | UnboundVarErr
                deriving (Eq, Ord, Show)
 
--- TODO: External
--- TODO: actually deal with ImportedDecl
-data DeclOrigin = LocalDecl DeclType SrcCtx
-                | ImportedDecl FullyQualifiedName DeclType SrcCtx
-                  deriving (Eq, Ord, Show)
+-- |Wraps the source location information of a declaration.
+data DeclOrigin
+  -- | Annotates a local declaration. At the module level, any declaration
+  -- carries a local annotation. At the package level, only the modules
+  -- defined in the current module should carry this annotation.
+  = LocalDecl SrcCtx
+  -- | Annotates an imported declaration. At the module level, declarations
+  -- imported in scope through 'use' or 'require' declarations carry such
+  -- annotations. At the package level, all the modules imported from
+  -- different packages should carry this annotation.
+  | ImportedDecl FullyQualifiedName SrcCtx
+    deriving (Eq, Ord, Show)
 
--- TODO: clean up concrete/{required,abstract} abstraction in core compiler
---       language.
-data DeclType = ConcreteDecl | AbstractDecl
-                deriving (Eq, Ord, Show)
+
+-- |Wraps the source location information of a concrete declaration (i.e. a
+-- declaration that is not required).
+newtype ConcreteDeclOrigin = ConcreteDeclOrigin DeclOrigin
+                             deriving (Eq, Ord)
+-- |Wraps the source location information of an abstract declaration (i.e. a
+-- declaration that is required).
+newtype AbstractDeclOrigin = AbstractDeclOrigin DeclOrigin
+                             deriving (Eq, Ord)
 
 -- === compilation phases ===
 
@@ -325,10 +339,14 @@ type family XAnn p (e :: * -> *) where
   XAnn PhCheck MRenaming' = DeclOrigin
 
   XAnn PhParse TypeDecl' = SrcCtx
-  XAnn PhCheck TypeDecl' = [DeclOrigin]
+  XAnn PhCheck TypeDecl' = ( Maybe ConcreteDeclOrigin
+                           , NE.NonEmpty AbstractDeclOrigin
+                           )
 
   XAnn PhParse CallableDecl' = SrcCtx
-  XAnn PhCheck CallableDecl' = [DeclOrigin]
+  XAnn PhCheck CallableDecl' = ( Maybe ConcreteDeclOrigin
+                               , NE.NonEmpty AbstractDeclOrigin
+                               )
 
   XAnn PhParse MExpr' = SrcCtx
   XAnn PhCheck MExpr' = MType
@@ -433,8 +451,14 @@ instance HasSrcCtx SrcCtx where
 
 instance HasSrcCtx DeclOrigin where
   srcCtx declO = case declO of
-    LocalDecl _ src -> src
-    ImportedDecl _ _ src -> src
+    LocalDecl src -> src
+    ImportedDecl _ src -> src
+
+instance HasSrcCtx AbstractDeclOrigin where
+  srcCtx (AbstractDeclOrigin declO) = srcCtx declO
+
+instance HasSrcCtx ConcreteDeclOrigin where
+  srcCtx (ConcreteDeclOrigin declO) = srcCtx declO
 
 instance HasSrcCtx (SrcCtx, a) where
   srcCtx (src, _) = src
@@ -448,7 +472,7 @@ instance HasSrcCtx (XAnn p e) => HasSrcCtx (Ann p e) where
 -- === useful patterns ===
 
 pattern NoCtx :: a -> WithSrc a
-pattern NoCtx item = WithSrc Nothing item
+pattern NoCtx item = WithSrc (SrcCtx Nothing) item
 
 pattern MSig
   :: Name -> XPhasedContainer p (MDecl p) -> [MModuleDep p]
@@ -490,17 +514,19 @@ pattern MProc
 pattern MProc name args retType guard body =
   Callable Procedure name args retType guard body
 
-pattern AbstractImportedDecl :: FullyQualifiedName -> SrcCtx -> DeclOrigin
-pattern AbstractImportedDecl fqn src = ImportedDecl fqn AbstractDecl src
+pattern AbstractImportedDecl :: FullyQualifiedName -> SrcCtx
+                             -> AbstractDeclOrigin
+pattern AbstractImportedDecl fqn src = AbstractDeclOrigin (ImportedDecl fqn src)
 
-pattern AbstractLocalDecl :: SrcCtx -> DeclOrigin
-pattern AbstractLocalDecl src = LocalDecl AbstractDecl src
+pattern AbstractLocalDecl :: SrcCtx -> AbstractDeclOrigin
+pattern AbstractLocalDecl src = AbstractDeclOrigin (LocalDecl src)
 
-pattern ConcreteImportedDecl :: FullyQualifiedName -> SrcCtx -> DeclOrigin
-pattern ConcreteImportedDecl fqn src = ImportedDecl fqn ConcreteDecl src
+pattern ConcreteImportedDecl :: FullyQualifiedName -> SrcCtx
+                             -> ConcreteDeclOrigin
+pattern ConcreteImportedDecl fqn src = ConcreteDeclOrigin (ImportedDecl fqn src)
 
-pattern ConcreteLocalDecl :: SrcCtx -> DeclOrigin
-pattern ConcreteLocalDecl src = LocalDecl ConcreteDecl src
+pattern ConcreteLocalDecl :: SrcCtx -> ConcreteDeclOrigin
+pattern ConcreteLocalDecl src = ConcreteDeclOrigin (LocalDecl src)
 
 -- === top level declarations manipulation ===
 
@@ -531,18 +557,18 @@ moduleDecls (Ann _ modul) = case modul of
 -- === module declarations manipulation ===
 
 getTypeDecls :: Foldable t => t (MDecl p) -> [TypeDecl p]
-getTypeDecls = foldl extractType []
+getTypeDecls = foldr extractType []
   where
-    extractType :: [TypeDecl p] -> MDecl p -> [TypeDecl p]
-    extractType acc decl = case decl of
+    extractType :: MDecl p -> [TypeDecl p] -> [TypeDecl p]
+    extractType decl acc = case decl of
       TypeDecl tdecl -> tdecl:acc
       _ -> acc
 
 getCallableDecls :: Foldable t => t (MDecl p) -> [CallableDecl p]
-getCallableDecls = foldl extractCallable []
+getCallableDecls = foldr extractCallable []
   where
-    extractCallable :: [CallableDecl p] -> MDecl p -> [CallableDecl p]
-    extractCallable acc decl = case decl of
+    extractCallable :: MDecl p -> [CallableDecl p] -> [CallableDecl p]
+    extractCallable decl acc = case decl of
       CallableDecl cdecl -> cdecl:acc
       _ -> acc
 
