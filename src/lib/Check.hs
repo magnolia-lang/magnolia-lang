@@ -599,9 +599,11 @@ insertAndMergeDecl env decl = do
     mergeTypes :: TcTypeDecl -> Maybe [TcDecl] -> MgMonad TcTypeDecl
     mergeTypes annT1@(Ann _ t1) mdecls = case mdecls of
       Nothing -> return annT1
-      Just [TypeDecl annT2] -> do
+      Just [TypeDecl annT2@(Ann _ t2)] -> do
         newAnns <- mergeAnns (_ann annT1) (_ann annT2)
-        return $ Ann newAnns t1
+        let newType = Type (nodeName t1)
+                           (_typeIsRequired t1 && _typeIsRequired t2)
+        return $ Ann newAnns newType
       Just someList ->
         throwLocatedE CompilerErr errorLoc $
           "type lookup was matched with unexpected list " <> pshow someList
