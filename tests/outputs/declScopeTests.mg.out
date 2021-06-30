@@ -14,12 +14,18 @@ tests/inputs/declScopeTests.mg:38:5: Declaration error: predicate can not have a
 
 tests/inputs/declScopeTests.mg:55:5: Declaration context error: axioms can only be declared in concepts
 
-tests/inputs/declScopeTests.mg:65:5: Declaration error: function funProto () : T; was left unimplemented in program
+tests/inputs/declScopeTests.mg:62:13: Declaration error: T was left unimplemented in program P
 
-tests/inputs/declScopeTests.mg:66:5: Declaration error: procedure procProto (); was left unimplemented in program
+tests/inputs/declScopeTests.mg:62:13: Declaration error: _==_ was left unimplemented in program P
 
-tests/inputs/declScopeTests.mg:67:5: Declaration error: predicate predProto (); was left unimplemented in program
+tests/inputs/declScopeTests.mg:62:13: Declaration error: _=_ was left unimplemented in program P
 
-tests/inputs/declScopeTests.mg:73:5: Declaration error: axiom axiomBody (); was left unimplemented in program
+tests/inputs/declScopeTests.mg:62:13: Declaration error: axiomBody was left unimplemented in program P
 
-tests/inputs/declScopeTests.mg:73:5: Declaration context error: axioms can only be declared in concepts
+tests/inputs/declScopeTests.mg:62:13: Declaration error: funProto was left unimplemented in program P
+
+tests/inputs/declScopeTests.mg:62:13: Declaration error: predProto was left unimplemented in program P
+
+tests/inputs/declScopeTests.mg:62:13: Declaration error: procProto was left unimplemented in program P
+
+tests/inputs/declScopeTests.mg:81:5: Declaration context error: axioms can only be declared in concepts

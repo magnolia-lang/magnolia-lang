@@ -546,6 +546,6 @@ withSrc p = do
   start <- mkSrcPos <$> getSourcePos
   element <- p
   end <- mkSrcPos <$> getSourcePos
-  return $ WithSrc (Just (start, end)) element
+  return $ WithSrc (SrcCtx $ Just (start, end)) element
   where
     mkSrcPos s = (sourceName s, unPos $ sourceLine s, unPos $ sourceColumn s)

@@ -1,0 +1,9 @@
+tests/inputs/requirementTests.mg:21:5: Declaration error: got conflicting implementations for type T at tests/inputs/requirementTests.mg:19:5 and tests/inputs/requirementTests.mg:21:5
+
+tests/inputs/requirementTests.mg:26:5: Declaration error: got conflicting implementations for function _==_(e1 : T, e2 : T) : Predicate at tests/inputs/requirementTests.mg:9:5 and tests/inputs/requirementTests.mg:14:5
+
+tests/inputs/requirementTests.mg:26:5: Declaration error: got conflicting implementations for function f() : T at tests/inputs/requirementTests.mg:10:5 and tests/inputs/requirementTests.mg:15:5
+
+tests/inputs/requirementTests.mg:26:5: Declaration error: got conflicting implementations for procedure _=_(out var : T, obs expr : T) at tests/inputs/requirementTests.mg:9:5 and tests/inputs/requirementTests.mg:14:5
+
+tests/inputs/requirementTests.mg:26:5: Declaration error: got conflicting implementations for type T at tests/inputs/requirementTests.mg:9:5 and tests/inputs/requirementTests.mg:14:5

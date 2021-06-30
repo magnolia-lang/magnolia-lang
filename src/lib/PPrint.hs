@@ -41,11 +41,13 @@ pprintList :: Pretty a => [a] -> IO ()
 pprintList =  printDoc . vsep . punctuate line . map p
 
 instance Pretty Err where -- TODO: change error to have error types
-  pretty (Err errType srcInfo txt) = case srcInfo of
-    Nothing -> "<no context>:" <+> p errType <+> p txt
+  pretty (Err errType src txt) = p src <> ":" <+> p errType <+> p txt
+
+instance Pretty SrcCtx where
+  pretty (SrcCtx msrcInfo) = case msrcInfo of
+    Nothing -> "<unknown location>"
     Just ((filename, startLine, startColumn), _) ->
-      p filename <> ":" <> p startLine <> ":" <> p startColumn <>
-      ":" <+> p errType <+> p txt
+      p filename <> ":" <> p startLine <> ":" <> p startColumn
 
 instance Pretty ErrType where
   pretty e = case e of
@@ -135,9 +137,10 @@ instance Pretty (MModule' PhCheck) where
   pretty (MModule moduleType name declMap depList) =
     vsep [ nest 4 (vsep (  p moduleType <+> p name <+> "= {"
                         :  map p depList
-                        <> map p (join (M.elems (M.map cleanUp declMap)))
+                        <> map ((<> ";") . p)
+                               (join (M.elems (M.map cleanUp declMap)))
                         ))
-         , "};"
+         , "}"
          ]
     where
       cleanUp :: [TcDecl] -> [TcDecl]
@@ -197,17 +200,17 @@ instance Pretty (MDecl PhCheck) where
 
 instance Pretty (TypeDecl' p) where
   pretty (Type typ isRequired) = (if isRequired then "require" else "") <>
-    "type" <+> p typ <> ";"
+    "type" <+> p typ
 
 instance Pretty (CallableDecl' p) where
   pretty (Callable callableType name args ret mguard cbody) =
     let pret = if callableType == Function then " : " <> p ret else ""
-        pbody = case cbody of EmptyBody -> ";"
+        pbody = case cbody of EmptyBody -> ""
                               MagnoliaBody body -> " = " <> p body
                               ExternalBody -> " = <external impl>;"
         pguard = case mguard of Nothing -> ""
                                 Just guard -> " guard " <> p guard
-    in p callableType <+> p name <+> prettyArgs <>
+    in p callableType <+> p name <> prettyArgs <>
         pret <> pguard <> pbody
     where
       prettyArgs :: Doc ann
