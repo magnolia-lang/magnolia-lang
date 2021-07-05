@@ -88,12 +88,13 @@ parsePackageHead filePath s =
 
 packageHead :: FilePath -> String -> Parser PackageHead
 packageHead filePath s = do
-  pkgName <- keyword PackageKW *> packageName
+  pkgName <- keyword PackageKW *> fullyQualifiedName NSDirectory NSPackage
   -- TODO: error out if package name is different from filepath?
-  imports <- choice [ keyword ImportKW >>
-                      (withSrc packageName `sepBy1` symbol ",")
-                    , return []
-                    ] <* semi
+  imports <- choice
+    [ keyword ImportKW >>
+      (fullyQualifiedName NSDirectory NSPackage `sepBy1` symbol ",")
+    , return []
+    ] <* semi
   return PackageHead { _packageHeadPath = filePath
                      , _packageHeadStr = s
                      , _packageHeadName = pkgName
