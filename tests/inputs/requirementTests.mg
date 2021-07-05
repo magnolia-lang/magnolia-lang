@@ -30,3 +30,12 @@ implementation MergingImpls = {
     function f(): T; // should succeed
     function f(): T; // should succeed
 }
+
+implementation MergingGuards = {
+    type T;
+    predicate g_1();
+    predicate g_2();
+
+    function f(): T guard g_1(); // should succeed
+    function f(): T guard g_2(); // should succeed TODO: unimplemented, 05.07.21
+}

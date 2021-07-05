@@ -661,8 +661,9 @@ insertAndMergeDecl env decl = do
         -- We consider two guards as equivalent only if they are
         -- syntactically equal.
         if guard1 == guard2 then return $ Just guard1
-        else throwLocatedE NotImplementedErr errorLoc
-          "merging of two callables with different guards"
+        else throwLocatedE NotImplementedErr errorLoc $
+          "merging of two callables " <> pshow name <>
+          " with different guards " <> pshow guard1 <> " and " <> pshow guard2
 
     -- When attempting to merge two existing declarations, we have 3 distinct
     -- cases:
