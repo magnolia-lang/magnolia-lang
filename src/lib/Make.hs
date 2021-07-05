@@ -29,7 +29,7 @@ upsweep = foldMAccumErrorsAndFail go M.empty
       let pCycle = T.intercalate ", " $ map (pshow . _packageHeadName) pkgHeads
       in throwNonLocatedE CyclicPackageErr pCycle
 
-    go globalEnv (G.AcyclicSCC pkgHead) = do
+    go globalEnv (G.AcyclicSCC pkgHead) = enter (_packageHeadName pkgHead) $ do
       Ann ann (MPackage name decls deps) <-
         parsePackage (_packageHeadPath pkgHead) (_packageHeadStr pkgHead)
       -- TODO: add local/external ann for nodes
