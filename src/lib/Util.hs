@@ -32,7 +32,7 @@ import Syntax
 
 -- === magnolia monad utils ===
 
-newtype MgMonadT e s m a = MgMonadT { unMg :: E.ExceptT e (St.StateT s m) a }
+newtype MgMonadT e s m a = MgMonadT { unMgT :: E.ExceptT e (St.StateT s m) a }
                            deriving (Functor, Applicative, Monad)
 
 instance MonadIO m => MonadIO (MgMonadT e s m) where
@@ -41,7 +41,7 @@ instance MonadIO m => MonadIO (MgMonadT e s m) where
 type MgMonad = MgMonadT () (S.Set Err) IO
 
 runMgMonadT :: MgMonadT e s m a -> s -> m (Either e a, s)
-runMgMonadT mgm s = (`St.runStateT` s) . E.runExceptT $ unMg mgm
+runMgMonadT mgm s = (`St.runStateT` s) . E.runExceptT $ unMgT mgm
 
 runMgMonad :: MgMonad a -> IO (Either () a, S.Set Err)
 runMgMonad = (`runMgMonadT` S.empty)
@@ -57,7 +57,7 @@ throwE = MgMonadT . E.throwE
 
 catchE
   :: Monad m => MgMonadT e s m a -> (e -> MgMonadT e s m a) -> MgMonadT e s m a
-catchE me f = MgMonadT (unMg me `E.catchE` (unMg . f))
+catchE me f = MgMonadT (unMgT me `E.catchE` (unMgT . f))
 
 -- === error handling utils ===
 
