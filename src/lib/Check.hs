@@ -81,7 +81,7 @@ checkModule
   :: Env [TcTopLevelDecl]
   -> MModule PhParse
   -> MgMonad (Env [TcTopLevelDecl])
-checkModule tlDecls (Ann src (RefModule typ name ref)) = do
+checkModule tlDecls (Ann src (RefModule typ name ref)) = enter name $ do
   -- TODO: cast module: do we need to check out the deps?
   ~(Ann _ (MModule _ _ decls deps)) <-
     lookupTopLevelRef src (M.map getModules tlDecls) ref >>= castModule typ
@@ -90,7 +90,8 @@ checkModule tlDecls (Ann src (RefModule typ name ref)) = do
         Ann (LocalDecl src) renamedModule
   return $ M.insertWith (<>) name [renamedModuleDecl] tlDecls
 
-checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) = do
+checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) =
+  enter moduleName $ do
   when (maybe False (any isLocalDecl . getModules)
               (M.lookup moduleName tlDecls)) $
     throwLocatedE MiscErr modSrc $ "duplicate local module name " <>

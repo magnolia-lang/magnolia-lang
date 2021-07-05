@@ -1,13 +1,13 @@
-tests/inputs/stateHandlingTests.mg:8:5: Type error: expected return type to be Unit in procedure but return value has type T
+tests/inputs/stateHandlingTests.mg:8:5: Type error in tests.inputs.stateHandlingTests.I: expected return type to be Unit in procedure but return value has type T
 
-tests/inputs/stateHandlingTests.mg:14:60: Type error: value block has conflicting return types (found T, U)
+tests/inputs/stateHandlingTests.mg:14:60: Type error in tests.inputs.stateHandlingTests.I: value block has conflicting return types (found T, U)
 
-tests/inputs/stateHandlingTests.mg:22:13: Mode error: incompatible modes in call to _=_: expected out but got unk for argument #1
+tests/inputs/stateHandlingTests.mg:22:13: Mode error in tests.inputs.stateHandlingTests.I: incompatible modes in call to _=_: expected out but got unk for argument #1
 
-tests/inputs/stateHandlingTests.mg:33:29: Mode error: incompatible modes in call to test_proc: expected out but got unk for argument #1
+tests/inputs/stateHandlingTests.mg:33:29: Mode error in tests.inputs.stateHandlingTests.I: incompatible modes in call to test_proc: expected out but got unk for argument #1
 
-tests/inputs/stateHandlingTests.mg:39:22: Mode error: incompatible modes in call to test_proc: expected out but got unk for argument #1
+tests/inputs/stateHandlingTests.mg:39:22: Mode error in tests.inputs.stateHandlingTests.I: incompatible modes in call to test_proc: expected out but got unk for argument #1
 
-tests/inputs/stateHandlingTests.mg:45:21: Mode error: incompatible modes in call to test_proc: expected out but got unk for argument #1
+tests/inputs/stateHandlingTests.mg:45:21: Mode error in tests.inputs.stateHandlingTests.I: incompatible modes in call to test_proc: expected out but got unk for argument #1
 
-tests/inputs/stateHandlingTests.mg:55:13: Error: variable not in scope: t
+tests/inputs/stateHandlingTests.mg:55:13: Error: variable not in scope in tests.inputs.stateHandlingTests.I: t

@@ -41,7 +41,10 @@ pprintList :: Pretty a => [a] -> IO ()
 pprintList =  printDoc . vsep . punctuate line . map p
 
 instance Pretty Err where -- TODO: change error to have error types
-  pretty (Err errType src txt) = p src <> ":" <+> p errType <+> p txt
+  pretty (Err errType src parentScopes txt) =
+    p src <> ":" <+> p errType <> (case parentScopes of
+      [] -> ""
+      ps -> " in " <> concatWith (surround dot) (map p ps)) <> ":" <+> p txt
 
 instance Pretty SrcCtx where
   pretty (SrcCtx msrcInfo) = case msrcInfo of
@@ -61,13 +64,13 @@ instance Pretty ErrType where
     CyclicModuleErr -> cyclic "modules"
     CyclicNamedRenamingErr -> cyclic "named renamings"
     CyclicPackageErr -> cyclic "packages"
-    DeclContextErr -> "Declaration context error:"
-    InvalidDeclErr -> "Declaration error:"
-    MiscErr -> "Error:"
-    ModeMismatchErr -> "Mode error:"
-    NotImplementedErr -> "Not implemented:"
-    ParseErr -> "Parse error:"
-    TypeErr -> "Type error:"
+    DeclContextErr -> "Declaration context error"
+    InvalidDeclErr -> "Declaration error"
+    MiscErr -> "Error"
+    ModeMismatchErr -> "Mode error"
+    NotImplementedErr -> "Not implemented"
+    ParseErr -> "Parse error"
+    TypeErr -> "Type error"
     UnboundFunctionErr -> unbound "function"
     UnboundTopLevelErr -> unbound "top-level reference"
     UnboundNameErr -> unbound "name"
@@ -75,9 +78,9 @@ instance Pretty ErrType where
     UnboundTypeErr -> unbound "type"
     UnboundVarErr -> unbound "variable"
     where
-      ambiguous s = "Error: could not disambiguate between" <+> s <> ":"
-      cyclic s = "Error: found cyclic dependency between" <+> s <> ":"
-      unbound s = "Error:" <+> s <+> "not in scope:"
+      ambiguous s = "Error: could not disambiguate between" <+> s
+      cyclic s = "Error: found cyclic dependency between" <+> s
+      unbound s = "Error:" <+> s <+> "not in scope"
 
 instance Pretty Name where
   pretty (Name _ str) = p str

@@ -1,31 +1,31 @@
-tests/inputs/declScopeTests.mg:16:5: Declaration error: function can not have a body in signature
+tests/inputs/declScopeTests.mg:16:5: Declaration error in tests.inputs.declScopeTests.S: function can not have a body in signature
 
-tests/inputs/declScopeTests.mg:17:5: Declaration error: procedure can not have a body in signature
+tests/inputs/declScopeTests.mg:17:5: Declaration error in tests.inputs.declScopeTests.S: procedure can not have a body in signature
 
-tests/inputs/declScopeTests.mg:18:5: Declaration error: predicate can not have a body in signature
+tests/inputs/declScopeTests.mg:18:5: Declaration error in tests.inputs.declScopeTests.S: predicate can not have a body in signature
 
-tests/inputs/declScopeTests.mg:19:5: Declaration context error: axioms can only be declared in concepts
+tests/inputs/declScopeTests.mg:19:5: Declaration context error in tests.inputs.declScopeTests.S: axioms can only be declared in concepts
 
-tests/inputs/declScopeTests.mg:36:5: Declaration error: function can not have a body in concept
+tests/inputs/declScopeTests.mg:36:5: Declaration error in tests.inputs.declScopeTests.C: function can not have a body in concept
 
-tests/inputs/declScopeTests.mg:37:5: Declaration error: procedure can not have a body in concept
+tests/inputs/declScopeTests.mg:37:5: Declaration error in tests.inputs.declScopeTests.C: procedure can not have a body in concept
 
-tests/inputs/declScopeTests.mg:38:5: Declaration error: predicate can not have a body in concept
+tests/inputs/declScopeTests.mg:38:5: Declaration error in tests.inputs.declScopeTests.C: predicate can not have a body in concept
 
-tests/inputs/declScopeTests.mg:55:5: Declaration context error: axioms can only be declared in concepts
+tests/inputs/declScopeTests.mg:55:5: Declaration context error in tests.inputs.declScopeTests.I: axioms can only be declared in concepts
 
-tests/inputs/declScopeTests.mg:62:13: Declaration error: T was left unimplemented in program P
+tests/inputs/declScopeTests.mg:62:13: Declaration error in tests.inputs.declScopeTests.P: T was left unimplemented in program P
 
-tests/inputs/declScopeTests.mg:62:13: Declaration error: _==_ was left unimplemented in program P
+tests/inputs/declScopeTests.mg:62:13: Declaration error in tests.inputs.declScopeTests.P: _==_ was left unimplemented in program P
 
-tests/inputs/declScopeTests.mg:62:13: Declaration error: _=_ was left unimplemented in program P
+tests/inputs/declScopeTests.mg:62:13: Declaration error in tests.inputs.declScopeTests.P: _=_ was left unimplemented in program P
 
-tests/inputs/declScopeTests.mg:62:13: Declaration error: axiomBody was left unimplemented in program P
+tests/inputs/declScopeTests.mg:62:13: Declaration error in tests.inputs.declScopeTests.P: axiomBody was left unimplemented in program P
 
-tests/inputs/declScopeTests.mg:62:13: Declaration error: funProto was left unimplemented in program P
+tests/inputs/declScopeTests.mg:62:13: Declaration error in tests.inputs.declScopeTests.P: funProto was left unimplemented in program P
 
-tests/inputs/declScopeTests.mg:62:13: Declaration error: predProto was left unimplemented in program P
+tests/inputs/declScopeTests.mg:62:13: Declaration error in tests.inputs.declScopeTests.P: predProto was left unimplemented in program P
 
-tests/inputs/declScopeTests.mg:62:13: Declaration error: procProto was left unimplemented in program P
+tests/inputs/declScopeTests.mg:62:13: Declaration error in tests.inputs.declScopeTests.P: procProto was left unimplemented in program P
 
-tests/inputs/declScopeTests.mg:81:5: Declaration context error: axioms can only be declared in concepts
+tests/inputs/declScopeTests.mg:81:5: Declaration context error in tests.inputs.declScopeTests.P: axioms can only be declared in concepts
