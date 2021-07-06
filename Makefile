@@ -14,6 +14,7 @@ test-targets = declScopeTests \
 		modeTests \
 		packageTests \
 		parsingTests \
+		renamingTests \
 		requirementTests \
 	       	stateHandlingTests \
 		stmtTests

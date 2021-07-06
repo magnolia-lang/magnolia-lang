@@ -5,13 +5,14 @@ module Check (checkModule) where
 
 import Control.Applicative
 import Control.Monad.Except (foldM, lift, unless, when)
-import Control.Monad.Trans.State
+--import Control.Monad.IO.Class (liftIO)
+import qualified Control.Monad.Trans.State as ST
 --import Debug.Trace (trace)
 import Data.Foldable (traverse_)
 import Data.Maybe (fromJust, isJust, isNothing)
 import Data.Traversable (for)
 import Data.Tuple (swap)
-import Data.Void
+import Data.Void (absurd)
 
 import qualified Data.List as L
 import Data.List.NonEmpty (NonEmpty ((:|)), (<|))
@@ -32,7 +33,7 @@ import Util
 -- TODO: hold names in scope to avoid inconsistencies (like order of decls
 --       mattering
 type VarScope = Env (TypedVar PhCheck)
-type ModuleScope = Env [MDecl PhCheck]
+type ModuleScope = Env [TcDecl]
 
 -- TODO: this is a hacky declaration for predicate operators, which should
 -- be available in any module scope. We are still thinking about what is the
@@ -44,7 +45,7 @@ hackyPrelude :: Bool -> [TcDecl]
 --       Then, these could be safely merged when imported in scope.
 --       At the moment, this can cause problems when merging programs together.
 --       This shall be handled later.
-hackyPrelude genConcreteDefs = map (CallableDecl . Ann newAnn) (unOps <> binOps)
+hackyPrelude genConcreteDefs = map (MCallableDecl . Ann newAnn) (unOps <> binOps)
   where
     lhsVar = Ann Pred $ Var MObs (VarName "#pred1#") Pred
     rhsVar = Ann Pred $ Var MObs (VarName "#pred2#") Pred
@@ -136,20 +137,20 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) =
             }
   return $ M.insertWith (<>) moduleName [resultModuleDecl] tlDecls
   where
-    types :: [TypeDecl PhCheck]
+    types :: [TcTypeDecl]
     types = map mkTypeDecl (getTypeDecls decls)
 
-    mkTypeDecl :: TypeDecl PhParse -> TypeDecl PhCheck
+    mkTypeDecl :: MTypeDecl PhParse -> TcTypeDecl
     mkTypeDecl (Ann src (Type n isReq)) =
       let absDecls = AbstractLocalDecl src :| []
           tcTy = Type n isReq
       in if isReq
-         then Ann (Nothing, absDecls) tcTy
+         then Ann (if isReq then Nothing else Just $ ConcreteLocalDecl src, absDecls) tcTy
          else Ann (Just $ ConcreteLocalDecl src, absDecls) tcTy
 
     checkBody
       :: ModuleScope
-      -> CallableDecl PhParse
+      -> MCallableDecl PhParse
       -> MgMonad ModuleScope
     checkBody env decl@(Ann src (Callable ctype fname args retType _ cbody))
       -- TODO: move consistency check here to another function, for clarity.
@@ -186,7 +187,7 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) =
           let tcAnnDecl = Ann (Just $ ConcreteLocalDecl src, absDeclOs) $
                 Callable ctype fname tcArgs retType tcGuard tcBody
           if bodyRetType == retType
-          then insertAndMergeDecl env (CallableDecl tcAnnDecl)
+          then insertAndMergeDecl env (MCallableDecl tcAnnDecl)
           else throwLocatedE TypeErr src $
             "expected return type to be " <> pshow retType <> " in " <>
             pshow ctype <> " but return value has type " <>
@@ -208,8 +209,8 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) =
     -- TODO: catch potential compiler errors here? (e.g. callables with a
     --       concrete annotation that are unimplemented)
     checkImplemented decl = case decl of
-      CallableDecl (Ann (Just _, _) _) -> return ()
-      TypeDecl (Ann (Just _, _) _) -> return ()
+      MCallableDecl (Ann (Just _, _) _) -> return ()
+      MTypeDecl (Ann (Just _, _) _) -> return ()
       _ -> throwLocatedE InvalidDeclErr modSrc $ pshow (nodeName decl) <>
         " was left unimplemented in " <> pshow moduleType <> " " <>
         pshow moduleName
@@ -254,13 +255,13 @@ castModule dstTyp origModule@(Ann declO (MModule srcTyp _ _ _)) = do
     mkSigDecls decls = foldl handleSigDecl [] decls
 
     handleSigDecl :: [TcDecl] -> TcDecl -> [TcDecl]
-    handleSigDecl acc decl@(TypeDecl _) = decl : acc
-    handleSigDecl acc (CallableDecl d) = case d of
+    handleSigDecl acc decl@(MTypeDecl _) = decl : acc
+    handleSigDecl acc (MCallableDecl d) = case d of
       -- When casting to signature, axioms are stripped away.
       Ann _ MAxiom {} -> acc
-      _ -> CallableDecl (prototypize <$$> d) : acc
+      _ -> MCallableDecl (prototypize <$$> d) : acc
 
-    prototypize :: CallableDecl' p -> CallableDecl' p
+    prototypize :: MCallableDecl' p -> MCallableDecl' p
     prototypize (Callable ctype name args retType guard _) =
       Callable ctype name args retType guard EmptyBody
 
@@ -529,7 +530,7 @@ annotateScopedExprStmt modul = go
 
   getReturnType (Ann _ (Callable _ _ _ returnType _ _)) = returnType
 
-  checkArgModes :: SrcCtx -> CallableDecl p -> [MExpr p] -> MgMonad ()
+  checkArgModes :: SrcCtx -> MCallableDecl p -> [MExpr p] -> MgMonad ()
   checkArgModes src (Ann _ (Callable _ name callableArgs _ _ _)) callArgs = do
     let callableArgModes = map (_varMode . _elem) callableArgs
         callArgModes = map exprMode callArgs
@@ -583,24 +584,24 @@ insertAndMergeDecl env decl = do
   return $ M.insert name newDeclList env
   where
     (errorLoc, nameAndProto) = case decl of
-      TypeDecl (Ann (_, absDeclOs1) _) ->
+      MTypeDecl (Ann (_, absDeclOs1) _) ->
         (srcCtx $ NE.head absDeclOs1, "type " <> pshow (nodeName decl))
-      CallableDecl (Ann (_, absDeclOs1) c) ->
+      MCallableDecl (Ann (_, absDeclOs1) c) ->
         (srcCtx $ NE.head absDeclOs1, pshow (c { _callableBody = EmptyBody }))
 
     name = nodeName decl
     mkNewDeclList = case decl of
-      TypeDecl tdecl ->
-        (:[]) . TypeDecl <$> mergeTypes tdecl (M.lookup name env)
-      CallableDecl cdecl ->
-        map CallableDecl <$> mergePrototypes cdecl (M.lookup name env)
+      MTypeDecl tdecl ->
+        (:[]) . MTypeDecl <$> mergeTypes tdecl (M.lookup name env)
+      MCallableDecl cdecl ->
+        map MCallableDecl <$> mergePrototypes cdecl (M.lookup name env)
 
     -- TODO: is this motivation for storing types and callables in different
     -- scopes?
     mergeTypes :: TcTypeDecl -> Maybe [TcDecl] -> MgMonad TcTypeDecl
     mergeTypes annT1@(Ann _ t1) mdecls = case mdecls of
       Nothing -> return annT1
-      Just [TypeDecl annT2@(Ann _ t2)] -> do
+      Just [MTypeDecl annT2@(Ann _ t2)] -> do
         newAnns <- mergeAnns (_ann annT1) (_ann annT2)
         let newType = Type (nodeName t1)
                            (_typeIsRequired t1 && _typeIsRequired t2)
@@ -717,38 +718,26 @@ insertAndMergeDecl env decl = do
 
 mergeModules :: ModuleScope -> ModuleScope -> MgMonad ModuleScope
 mergeModules mod1 mod2 =
-  foldMAccumErrors insertAndMergeDeclList mod1 (map snd $ M.toList mod2)
-  where
-    insertAndMergeDeclList initEnv declList =
-      foldM insertAndMergeDecl initEnv declList
+  foldMAccumErrors (foldM insertAndMergeDecl) mod1 (map snd $ M.toList mod2)
 
-checkTypeExists ::
-  ModuleScope ->
-  WithSrc Name ->
-  MgMonad ()
+checkTypeExists :: ModuleScope -> WithSrc Name -> MgMonad ()
 checkTypeExists modul (WithSrc src name)
   | Unit <- name = return ()
   | Pred <- name = return ()
   | otherwise = case M.lookup name modul of
       Nothing      -> throwLocatedE UnboundTypeErr src (pshow name)
-      Just matches -> if not $ null (getTypeDecls matches)
-                      then return ()
-                      else throwLocatedE UnboundTypeErr src (pshow name)
+      Just matches -> when (null (getTypeDecls matches)) $
+        throwLocatedE UnboundTypeErr src (pshow name)
 
-registerType
-  :: ModuleScope
-  -> TypeDecl PhCheck
-  -> MgMonad ModuleScope
+registerType :: ModuleScope -> TcTypeDecl -> MgMonad ModuleScope
 registerType modul annType =
   foldM insertAndMergeDecl modul (mkTypeUtils annType)
 
-mkTypeUtils
-  :: TypeDecl PhCheck
-  -> [MDecl PhCheck]
+mkTypeUtils :: TcTypeDecl -> [TcDecl]
 mkTypeUtils annType@(Ann _ (Type _ isRequired)) =
-    [ TypeDecl annType
-    , CallableDecl (Ann newAnn equalityFnDecl)
-    , CallableDecl (Ann newAnn assignProcDecl)
+    [ MTypeDecl annType
+    , MCallableDecl (Ann newAnn equalityFnDecl)
+    , MCallableDecl (Ann newAnn assignProcDecl)
     ]
   where
     newAnn = let (conDeclO, absDeclOs) = _ann annType in case conDeclO of
@@ -771,23 +760,25 @@ mkTypeUtils annType@(Ann _ (Type _ isRequired)) =
 -- TODO: ensure functions have a return type defined, though should be handled
 -- by parsing.
 
+-- | Register a callable prototype within the current scope.
+-- TODO: make guard of input empty to remove boolean argument.
 registerProto ::
   Bool -> -- whether to register/check guards or not
   ModuleScope ->
-  CallableDecl PhParse ->
+  MCallableDecl PhParse ->
   MgMonad ModuleScope
-registerProto checkGuards modul annCallable =
-  do -- TODO: ensure bodies are registered later on
-    checkedProto <- checkProto checkGuards modul annCallable
-    insertAndMergeDecl modul (CallableDecl checkedProto)
+registerProto checkGuards modul annCallable = do
+  tcProto <- checkProto checkGuards modul annCallable
+  insertAndMergeDecl modul $ MCallableDecl tcProto
+
 
 -- TODO: check for procedures, predicates, axioms (this is only for func)?
 -- TODO: check guard
 checkProto
   :: Bool
   -> ModuleScope
-  -> CallableDecl PhParse
-  -> MgMonad (CallableDecl PhCheck)
+  -> MCallableDecl PhParse
+  -> MgMonad (MCallableDecl PhCheck)
 checkProto checkGuards env
     (Ann src (Callable ctype name args retType mguard _)) = do
   tcArgs <- checkArgs args
@@ -839,10 +830,10 @@ mkEnvFromDep env (Ann src (MModuleDep fqRef tcRenamings castToSig)) = do
   -- We add a new local annotation, where the source information comes from
   -- the dependency declaration.
   let mkLocalDecl d = let localDecl = AbstractLocalDecl src in case d of
-        TypeDecl (Ann (mconDecl, absDeclOs) td) ->
-          TypeDecl (Ann (mconDecl, localDecl <| absDeclOs) td)
-        CallableDecl (Ann (mconDecl, absDeclOs) cd) ->
-          CallableDecl (Ann (mconDecl, localDecl <| absDeclOs) cd)
+        MTypeDecl (Ann (mconDecl, absDeclOs) td) ->
+          MTypeDecl (Ann (mconDecl, localDecl <| absDeclOs) td)
+        MCallableDecl (Ann (mconDecl, absDeclOs) cd) ->
+          MCallableDecl (Ann (mconDecl, localDecl <| absDeclOs) cd)
       localDecls = M.map (map mkLocalDecl) decls
       -- TODO: gather here env of known renamings
   foldM applyRenamingBlock localDecls tcRenamings
@@ -866,8 +857,8 @@ applyRenamingBlock modul renamingBlock@(Ann src (MRenamingBlock renamings)) = do
       -- TODO: will have to modify when renamings can be more atomic and
       -- namespace can be specified.
       filterSources sourceNames namespace =
-        filter (\(Name _ nameStr) ->
-                isNothing $ M.lookup (Name namespace nameStr) modul) sourceNames
+        filter (\n -> isNothing $ M.lookup (Name namespace (_name n)) modul)
+                sourceNames
       unknownSources =
         foldl filterSources sources [NSFunction, NSProcedure, NSType]
       -- All renamings in a renaming block happen at the same time. If we have
@@ -893,18 +884,18 @@ applyRenamingBlock modul renamingBlock@(Ann src (MRenamingBlock renamings)) = do
       r'' = unambiguousRenamings <>
               [(freeName, fromJust $ M.lookup source renamingMap) |
                (source, freeName) <- r']
-  (modul', renamings') <- (
-      if M.size renamingMap /= L.length renamings
-      then throwLocatedE MiscErr src "duplicate source in renaming block"
-      else if not (null unknownSources)
-      then throwLocatedE MiscErr src $ "renaming block has unknown " <>
-        "sources: " <> pshow unknownSources
-      else if not (null occurOnBothSides)
-      then
-        let annR' = map (Ann (LocalDecl (SrcCtx Nothing)) . InlineRenaming) r'
-        in applyRenamingBlock modul (MRenamingBlock annR' <$$ renamingBlock)
-           >>= \modul' -> return (modul', r'')
-      else return (modul, inlineRenamings))
+  (modul', renamings') <- do
+    when (M.size renamingMap /= L.length renamings) $
+      throwLocatedE MiscErr src "duplicate source in renaming block"
+    unless (null unknownSources) $
+      throwLocatedE MiscErr src $ "renaming block has unknown sources: " <>
+        pshow unknownSources
+    if null occurOnBothSides
+    then return (modul, inlineRenamings)
+    else
+      let annR' = map (Ann (LocalDecl (SrcCtx Nothing)) . InlineRenaming) r'
+      in applyRenamingBlock modul (MRenamingBlock annR' <$$ renamingBlock)
+          >>= \modul' -> return (modul', r'')
   return $ M.fromListWith (<>) $ L.map (\(k, decls) ->
           (tryAllRenamings replaceName k renamings',
            L.map (flip (tryAllRenamings applyRenaming) renamings') decls)) $
@@ -913,18 +904,19 @@ applyRenamingBlock modul renamingBlock@(Ann src (MRenamingBlock renamings)) = do
 
 -- TODO: specialize replacements based on namespaces?
 replaceName :: Name -> InlineRenaming -> Name
-replaceName origName@(Name ns nameStr) (Name _ sourceStr, Name _ targetStr) =
-  if sourceStr == nameStr then Name ns targetStr else origName
+replaceName orig (source, target) =
+  if _name source == _name orig then orig { _name = _name target } else orig
 
--- Applies a renaming to a declaration. Renamings only affect names defined at
--- declaration level; this means that they do not affect local variables.
-applyRenaming :: MDecl PhCheck -> InlineRenaming -> MDecl PhCheck
+-- | Applies a renaming to a declaration. Renamings only affect names defined at
+-- the declaration level --- that is the names of types and callables.
+-- Especially, they DO NOT modify the names of local variables within callables.
+applyRenaming :: TcDecl -> InlineRenaming -> TcDecl
 applyRenaming decl renaming = case decl of
-  TypeDecl typeDecl -> TypeDecl $ applyRenamingInTypeDecl <$$> typeDecl
-  CallableDecl callableDecl ->
-    CallableDecl $ applyRenamingInCallableDecl <$$> callableDecl
+  MTypeDecl typeDecl -> MTypeDecl $ applyRenamingInTypeDecl <$$> typeDecl
+  MCallableDecl callableDecl ->
+    MCallableDecl $ applyRenamingInCallableDecl <$$> callableDecl
   where
-    replaceName' = flip replaceName renaming
+    replaceName' = (`replaceName` renaming)
     applyRenamingInTypeDecl (Type typ isRequired) =
       Type (replaceName' typ) isRequired
     applyRenamingInCallableDecl (Callable ctyp name vars retType mguard cbody) =
@@ -963,8 +955,8 @@ applyRenaming decl renaming = case decl of
 
 mapAccumM :: (Traversable t, Monad m)
           => (a -> b -> m (a, c)) -> a -> t b -> m (a, t c)
-mapAccumM f a tb = swap <$> mapM go tb `runStateT` a
-  where go b = do s <- get
+mapAccumM f a tb = swap <$> mapM go tb `ST.runStateT` a
+  where go b = do s <- ST.get
                   (s', r) <- lift $ f s b
-                  put s'
+                  ST.put s'
                   return r

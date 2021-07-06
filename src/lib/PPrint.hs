@@ -141,28 +141,10 @@ instance Pretty (MModule' PhCheck) where
     vsep [ nest 4 (vsep (  p moduleType <+> p name <+> "= {"
                         :  map p depList
                         <> map ((<> ";") . p)
-                               (join (M.elems (M.map cleanUp declMap)))
+                               (join (M.elems declMap))
                         ))
          , "}"
          ]
-    where
-      cleanUp :: [TcDecl] -> [TcDecl]
-      cleanUp = foldl deDup []
-
-      deDup :: [TcDecl] -> TcDecl -> [TcDecl]
-      deDup decls d = case d of
-        TypeDecl _ -> if d `elem` decls then decls else d : decls
-        CallableDecl cd ->
-          let anonD = mkAnonProto <$$> cd in
-          if any (matchAnonProtoDecl anonD) decls
-          then if callableIsImplemented cd
-               then d : filter (not . matchAnonProtoDecl anonD) decls
-               else decls
-          else d : decls
-
-      matchAnonProtoDecl target decl = case decl of
-        TypeDecl _ -> False
-        CallableDecl cd -> mkAnonProto <$$> cd == target
 
 
   pretty (RefModule _ _ v) = absurd v
@@ -198,16 +180,16 @@ instance Pretty Backend where
     JavaScript -> "JavaScript"
     Python -> "Python"
 
-instance Pretty (MDecl PhCheck) where
+instance Pretty (MDecl p) where
   pretty decl = case decl of
-    TypeDecl tdecl -> pretty tdecl
-    CallableDecl cdecl -> pretty cdecl
+    MTypeDecl tdecl -> pretty tdecl
+    MCallableDecl cdecl -> pretty cdecl
 
-instance Pretty (TypeDecl' p) where
+instance Pretty (MTypeDecl' p) where
   pretty (Type typ isRequired) = (if isRequired then "require" else "") <>
     "type" <+> p typ
 
-instance Pretty (CallableDecl' p) where
+instance Pretty (MCallableDecl' p) where
   pretty (Callable callableType name args ret mguard cbody) =
     let pret = if callableType == Function then " : " <> p ret else ""
         pbody = case cbody of EmptyBody -> ""
@@ -224,7 +206,7 @@ instance Pretty (CallableDecl' p) where
         _ -> parens $ hsep $ punctuate comma $
             map (\(Ann _ a) -> p (nodeName a) <+> ":" <+> p (_varType a)) args
 
-instance Pretty CallableType where
+instance Pretty MCallableType where
   pretty callableType = case callableType of
     Axiom -> "axiom"
     Function -> "function"

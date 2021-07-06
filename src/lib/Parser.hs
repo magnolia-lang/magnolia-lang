@@ -206,16 +206,16 @@ declaration mtyp = do
                         _           -> declaration' True
          ] <* many semi
   where
-    declaration' isRequired =  (TypeDecl <$> annot (typeDecl isRequired))
-                           <|> (CallableDecl <$> annot (callable mtyp))
+    declaration' isRequired =  (MTypeDecl <$> annot (typeDecl isRequired))
+                           <|> (MCallableDecl <$> annot (callable mtyp))
 
-typeDecl :: Bool -> Parser (TypeDecl' PhParse)
+typeDecl :: Bool -> Parser (MTypeDecl' PhParse)
 typeDecl isRequired = do
   keyword TypeKW
   name <- typeName <* semi -- TODO: make expr
   return $ Type name isRequired
 
-callable :: MModuleType -> Parser (CallableDecl' PhParse)
+callable :: MModuleType -> Parser (MCallableDecl' PhParse)
 callable mtyp = do
   callableType <- (keyword AxiomKW >> return Axiom)
               <|> (keyword TheoremKW >> return Axiom)

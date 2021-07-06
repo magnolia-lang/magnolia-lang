@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Make (loadDependencyGraph, upsweep) where
+module Make (loadDependencyGraph, upsweep, TcGlobalEnv) where
 
 import Control.Monad (foldM, unless)
 import Control.Monad.IO.Class (liftIO)
@@ -16,46 +16,47 @@ import PPrint
 import Syntax
 import Util
 
+type TcGlobalEnv = Env (MPackage PhCheck)
+
 -- TODO: recover when tcing?
-upsweep :: [G.SCC PackageHead] -> MgMonad (GlobalEnv PhCheck)
+upsweep :: [G.SCC PackageHead] -> MgMonad TcGlobalEnv
 upsweep = foldMAccumErrorsAndFail go M.empty
   where
     -- TODO: keep going?
-    go
-      :: GlobalEnv PhCheck
-      -> G.SCC PackageHead
-      -> MgMonad (GlobalEnv PhCheck)
+    go :: TcGlobalEnv
+       -> G.SCC PackageHead
+       -> MgMonad TcGlobalEnv
     go _ (G.CyclicSCC pkgHeads) =
       let pCycle = T.intercalate ", " $ map (pshow . _packageHeadName) pkgHeads
       in throwNonLocatedE CyclicPackageErr pCycle
 
     go globalEnv (G.AcyclicSCC pkgHead) =
       enter (fromFullyQualifiedName (_packageHeadName pkgHead)) $ do
-      Ann ann (MPackage name decls deps) <-
-        parsePackage (_packageHeadPath pkgHead) (_packageHeadStr pkgHead)
-      -- TODO: add local/external ann for nodes
-      importedEnv <-
-        foldMAccumErrors (loadPackageDependency globalEnv) M.empty deps
-      -- 1. Renamings
-      envWithRenamings <- upsweepRenamings importedEnv $
-        topSortRenamingDecls name (getNamedRenamings decls)
-      -- TODO: deal with renamings first, then modules, then satisfactions
-      -- 2. Modules
-      checkedModulesNOTFINISHED <- upsweepModules envWithRenamings $
-        topSortModules name (getModules decls)
-      -- 3. Satisfactions
-      -- TODO: ^
-      -- TODO: deal with deps and other tld types
-      let checkedPackage = Ann ann (MPackage name checkedModulesNOTFINISHED [])
-      return $ M.insert name checkedPackage globalEnv
+        Ann pkgAnn (MPackage name decls deps) <-
+          parsePackage (_packageHeadPath pkgHead) (_packageHeadStr pkgHead)
+        let allModules = getModules decls
+            allNamedRenamings = getNamedRenamings decls
+        -- TODO: add local/external ann for nodes
+        importedEnv <- foldMAccumErrors (loadDependency globalEnv) M.empty deps
+        -- 1. Renamings
+        envWithRenamings <- upsweepNamedRenamings importedEnv $
+          topSortRenamingDecls name allNamedRenamings
+        -- TODO: deal with renamings first, then modules, then satisfactions
+        -- 2. Modules
+        tcModulesNOTFINISHED <- upsweepModules envWithRenamings $
+          topSortModules name allModules
+        -- 3. Satisfactions
+        -- TODO: ^
+        -- TODO: deal with deps and other tld types
+        let tcPackage = Ann pkgAnn (MPackage name tcModulesNOTFINISHED [])
+        return $ M.insert name tcPackage globalEnv
 
 topSortModules :: Name -> [MModule PhParse] -> [G.SCC (MModule PhParse)]
 topSortModules pkgName modules = G.stronglyConnComp
     [ ( modul
       , nodeName modul
       , map _targetName $
-          filter (isLocalFQName pkgName) $
-            dependencies modul
+          filter (isLocalFullyQualifiedName pkgName) (dependencies modul)
       )
     | modul <- modules
     ]
@@ -67,33 +68,26 @@ topSortRenamingDecls pkgName namedRenamings = G.stronglyConnComp
     [ ( node
       , name
       , map _targetName $
-          filter (isLocalFQName pkgName) $
+          filter (isLocalFullyQualifiedName pkgName) $
             getRenamingDependencies renamingBlocks
       )
     | node@(Ann _ (MNamedRenaming name renamingBlocks)) <- namedRenamings
     ]
 
-isLocalFQName :: Name -> FullyQualifiedName -> Bool
-isLocalFQName pkgName (FullyQualifiedName mscopeName _) =
-  case mscopeName of Nothing -> True
-                     Just scopeName -> scopeName == pkgName
+isLocalFullyQualifiedName :: Name -> FullyQualifiedName -> Bool
+isLocalFullyQualifiedName pkgName = maybe True (== pkgName) . _scopeName
 
 getRenamingDependencies :: MRenamingBlock PhParse -> [FullyQualifiedName]
 getRenamingDependencies (Ann _ (MRenamingBlock renamings)) =
-    foldl extractRenamingRef [] renamings
+  foldl extractRenamingRef [] renamings
+  where
+    extractRenamingRef acc (Ann _ r) = case r of
+      InlineRenaming _ -> acc
+      RefRenaming name -> name:acc
 
-extractRenamingRef
-  :: [FullyQualifiedName] -> MRenaming PhParse -> [FullyQualifiedName]
-extractRenamingRef acc (Ann _ r) = case r of
-  InlineRenaming _ -> acc
-  RefRenaming name -> name:acc
-
-loadPackageDependency
-  :: GlobalEnv PhCheck
-  -> Env [TcTopLevelDecl]
-  -> MPackageDep PhParse
-  -> MgMonad (Env [TcTopLevelDecl])
-loadPackageDependency globalEnv localEnv (Ann src dep) = do
+loadDependency :: TcGlobalEnv -> Env [TcTopLevelDecl]
+               -> MPackageDep PhParse -> MgMonad (Env [TcTopLevelDecl])
+loadDependency globalEnv localEnv (Ann src dep) =
   case M.lookup (nodeName dep) globalEnv of
     Nothing -> throwLocatedE MiscErr src $ "attempted to load package " <>
       pshow (nodeName dep) <> " but package couldn't be found"
@@ -103,11 +97,10 @@ loadPackageDependency globalEnv localEnv (Ann src dep) = do
                   (_packageDecls pkg)
       return $ M.unionWith (<>) importedLocalDecls localEnv
 
-importLocal
-  :: Name -- ^ Name of the package
-  -> [TcTopLevelDecl]
-  -> TcTopLevelDecl
-  -> [TcTopLevelDecl]
+importLocal :: Name             -- ^ Name of the package to import from
+            -> [TcTopLevelDecl]
+            -> TcTopLevelDecl
+            -> [TcTopLevelDecl]
 importLocal name acc decl = case decl of
   MNamedRenamingDecl (Ann (LocalDecl src) node) ->
     MNamedRenamingDecl (Ann (mkImportedDecl src node) node):acc
@@ -116,19 +109,19 @@ importLocal name acc decl = case decl of
   MSatisfactionDecl (Ann (LocalDecl src) node) ->
     MSatisfactionDecl (Ann (mkImportedDecl src node) node):acc
   -- We do not import non-local decls from other packages.
-  _ -> acc -- Ann (src, ImportedDecl name (nodeName modul)) modul:acc
+  _ -> acc
   where
     mkImportedDecl src node =
       ImportedDecl (FullyQualifiedName (Just name) (nodeName node)) src
 
-
+-- | Checks and expands a list of topologically sorted named renamings, and then
+-- adds them to an initial top level environment.
 -- TODO: optimize as needed, could be more elegant.
--- Checks and expands renamings.
-upsweepRenamings
-  :: Env [TcTopLevelDecl]
-  -> [G.SCC (MNamedRenaming PhParse)]
+upsweepNamedRenamings
+  :: Env [TcTopLevelDecl]             -- ^ The starting top level environment
+  -> [G.SCC (MNamedRenaming PhParse)] -- ^ The named renamings to check
   -> MgMonad (Env [TcTopLevelDecl])
-upsweepRenamings = foldMAccumErrors go
+upsweepNamedRenamings = foldMAccumErrors go
   where
     go
       :: Env [TcTopLevelDecl]
@@ -147,10 +140,11 @@ upsweepRenamings = foldMAccumErrors go
       return $ M.insertWith (<>) name [MNamedRenamingDecl tcNamedRenaming]
                             env
 
-
+-- | Checks a list of topologically sorted modules, and then adds them to an
+-- initial top level environment.
 upsweepModules
-  :: Env [TcTopLevelDecl]
-  -> [G.SCC (MModule PhParse)]
+  :: Env [TcTopLevelDecl]      -- ^ The starting top level environment
+  -> [G.SCC (MModule PhParse)] -- ^ The modules to check
   -> MgMonad (Env [TcTopLevelDecl])
 upsweepModules = foldMAccumErrors go
   where
@@ -162,10 +156,15 @@ upsweepModules = foldMAccumErrors go
       let mCycle = T.intercalate ", " $ map (pshow . nodeName) modules in
       throwNonLocatedE CyclicModuleErr mCycle
 
-    -- TODO: error catching & recovery
     go env (G.AcyclicSCC modul) = checkModule env modul
 
 -- TODO: cache and choose what to reload with granularity
+-- | Takes the path towards a Magnolia package and constructs its dependency
+-- graph, which is returned as a topologically sorted list of strongly
+-- connected components (of package heads).
+--
+-- For example, assuming a Magnolia package "A" depends on a Magnolia package
+-- "B", the result will be sorted like ["B", "A"].
 loadDependencyGraph :: FilePath -> MgMonad [G.SCC PackageHead]
 loadDependencyGraph = (topSortPackages <$>) . recover (go M.empty)
   where

@@ -13,36 +13,119 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Syntax (
-    Backend (..), CallableDecl, CallableDecl' (..), CallableType (..),
-    MaybeTypedVar, MaybeTypedVar', TypeDecl, TypeDecl' (..), TypedVar,
-    TypedVar', MBlockType (..), MDecl (..), MExpr, MExpr' (..), MModule,
-    MModule' (..), MModuleDep, MModuleDep' (..), MModuleType (..),
-    MNamedRenaming, MNamedRenaming' (..),
-    MPackage, MPackage' (..), MPackageDep, MPackageDep' (..), MRenamingBlock,
-    MRenamingBlock' (..), MSatisfaction, MSatisfaction' (..),
-    MTopLevelDecl (..), MType, MVar (..), MVarMode (..), WithSrc (..),
-    GlobalEnv, InlineRenaming, PackageHead (..), RenamedModule (..),
-    MRenaming' (..), MRenaming,
-    CBody (..), CGuard,
-    TcCallableDecl, TcDecl, TcExpr, TcMaybeTypedVar, TcModule, TcModuleDep,
-    TcPackage, TcTopLevelDecl, TcTypeDecl, TcTypedVar,
-    HasDependencies (..), HasSrcCtx (..), NamedNode (..),
-    Command (..),
-    AbstractDeclOrigin, ConcreteDeclOrigin, DeclOrigin (..),
-    Err (..), ErrType (..),
-    PhParse, PhCheck, PhCodeGen, SrcCtx (..),
-    Ann (..), XAnn, (<$$>), (<$$),
-    XRef,
-    pattern Pred, pattern Unit,
-    pattern NoCtx,
-    pattern MCon, pattern MProg, pattern MImpl, pattern MSig,
-    pattern MAxiom, pattern MFunc, pattern MPred, pattern MProc,
-    pattern AbstractImportedDecl, pattern AbstractLocalDecl,
-    pattern ConcreteImportedDecl, pattern ConcreteLocalDecl,
-    getModules, getNamedRenamings,
-    moduleDecls,
-    getTypeDecls, getCallableDecls,
-    callableIsImplemented, mkAnonProto, replaceGuard)
+  -- * AST nodes
+  --
+  -- $mgAst
+  -- TODO(bchetioui, 07/07/21): cleanup node names. This is put on hold to
+  -- avoid too much rebasing of a big PR.
+  -- ** Generic AST nodes
+    CBody (..)
+  , CGuard
+  , InlineRenaming
+  , MaybeTypedVar
+  , MaybeTypedVar'
+  , MBlockType (..)
+  , MCallableDecl
+  , MCallableDecl' (..)
+  , MCallableType (..)
+  , MDecl (..)
+  , MExpr
+  , MExpr' (..)
+  , MModule
+  , MModule' (..)
+  , MModuleDep
+  , MModuleDep' (..)
+  , MModuleType (..)
+  , MNamedRenaming
+  , MNamedRenaming' (..)
+  , MPackage
+  , MPackage' (..)
+  , MPackageDep
+  , MPackageDep' (..)
+  , MRenaming
+  , MRenaming' (..)
+  , MRenamingBlock
+  , MRenamingBlock' (..)
+  , MSatisfaction
+  , MSatisfaction' (..)
+  , MTopLevelDecl (..)
+  , MType
+  , MTypeDecl
+  , MTypeDecl' (..)
+  , MVar (..)
+  , MVarMode (..)
+  , RenamedModule (..)
+  , TypedVar
+  , TypedVar'
+  -- ** AST nodes after the type checking phase
+  , Tc
+  , TcCallableDecl
+  , TcDecl
+  , TcExpr
+  , TcMaybeTypedVar
+  , TcModule
+  , TcModuleDep
+  , TcNamedRenaming
+  , TcPackage
+  , TcRenaming
+  , TcRenamingBlock
+  , TcTopLevelDecl
+  , TcTypeDecl
+  , TcTypedVar
+  -- ** AST-related patterns
+  , pattern MAxiom
+  , pattern MCon
+  , pattern MFunc
+  , pattern MImpl
+  , pattern MPred
+  , pattern MProc
+  , pattern MProg
+  , pattern MSig
+  -- ** \"Primitive\" Magnolia types
+  , pattern Pred
+  , pattern Unit
+  -- ** Utils
+  , getCallableDecls
+  , getModules
+  , getNamedRenamings
+  , getTypeDecls
+  , moduleDecls
+  -- * Classes
+  , HasDependencies (..)
+  , HasName (..)
+  , HasSrcCtx (..)
+  -- * Annotation utils
+  -- ** Annotation types
+  , AbstractDeclOrigin
+  , ConcreteDeclOrigin
+  , DeclOrigin (..)
+  , SrcCtx (..)
+  -- ** Annotation-related patterns
+  , pattern AbstractImportedDecl
+  , pattern AbstractLocalDecl
+  , pattern ConcreteImportedDecl
+  , pattern ConcreteLocalDecl
+  , pattern NoCtx
+  -- ** Annotation wrapper utils
+  , Ann (..)
+  , XAnn
+  , (<$$>)
+  , (<$$)
+  -- * Parsing utils
+  , PackageHead (..)
+  , WithSrc (..)
+  -- * Compilation phases
+  , PhParse
+  , PhCheck
+  , PhCodeGen
+  -- * Errors
+  , Err (..)
+  , ErrType (..)
+  -- * Codegen
+  , Backend (..)
+  -- * Repl utils
+  , Command (..)
+  )
   where
 
 import qualified Data.List.NonEmpty as NE
@@ -72,17 +155,17 @@ data PackageHead = PackageHead { _packageHeadPath :: FilePath
 
 -- === env utils ===
 
-type GlobalEnv p = Env (MPackage p)
-
---type GlobalEnv p = Env (Env (Env [MDecl p]))
-
+type Tc e = Ann PhCheck e
 type TcPackage = MPackage PhCheck
 type TcTopLevelDecl = MTopLevelDecl PhCheck
+type TcNamedRenaming = MNamedRenaming PhCheck
+type TcRenamingBlock = MRenamingBlock PhCheck
+type TcRenaming = MRenaming PhCheck
 type TcModule = MModule PhCheck
 type TcModuleDep = MModuleDep PhCheck
 type TcDecl = MDecl PhCheck
-type TcCallableDecl = CallableDecl PhCheck
-type TcTypeDecl = TypeDecl PhCheck
+type TcCallableDecl = MCallableDecl PhCheck
+type TcTypeDecl = MTypeDecl PhCheck
 type TcExpr = MExpr PhCheck
 type TcTypedVar = TypedVar PhCheck
 type TcMaybeTypedVar = MaybeTypedVar PhCheck
@@ -106,6 +189,17 @@ instance Show (e p) => Show (Ann p e) where
 (<$$) e (Ann ann _) = Ann { _ann = ann, _elem = e }
 
 -- === AST ===
+
+-- $mgAst
+--
+-- The Magnolia AST defined here follows the patterns described in the
+-- [Trees that Grow](https://www.microsoft.com/en-us/research/uploads/prod/2016/11/trees-that-grow.pdf)
+-- paper to carry different types of annotations depending on the current
+-- compiler phase.
+--
+-- When two types named T and T\' are defined, T is an annotated version of
+-- T\', i.e. it is a parameterized type synonym of the form
+-- > type T p = Ann p T'
 
 -- TODO: use fully qualified names consistently at the package level
 type MPackage p = Ann p MPackage'
@@ -149,7 +243,6 @@ data MModuleDep' p = MModuleDep { _depName :: FullyQualifiedName
 type MRenamingBlock p = Ann p MRenamingBlock'
 newtype MRenamingBlock' p = MRenamingBlock [MRenaming p]
 
--- TODO: make annotated binders to keep typing information
 type MRenaming p = Ann p MRenaming'
 data MRenaming' p = InlineRenaming InlineRenaming
                   | RefRenaming (XRef p)
@@ -163,17 +256,17 @@ data MModuleType = Signature
                  | External Backend FullyQualifiedName
                    deriving (Eq, Show)
 
-data MDecl p = TypeDecl (TypeDecl p)
-             | CallableDecl (CallableDecl p)
+data MDecl p = MTypeDecl (MTypeDecl p)
+             | MCallableDecl (MCallableDecl p)
                deriving (Eq, Show)
 
-type TypeDecl p = Ann p TypeDecl'
-data TypeDecl' p = Type { _typeName :: MType, _typeIsRequired :: Bool }
+type MTypeDecl p = Ann p MTypeDecl'
+data MTypeDecl' p = Type { _typeName :: MType, _typeIsRequired :: Bool }
                    deriving (Eq, Show)
 
-type CallableDecl p = Ann p CallableDecl'
-data CallableDecl' p =
-  Callable { _callableType :: CallableType
+type MCallableDecl p = Ann p MCallableDecl'
+data MCallableDecl' p =
+  Callable { _callableType :: MCallableType
            , _callableName :: Name
            , _callableArgs :: [TypedVar p]
            , _callableReturnType :: MType
@@ -188,17 +281,17 @@ type CGuard p = Maybe (MExpr p)
 
 type MType = Name
 
--- Predicate type, used for Conditionals
+-- | Predicate type, used for conditionals.
 pattern Pred :: MType
 pattern Pred = GenName "Predicate"
 
--- Unit type, used for Statements
+-- | Unit type, used for stateful computations.
 pattern Unit :: MType
 pattern Unit = GenName "Unit"
 
 -- TODO: can I simplify? Axioms and Predicates are function, except with a
 --       predefined return type.
-data CallableType = Axiom | Function | Predicate | Procedure
+data MCallableType = Axiom | Function | Predicate | Procedure
                     deriving (Eq, Show)
 
 -- TODO: make a constructor for coercedexpr to remove (Maybe MType) from calls
@@ -351,13 +444,13 @@ type family XAnn p (e :: * -> *) where
   XAnn PhParse MRenaming' = SrcCtx
   XAnn PhCheck MRenaming' = DeclOrigin
 
-  XAnn PhParse TypeDecl' = SrcCtx
-  XAnn PhCheck TypeDecl' = ( Maybe ConcreteDeclOrigin
+  XAnn PhParse MTypeDecl' = SrcCtx
+  XAnn PhCheck MTypeDecl' = ( Maybe ConcreteDeclOrigin
                            , NE.NonEmpty AbstractDeclOrigin
                            )
 
-  XAnn PhParse CallableDecl' = SrcCtx
-  XAnn PhCheck CallableDecl' = ( Maybe ConcreteDeclOrigin
+  XAnn PhParse MCallableDecl' = SrcCtx
+  XAnn PhCheck MCallableDecl' = ( Maybe ConcreteDeclOrigin
                                , NE.NonEmpty AbstractDeclOrigin
                                )
 
@@ -379,7 +472,6 @@ type family XRef p where
   XRef PhParse = FullyQualifiedName
   XRef PhCheck = Void
 
--- TODO: move?
 -- === standalone show instances ===
 
 deriving instance Show (MRenaming' PhCheck)
@@ -394,49 +486,49 @@ deriving instance Show (MPackage' PhCheck)
 
 -- === useful typeclasses ===
 
-class NamedNode n where
+class HasName n where
   nodeName :: n -> Name
 
-instance NamedNode (e p) => NamedNode (Ann p e) where
+instance HasName (e p) => HasName (Ann p e) where
   nodeName = nodeName . _elem
 
-instance NamedNode (MPackage' p) where
+instance HasName (MPackage' p) where
   nodeName = _packageName
 
-instance NamedNode (MPackageDep' p) where
+instance HasName (MPackageDep' p) where
   nodeName (MPackageDep name) = fromFullyQualifiedName name
 
-instance NamedNode (MTopLevelDecl p) where
+instance HasName (MTopLevelDecl p) where
   nodeName topLevelDecl = case topLevelDecl of
     MNamedRenamingDecl namedRenaming -> nodeName namedRenaming
     MModuleDecl modul -> nodeName modul
     MSatisfactionDecl satisfaction -> nodeName satisfaction
 
-instance NamedNode (MNamedRenaming' p) where
+instance HasName (MNamedRenaming' p) where
   nodeName (MNamedRenaming name _) = name
 
-instance NamedNode (MModule' p) where
+instance HasName (MModule' p) where
   nodeName (MModule _ name _ _) = name
   nodeName (RefModule _ name _) = name
 
-instance NamedNode (MSatisfaction' p) where
+instance HasName (MSatisfaction' p) where
   nodeName (MSatisfaction name _ _ _) = name
 
-instance NamedNode (MModuleDep' p) where
+instance HasName (MModuleDep' p) where
   nodeName (MModuleDep name _ _) = fromFullyQualifiedName name
 
-instance NamedNode (MDecl p) where
+instance HasName (MDecl p) where
   nodeName decl = case decl of
-    TypeDecl tdecl -> nodeName tdecl
-    CallableDecl cdecl -> nodeName cdecl
+    MTypeDecl tdecl -> nodeName tdecl
+    MCallableDecl cdecl -> nodeName cdecl
 
-instance NamedNode (TypeDecl' p) where
+instance HasName (MTypeDecl' p) where
   nodeName (Type name _) = name
 
-instance NamedNode (CallableDecl' p) where
+instance HasName (MCallableDecl' p) where
   nodeName (Callable _ name _ _ _ _) = name
 
-instance NamedNode (MVar typAnnType p) where
+instance HasName (MVar typAnnType p) where
   nodeName (Var _ name _) = name
 
 class HasDependencies a where
@@ -511,22 +603,22 @@ pattern MImpl
 pattern MImpl name decls deps = MModule Implementation name decls deps
 
 pattern MAxiom
-  :: Name -> [TypedVar p] -> MType -> CGuard p -> CBody p -> CallableDecl' p
+  :: Name -> [TypedVar p] -> MType -> CGuard p -> CBody p -> MCallableDecl' p
 pattern MAxiom name args retType guard body =
   Callable Axiom name args retType guard body
 
 pattern MFunc
-  :: Name -> [TypedVar p] -> MType -> CGuard p -> CBody p -> CallableDecl' p
+  :: Name -> [TypedVar p] -> MType -> CGuard p -> CBody p -> MCallableDecl' p
 pattern MFunc name args retType guard body =
   Callable Function name args retType guard body
 
 pattern MPred
-  :: Name -> [TypedVar p] -> MType -> CGuard p -> CBody p -> CallableDecl' p
+  :: Name -> [TypedVar p] -> MType -> CGuard p -> CBody p -> MCallableDecl' p
 pattern MPred name args retType guard body =
   Callable Predicate name args retType guard body
 
 pattern MProc
-  :: Name -> [TypedVar p] -> MType -> CGuard p -> CBody p -> CallableDecl' p
+  :: Name -> [TypedVar p] -> MType -> CGuard p -> CBody p -> MCallableDecl' p
 pattern MProc name args retType guard body =
   Callable Procedure name args retType guard body
 
@@ -565,43 +657,25 @@ getNamedRenamings = foldl extractNamedRenaming []
 
 -- === modules manipulation ===
 
-moduleDecls :: MModule PhCheck -> Env [MDecl PhCheck]
+moduleDecls :: MModule PhCheck -> Env [TcDecl]
 moduleDecls (Ann _ modul) = case modul of
   MModule _ _ decls _ -> decls
   RefModule _ _ v -> absurd v
 
 -- === module declarations manipulation ===
 
-getTypeDecls :: Foldable t => t (MDecl p) -> [TypeDecl p]
+getTypeDecls :: Foldable t => t (MDecl p) -> [MTypeDecl p]
 getTypeDecls = foldr extractType []
   where
-    extractType :: MDecl p -> [TypeDecl p] -> [TypeDecl p]
+    extractType :: MDecl p -> [MTypeDecl p] -> [MTypeDecl p]
     extractType decl acc = case decl of
-      TypeDecl tdecl -> tdecl:acc
+      MTypeDecl tdecl -> tdecl:acc
       _ -> acc
 
-getCallableDecls :: Foldable t => t (MDecl p) -> [CallableDecl p]
+getCallableDecls :: Foldable t => t (MDecl p) -> [MCallableDecl p]
 getCallableDecls = foldr extractCallable []
   where
-    extractCallable :: MDecl p -> [CallableDecl p] -> [CallableDecl p]
+    extractCallable :: MDecl p -> [MCallableDecl p] -> [MCallableDecl p]
     extractCallable decl acc = case decl of
-      CallableDecl cdecl -> cdecl:acc
+      MCallableDecl cdecl -> cdecl:acc
       _ -> acc
-
--- === declarations manipulation ===
-
-replaceGuard :: CallableDecl' p -> CGuard p -> CallableDecl' p
-replaceGuard (Callable callableType name args retType _ mbody) mguard =
-  Callable callableType name args retType mguard mbody
-
--- TODO: avoid partiality
-callableIsImplemented :: CallableDecl p -> Bool
-callableIsImplemented (Ann _ (Callable _ _ _ _ _ mbody)) = case mbody of
-  EmptyBody -> False
-  _ -> True
-
-mkAnonProto :: CallableDecl' p -> CallableDecl' p
-mkAnonProto (Callable ctype callableName args retType mguard _) =
-      Callable ctype callableName (map (mkAnonVar <$$>) args) retType
-               mguard EmptyBody
-  where mkAnonVar (Var mode _ typ) = Var mode (GenName "#anon#") typ

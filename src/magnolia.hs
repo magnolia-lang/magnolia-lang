@@ -9,9 +9,8 @@ import qualified Data.List as L
 import qualified Data.Map as M
 import Debug.Trace (trace)
 import Options.Applicative hiding (Success, Failure)
-import System.Console.Haskeline --(InputT, runInputT)
+import System.Console.Haskeline
 
---import EmitPy
 import Env
 import Make
 import Parser
@@ -19,7 +18,7 @@ import PPrint
 import Syntax
 import Util
 
-type TopEnv = GlobalEnv PhCheck
+type TopEnv = TcGlobalEnv
 data Status = Failure | Success -- TODO: move and expand statuses
 data CompilerMode = ReplMode | BuildMode String
 
@@ -93,7 +92,7 @@ repl = runInputT defaultSettings go
 execCmd :: Command -> StateT TopEnv IO ()
 execCmd cmd = case cmd of
   LoadPackage pkgStr -> loadPackage False pkgStr
-  ReloadPackage pkgStr -> loadPackage True pkgStr --undefined
+  ReloadPackage pkgStr -> loadPackage True pkgStr
   InspectModule modName -> inspectModule modName
   InspectPackage pkgName -> inspectPackage pkgName
   ListPackages -> listPackages

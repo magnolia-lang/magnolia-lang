@@ -43,7 +43,6 @@ import qualified Control.Monad.Trans.Reader as R
 import qualified Control.Monad.Trans.State as St
 import qualified Data.List as L
 import qualified Data.Map as M
-import Data.Maybe (fromJust)
 import qualified Data.Set as S
 import Data.Text.Prettyprint.Doc (Pretty)
 import qualified Data.Text.Lazy as T
@@ -181,127 +180,98 @@ lookupTopLevelRef
   :: ( XAnn PhCheck e ~ DeclOrigin
      , Show (e PhCheck)
      , Pretty (e PhCheck)
-     , NamedNode (e PhCheck)
+     , HasName (e PhCheck)
      )
-  => SrcCtx
-  -> Env [Ann PhCheck e]
-  -> FullyQualifiedName
-  -> MgMonad (Ann PhCheck e)
-lookupTopLevelRef src env ref@(FullyQualifiedName mscopeName targetName) =
-  case M.lookup targetName env of
-    Nothing -> throwLocatedE UnboundTopLevelErr src $ pshow ref
-    Just matches ->
-      if null matches then throwLocatedE CompilerErr src $
-        "name " <> pshow targetName <> " exists but is not bound to anything"
-      else do
-        let localDecls = filter isLocalDecl matches
-        compatibleMatches <-
-          case mscopeName of
-            Nothing -> do
-              -- There are two valid cases in which it is possible not to
-              -- provide a scope name:
-              -- (1) there is only one element in scope corresponding to the
-              --     target name, and the code is therefore unambiguous; in
-              --     this case, the name of the scope is here optional;
-              -- (2) there is exactly one locally defined element in scope.
-              if null localDecls then return matches
-              else do
-                unless (null $ tail localDecls) $
+  => SrcCtx -> Env [Tc e] -> FullyQualifiedName -> MgMonad (Tc e)
+lookupTopLevelRef src env ref = case M.lookup (_targetName ref) env of
+  Nothing -> throwLocatedE UnboundTopLevelErr src $ pshow ref
+  Just [] -> throwLocatedE CompilerErr src $
+    "name " <> pshow (_targetName ref) <> " exists but is not bound to anything"
+  Just matches -> do
+    let localDecls = filter isLocalDecl matches
+    compatibleMatches <- case _scopeName ref of
+      Nothing ->
+        -- There are two valid cases in which it is possible not to
+        -- provide a scope name:
+        -- (1) there is only one element in scope corresponding to the
+        --     target name, and the code is therefore unambiguous; in
+        --     this case, the name of the scope is here optional;
+        -- (2) there is exactly one locally defined element in scope.
+        if null localDecls
+        then return matches
+        else do unless (null $ tail localDecls) $
                   throwLocatedE CompilerErr src $
                     "there are several locally defined top-level constructs " <>
-                    "with the name " <> pshow targetName <> " in scope"
+                    "with the name " <> pshow (_targetName ref) <> " in scope"
                 return localDecls
-            Just scopeName -> do
-              parentPackageName <- getParentPackageName
-              if scopeName == parentPackageName
-              then do
-                when (null localDecls) $
-                  throwLocatedE UnboundTopLevelErr src $ pshow ref
-                unless (null $ tail localDecls) $
-                  throwLocatedE CompilerErr src $
-                    "there are several locally defined top-level constructs " <>
-                    "with the name " <> pshow targetName <> " in scope"
-                return localDecls
-              else return $ filter (matchesImportScope (fromJust mscopeName))
-                                    matches
-        -- The reference is only valid when a match exists and is unambiguous,
-        -- i.e. in cases when compatibleMatches contains exactly one element.
-        when (null compatibleMatches) $ -- no match
-          throwLocatedE UnboundTopLevelErr src $ pshow ref
-        unless (null $ tail compatibleMatches) $ -- more than one match
-          throwLocatedE AmbiguousTopLevelRefErr src $ pshow ref <>
-            "'. Candidates are: " <>
-            T.intercalate ", " (map (pshow . mkFQName) compatibleMatches)
-        return $ head compatibleMatches
-  where
-    matchesImportScope
-      :: XAnn PhCheck e ~ DeclOrigin => Name -> Ann PhCheck e -> Bool
-    matchesImportScope scopeName (Ann declO _) = case declO of
-      ImportedDecl (FullyQualifiedName (Just scopeName') _) _ ->
-        scopeName == scopeName'
-      _ -> False
-
-    mkFQName
-      :: (XAnn PhCheck e ~ DeclOrigin, NamedNode (e PhCheck))
-      => Ann PhCheck e -> Name
-    mkFQName (Ann declO node) = case declO of
-      LocalDecl {} -> nodeName node
-      ImportedDecl fqn _ -> fromFullyQualifiedName fqn
+      Just scopeName -> do
+        parentPkgName <- getParentPackageName
+        if scopeName == parentPkgName
+        then do
+          when (null localDecls) $
+            throwLocatedE UnboundTopLevelErr src $ pshow ref
+          unless (null $ tail localDecls) $
+            throwLocatedE CompilerErr src $
+              "there are several locally defined top-level constructs " <>
+              "with the name " <> pshow (_targetName ref) <> " in scope"
+          return localDecls
+        else let matchesImportScope match = case _ann match of
+                    ImportedDecl fqn _ -> Just scopeName == _scopeName fqn
+                    _ -> False
+             in return $ filter matchesImportScope matches
+    -- The reference is only valid when a match exists and is unambiguous,
+    -- i.e. in cases when compatibleMatches contains exactly one element.
+    when (null compatibleMatches) $ -- no match
+      throwLocatedE UnboundTopLevelErr src $ pshow ref
+    parentPkgName <- getParentPackageName
+    let toFQN n declO = case declO of
+          LocalDecl {} -> FullyQualifiedName (Just parentPkgName) n
+          ImportedDecl fqn _ -> fqn
+    unless (null $ tail compatibleMatches) $ -- more than one match
+      throwLocatedE AmbiguousTopLevelRefErr src $ pshow ref <>
+        "'. Candidates are: " <> T.intercalate ", " (
+          map (\m -> pshow $ toFQN (nodeName m) (_ann m)) compatibleMatches)
+    return $ head compatibleMatches
 
 -- === renamings manipulation ===
 
 -- TODO: coercion w/o RefRenaming type?
-checkRenamingBlock
-  :: MRenamingBlock PhParse
-  -> MgMonad (MRenamingBlock PhCheck)
-checkRenamingBlock (Ann blockSrc (MRenamingBlock renamings)) = do
-  checkedRenamings <- traverse checkInlineRenaming renamings
-  return $ Ann blockSrc $ MRenamingBlock checkedRenamings
+checkRenamingBlock :: MRenamingBlock PhParse -> MgMonad TcRenamingBlock
+checkRenamingBlock (Ann blockSrc (MRenamingBlock renamings)) =
+  Ann blockSrc . MRenamingBlock <$> traverse checkInlineRenaming renamings
   where
-    checkInlineRenaming
-      :: MRenaming PhParse
-      -> MgMonad (MRenaming PhCheck)
+    checkInlineRenaming :: MRenaming PhParse -> MgMonad TcRenaming
     checkInlineRenaming (Ann src renaming) = case renaming of
-      -- It seems that the below pattern matching can not be avoided, due to
-      -- coercion concerns (https://gitlab.haskell.org/ghc/ghc/-/issues/15683).
-      InlineRenaming r -> return $
-        Ann (LocalDecl src) (InlineRenaming r)
+      InlineRenaming r -> return $ Ann (LocalDecl src) (InlineRenaming r)
       RefRenaming _ -> throwLocatedE CompilerErr src $ "references left " <>
         "in renaming block at checking time"
 
-expandRenamingBlock
-  :: Env [MNamedRenaming PhCheck]
-  -> MRenamingBlock PhParse
-  -> MgMonad (MRenamingBlock PhCheck)
+expandRenamingBlock :: Env [TcNamedRenaming] -> MRenamingBlock PhParse
+                    -> MgMonad TcRenamingBlock
 expandRenamingBlock env (Ann src (MRenamingBlock renamings)) =
   Ann src . MRenamingBlock <$>
     (foldl (<>) [] <$> mapM (expandRenaming env) renamings)
 
-expandRenaming
-  :: Env [MNamedRenaming PhCheck]
-  -> MRenaming PhParse
-  -> MgMonad [MRenaming PhCheck]
+
+expandRenaming :: Env [TcNamedRenaming] -> MRenaming PhParse
+               -> MgMonad [TcRenaming]
 expandRenaming env (Ann src renaming) = case renaming of
-  InlineRenaming ir -> return
-    [Ann (LocalDecl src) (InlineRenaming ir)]
+  InlineRenaming ir -> return [Ann (LocalDecl src) (InlineRenaming ir)]
   RefRenaming ref -> do
     Ann _ (MNamedRenaming _ (Ann _ (MRenamingBlock renamings))) <-
       lookupTopLevelRef src env ref
     return renamings
 
-mkInlineRenamings :: MRenamingBlock PhCheck -> [InlineRenaming]
+mkInlineRenamings :: TcRenamingBlock -> [InlineRenaming]
 mkInlineRenamings (Ann _ (MRenamingBlock renamings)) =
     map mkInlineRenaming renamings
-  where
-    mkInlineRenaming :: MRenaming PhCheck -> InlineRenaming
-    mkInlineRenaming (Ann _ renaming) = case renaming of
-      InlineRenaming ir -> ir
-      RefRenaming v -> absurd v
+  where mkInlineRenaming (Ann _ r) = case r of InlineRenaming ir -> ir
+                                               RefRenaming v -> absurd v
 
 -- === declaration manipulation ===
 
 isLocalDecl :: XAnn p e ~ DeclOrigin => Ann p e -> Bool
-isLocalDecl (Ann declO _) = case declO of LocalDecl {} -> True ; _ -> False
+isLocalDecl d = case _ann d of LocalDecl {} -> True ; _ -> False
 
 -- === expression manipulation ===
 
