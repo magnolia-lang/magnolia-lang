@@ -6,8 +6,10 @@ module Util (
   -- * MgMonad utils
     MgMonad
   , runMgMonad
-  -- ** MgMonad error-related utils
+  -- ** MgMonad scope-related utils
   , enter
+  , getParentPackageName
+  -- ** MgMonad error-related utils
   , foldMAccumErrors
   , foldMAccumErrorsAndFail
   , recover
@@ -41,7 +43,7 @@ import qualified Control.Monad.Trans.Reader as R
 import qualified Control.Monad.Trans.State as St
 import qualified Data.List as L
 import qualified Data.Map as M
-import Data.Maybe (fromJust, isNothing)
+import Data.Maybe (fromJust)
 import qualified Data.Set as S
 import Data.Text.Prettyprint.Doc (Pretty)
 import qualified Data.Text.Lazy as T
@@ -127,6 +129,17 @@ recoverWithDefault f b a = f a `catchE` const (return b)
 parentScopes :: MgMonad [Name]
 parentScopes = L.reverse <$> ask
 
+-- | Returns the innermost package name associated with the computation. An
+-- exception is thrown if it doesn't exist.
+getParentPackageName :: MgMonad Name
+getParentPackageName = do
+  ps <- ask
+  case L.find ((== NSPackage) . _namespace) ps of
+    Nothing -> throwNonLocatedE CompilerErr
+      "attempted to query a parent package name but none exists"
+    Just name -> return name
+
+
 -- | Runs a computation within a child scope.
 enter :: Name      -- ^ the name of the child scope
       -> MgMonad a -- ^ the computation
@@ -181,17 +194,16 @@ lookupTopLevelRef src env ref@(FullyQualifiedName mscopeName targetName) =
       if null matches then throwLocatedE CompilerErr src $
         "name " <> pshow targetName <> " exists but is not bound to anything"
       else do
+        let localDecls = filter isLocalDecl matches
         compatibleMatches <-
-            if isNothing mscopeName then do
+          case mscopeName of
+            Nothing -> do
               -- There are two valid cases in which it is possible not to
               -- provide a scope name:
               -- (1) there is only one element in scope corresponding to the
               --     target name, and the code is therefore unambiguous; in
               --     this case, the name of the scope is here optional;
               -- (2) there is exactly one locally defined element in scope.
-              --     In this case, the name of the scope *can not* be provided,
-              --     because the surrounding package is not yet *in scope*.
-              let localDecls = filter isLocalDecl matches
               if null localDecls then return matches
               else do
                 unless (null $ tail localDecls) $
@@ -199,15 +211,27 @@ lookupTopLevelRef src env ref@(FullyQualifiedName mscopeName targetName) =
                     "there are several locally defined top-level constructs " <>
                     "with the name " <> pshow targetName <> " in scope"
                 return localDecls
-            else return $ filter (matchesImportScope (fromJust mscopeName))
-                                  matches
+            Just scopeName -> do
+              parentPackageName <- getParentPackageName
+              if scopeName == parentPackageName
+              then do
+                when (null localDecls) $
+                  throwLocatedE UnboundTopLevelErr src $ pshow ref
+                unless (null $ tail localDecls) $
+                  throwLocatedE CompilerErr src $
+                    "there are several locally defined top-level constructs " <>
+                    "with the name " <> pshow targetName <> " in scope"
+                return localDecls
+              else return $ filter (matchesImportScope (fromJust mscopeName))
+                                    matches
         -- The reference is only valid when a match exists and is unambiguous,
         -- i.e. in cases when compatibleMatches contains exactly one element.
         when (null compatibleMatches) $ -- no match
           throwLocatedE UnboundTopLevelErr src $ pshow ref
         unless (null $ tail compatibleMatches) $ -- more than one match
           throwLocatedE AmbiguousTopLevelRefErr src $ pshow ref <>
-            "'. Candidates are: " <> pshow (map mkFQName compatibleMatches)
+            "'. Candidates are: " <>
+            T.intercalate ", " (map (pshow . mkFQName) compatibleMatches)
         return $ head compatibleMatches
   where
     matchesImportScope

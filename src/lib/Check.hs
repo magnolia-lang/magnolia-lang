@@ -99,14 +99,14 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) =
   let callables = getCallableDecls decls
       isProgram = moduleType == Program
   -- Step 1: expand uses
-  (depScope, checkedDeps) <- do
+  (depScope, tcDeps) <- do
       -- TODO: check here that we are only importing valid types of modules.
       -- For instance, a program can not be imported into a concept, unless
       -- downcasted explicitly to a signature/concept.
-      (depScopeList, checkedDeps) <- unzip <$>
-        mapM (buildModuleFromDependency tlDecls) deps
-      depScope <- foldM mergeModules M.empty depScopeList
-      return (depScope, checkedDeps)
+      tcDeps <- mapM (checkModuleDep tlDecls) deps
+      depScope <- foldM (\acc dep -> mkEnvFromDep tlDecls dep
+                                  >>= mergeModules acc) M.empty tcDeps
+      return (depScope, tcDeps)
   -- TODO: hacky step, make prelude.
   -- Step 2: register predicate functions if needed
   hackyScope <- foldM insertAndMergeDecl depScope (hackyPrelude isProgram)
@@ -132,7 +132,7 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) =
   -- TODO: make module
   let resultModuleDecl = MModuleDecl $
         Ann { _ann = LocalDecl modSrc
-            , _elem = MModule moduleType moduleName finalScope checkedDeps
+            , _elem = MModule moduleType moduleName finalScope tcDeps
             }
   return $ M.insertWith (<>) moduleName [resultModuleDecl] tlDecls
   where
@@ -816,32 +816,36 @@ checkProto checkGuards env
           checkTypeExists env (WithSrc argSrc typ)
           return $ Ann typ (Var mode varName typ)
 
-buildModuleFromDependency
-  :: Env [TcTopLevelDecl]
-  -> MModuleDep PhParse
-  -> MgMonad (Env [TcDecl], TcModuleDep)
-buildModuleFromDependency env (Ann src (MModuleDep ref renamings castToSig)) =
-  do  match <- lookupTopLevelRef src (M.map getModules env) ref
-      -- TODO: strip non-signature elements here.
-      decls <- if castToSig
-        then throwLocatedE NotImplementedErr src "casting to signature"
-        else return $ moduleDecls match
-      -- We add a new local annotation, where the source information comes from
-      -- the dependency declaration.
-      let mkLocalDecl d = let localDecl = AbstractLocalDecl src in case d of
-            TypeDecl (Ann (mconDecl, absDeclOs) td) ->
-              TypeDecl (Ann (mconDecl, localDecl <| absDeclOs) td)
-            CallableDecl (Ann (mconDecl, absDeclOs) cd) ->
-              CallableDecl (Ann (mconDecl, localDecl <| absDeclOs) cd)
-          localDecls = M.map (map mkLocalDecl) decls
+checkModuleDep :: Env [TcTopLevelDecl]
+               -> MModuleDep PhParse
+               -> MgMonad TcModuleDep
+checkModuleDep env (Ann src (MModuleDep fqRef renamings castToSig)) = do
+  (Ann refDeclO _) <- lookupTopLevelRef src (M.map getModules env) fqRef
+  parentPackageName <- getParentPackageName
+  let resolvedRef = case refDeclO of
+        LocalDecl {} -> FullyQualifiedName (Just parentPackageName)
+                                           (_targetName fqRef)
+        ImportedDecl fqName _ -> fqName
+  tcRenamings <-
+    mapM (expandRenamingBlock (M.map getNamedRenamings env)) renamings
+  return $ Ann src (MModuleDep resolvedRef tcRenamings castToSig)
+
+mkEnvFromDep :: Env [TcTopLevelDecl] -> TcModuleDep -> MgMonad (Env [TcDecl])
+mkEnvFromDep env (Ann src (MModuleDep fqRef tcRenamings castToSig)) = do
+  tlRef <- lookupTopLevelRef src (M.map getModules env) fqRef
+  decls <- if castToSig
+           then throwLocatedE NotImplementedErr src "casting to signature"
+           else return $ moduleDecls tlRef
+  -- We add a new local annotation, where the source information comes from
+  -- the dependency declaration.
+  let mkLocalDecl d = let localDecl = AbstractLocalDecl src in case d of
+        TypeDecl (Ann (mconDecl, absDeclOs) td) ->
+          TypeDecl (Ann (mconDecl, localDecl <| absDeclOs) td)
+        CallableDecl (Ann (mconDecl, absDeclOs) cd) ->
+          CallableDecl (Ann (mconDecl, localDecl <| absDeclOs) cd)
+      localDecls = M.map (map mkLocalDecl) decls
       -- TODO: gather here env of known renamings
-      checkedRenamings <-
-        mapM (expandRenamingBlock (M.map getNamedRenamings env)) renamings
-      renamedDecls <- foldM applyRenamingBlock localDecls checkedRenamings
-      -- TODO: do this well
-      let checkedDep = Ann src (MModuleDep ref checkedRenamings castToSig)
-      -- TODO: hold checkedModuleDeps in M.Map FQN Deps (change key type)
-      return (renamedDecls, checkedDep)
+  foldM applyRenamingBlock localDecls tcRenamings
 
 -- TODO: cleanup duplicates, make a set of MDecl instead of a list?
 -- TODO: finish renamings

@@ -101,7 +101,7 @@ instance Pretty NameSpace where
 
 instance Pretty FullyQualifiedName where
   pretty (FullyQualifiedName mscopeName targetName) =
-    maybe "" (\n -> p n <+> ".") mscopeName <+> p targetName
+    maybe "" (\n -> p n <> ".") mscopeName <> p targetName
 
 instance (Show (e p), Pretty (e p)) => Pretty (Ann p e) where
   pretty = p . _elem
@@ -169,9 +169,11 @@ instance Pretty (MModule' PhCheck) where
 
 instance Pretty (MModuleDep' PhCheck) where
   pretty (MModuleDep name renamingBlocks castToSig) =
-    let pName = if castToSig then "signature(" <+> p name <+> ")"
+    let pName = if castToSig then "signature(" <> p name <> ")"
                              else p name
-    in pName <+> align (vsep (map p renamingBlocks)) <> ";"
+    in pName <> (if not $ null renamingBlocks
+                 then " " <> align (vsep (map p renamingBlocks))
+                 else "") <> ";"
 
 instance Pretty (MRenamingBlock' PhCheck) where
   pretty (MRenamingBlock renamings) =

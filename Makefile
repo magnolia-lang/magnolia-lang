@@ -12,6 +12,7 @@ lint:
 test-targets = declScopeTests \
 		externalTests \
 		modeTests \
+		packageTests \
 		parsingTests \
 		requirementTests \
 	       	stateHandlingTests \

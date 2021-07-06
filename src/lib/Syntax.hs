@@ -65,8 +65,8 @@ data Command = LoadPackage String
 
 data PackageHead = PackageHead { _packageHeadPath :: FilePath
                                , _packageHeadStr :: String
-                               , _packageHeadName :: Name
-                               , _packageHeadImports :: [WithSrc Name]
+                               , _packageHeadName :: FullyQualifiedName
+                               , _packageHeadImports :: [FullyQualifiedName]
                                }
                    deriving (Eq, Show)
 
@@ -441,6 +441,9 @@ instance NamedNode (MVar typAnnType p) where
 
 class HasDependencies a where
   dependencies :: a -> [FullyQualifiedName]
+
+instance HasDependencies PackageHead where
+  dependencies = _packageHeadImports
 
 instance HasDependencies (MModule PhParse) where
   dependencies (Ann _ modul) = case modul of
