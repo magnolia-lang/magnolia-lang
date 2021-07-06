@@ -8,7 +8,7 @@ module Util (
   , runMgMonad
   -- ** MgMonad scope-related utils
   , enter
-  , parentPackageName
+  , getParentPackageName
   -- ** MgMonad error-related utils
   , foldMAccumErrors
   , foldMAccumErrorsAndFail
@@ -131,8 +131,8 @@ parentScopes = L.reverse <$> ask
 
 -- | Returns the innermost package name associated with the computation. An
 -- exception is thrown if it doesn't exist.
-parentPackageName :: MgMonad Name
-parentPackageName = do
+getParentPackageName :: MgMonad Name
+getParentPackageName = do
   ps <- ask
   case L.find ((== NSPackage) . _namespace) ps of
     Nothing -> throwNonLocatedE CompilerErr
@@ -212,8 +212,8 @@ lookupTopLevelRef src env ref@(FullyQualifiedName mscopeName targetName) =
                     "with the name " <> pshow targetName <> " in scope"
                 return localDecls
             Just scopeName -> do
-              parentPkgName <- parentPackageName
-              if scopeName == parentPkgName
+              parentPackageName <- getParentPackageName
+              if scopeName == parentPackageName
               then do
                 when (null localDecls) $
                   throwLocatedE UnboundTopLevelErr src $ pshow ref

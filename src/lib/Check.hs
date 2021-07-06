@@ -821,9 +821,9 @@ checkModuleDep :: Env [TcTopLevelDecl]
                -> MgMonad TcModuleDep
 checkModuleDep env (Ann src (MModuleDep fqRef renamings castToSig)) = do
   (Ann refDeclO _) <- lookupTopLevelRef src (M.map getModules env) fqRef
-  parentPkgName <- parentPackageName
+  parentPackageName <- getParentPackageName
   let resolvedRef = case refDeclO of
-        LocalDecl {} -> FullyQualifiedName (Just parentPkgName)
+        LocalDecl {} -> FullyQualifiedName (Just parentPackageName)
                                            (_targetName fqRef)
         ImportedDecl fqName _ -> fqName
   tcRenamings <-
