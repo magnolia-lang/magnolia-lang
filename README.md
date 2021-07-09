@@ -5,6 +5,9 @@ integration](https://github.com/magnolia-lang/magnolia-lang/actions/workflows/ci
 
 Magnolia is a research programming language based on the theory of institutions.
 
+⚠️ The compiler is still at an experimental stage, and not yet fully functional.
+Do not rely on anything to remain stable for the moment. ⚠️
+
 ## How to compile
 
 The compiler has been tested with GHC 8.10.3 and is built using `cabal`.
@@ -57,46 +60,7 @@ SomeOtherConcept
 
 ## How to contribute
 
-Feel free to open issues and pull requests! A brief overview of implemented and
-unimplemented features is available below. If you submit a pull request for one
-of the features marked as missing, please also update the README.
-
-If more details are necessary, feel free to ping me (bchetioui) directly and
-we can discuss them.
-
-### Feature overview
-
-#### Missing features
-
-- [ ] Satisfactions handling
-- [ ] Extensive testing of the compiler
-- [ ] Code generation
-- [ ] Documentation (*the code base is small, so it is not yet critical*)
-- [x] Distinction between "normal" blocks and value blocks
-- [ ] Assignment out of the AST, and related type inference
-
-#### Partially implemented features
-
-Since the language design is still evolving, nothing is fully implemented. The
-following features are partially supported:
-
-- [ ] Error diagnostics (*can be improved by improving error messages, and error
-  locs*)
-- [ ] Type and consistency checking (*some edge cases are not handled, left as
-  TODOs; error recovery can be added in some places*)
-- [ ] Imports (*the boundary between file names and package names could be
-  clarified; fully qualified name resolution is also not really supported yet*)
-- [ ] References to modules, renamings (*some module casts are still
-  unimplemented, e.g. "concept X = I" where I is an implementation is not yet
-  handled*)
-
-In addition, there are a number of TODOs left in the codebase. I have not done
-a great job at writing them so as to be directly exploitable without reading
-the code in more details, but they should give a fairly good idea of where we
-are at.
-
-Some invariants could also be enforced better across the codebase, e.g. by
-consistently using NonEmpty lists in cases when we should always find a match.
+Feel free to open issues and pull requests!
 
 ### Style guide
 
