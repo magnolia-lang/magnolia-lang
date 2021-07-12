@@ -1,7 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Check (checkModule) where
+module Check (
+    checkModule
+  , checkPackage
+  ) where
 
 import Control.Applicative
 import Control.Monad.Except (foldM, lift, unless, when)
@@ -14,6 +17,7 @@ import Data.Traversable (for)
 import Data.Tuple (swap)
 import Data.Void (absurd)
 
+import qualified Data.Graph as G
 import qualified Data.List as L
 import Data.List.NonEmpty (NonEmpty ((:|)), (<|))
 import qualified Data.List.NonEmpty as NE
@@ -25,6 +29,111 @@ import Env
 import PPrint
 import Syntax
 import Util
+
+-- | Typechecks a Magnolia package based on a pre-typechecked environment.
+-- Within 'checkPackage', we assume that all the other packages on which the
+-- input depends have been previously type checked and are accessible through
+-- the environment passed as the first argument.
+checkPackage :: Env TcPackage    -- ^ an environment of loaded packages
+             -> MPackage PhParse -- ^ the package to typecheck
+             -> MgMonad TcPackage
+checkPackage globalEnv (Ann src (MPackage name decls deps)) = do
+    globalEnvWithImports <- loadDependencies
+    -- 1. Check for cycles
+    namedRenamings <- detectCycle (getNamedRenamings decls)
+    modules <- detectCycle (getModules decls)
+    -- 2. Check renamings
+    globalEnvWithRenamings <- updateEnvWith globalEnvWithImports
+      (((MNamedRenamingDecl <$>) .) . checkNamedRenaming) namedRenamings
+    -- TODO: deal with renamings first, then modules, then satisfactions
+    -- 2. Check modules
+    globalEnvWithModules <- updateEnvWith globalEnvWithRenamings
+      (((MModuleDecl <$>) .) . checkModule) modules
+    -- 3. Satisfactions
+    -- TODO: ^
+    -- TODO: deal with deps and other tld types
+    return $ Ann src (MPackage name globalEnvWithModules [])
+  where
+    detectCycle :: (HasDependencies a, HasName a, HasSrcCtx a)
+                => [a] -> MgMonad [a]
+    detectCycle = (L.reverse <$>) . foldMAccumErrors
+      (\acc c -> (:acc) <$> checkNoCycle c) [] . topSortTopLevelE name
+
+    updateEnvWith env' f es = foldMAccumErrors (updateEnvWith' f) env' es
+
+    updateEnvWith' :: HasName a
+                   => (Env [TcTopLevelDecl] -> a -> MgMonad TcTopLevelDecl)
+                   -> Env [TcTopLevelDecl]
+                   -> a
+                   -> MgMonad (Env [TcTopLevelDecl])
+    updateEnvWith' f env' e = do
+      result <- f env' e
+      return $ M.insertWith (<>) (nodeName e) [result] env'
+
+    loadDependencies = foldMAccumErrors loadDependency M.empty deps
+
+    loadDependency :: Env [TcTopLevelDecl]
+                   -> MPackageDep PhParse
+                   -> MgMonad (Env [TcTopLevelDecl])
+    loadDependency localEnv (Ann src' dep) =
+      case M.lookup (nodeName dep) globalEnv of
+        Nothing -> throwLocatedE MiscErr src' $ "attempted to load package " <>
+          pshow (nodeName dep) <> " but package couldn't be found"
+        Just (Ann _ pkg) ->
+          let importedLocalDecls =
+                M.map (foldl (importLocal (nodeName dep)) [])
+                      (_packageDecls pkg)
+          in return $ M.unionWith (<>) importedLocalDecls localEnv
+
+    importLocal depName acc decl = case decl of
+      MNamedRenamingDecl (Ann (LocalDecl src') node) ->
+        MNamedRenamingDecl (Ann (mkImportedDecl depName src' node) node):acc
+      MModuleDecl (Ann (LocalDecl src') node) ->
+        MModuleDecl (Ann (mkImportedDecl depName src' node) node):acc
+      MSatisfactionDecl (Ann (LocalDecl src') node) ->
+        MSatisfactionDecl (Ann (mkImportedDecl depName src' node) node):acc
+      -- We do not import non-local decls from other packages.
+      _ -> acc
+
+    mkImportedDecl :: HasName a => Name -> SrcCtx -> a -> DeclOrigin
+    mkImportedDecl depName src' node =
+      ImportedDecl (FullyQualifiedName (Just depName) (nodeName node)) src'
+
+
+-- | Throws an error if a strongly connected component is cyclic. Otherwise,
+-- returns the vertex contained in the acyclic component.
+checkNoCycle :: (HasSrcCtx a, HasName a) => G.SCC a -> MgMonad a
+checkNoCycle (G.CyclicSCC vertices) =
+  let cyclicErr = T.intercalate ", " $ map (pshow . nodeName) vertices in
+  throwLocatedE CyclicErr (srcCtx (head vertices)) cyclicErr
+checkNoCycle (G.AcyclicSCC vertex) = return vertex
+
+-- | Checks that a named renaming is valid, i.e. that it can be fully inlined.
+checkNamedRenaming :: Env [TcTopLevelDecl]
+                   -> MNamedRenaming PhParse
+                   -> MgMonad TcNamedRenaming
+checkNamedRenaming env (Ann src (MNamedRenaming name renamingBlock)) =
+  Ann (LocalDecl src) . MNamedRenaming name <$>
+    checkRenamingBlock (M.map getNamedRenamings env) renamingBlock
+
+-- | Checks that a renaming block is valid.
+-- TODO: part of the logic from applyRenamingBlock should be moved here.
+--       For instance, the part where we check whether a name is mapped to
+--       two targets.
+checkRenamingBlock :: Env [TcNamedRenaming]
+                   -> MRenamingBlock PhParse
+                   -> MgMonad TcRenamingBlock
+checkRenamingBlock env (Ann src (MRenamingBlock renamingList)) =
+  Ann src . MRenamingBlock <$>
+    (foldr (<>) [] <$> mapM inlineRenaming renamingList)
+  where
+    inlineRenaming :: MRenaming PhParse -> MgMonad [TcRenaming]
+    inlineRenaming (Ann src' renaming) = case renaming of
+      InlineRenaming ir -> return [Ann (LocalDecl src') (InlineRenaming ir)]
+      RefRenaming ref -> do
+        Ann _ (MNamedRenaming _ (Ann _ (MRenamingBlock renamings))) <-
+          lookupTopLevelRef src' env ref
+        return renamings
 
 -- In a given callable scope in Magnolia, the following variable-related rules
 -- apply:
@@ -81,15 +190,12 @@ mkScopeVarsImmutable = M.map mkImmutable
 checkModule
   :: Env [TcTopLevelDecl]
   -> MModule PhParse
-  -> MgMonad (Env [TcTopLevelDecl])
+  -> MgMonad TcModule
 checkModule tlDecls (Ann src (RefModule typ name ref)) = enter name $ do
   -- TODO: cast module: do we need to check out the deps?
   ~(Ann _ (MModule _ _ decls deps)) <-
     lookupTopLevelRef src (M.map getModules tlDecls) ref >>= castModule typ
-  let renamedModule = MModule typ name decls deps :: MModule' PhCheck
-      renamedModuleDecl = MModuleDecl $
-        Ann (LocalDecl src) renamedModule
-  return $ M.insertWith (<>) name [renamedModuleDecl] tlDecls
+  return $ Ann (LocalDecl src) $ MModule typ name decls deps
 
 checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) =
   enter moduleName $ do
@@ -131,11 +237,9 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) =
     traverse_ (traverse_ (recover checkImplemented)) finalScope
   -- TODO: check that name is unique?
   -- TODO: make module
-  let resultModuleDecl = MModuleDecl $
-        Ann { _ann = LocalDecl modSrc
-            , _elem = MModule moduleType moduleName finalScope tcDeps
-            }
-  return $ M.insertWith (<>) moduleName [resultModuleDecl] tlDecls
+  return $ Ann { _ann = LocalDecl modSrc
+               , _elem = MModule moduleType moduleName finalScope tcDeps
+               }
   where
     types :: [TcTypeDecl]
     types = map mkTypeDecl (getTypeDecls decls)
@@ -818,7 +922,7 @@ checkModuleDep env (Ann src (MModuleDep fqRef renamings castToSig)) = do
                                            (_targetName fqRef)
         ImportedDecl fqName _ -> fqName
   tcRenamings <-
-    mapM (expandRenamingBlock (M.map getNamedRenamings env)) renamings
+    mapM (checkRenamingBlock (M.map getNamedRenamings env)) renamings
   return $ Ann src (MModuleDep resolvedRef tcRenamings castToSig)
 
 mkEnvFromDep :: Env [TcTopLevelDecl] -> TcModuleDep -> MgMonad (Env [TcDecl])
@@ -849,7 +953,7 @@ applyRenamingBlock
   -> MgMonad ModuleScope
 applyRenamingBlock modul renamingBlock@(Ann src (MRenamingBlock renamings)) = do
   -- TODO: pass renaming decls to expand them
-  let inlineRenamings = mkInlineRenamings renamingBlock
+  let inlineRenamings = renamingBlockToInlineRenamings renamingBlock
       renamingMap = M.fromList inlineRenamings
       (sources, targets) = ( L.map fst inlineRenamings
                            , L.map snd inlineRenamings

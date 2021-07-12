@@ -25,10 +25,7 @@ module Util (
   , lookupTopLevelRef
   , topSortTopLevelE
   -- * Renaming manipulation utils
-  , mkInlineRenamings
-  , expandRenaming
-  , expandRenamingBlock
-  , checkRenamingBlock
+  , renamingBlockToInlineRenamings
   -- * Declaration manipulation utils
   , isLocalDecl
   -- * Expression manipulations utils
@@ -48,7 +45,7 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 import Data.Text.Prettyprint.Doc (Pretty)
 import qualified Data.Text.Lazy as T
-import Data.Void
+import Data.Void (absurd)
 
 import Env
 import PPrint
@@ -251,35 +248,8 @@ topSortTopLevelE pkgName elems = G.stronglyConnComp
 
 -- === renamings manipulation ===
 
--- TODO: coercion w/o RefRenaming type?
-checkRenamingBlock :: MRenamingBlock PhParse -> MgMonad TcRenamingBlock
-checkRenamingBlock (Ann blockSrc (MRenamingBlock renamings)) =
-  Ann blockSrc . MRenamingBlock <$> traverse checkInlineRenaming renamings
-  where
-    checkInlineRenaming :: MRenaming PhParse -> MgMonad TcRenaming
-    checkInlineRenaming (Ann src renaming) = case renaming of
-      InlineRenaming r -> return $ Ann (LocalDecl src) (InlineRenaming r)
-      RefRenaming _ -> throwLocatedE CompilerErr src $ "references left " <>
-        "in renaming block at checking time"
-
-expandRenamingBlock :: Env [TcNamedRenaming] -> MRenamingBlock PhParse
-                    -> MgMonad TcRenamingBlock
-expandRenamingBlock env (Ann src (MRenamingBlock renamings)) =
-  Ann src . MRenamingBlock <$>
-    (foldl (<>) [] <$> mapM (expandRenaming env) renamings)
-
-
-expandRenaming :: Env [TcNamedRenaming] -> MRenaming PhParse
-               -> MgMonad [TcRenaming]
-expandRenaming env (Ann src renaming) = case renaming of
-  InlineRenaming ir -> return [Ann (LocalDecl src) (InlineRenaming ir)]
-  RefRenaming ref -> do
-    Ann _ (MNamedRenaming _ (Ann _ (MRenamingBlock renamings))) <-
-      lookupTopLevelRef src env ref
-    return renamings
-
-mkInlineRenamings :: TcRenamingBlock -> [InlineRenaming]
-mkInlineRenamings (Ann _ (MRenamingBlock renamings)) =
+renamingBlockToInlineRenamings :: TcRenamingBlock -> [InlineRenaming]
+renamingBlockToInlineRenamings (Ann _ (MRenamingBlock renamings)) =
     map mkInlineRenaming renamings
   where mkInlineRenaming (Ann _ r) = case r of InlineRenaming ir -> ir
                                                RefRenaming v -> absurd v

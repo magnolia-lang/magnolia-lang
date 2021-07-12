@@ -28,101 +28,13 @@ upsweep = foldMAccumErrorsAndFail go M.empty
        -> MgMonad TcGlobalEnv
     go _ (G.CyclicSCC pkgHeads) =
       let pCycle = T.intercalate ", " $ map (pshow . _packageHeadName) pkgHeads
-      in throwNonLocatedE CyclicPackageErr pCycle
+      in throwNonLocatedE CyclicErr pCycle
 
-    go globalEnv (G.AcyclicSCC pkgHead) =
+    go env (G.AcyclicSCC pkgHead) =
       enter (fromFullyQualifiedName (_packageHeadName pkgHead)) $ do
-        Ann pkgAnn (MPackage name decls deps) <-
-          parsePackage (_packageHeadPath pkgHead) (_packageHeadStr pkgHead)
-        let allModules = getModules decls
-            allNamedRenamings = getNamedRenamings decls
-        -- TODO: add local/external ann for nodes
-        importedEnv <- foldMAccumErrors (loadDependency globalEnv) M.empty deps
-        -- 1. Renamings
-        envWithRenamings <- upsweepNamedRenamings importedEnv $
-          topSortTopLevelE name allNamedRenamings
-        -- TODO: deal with renamings first, then modules, then satisfactions
-        -- 2. Modules
-        tcModulesNOTFINISHED <- upsweepModules envWithRenamings $
-          topSortTopLevelE name allModules
-        -- 3. Satisfactions
-        -- TODO: ^
-        -- TODO: deal with deps and other tld types
-        let tcPackage = Ann pkgAnn (MPackage name tcModulesNOTFINISHED [])
-        return $ M.insert name tcPackage globalEnv
-
-loadDependency :: TcGlobalEnv -> Env [TcTopLevelDecl]
-               -> MPackageDep PhParse -> MgMonad (Env [TcTopLevelDecl])
-loadDependency globalEnv localEnv (Ann src dep) =
-  case M.lookup (nodeName dep) globalEnv of
-    Nothing -> throwLocatedE MiscErr src $ "attempted to load package " <>
-      pshow (nodeName dep) <> " but package couldn't be found"
-    Just (Ann _ pkg) -> do
-      let importedLocalDecls =
-            M.map (foldl (importLocal (nodeName dep)) [])
-                  (_packageDecls pkg)
-      return $ M.unionWith (<>) importedLocalDecls localEnv
-
-importLocal :: Name             -- ^ Name of the package to import from
-            -> [TcTopLevelDecl]
-            -> TcTopLevelDecl
-            -> [TcTopLevelDecl]
-importLocal name acc decl = case decl of
-  MNamedRenamingDecl (Ann (LocalDecl src) node) ->
-    MNamedRenamingDecl (Ann (mkImportedDecl src node) node):acc
-  MModuleDecl (Ann (LocalDecl src) node) ->
-    MModuleDecl (Ann (mkImportedDecl src node) node):acc
-  MSatisfactionDecl (Ann (LocalDecl src) node) ->
-    MSatisfactionDecl (Ann (mkImportedDecl src node) node):acc
-  -- We do not import non-local decls from other packages.
-  _ -> acc
-  where
-    mkImportedDecl src node =
-      ImportedDecl (FullyQualifiedName (Just name) (nodeName node)) src
-
--- | Checks and expands a list of topologically sorted named renamings, and then
--- adds them to an initial top level environment.
--- TODO: optimize as needed, could be more elegant.
-upsweepNamedRenamings
-  :: Env [TcTopLevelDecl]             -- ^ The starting top level environment
-  -> [G.SCC (MNamedRenaming PhParse)] -- ^ The named renamings to check
-  -> MgMonad (Env [TcTopLevelDecl])
-upsweepNamedRenamings = foldMAccumErrors go
-  where
-    go
-      :: Env [TcTopLevelDecl]
-      -> G.SCC (MNamedRenaming PhParse)
-      -> MgMonad (Env [TcTopLevelDecl])
-    go _ (G.CyclicSCC namedBlock) =
-      let rCycle = T.intercalate ", " $ map (pshow . nodeName) namedBlock in
-      throwNonLocatedE CyclicNamedRenamingErr rCycle
-
-    go env (G.AcyclicSCC (Ann src (MNamedRenaming name renamingBlock))) = do
-      expandedBlock <-
-        expandRenamingBlock (M.map getNamedRenamings env) renamingBlock
-        -- TODO: expand named renamings
-      let tcNamedRenaming = Ann (LocalDecl src)
-                                (MNamedRenaming name expandedBlock)
-      return $ M.insertWith (<>) name [MNamedRenamingDecl tcNamedRenaming]
-                            env
-
--- | Checks a list of topologically sorted modules, and then adds them to an
--- initial top level environment.
-upsweepModules
-  :: Env [TcTopLevelDecl]      -- ^ The starting top level environment
-  -> [G.SCC (MModule PhParse)] -- ^ The modules to check
-  -> MgMonad (Env [TcTopLevelDecl])
-upsweepModules = foldMAccumErrors go
-  where
-    go
-      :: Env [TcTopLevelDecl]
-      -> G.SCC (MModule PhParse)
-      -> MgMonad (Env [TcTopLevelDecl])
-    go _ (G.CyclicSCC modules) =
-      let mCycle = T.intercalate ", " $ map (pshow . nodeName) modules in
-      throwNonLocatedE CyclicModuleErr mCycle
-
-    go env (G.AcyclicSCC modul) = checkModule env modul
+        pkg <- parsePackage (_packageHeadPath pkgHead) (_packageHeadStr pkgHead)
+        tcPkg <- checkPackage env pkg
+        return $ M.insert (nodeName pkg) tcPkg env
 
 -- TODO: cache and choose what to reload with granularity
 -- | Takes the path towards a Magnolia package and constructs its dependency

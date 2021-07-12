@@ -369,10 +369,7 @@ data ErrType = AmbiguousFunctionRefErr
              | AmbiguousProcedureRefErr
              | AmbiguousTopLevelRefErr
              | CompilerErr
-             | CyclicCallableErr
-             | CyclicModuleErr
-             | CyclicNamedRenamingErr
-             | CyclicPackageErr
+             | CyclicErr
              | DeclContextErr
              | InvalidDeclErr
              | MiscErr

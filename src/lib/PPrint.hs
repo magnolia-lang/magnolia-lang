@@ -60,10 +60,7 @@ instance Pretty ErrType where
     CompilerErr -> "Compiler bug!" <> line
       <> "Please report this at github.com/magnolia-lang/magnolia-lang"
       <> line
-    CyclicCallableErr -> cyclic "callables"
-    CyclicModuleErr -> cyclic "modules"
-    CyclicNamedRenamingErr -> cyclic "named renamings"
-    CyclicPackageErr -> cyclic "packages"
+    CyclicErr -> "Error: found cyclic dependency"
     DeclContextErr -> "Declaration context error"
     InvalidDeclErr -> "Declaration error"
     MiscErr -> "Error"
@@ -79,7 +76,6 @@ instance Pretty ErrType where
     UnboundVarErr -> unbound "variable"
     where
       ambiguous s = "Error: could not disambiguate between" <+> s
-      cyclic s = "Error: found cyclic dependency between" <+> s
       unbound s = "Error:" <+> s <+> "not in scope"
 
 instance Pretty Name where
