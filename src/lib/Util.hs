@@ -23,6 +23,7 @@ module Util (
   , isPkgPath
   -- * Top-level manipulation utils
   , lookupTopLevelRef
+  , topSortTopLevelE
   -- * Renaming manipulation utils
   , mkInlineRenamings
   , expandRenaming
@@ -41,6 +42,7 @@ import Control.Monad.Trans.Class (lift)
 import qualified Control.Monad.Trans.Except as E
 import qualified Control.Monad.Trans.Reader as R
 import qualified Control.Monad.Trans.State as St
+import qualified Data.Graph as G
 import qualified Data.List as L
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -232,6 +234,20 @@ lookupTopLevelRef src env ref = case M.lookup (_targetName ref) env of
         "'. Candidates are: " <> T.intercalate ", " (
           map (\m -> pshow $ toFQN (nodeName m) (_ann m)) compatibleMatches)
     return $ head compatibleMatches
+
+-- | Topologically sorts top-level named elements (i.e. named renamings
+-- declarations, modules) based on their local dependencies.
+topSortTopLevelE :: (HasDependencies a, HasName a) => Name -> [a] -> [G.SCC a]
+topSortTopLevelE pkgName elems = G.stronglyConnComp
+  [ ( e
+    , nodeName e
+    , map _targetName $ filter isLocalFullyQualifiedName (dependencies e)
+    )
+    | e <- elems
+  ]
+  where
+    isLocalFullyQualifiedName :: FullyQualifiedName -> Bool
+    isLocalFullyQualifiedName = maybe True (== pkgName) . _scopeName
 
 -- === renamings manipulation ===
 

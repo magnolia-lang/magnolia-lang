@@ -40,50 +40,16 @@ upsweep = foldMAccumErrorsAndFail go M.empty
         importedEnv <- foldMAccumErrors (loadDependency globalEnv) M.empty deps
         -- 1. Renamings
         envWithRenamings <- upsweepNamedRenamings importedEnv $
-          topSortRenamingDecls name allNamedRenamings
+          topSortTopLevelE name allNamedRenamings
         -- TODO: deal with renamings first, then modules, then satisfactions
         -- 2. Modules
         tcModulesNOTFINISHED <- upsweepModules envWithRenamings $
-          topSortModules name allModules
+          topSortTopLevelE name allModules
         -- 3. Satisfactions
         -- TODO: ^
         -- TODO: deal with deps and other tld types
         let tcPackage = Ann pkgAnn (MPackage name tcModulesNOTFINISHED [])
         return $ M.insert name tcPackage globalEnv
-
-topSortModules :: Name -> [MModule PhParse] -> [G.SCC (MModule PhParse)]
-topSortModules pkgName modules = G.stronglyConnComp
-    [ ( modul
-      , nodeName modul
-      , map _targetName $
-          filter (isLocalFullyQualifiedName pkgName) (dependencies modul)
-      )
-    | modul <- modules
-    ]
-
--- TODO: does that work for imported nodes? Non-existing dependencies?
-topSortRenamingDecls
-  :: Name -> [MNamedRenaming PhParse] -> [G.SCC (MNamedRenaming PhParse)]
-topSortRenamingDecls pkgName namedRenamings = G.stronglyConnComp
-    [ ( node
-      , name
-      , map _targetName $
-          filter (isLocalFullyQualifiedName pkgName) $
-            getRenamingDependencies renamingBlocks
-      )
-    | node@(Ann _ (MNamedRenaming name renamingBlocks)) <- namedRenamings
-    ]
-
-isLocalFullyQualifiedName :: Name -> FullyQualifiedName -> Bool
-isLocalFullyQualifiedName pkgName = maybe True (== pkgName) . _scopeName
-
-getRenamingDependencies :: MRenamingBlock PhParse -> [FullyQualifiedName]
-getRenamingDependencies (Ann _ (MRenamingBlock renamings)) =
-  foldl extractRenamingRef [] renamings
-  where
-    extractRenamingRef acc (Ann _ r) = case r of
-      InlineRenaming _ -> acc
-      RefRenaming name -> name:acc
 
 loadDependency :: TcGlobalEnv -> Env [TcTopLevelDecl]
                -> MPackageDep PhParse -> MgMonad (Env [TcTopLevelDecl])

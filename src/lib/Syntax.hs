@@ -534,18 +534,30 @@ instance HasName (MVar typAnnType p) where
 class HasDependencies a where
   dependencies :: a -> [FullyQualifiedName]
 
+instance HasDependencies (e p) => HasDependencies (Ann p e) where
+  dependencies = dependencies . _elem
+
 instance HasDependencies PackageHead where
   dependencies = _packageHeadImports
 
-instance HasDependencies (MModule PhParse) where
-  dependencies (Ann _ modul) = case modul of
+instance HasDependencies (MModule' PhParse) where
+  dependencies modul = case modul of
     MModule _ _ _ deps -> map (_depName . _elem) deps
     RefModule _ _ refName -> [refName]
 
-instance HasDependencies (MModule PhCheck) where
-  dependencies (Ann _ modul) = case modul of
+instance HasDependencies (MModule' PhCheck) where
+  dependencies modul = case modul of
     MModule _ _ _ deps -> map (_depName . _elem) deps
     RefModule _ _ v -> absurd v
+
+instance HasDependencies (MNamedRenaming' PhParse) where
+  dependencies (MNamedRenaming _ renamingBlock) =
+    dependencies renamingBlock
+
+instance HasDependencies (MRenamingBlock' PhParse) where
+  dependencies (MRenamingBlock renamings) =
+    foldr (\(Ann _ r) acc -> case r of RefRenaming n -> n:acc ; _ -> acc) []
+          renamings
 
 instance HasDependencies (MPackage p) where
   dependencies (Ann _ (MPackage _ _ deps)) =
