@@ -1,13 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Make (loadDependencyGraph, upsweep, TcGlobalEnv) where
+module Make (
+    -- * Passes
+    checkPass
+  , depAnalPass
+  , parsePass
+  )
+  where
 
 import Control.Monad (foldM, unless)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.Graph as G
 import qualified Data.List as L
 import qualified Data.Map as M
-import qualified Data.Text.Lazy as T
 
 import Check
 import Env
@@ -17,24 +22,33 @@ import Syntax
 import Util
 
 type TcGlobalEnv = Env (MPackage PhCheck)
+type ParsedPackage = MPackage PhParse
 
--- TODO: recover when tcing?
-upsweep :: [G.SCC PackageHead] -> MgMonad TcGlobalEnv
-upsweep = foldMAccumErrorsAndFail go M.empty
+-- -- === passes ===
+
+depAnalPass :: FilePath -> MgMonad [PackageHead]
+depAnalPass filepath = loadDependencyGraph filepath >>= detectCycle
   where
-    -- TODO: keep going?
-    go :: TcGlobalEnv
-       -> G.SCC PackageHead
-       -> MgMonad TcGlobalEnv
-    go _ (G.CyclicSCC pkgHeads) =
-      let pCycle = T.intercalate ", " $ map (pshow . _packageHeadName) pkgHeads
-      in throwNonLocatedE CyclicErr pCycle
+    detectCycle = (L.reverse <$>) . foldMAccumErrors
+      (\acc c -> (:acc) <$> checkNoCycle c) []
 
-    go env (G.AcyclicSCC pkgHead) =
-      enter (fromFullyQualifiedName (_packageHeadName pkgHead)) $ do
-        pkg <- parsePackage (_packageHeadPath pkgHead) (_packageHeadStr pkgHead)
-        tcPkg <- checkPackage env pkg
-        return $ M.insert (nodeName pkg) tcPkg env
+parsePass :: [PackageHead] -> MgMonad [ParsedPackage]
+parsePass pkgHeads =
+  let parseFn pkgHead = parsePackage (_packageHeadPath pkgHead)
+                                     (_packageHeadFileContent pkgHead)
+  in mapM parseFn pkgHeads
+
+-- | This function performs type and consistency checkings of a list of
+-- parsed packages. It is assumed that the packages passed as a parameter to
+-- checkPass are topologically sorted, so that each package is checked after
+-- its dependencies.
+checkPass :: [ParsedPackage] -> MgMonad TcGlobalEnv
+checkPass = foldMAccumErrorsAndFail go M.empty
+  where
+    go :: TcGlobalEnv -> ParsedPackage -> MgMonad TcGlobalEnv
+    go env parsedPkg = do
+      tcPkg <- checkPackage env parsedPkg
+      return $ M.insert (nodeName parsedPkg) tcPkg env
 
 -- TODO: cache and choose what to reload with granularity
 -- | Takes the path towards a Magnolia package and constructs its dependency

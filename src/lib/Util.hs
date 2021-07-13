@@ -21,6 +21,8 @@ module Util (
   , mkPkgPathFromName
   , mkPkgPathFromStr
   , isPkgPath
+  -- * Dependencies-related utils
+  , checkNoCycle
   -- * Top-level manipulation utils
   , lookupTopLevelRef
   , topSortTopLevelE
@@ -245,6 +247,14 @@ topSortTopLevelE pkgName elems = G.stronglyConnComp
   where
     isLocalFullyQualifiedName :: FullyQualifiedName -> Bool
     isLocalFullyQualifiedName = maybe True (== pkgName) . _scopeName
+
+-- | Throws an error if a strongly connected component is cyclic. Otherwise,
+-- returns the vertex contained in the acyclic component.
+checkNoCycle :: (HasSrcCtx a, HasName a) => G.SCC a -> MgMonad a
+checkNoCycle (G.CyclicSCC vertices) =
+  let cyclicErr = T.intercalate ", " $ map (pshow . nodeName) vertices in
+  throwLocatedE CyclicErr (srcCtx (head vertices)) cyclicErr
+checkNoCycle (G.AcyclicSCC vertex) = return vertex
 
 -- === renamings manipulation ===
 

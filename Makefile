@@ -25,7 +25,7 @@ update-tests: $(test-targets:%=update-output-%)
 
 check-output-%: tests/inputs/%.mg tests/outputs/%.mg.out build
 	$(eval tempfile := $(shell mktemp))
-	$(mgn) build $< > $(tempfile)
+	$(mgn) test --pass check $< > $(tempfile)
 	@diff $(tempfile) $(word 2, $^) > /dev/null && echo "OK" || (echo "Output is not matching for test file $<"; rm $(tempfile); exit 1)
 	@rm $(tempfile)
 
