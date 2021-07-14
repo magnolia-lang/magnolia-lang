@@ -22,7 +22,6 @@ import Syntax
 import Util
 
 type TcGlobalEnv = Env (MPackage PhCheck)
-type ParsedPackage = MPackage PhParse
 
 -- -- === passes ===
 

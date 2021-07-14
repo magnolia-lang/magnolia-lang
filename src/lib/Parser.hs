@@ -22,12 +22,6 @@ import Util
 
 type Parser = Parsec Void String
 
-type ParsedPackage = MPackage PhParse
-type ParsedDecl = MDecl PhParse
-type ParsedExpr = MExpr PhParse
-type ParsedTypedVar = TypedVar PhParse
-type ParsedMaybeTypedVar = MaybeTypedVar PhParse
-
 -- === exception handling utils ===
 
 throwNonLocatedParseError
@@ -115,31 +109,28 @@ parsePackage filePath s =
     Right pkg -> return pkg
 
 package :: Parser ParsedPackage
-package = annot package'
-  where
-    package' = do
-      pkgName <- keyword PackageKW *> packageName
-      deps <- choice
-        [ do keyword ImportKW ;
-             annot (MPackageDep <$> fullyQualifiedName NSDirectory NSPackage)
-                      `sepBy1` symbol ","
-        , return []
-        ] <* semi
-      decls <- manyTill (many semi *>
-                         topLevelDecl <* many semi) eof
-      return $ MPackage pkgName decls deps
+package = annot $ do
+  pkgName <- keyword PackageKW *> packageName
+  deps <- choice
+    [ do keyword ImportKW ;
+          annot (MPackageDep <$> fullyQualifiedName NSDirectory NSPackage)
+                  `sepBy1` symbol ","
+    , return []
+    ] <* semi
+  decls <- manyTill (many semi *> topLevelDecl <* many semi) eof
+  return $ MPackage pkgName decls deps
 
-topLevelDecl :: Parser (MTopLevelDecl PhParse)
+topLevelDecl :: Parser ParsedTopLevelDecl
 topLevelDecl =  try (MModuleDecl <$> moduleDecl)
             <|> (MNamedRenamingDecl <$> renamingDecl)
             <|> (MSatisfactionDecl <$> satisfaction)
 
-moduleDecl :: Parser (MModule PhParse)
+moduleDecl :: Parser ParsedModule
 moduleDecl = do
   typ <- moduleType
   name <- ModName <$> nameString
   symbol "="
-  annot $ inlineModule typ name <|> moduleRef typ name
+  inlineModule typ name <|> moduleRef typ name
 
 moduleType :: Parser MModuleType
 moduleType = (keyword ConceptKW >> return Concept)
@@ -147,20 +138,20 @@ moduleType = (keyword ConceptKW >> return Concept)
           <|> (keyword SignatureKW >> return Signature)
           <|> (keyword ProgramKW >> return Program)
 
-moduleRef :: MModuleType -> Name -> Parser (MModule' PhParse)
-moduleRef typ name = do
+moduleRef :: MModuleType -> Name -> Parser ParsedModule
+moduleRef typ name = annot $ do
   refName <- fullyQualifiedName NSPackage NSModule
   return $ RefModule typ name refName
 
-inlineModule :: MModuleType -> Name -> Parser (MModule' PhParse)
-inlineModule inTyp name = do
-  mexternal <- option Nothing (
-          do keyword ExternalKW
-             backend <- choice [ keyword CxxKW >> return Cxx
-                               , keyword JavaScriptKW >> return JavaScript
-                               , keyword PythonKW >> return Python]
-             externalName <- fullyQualifiedName NSDirectory NSPackage
-             return . Just $ External backend externalName)
+inlineModule :: MModuleType -> Name -> Parser ParsedModule
+inlineModule inTyp name = annot $ do
+  mexternal <- option Nothing (do
+    keyword ExternalKW
+    backend <- choice [ keyword CxxKW >> return Cxx
+                      , keyword JavaScriptKW >> return JavaScript
+                      , keyword PythonKW >> return Python]
+    externalName <- fullyQualifiedName NSDirectory NSPackage
+    return . Just $ External backend externalName)
   let typ = fromMaybe inTyp mexternal
   declsAndDeps <- braces $ many (try (Left <$> declaration typ)
                                  <|> (Right <$> moduleDependency))
@@ -168,37 +159,34 @@ inlineModule inTyp name = do
       deps  = [dep  | (Right dep) <- declsAndDeps]
   return $ MModule typ name decls deps
 
-renamingDecl :: Parser (MNamedRenaming PhParse)
-renamingDecl = annot renamingDecl'
-  where
-    renamingDecl' = do
-      keyword RenamingKW
-      name <- RenamingName <$> nameString
-      symbol "="
-      MNamedRenaming name <$> renamingBlock
+renamingDecl :: Parser ParsedNamedRenaming
+renamingDecl = annot $ do
+  keyword RenamingKW
+  name <- RenamingName <$> nameString
+  symbol "="
+  MNamedRenaming name <$> renamingBlock
 
-satisfaction :: Parser (MSatisfaction PhParse)
-satisfaction = annot satisfaction'
+satisfaction :: Parser ParsedSatisfaction
+satisfaction = annot $ do
+  -- TODO: add renamings
+  keyword SatisfactionKW
+  name <- SatName <$> nameString
+  symbol "="
+  initialModule <- renamedModule
+  withModule <- optional $ keyword WithKW >> renamedModule
+  modeledModule <- keyword ModelsKW >> renamedModule
+  return $ MSatisfaction name initialModule withModule modeledModule
   where
     -- TODO: fresh gen?
     anonName = GenName "__anonymous_module_name__"
     typ = Concept
-    anonModule = annot $ moduleRef typ anonName <|> inlineModule typ anonName
+    anonModule = moduleRef typ anonName <|> inlineModule typ anonName
 
     renamedModule = do
       modul <- anonModule
       renamingBlocks <- many renamingBlock
       return $ RenamedModule modul renamingBlocks
 
-    satisfaction' = do
-      -- TODO: add renamings
-      keyword SatisfactionKW
-      name <- SatName <$> nameString
-      symbol "="
-      initialModule <- renamedModule
-      withModule <- optional $ keyword WithKW >> renamedModule
-      modeledModule <- keyword ModelsKW >> renamedModule
-      return $ MSatisfaction name initialModule withModule modeledModule
 
 declaration :: MModuleType -> Parser ParsedDecl
 declaration mtyp = do
@@ -211,17 +199,17 @@ declaration mtyp = do
                         _           -> declaration' True
          ] <* many semi
   where
-    declaration' isRequired =  (MTypeDecl <$> annot (typeDecl isRequired))
-                           <|> (MCallableDecl <$> annot (callable mtyp))
+    declaration' isRequired =  (MTypeDecl <$> typeDecl isRequired)
+                           <|> (MCallableDecl <$> callable mtyp)
 
-typeDecl :: Bool -> Parser (MTypeDecl' PhParse)
-typeDecl isRequired = do
+typeDecl :: Bool -> Parser ParsedTypeDecl
+typeDecl isRequired = annot $ do
   keyword TypeKW
   name <- typeName <* semi -- TODO: make expr
   return $ Type name isRequired
 
-callable :: MModuleType -> Parser (MCallableDecl' PhParse)
-callable mtyp = do
+callable :: MModuleType -> Parser ParsedCallableDecl
+callable mtyp = annot $ do
   callableType <- (keyword AxiomKW >> return Axiom)
               <|> (keyword TheoremKW >> return Axiom)
               <|> (keyword FunctionKW >> return Function)
@@ -245,12 +233,10 @@ callable mtyp = do
   return $ Callable callableType name args retType guard body
 
 annVar :: MVarMode -> Parser ParsedTypedVar
-annVar mode = annot annVar'
-  where
-    annVar' = do
-      name <- varName
-      typAnn <- symbol ":" *> typeName
-      return $ Var mode name typAnn
+annVar mode = annot $ do
+  name <- varName
+  typAnn <- symbol ":" *> typeName
+  return $ Var mode name typAnn
 
 nameVar :: MVarMode -> Parser ParsedMaybeTypedVar
 nameVar mode = annot ((\name -> Var mode name Nothing) <$> varName)
@@ -277,66 +263,55 @@ expr = makeExprParser leafExpr ops
            <|> parens expr
 
 blockExpr :: Parser ParsedExpr
-blockExpr = annot blockExpr'
-  where
-    blockExpr' = do
-      block <- braces (many (exprStmt <* some semi))
-      block' <- if null block then (:[]) <$> annot (return MSkip)
-                else return block
-      let blockType = if any isValueExpr block' then MValueBlock
-                      else MEffectfulBlock
-      return $ MBlockExpr blockType (NE.fromList block')
+blockExpr = annot $ do
+  block <- braces (many (exprStmt <* some semi))
+  block' <- if null block then (:[]) <$> annot (return MSkip)
+            else return block
+  let blockType = if any isValueExpr block' then MValueBlock
+                  else MEffectfulBlock
+  return $ MBlockExpr blockType (NE.fromList block')
 
 ifExpr :: Parser ParsedExpr
-ifExpr = annot ifExpr'
-  where
-    ifExpr' = do
-      keyword IfKW
-      cond <- expr
-      keyword ThenKW
-      bTrue <- expr
-      keyword ElseKW
-      MIf cond bTrue <$> expr
+ifExpr = annot $ do
+  keyword IfKW
+  cond <- expr
+  keyword ThenKW
+  bTrue <- expr
+  keyword ElseKW
+  MIf cond bTrue <$> expr
 
 callableCall :: (String -> Name) -> Parser ParsedExpr
-callableCall nameCons = annot callableCall'
-  where
-    callableCall' = do
-      name <- try symOpName <|> (nameCons <$> nameString)
-      args <- parens (expr `sepBy` symbol ",")
-      ann <- optional (symbol ":" *> typeName)
-      return $ MCall name args ann
+callableCall nameCons = annot $ do
+  name <- try symOpName <|> (nameCons <$> nameString)
+  args <- parens (expr `sepBy` symbol ",")
+  ann <- optional (symbol ":" *> typeName)
+  return $ MCall name args ann
 
-moduleDependency :: Parser (MModuleDep PhParse)
-moduleDependency = annot moduleDependency'
-  where
-    moduleDependency' = do
-      choice [keyword UseKW, keyword RequireKW]
-      (castToSignature, name) <-
-        try (keyword SignatureKW *>
-             ((True,) <$> fullyQualifiedName NSPackage NSModule))
-          <|> (False,) <$> fullyQualifiedName NSPackage NSModule
-      renamings <- many renamingBlock
-      semi
-      return $ MModuleDep name renamings castToSignature
+moduleDependency :: Parser ParsedModuleDep
+moduleDependency = annot $ do
+  choice [keyword UseKW, keyword RequireKW]
+  (castToSignature, name) <-
+    try (keyword SignatureKW *>
+          ((True,) <$> fullyQualifiedName NSPackage NSModule))
+      <|> (False,) <$> fullyQualifiedName NSPackage NSModule
+  renamings <- many renamingBlock
+  semi
+  return $ MModuleDep name renamings castToSignature
 
-renamingBlock :: Parser (MRenamingBlock PhParse)
-renamingBlock = annot renamingBlock'
-  where
-    renamingBlock' = MRenamingBlock <$> brackets (renaming `sepBy` symbol ",")
+renamingBlock :: Parser ParsedRenamingBlock
+renamingBlock = annot $
+  MRenamingBlock <$> brackets (renaming `sepBy` symbol ",")
 
-renaming :: Parser (MRenaming PhParse)
+renaming :: Parser ParsedRenaming
 renaming = try inlineRenaming
         <|> annot (RefRenaming <$> fullyQualifiedName NSPackage NSRenaming)
 
-inlineRenaming :: Parser (MRenaming PhParse)
-inlineRenaming = annot inlineRenaming'
-  where
-    inlineRenaming' = do
-      source <- try symOpName <|> (UnspecName <$> nameString)
-      symbol "=>"
-      target <- try symOpName <|> (UnspecName <$> nameString)
-      return $ InlineRenaming (source, target)
+inlineRenaming :: Parser ParsedRenaming
+inlineRenaming = annot $ do
+  source <- try symOpName <|> (UnspecName <$> nameString)
+  symbol "=>"
+  target <- try symOpName <|> (UnspecName <$> nameString)
+  return $ InlineRenaming (source, target)
 
 exprStmt :: Parser ParsedExpr
 exprStmt = assertStmt <|> try letStmt <|> try assignStmt <|> expr
@@ -345,28 +320,21 @@ assertStmt :: Parser ParsedExpr
 assertStmt = keyword AssertKW *> annot (MAssert <$> expr)
 
 letStmt :: Parser ParsedExpr
-letStmt = annot letStmt'
-  where
-    letStmt' = do
-      keyword LetKW
-      ~(Ann ann (Var declMode name mty)) <- letVar
-      value <- optional (symbol "=" *> expr)
-      let mode = if isNothing value then MOut else declMode
-      return $ MLet (Ann ann (Var mode name mty)) value
-
-    letVar = do
-      mode <- option MUpd (keyword ObsKW $> MObs)
-      var mode
+letStmt = annot $ do
+  keyword LetKW
+  ~(Ann ann (Var declMode name mty)) <-
+    option MUpd (keyword ObsKW $> MObs) >>= var
+  value <- optional (symbol "=" *> expr)
+  let mode = if isNothing value then MOut else declMode
+  return $ MLet (Ann ann (Var mode name mty)) value
 
 
 assignStmt :: Parser ParsedExpr
-assignStmt = annot assignStmt'
-  where
-    assignStmt' = do
-      lhsVarExpr <- annot (nameVar MUnk >>= \v -> return $ MVar v)
-      symbol "="
-      rhsExpr <- expr
-      return $ MCall (ProcName "_=_") [lhsVarExpr, rhsExpr] Nothing
+assignStmt = annot $ do
+  lhsVarExpr <- annot (nameVar MUnk >>= \v -> return $ MVar v)
+  symbol "="
+  rhsExpr <- expr
+  return $ MCall (ProcName "_=_") [lhsVarExpr, rhsExpr] Nothing
 
 ops :: [[Operator Parser ParsedExpr]]
 ops = [ map unOp ["+", "-", "!", "~"]                -- unary ops
@@ -540,7 +508,7 @@ nameChar = alphaNumChar <|> char '_'
 annot ::
   (XAnn PhParse e ~ SrcCtx) =>
   Parser (e PhParse) ->
-  Parser (Ann PhParse e)
+  Parser (Parsed e)
 annot p = do
   (src, element) <- withSrc p
   return $ Ann { _ann = src, _elem = element }

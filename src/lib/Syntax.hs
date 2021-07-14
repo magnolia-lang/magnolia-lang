@@ -56,6 +56,22 @@ module Syntax (
   , RenamedModule (..)
   , TypedVar
   , TypedVar'
+  -- ** AST nodes after the parsing phase
+  , Parsed
+  , ParsedCallableDecl
+  , ParsedDecl
+  , ParsedExpr
+  , ParsedMaybeTypedVar
+  , ParsedModule
+  , ParsedModuleDep
+  , ParsedNamedRenaming
+  , ParsedPackage
+  , ParsedRenaming
+  , ParsedRenamingBlock
+  , ParsedSatisfaction
+  , ParsedTopLevelDecl
+  , ParsedTypeDecl
+  , ParsedTypedVar
   -- ** AST nodes after the type checking phase
   , Tc
   , TcCallableDecl
@@ -68,6 +84,7 @@ module Syntax (
   , TcPackage
   , TcRenaming
   , TcRenamingBlock
+  , TcSatisfaction
   , TcTopLevelDecl
   , TcTypeDecl
   , TcTypedVar
@@ -151,7 +168,7 @@ data PackageHead = PackageHead { _packageHeadPath :: FilePath
                                }
                    deriving (Eq, Show)
 
--- === env utils ===
+-- === useful type aliases ===
 
 type Tc e = Ann PhCheck e
 type TcPackage = MPackage PhCheck
@@ -167,6 +184,23 @@ type TcTypeDecl = MTypeDecl PhCheck
 type TcExpr = MExpr PhCheck
 type TcTypedVar = TypedVar PhCheck
 type TcMaybeTypedVar = MaybeTypedVar PhCheck
+type TcSatisfaction = MSatisfaction PhCheck
+
+type Parsed e = Ann PhParse e
+type ParsedPackage = MPackage PhParse
+type ParsedTopLevelDecl = MTopLevelDecl PhParse
+type ParsedNamedRenaming = MNamedRenaming PhParse
+type ParsedRenamingBlock = MRenamingBlock PhParse
+type ParsedRenaming = MRenaming PhParse
+type ParsedModule = MModule PhParse
+type ParsedModuleDep = MModuleDep PhParse
+type ParsedDecl = MDecl PhParse
+type ParsedCallableDecl = MCallableDecl PhParse
+type ParsedTypeDecl = MTypeDecl PhParse
+type ParsedExpr = MExpr PhParse
+type ParsedTypedVar = TypedVar PhParse
+type ParsedMaybeTypedVar = MaybeTypedVar PhParse
+type ParsedSatisfaction = MSatisfaction PhParse
 
 -- Ann [compilation phase] [node type]
 data Ann p e = Ann { _ann :: XAnn p e
