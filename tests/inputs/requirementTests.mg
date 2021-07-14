@@ -37,5 +37,5 @@ implementation MergingGuards = {
     predicate g_2();
 
     function f(): T guard g_1(); // should succeed
-    function f(): T guard g_2(); // should succeed TODO: unimplemented, 05.07.21
+    function f(): T guard g_2(); // should succeed
 }

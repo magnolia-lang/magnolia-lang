@@ -759,7 +759,7 @@ insertAndMergeDecl env decl = do
           return $ Ann newAnns newCallable : nonMatches
         else return $ Ann anns callableDecl : nonMatches
 
-    mergeGuards :: CGuard p -> CGuard p -> MgMonad (CGuard p)
+    mergeGuards :: CGuard PhCheck -> CGuard PhCheck -> MgMonad (CGuard PhCheck)
     mergeGuards mguard1 mguard2 = case (mguard1, mguard2) of
       (Nothing, _)  -> return mguard2
       (_ , Nothing) -> return mguard1
@@ -767,9 +767,9 @@ insertAndMergeDecl env decl = do
         -- We consider two guards as equivalent only if they are
         -- syntactically equal.
         if guard1 == guard2 then return $ Just guard1
-        else throwLocatedE NotImplementedErr errorLoc $
-          "merging of two callables " <> pshow name <>
-          " with different guards " <> pshow guard1 <> " and " <> pshow guard2
+        -- We merge the guards by synthesizing a conjunction.
+        else return . Just $
+          Ann Pred (MCall (FuncName "_&&_") [guard1, guard2] Nothing)
 
     -- When attempting to merge two existing declarations, we have 3 distinct
     -- cases:
