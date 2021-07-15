@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 import Control.Monad (join)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Class (lift)
@@ -7,6 +5,7 @@ import Control.Monad.Trans.State
 import Data.Foldable (toList)
 import qualified Data.List as L
 import qualified Data.Map as M
+import qualified Data.Set as S
 import Debug.Trace (trace)
 import Options.Applicative hiding (Success, Failure)
 import System.Console.Haskeline
@@ -18,9 +17,37 @@ import PPrint
 import Syntax
 import Util
 
-type TopEnv = TcGlobalEnv
-data Status = Failure | Success -- TODO: move and expand statuses
-data CompilerMode = ReplMode | BuildMode String
+type TopEnv = Env (MPackage PhCheck)
+data CompilerMode = ReplMode | BuildMode FilePath | TestMode TestConfig FilePath
+
+data TestConfig = TestConfig { _testPass :: Pass
+                             , _testBackend :: Backend
+                             }
+
+-- | Compiler passes
+data Pass = CheckPass
+          | CodegenPass
+          | DepAnalPass
+          | ParsePass
+
+-- | Runs the compiler up to the pass specified in the test configuration, and
+-- logs the errors encountered to standard output.
+runTest :: TestConfig -> FilePath -> IO ()
+runTest config filePath = case _testPass config of
+  DepAnalPass -> runAndLogErrs $ depAnalPass filePath
+  ParsePass -> runAndLogErrs $ depAnalPass filePath >>= parsePass
+  CheckPass -> runAndLogErrs $ depAnalPass filePath >>= parsePass >>= checkPass
+  CodegenPass -> error "codegen not yet implemented"
+
+-- === debugging utils ===
+
+logErrs :: S.Set Err -> IO ()
+logErrs errs = pprintList (L.sort (toList errs))
+
+runAndLogErrs :: MgMonad a -> IO ()
+runAndLogErrs m = runMgMonad m >>= \(_, errs) -> logErrs errs
+
+-- === passes ===
 
 mkInfo :: Parser a -> ParserInfo a
 mkInfo p = info (p <**> helper) mempty
@@ -29,50 +56,58 @@ parseCompilerMode :: ParserInfo CompilerMode
 parseCompilerMode = mkInfo compilerMode
   where
     compilerMode :: Parser CompilerMode
-    compilerMode = subparser $ replCmd <> buildCmd
+    compilerMode = subparser $ replCmd <> buildCmd <> testCmd
 
     replCmd = command "repl"
-      (info (helper <*> pure ReplMode) (progDesc "Start Magnolia repl"))
+      (info (helper <*> pure ReplMode)
+            (progDesc "Start Magnolia repl"))
+
     buildCmd = command "build"
-      (info (helper <*> buildArgs) (progDesc "Compile a package"))
-    buildArgs = BuildMode <$>
-      argument str (metavar "FILE" <> help "Source program")
+      (info (helper <*> (BuildMode <$> target))
+            (progDesc "Compile a package"))
+
+    testCmd = command "test"
+      (info (helper <*> (TestMode <$> testConfig <*> target))
+            (progDesc "Test the compiler passes"))
+
+    target = argument str (metavar "FILE" <> help "Source program")
+    testConfig = TestConfig <$>
+      option (oneOf passOpts)
+             (long "pass" <> value CheckPass <>
+              help ("Pass: " <> dispOpts passOpts)) <*>
+      option (oneOf backendOpts)
+             (long "backend" <> value Cxx <>
+              help ("Backend: " <> dispOpts backendOpts))
+
+    passOpts = [ ("check", CheckPass)
+               , ("codegen", CodegenPass)
+               , ("depanal", DepAnalPass)
+               , ("parse", ParsePass)
+               ]
+    backendOpts = [ ("cpp", Cxx)
+                  , ("javascript", JavaScript)
+                  , ("python", Python)]
+
+    oneOf :: [(String, a)] -> ReadM a
+    oneOf optPairs = eitherReader (\v -> case L.lookup v optPairs of
+      Just someOpt -> Right someOpt
+      _ -> Left $ "Option must be one of " <>
+                  L.intercalate ", " (map (show . fst) optPairs))
+
+    dispOpts opts = fst (head opts) <> " (default) | " <>
+      L.intercalate " | " (map fst (tail opts))
 
 main :: IO ()
 main = do
   compilerMode <- customExecParser (prefs showHelpOnEmpty) parseCompilerMode
   case compilerMode of
     ReplMode -> repl `runStateT` M.empty >> return ()
-    BuildMode filename -> build filename >>= \case
-        Nothing   -> return ()
-        Just code -> pprint code
+    BuildMode filePath -> let config = TestConfig CheckPass Cxx
+                          in runTest config filePath
+    TestMode config filePath -> runTest config filePath
 
-codegen :: String -> TopEnv -> IO String -- TODO: return instead source code type or smth
-codegen filename env = case M.lookup (mkPkgNameFromPath filename) env of
-  Nothing -> error $ "Compiler bug! Package for file " <> filename <>
-    " not found."
-  -- TODO: handle dir paths better
-  Just _ -> return "Sorry! Codegen is unimplemented!" --(emitPyPackage pkg)
 
--- TODO: add existing env, and move "compile" to Make module
-compile :: String -> IO (Status, TopEnv)
-compile filename = do
-  -- TODO: replace "ExceptT" with (Status, TopEnv) to allow partial success
-  (result, errs) <- runMgMonad (loadDependencyGraph filename >>= upsweep)
-  case result of
-    Left _ -> pprintList (L.sort (toList errs)) >> return (Failure, M.empty)
-    Right env -> if null errs then return (Success, env)
-                 else error $ "Compiler bug! Compile succeeded but had " <>
-                              "errors: " <> show errs
-
-build :: String -> IO (Maybe String) -- TODO: return instead source code type or smth
-build filename = do
-  (status, compiledPackages) <- compile filename
-  case status of
-    Failure -> return Nothing
-    Success -> Just <$> codegen filename compiledPackages
-
-repl :: StateT TopEnv IO () --InputT (StateT s IO) ()
+repl :: StateT TopEnv IO ()
 repl = runInputT defaultSettings go
   where
     go :: InputT (StateT TopEnv IO) ()
@@ -108,12 +143,13 @@ execCmd cmd = case cmd of
       case pkgRef of
         Just _ -> return ()
         Nothing -> do
-          (success, newEnv) <- liftIO $ compile pkgPath
-          case success of
-            Failure -> return ()
-            Success -> case M.lookup pkgName newEnv of
+          (eenv, errs) <- liftIO $ runMgMonad (depAnalPass pkgPath >>= parsePass >>= checkPass)
+          case eenv of
+            Left () -> liftIO (logErrs errs)
+            Right newEnv -> case M.lookup pkgName newEnv of
               -- TODO: handle better package names that don't fit
-              Nothing -> trace (show newEnv) (return ()) >> error "Compiler bug!"
+              Nothing ->
+                trace (show newEnv) (return ()) >> error "Compiler bug!"
               Just pkg -> modify (M.insert pkgName pkg) -- TODO: what to do with other packages?
 
     inspectModule :: Name -> StateT TopEnv IO ()

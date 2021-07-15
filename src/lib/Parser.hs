@@ -81,25 +81,30 @@ showMenuCommand = symbol "help" >> return ShowMenu
 
 -- TODO: find type for imports
 parsePackageHead :: FilePath -> String -> MgMonad PackageHead
-parsePackageHead filePath s =
-  case parse (sc >> packageHead filePath s) filePath s of
+parsePackageHead filePath input =
+  case parse (sc >> packageHead filePath input) filePath input of
     Left e -> throwNonLocatedParseError e
     Right ph -> return ph
 
 packageHead :: FilePath -> String -> Parser PackageHead
-packageHead filePath s = do
-  pkgName <- keyword PackageKW *> fullyQualifiedName NSDirectory NSPackage
-  -- TODO: error out if package name is different from filepath?
-  imports <- choice
-    [ keyword ImportKW >>
-      (fullyQualifiedName NSDirectory NSPackage `sepBy1` symbol ",")
-    , return []
-    ] <* semi
+packageHead filePath input = do
+  (src, (pkgName, imports)) <- withSrc packageHead'
   return PackageHead { _packageHeadPath = filePath
-                     , _packageHeadStr = s
+                     , _packageHeadFileContent = input
                      , _packageHeadName = pkgName
                      , _packageHeadImports = imports
-                     }
+                     , _packageHeadSrcCtx = src
+                    }
+  where
+    packageHead' = do
+      pkgName <- keyword PackageKW *> fullyQualifiedName NSDirectory NSPackage
+      -- TODO: error out if package name is different from filepath?
+      imports <- choice
+        [ keyword ImportKW >>
+          (fullyQualifiedName NSDirectory NSPackage `sepBy1` symbol ",")
+        , return []
+        ] <* semi
+      return (pkgName, imports)
 
 -- === package parsing utils ===
 
@@ -379,15 +384,15 @@ ops = [ map unOp ["+", "-", "!", "~"]                -- unary ops
 unOp :: String -> Operator Parser ParsedExpr
 unOp s = Prefix $ unOpCall <$> withSrc (symbol s)
   where
-    unOpCall (WithSrc src _) e =
+    unOpCall (src, _) e =
       Ann { _ann = src, _elem = MCall (FuncName (s <> "_")) [e] Nothing }
 
 
 binOp :: String -> Operator Parser ParsedExpr
 binOp s = InfixL $ binOpCall <$> withSrc (symbol s)
   where
-    binOpCall :: WithSrc a -> ParsedExpr -> ParsedExpr -> ParsedExpr
-    binOpCall (WithSrc src _) e1 e2 =
+    binOpCall :: (SrcCtx, a) -> ParsedExpr -> ParsedExpr -> ParsedExpr
+    binOpCall (src, _) e1 e2 =
       Ann { _ann = src
           , _elem = MCall (FuncName ("_" <> s <> "_")) [e1, e2] Nothing
           }
@@ -537,16 +542,16 @@ annot ::
   Parser (e PhParse) ->
   Parser (Ann PhParse e)
 annot p = do
-  (WithSrc src element) <- withSrc p
+  (src, element) <- withSrc p
   return $ Ann { _ann = src, _elem = element }
 
 withSrc ::
   Parser a ->
-  Parser (WithSrc a)
+  Parser (SrcCtx, a)
 withSrc p = do
   start <- mkSrcPos <$> getSourcePos
   element <- p
   end <- mkSrcPos <$> getSourcePos
-  return $ WithSrc (SrcCtx $ Just (start, end)) element
+  return (SrcCtx $ Just (start, end), element)
   where
     mkSrcPos s = (sourceName s, unPos $ sourceLine s, unPos $ sourceColumn s)

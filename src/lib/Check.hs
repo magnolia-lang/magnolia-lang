@@ -17,7 +17,6 @@ import Data.Traversable (for)
 import Data.Tuple (swap)
 import Data.Void (absurd)
 
-import qualified Data.Graph as G
 import qualified Data.List as L
 import Data.List.NonEmpty (NonEmpty ((:|)), (<|))
 import qualified Data.List.NonEmpty as NE
@@ -37,22 +36,23 @@ import Util
 checkPackage :: Env TcPackage    -- ^ an environment of loaded packages
              -> MPackage PhParse -- ^ the package to typecheck
              -> MgMonad TcPackage
-checkPackage globalEnv (Ann src (MPackage name decls deps)) = do
-    globalEnvWithImports <- loadDependencies
-    -- 1. Check for cycles
-    namedRenamings <- detectCycle (getNamedRenamings decls)
-    modules <- detectCycle (getModules decls)
-    -- 2. Check renamings
-    globalEnvWithRenamings <- updateEnvWith globalEnvWithImports
-      (((MNamedRenamingDecl <$>) .) . checkNamedRenaming) namedRenamings
-    -- TODO: deal with renamings first, then modules, then satisfactions
-    -- 2. Check modules
-    globalEnvWithModules <- updateEnvWith globalEnvWithRenamings
-      (((MModuleDecl <$>) .) . checkModule) modules
-    -- 3. Satisfactions
-    -- TODO: ^
-    -- TODO: deal with deps and other tld types
-    return $ Ann src (MPackage name globalEnvWithModules [])
+checkPackage globalEnv (Ann src (MPackage name decls deps)) =
+    enter name $ do
+      globalEnvWithImports <- loadDependencies
+      -- 1. Check for cycles
+      namedRenamings <- detectCycle (getNamedRenamings decls)
+      modules <- detectCycle (getModules decls)
+      -- 2. Check renamings
+      globalEnvWithRenamings <- updateEnvWith globalEnvWithImports
+        (((MNamedRenamingDecl <$>) .) . checkNamedRenaming) namedRenamings
+      -- TODO: deal with renamings first, then modules, then satisfactions
+      -- 2. Check modules
+      globalEnvWithModules <- updateEnvWith globalEnvWithRenamings
+        (((MModuleDecl <$>) .) . checkModule) modules
+      -- 3. Satisfactions
+      -- TODO: ^
+      -- TODO: deal with deps and other tld types
+      return $ Ann src (MPackage name globalEnvWithModules [])
   where
     detectCycle :: (HasDependencies a, HasName a, HasSrcCtx a)
                 => [a] -> MgMonad [a]
@@ -98,15 +98,6 @@ checkPackage globalEnv (Ann src (MPackage name decls deps)) = do
     mkImportedDecl :: HasName a => Name -> SrcCtx -> a -> DeclOrigin
     mkImportedDecl depName src' node =
       ImportedDecl (FullyQualifiedName (Just depName) (nodeName node)) src'
-
-
--- | Throws an error if a strongly connected component is cyclic. Otherwise,
--- returns the vertex contained in the acyclic component.
-checkNoCycle :: (HasSrcCtx a, HasName a) => G.SCC a -> MgMonad a
-checkNoCycle (G.CyclicSCC vertices) =
-  let cyclicErr = T.intercalate ", " $ map (pshow . nodeName) vertices in
-  throwLocatedE CyclicErr (srcCtx (head vertices)) cyclicErr
-checkNoCycle (G.AcyclicSCC vertex) = return vertex
 
 -- | Checks that a named renaming is valid, i.e. that it can be fully inlined.
 checkNamedRenaming :: Env [TcTopLevelDecl]
@@ -544,7 +535,7 @@ annotateScopedExprStmt modul = go
               "variable without specifying its type or an assignment " <>
               "expression"
           let (Just ty) = mTy
-          checkTypeExists modul (WithSrc src ty)
+          checkTypeExists modul (src, ty)
           unless (mode == MOut) $
             throwLocatedE ModeMismatchErr src $ "variable " <> pshow name <>
               " is declared with mode " <> pshow mode <> " but is not " <>
@@ -824,8 +815,8 @@ mergeModules :: ModuleScope -> ModuleScope -> MgMonad ModuleScope
 mergeModules mod1 mod2 =
   foldMAccumErrors (foldM insertAndMergeDecl) mod1 (map snd $ M.toList mod2)
 
-checkTypeExists :: ModuleScope -> WithSrc Name -> MgMonad ()
-checkTypeExists modul (WithSrc src name)
+checkTypeExists :: ModuleScope -> (SrcCtx, Name) -> MgMonad ()
+checkTypeExists modul (src, name)
   | Unit <- name = return ()
   | Pred <- name = return ()
   | otherwise = case M.lookup name modul of
@@ -886,7 +877,7 @@ checkProto
 checkProto checkGuards env
     (Ann src (Callable ctype name args retType mguard _)) = do
   tcArgs <- checkArgs args
-  checkTypeExists env (WithSrc src retType)
+  checkTypeExists env (src, retType)
   tcGuard <- case mguard of
     Nothing -> return Nothing
     Just guard -> if checkGuards
@@ -908,7 +899,7 @@ checkProto checkGuards env
 
         checkArgType :: TypedVar PhParse -> MgMonad (TypedVar PhCheck)
         checkArgType (Ann argSrc (Var mode varName typ)) = do
-          checkTypeExists env (WithSrc argSrc typ)
+          checkTypeExists env (argSrc, typ)
           return $ Ann typ (Var mode varName typ)
 
 checkModuleDep :: Env [TcTopLevelDecl]
