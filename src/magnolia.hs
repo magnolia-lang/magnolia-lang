@@ -22,13 +22,15 @@ data CompilerMode = ReplMode | BuildMode FilePath | TestMode TestConfig FilePath
 
 data TestConfig = TestConfig { _testPass :: Pass
                              , _testBackend :: Backend
+                             , _outputDirectory :: Maybe FilePath
                              }
 
 -- | Compiler passes
 data Pass = CheckPass
-          | CodegenPass
           | DepAnalPass
           | ParsePass
+          | ProgramCodegenPass
+          | StructurePreservingCodegenPass
 
 -- | Runs the compiler up to the pass specified in the test configuration, and
 -- logs the errors encountered to standard output.
@@ -37,9 +39,11 @@ runTest config filePath = case _testPass config of
   DepAnalPass -> runAndLogErrs $ depAnalPass filePath
   ParsePass -> runAndLogErrs $ depAnalPass filePath >>= parsePass
   CheckPass -> runAndLogErrs $ depAnalPass filePath >>= parsePass >>= checkPass
-  CodegenPass -> case _testBackend config of
+  ProgramCodegenPass -> case _testBackend config of
     Cxx -> undefined
     _ -> error "codegen not yet implemented"
+  StructurePreservingCodegenPass ->
+    error "structure preserving codegen not yet implemented"
 
 -- === debugging utils ===
 
@@ -79,12 +83,16 @@ parseCompilerMode = mkInfo compilerMode
               help ("Pass: " <> dispOpts passOpts)) <*>
       option (oneOf backendOpts)
              (long "backend" <> value Cxx <>
-              help ("Backend: " <> dispOpts backendOpts))
+              help ("Backend: " <> dispOpts backendOpts)) <*>
+      option (Just <$> str)
+             (long "output-directory" <> value Nothing <>
+              help "Output directory for code generation")
 
     passOpts = [ ("check", CheckPass)
-               , ("codegen", CodegenPass)
+               , ("codegen", ProgramCodegenPass)
                , ("depanal", DepAnalPass)
                , ("parse", ParsePass)
+               , ("structured-codegen", StructurePreservingCodegenPass)
                ]
     backendOpts = [ ("cpp", Cxx)
                   , ("javascript", JavaScript)
@@ -104,7 +112,7 @@ main = do
   compilerMode <- customExecParser (prefs showHelpOnEmpty) parseCompilerMode
   case compilerMode of
     ReplMode -> repl `runStateT` M.empty >> return ()
-    BuildMode filePath -> let config = TestConfig CheckPass Cxx
+    BuildMode filePath -> let config = TestConfig CheckPass Cxx Nothing
                           in runTest config filePath
     TestMode config filePath -> runTest config filePath
 
