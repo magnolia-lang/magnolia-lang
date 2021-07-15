@@ -1,0 +1,94 @@
+#include "E.hpp"
+#include <cassert>
+
+
+namespace tests {
+namespace self_contained_codegen {
+namespace inputs {
+namespace generalTranslationTests {
+struct P {
+private:
+    ExternalImplementation __ExternalImplementation;
+protected:
+    
+public:
+    typedef ExternalImplementation::X X;
+    typedef ExternalImplementation::Y Y;
+    P::Y _mkY();
+    void all_statements(const P::X& x_obs, P::X& x_upd, P::X& x_out);
+    P::X binary_add(const P::X& lhs, const P::X& rhs);
+    P::X call_f_overloaded_on_return_type();
+    bool eq(const P::X& e1, const P::X& e2);
+    bool eq(const P::Y& e1, const P::Y& e2);
+    void helper_assign(P::X& x_out);
+    P::X mkX();
+    void some_f_overloaded_on_return_type0(P::X& o);
+    void some_f_overloaded_on_return_type0(P::Y& o);
+    template <typename T>
+    inline T some_f_overloaded_on_return_type() {
+        T o;
+        some_f_overloaded_on_return_type0(o);
+        return o;
+    };
+};
+} // tests
+} // self_contained_codegen
+} // inputs
+} // generalTranslationTests
+#include "tests/self-contained-codegen/inputs/generalTranslationTests.hpp"
+
+
+namespace tests {
+namespace self_contained_codegen {
+namespace inputs {
+namespace generalTranslationTests {
+    P::Y P::_mkY() {
+        return __ExternalImplementation.mkY();
+    };
+    void P::all_statements(const P::X& x_obs, P::X& x_upd, P::X& x_out) {
+        x_out = x_obs;
+        x_out = [=, this]() {
+            return P::mkX();
+        }();
+        P::X x_var_unassigned;
+        P::X x_var_assigned = x_obs;
+        assert(P::eq(x_obs, x_obs));
+        P::helper_assign(x_upd);
+        x_out = P::eq(x_obs, x_obs) ? x_out : x_obs;
+        if (P::eq(x_obs, x_obs))
+        {
+            ;
+        }
+        else
+        {
+            ;
+        };
+    };
+    P::X P::binary_add(const P::X& lhs, const P::X& rhs) {
+        return __ExternalImplementation.binary_add(lhs, rhs);
+    };
+    P::X P::call_f_overloaded_on_return_type() {
+        return P::some_f_overloaded_on_return_type<X>();
+    };
+    bool P::eq(const P::X& e1, const P::X& e2) {
+        return __ExternalImplementation.eq(e1, e2);
+    };
+    bool P::eq(const P::Y& e1, const P::Y& e2) {
+        return __ExternalImplementation.eq(e1, e2);
+    };
+    void P::helper_assign(P::X& x_out) {
+        x_out = P::mkX();
+    };
+    P::X P::mkX() {
+        return __ExternalImplementation.mkX();
+    };
+    void P::some_f_overloaded_on_return_type0(P::X& o) {
+        o = P::mkX();
+    };
+    void P::some_f_overloaded_on_return_type0(P::Y& o) {
+        o = P::_mkY();
+    };
+} // tests
+} // self_contained_codegen
+} // inputs
+} // generalTranslationTests

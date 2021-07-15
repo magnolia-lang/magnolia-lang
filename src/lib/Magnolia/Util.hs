@@ -9,6 +9,7 @@ module Magnolia.Util (
   -- ** MgMonad scope-related utils
   , enter
   , getParentPackageName
+  , getParentModuleName
   -- ** MgMonad error-related utils
   , foldMAccumErrors
   , foldMAccumErrorsAndFail
@@ -132,13 +133,20 @@ parentScopes = L.reverse <$> ask
 -- | Returns the innermost package name associated with the computation. An
 -- exception is thrown if it doesn't exist.
 getParentPackageName :: MgMonad Name
-getParentPackageName = do
-  ps <- ask
-  case L.find ((== NSPackage) . _namespace) ps of
-    Nothing -> throwNonLocatedE CompilerErr
-      "attempted to query a parent package name but none exists"
-    Just name -> return name
+getParentPackageName = getParentNSName NSPackage
 
+-- | Returns the innermost module name associated with the computation. An
+-- exception is thrown if it doesn't exist.
+getParentModuleName :: MgMonad Name
+getParentModuleName = getParentNSName NSModule
+
+getParentNSName :: NameSpace -> MgMonad Name
+getParentNSName ns = do
+  ps <- ask
+  case L.find ((== ns) . _namespace) ps of
+    Nothing -> throwNonLocatedE CompilerErr $
+      "attempted to query a parent " <> pshow ns <> " name but none exists"
+    Just name -> return name
 
 -- | Runs a computation within a child scope.
 enter :: Name      -- ^ the name of the child scope

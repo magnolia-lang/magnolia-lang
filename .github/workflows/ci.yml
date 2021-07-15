@@ -37,4 +37,4 @@ jobs:
     - name: Build
       run: make
     - name: Run tests
-      run: make tests-all
+      run: make tests

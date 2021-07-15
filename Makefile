@@ -23,21 +23,24 @@ check-test-targets = declScopeTests \
 	    	     stateHandlingTests \
 		     stmtTests
 
-self-contained-codegen-test-targets = basic
+self-contained-codegen-test-targets = externalTests \
+                                      generalTranslationTests
+
+tests: tests-all
 
 tests-all:
 	for pass in parse check self-contained-codegen ; do \
-		make tests pass=$$pass ; \
+		make tests-pass pass=$$pass ; \
 	done
 
-update-tests-all:
+update-tests:
 	for pass in parse check self-contained-codegen ; do \
-                make update-tests pass=$$pass ; \
-        done
+		make update-tests-pass pass=$$pass ; \
+	done
 
-tests: $($(pass)-test-targets:%=check-output-%)
+tests-pass: $($(pass)-test-targets:%=check-output-%)
 
-update-tests: $($(pass)-test-targets:%=update-output-%)
+update-tests-pass: $($(pass)-test-targets:%=update-output-%)
 
 check-output-%: tests/$(pass)/inputs/%.mg tests/$(pass)/outputs/%.mg.out build
 	$(eval tempfile := $(shell mktemp))

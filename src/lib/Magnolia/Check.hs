@@ -210,7 +210,7 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) =
   hackyScope <- foldM insertAndMergeDecl depScope (hackyPrelude isProgram)
   -- Step 3: register types
   -- TODO: remove name as parameter to "insertAndMergeDecl"
-  baseScope <- foldMAccumErrors (registerType mbackend) hackyScope types
+  baseScope <- foldMAccumErrors (registerType mexternalInfo) hackyScope types
   -- Step 4: check and register protos
   protoScope <- do
     -- we first register all the protos without checking the guards
@@ -232,8 +232,8 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) =
                , _elem = MModule moduleType moduleName finalScope tcDeps
                }
   where
-    mbackend = case moduleType of
-        External backend _ -> Just backend
+    mexternalInfo = case moduleType of
+        External backend fqn -> Just (backend, _targetName fqn)
         _ -> Nothing
 
     types :: [TcTypeDecl]
@@ -245,7 +245,8 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) =
           tcTy = Type n isReq
       in if isReq
          then Ann (Nothing, absDecls) tcTy
-         else Ann (Just $ mkConcreteLocalDecl mbackend src n, absDecls) tcTy
+         else Ann (Just $ mkConcreteLocalDecl mexternalInfo src n, absDecls)
+                  tcTy
 
     checkBody
       :: ModuleScope
@@ -283,9 +284,14 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) =
               "pattern matching fail in callable body check for " <> pshow fname
           Ann (_, absDeclOs) (Callable _ _ tcArgs _ tcGuard _) <-
             checkProto True env decl
-          let tcAnnDecl =
-                Ann (Just $ ConcreteLocalMagnoliaDecl src, absDeclOs) $
-                  Callable ctype fname tcArgs retType tcGuard tcBody
+          let conDeclO = mkConcreteLocalDecl mexternalInfo src fname
+              tcAnnDecl = Ann (Just conDeclO, absDeclOs) $
+                Callable ctype fname tcArgs retType tcGuard tcBody
+          case (cbody, conDeclO) of
+            (ExternalBody, ConcreteExternalDecl {}) -> return ()
+            (MagnoliaBody _, ConcreteLocalMagnoliaDecl _) -> return ()
+            _ -> throwLocatedE CompilerErr src $
+              pshow fname <> "'s annotation is mismatched wrt its body"
           if bodyRetType == retType
           then insertAndMergeDecl env (MCallableDecl tcAnnDecl)
           else throwLocatedE TypeErr src $
@@ -833,36 +839,39 @@ checkTypeExists modul (src, name)
       Just matches -> when (null (getTypeDecls matches)) $
         throwLocatedE UnboundTypeErr src (pshow name)
 
-registerType :: Maybe Backend -> ModuleScope -> TcTypeDecl
+registerType :: Maybe (Backend, Name) -> ModuleScope -> TcTypeDecl
              -> MgMonad ModuleScope
-registerType mbackend modul annType =
-  foldM insertAndMergeDecl modul (mkTypeUtils mbackend annType)
+registerType mexternalInfo modul annType =
+  foldM insertAndMergeDecl modul (mkTypeUtils mexternalInfo annType)
 
-mkTypeUtils :: Maybe Backend -> TcTypeDecl -> [TcDecl]
-mkTypeUtils mbackend annType@(Ann _ (Type name isRequired)) =
+mkTypeUtils :: Maybe (Backend, Name) -> TcTypeDecl -> [TcDecl]
+mkTypeUtils mexternalInfo annType@(Ann _ (Type _ isRequired)) =
     [ MTypeDecl annType
-    , MCallableDecl (Ann newAnn equalityFnDecl)
-    , MCallableDecl (Ann newAnn assignProcDecl)
+    , MCallableDecl (Ann (mkNewAnn eqFnName) eqFnDecl)
+    , MCallableDecl (Ann (mkNewAnn assignProcName) assignProcDecl)
     ]
   where
-    newAnn = let (conDeclO, absDeclOs) = _ann annType in case conDeclO of
-      Just _ -> _ann annType
-      Nothing ->
-        if isRequired
-        then (Nothing, absDeclOs)
-        else let (AbstractLocalDecl src) = NE.head absDeclOs
-        in (Just (mkConcreteLocalDecl mbackend src name), absDeclOs)
+    mkNewAnn fname = let (mconDeclO, absDeclOs) = _ann annType in
+      case mconDeclO of
+        Just conDeclO -> let src = srcCtx conDeclO in
+          (Just (mkConcreteLocalDecl mexternalInfo src fname), absDeclOs)
+        Nothing ->
+          if isRequired
+          then (Nothing, absDeclOs)
+          else let (AbstractLocalDecl src) = NE.head absDeclOs
+          in (Just (mkConcreteLocalDecl mexternalInfo src fname), absDeclOs)
 
+    eqFnName = FuncName "_==_"
+    assignProcName = ProcName "_=_"
 
-    mkVar mode nameStr =
-      Ann (nodeName annType) $ Var mode (VarName nameStr) (nodeName annType)
-    equalityFnDecl =
-      Callable Function (FuncName "_==_") (map (mkVar MObs) ["e1", "e2"]) Pred
-               Nothing body
-    assignProcDecl =
-      Callable Procedure (ProcName "_=_")
-              [mkVar MOut "var", mkVar MObs "expr"] Unit Nothing body
-    body = if isRequired then ExternalBody else EmptyBody
+    mkVar mode nameStr = Ann (nodeName annType) $
+      Var mode (VarName nameStr) (nodeName annType)
+    eqFnDecl = Callable Function eqFnName (map (mkVar MObs) ["e1", "e2"]) Pred
+                        Nothing body
+    assignProcDecl = Callable Procedure assignProcName
+                              [mkVar MOut "var", mkVar MObs "expr"] Unit
+                              Nothing body
+    body = if isRequired then EmptyBody else ExternalBody
 
 -- TODO: ensure functions have a return type defined, though should be handled
 -- by parsing.

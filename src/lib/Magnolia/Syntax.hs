@@ -311,7 +311,7 @@ data MCallableDecl' p =
 --       they are backend-dependent (and there is always only one backend).
 --       This will need to be handled at the ConcreteDecl level as well.
 data CBody p = ExternalBody | EmptyBody | MagnoliaBody (MExpr p)
-  deriving (Eq, Show)
+               deriving (Eq, Show)
 type CGuard p = Maybe (MExpr p)
 
 type MType = Name
@@ -353,7 +353,7 @@ data MVar typAnnType p = Var { _varMode :: MVarMode
                              , _varName :: Name
                              , _varType :: typAnnType
                              }
-                          deriving (Eq, Show)
+                         deriving (Eq, Show)
 
 -- Mode is either Obs (const), Out (unset ref), Upd (ref), or Unk(nown)
 data MVarMode = MObs | MOut | MUnk | MUpd
@@ -417,10 +417,11 @@ data DeclOrigin
   -- carries a local annotation. At the package level, only the modules
   -- defined in the current module should carry this annotation.
   = LocalDecl SrcCtx
-  -- | Annotates an imported declaration. At the module level, declarations
-  -- imported in scope through 'use' or 'require' declarations carry such
-  -- annotations. At the package level, all the modules imported from
-  -- different packages should carry this annotation.
+  -- | Annotates an imported declaration. At the module level, no declaration
+  -- carries such an annotation at the moment (TODO: should we change that
+  -- behavior?). The reason is that within a module, declarations always have
+  -- a corresponding local declaration. At the package level, all the modules
+  -- imported from different packages should carry this annotation.
   | ImportedDecl FullyQualifiedName SrcCtx
     deriving (Eq, Show)
 
@@ -433,9 +434,9 @@ instance Ord DeclOrigin where
 -- declaration is defined purely using Magnolia code). A contrario, if the
 -- inner constructor is Right, then the origin of the declaration is interpreted
 -- as being external (i.e. the declaration is defined to exist on some
--- backend). In that case, the declaration is also accompanied with the name
--- that corresponds to the function in the external context, and the relevant
--- backend.
+-- backend). In that case, the declaration is also accompanied with the fully
+-- qualified name that corresponds to the function in the external context,
+-- and the relevant backend.
 newtype ConcreteDeclOrigin =
   ConcreteDeclOrigin (Either DeclOrigin
                              (DeclOrigin, Backend, FullyQualifiedName))
@@ -506,7 +507,7 @@ type family XAnn p (e :: * -> *) where
   XAnn PhCheck MExpr' = MType
 
   XAnn PhParse (MVar _) = SrcCtx
-  XAnn PhCheck (_ _) = MType
+  XAnn PhCheck (MVar _) = MType
 
 -- === other useful type families ===
 
@@ -514,7 +515,7 @@ type family XPhasedContainer p e where
   XPhasedContainer PhParse e = [e]
   XPhasedContainer PhCheck e = M.Map Name [e]
 
--- The goal of XRef is to statically prevent the existence of references to
+-- | The goal of XRef is to statically prevent the existence of references to
 -- named top level elements after the consistency/type checking phase.
 type family XRef p where
   XRef PhParse = FullyQualifiedName
