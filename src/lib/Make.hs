@@ -16,25 +16,23 @@ import qualified Data.List as L
 import qualified Data.Map as M
 import qualified Data.Text.Lazy as T
 
---import Cxx.Syntax
+import Cxx.Syntax
 import Env
 import Magnolia.Check
 import Magnolia.Parser
 import Magnolia.PPrint
 import Magnolia.Syntax
 import Magnolia.Util
---import MgToCxx
+import MgToCxx
 
 type TcGlobalEnv = Env (MPackage PhCheck)
-
-data CxxPackage
 
 -- -- === passes ===
 
 depAnalPass :: FilePath -> MgMonad [PackageHead]
 depAnalPass filepath = loadDependencyGraph filepath >>= detectCycle
 
---type CxxCodegenEnv = M.Map FullyQualifiedName (CxxModule, [(TcTypeDecl, CxxName)])
+type CxxCodegenEnv = M.Map FullyQualifiedName (CxxModule, [(TcTypeDecl, CxxName)])
 
 -- upsweepAndCodegen :: [G.SCC PackageHead] -> MgMonad TcGlobalEnv
 -- upsweepAndCodegen = (fst <$>) . foldMAccumErrorsAndFail go (M.empty, M.empty)
@@ -105,28 +103,28 @@ codegenCxxPass tcPkgs = do
        -> MgMonad (M.Map Name CxxPackage)
     go = undefined
 
--- upsweepAndCodegenModules
---   :: Name
---   -> (Env [TcTopLevelDecl], CxxCodegenEnv)
---   -> [G.SCC (MModule PhParse)]
---   -> MgMonad (Env [TcTopLevelDecl], CxxCodegenEnv)
--- upsweepAndCodegenModules pkgName = foldMAccumErrors go
---   where
---     go
---       :: (Env [TcTopLevelDecl], CxxCodegenEnv)
---       -> G.SCC (MModule PhParse)
---       -> MgMonad (Env [TcTopLevelDecl], CxxCodegenEnv)
---     go _ (G.CyclicSCC modules) =
---       let mCycle = T.intercalate ", " $ map (pshow . nodeName) modules in
---       throwNonLocatedE CyclicErr mCycle
+upsweepAndCodegenModules
+  :: Name
+  -> (Env [TcTopLevelDecl], CxxCodegenEnv)
+  -> [G.SCC (MModule PhParse)]
+  -> MgMonad (Env [TcTopLevelDecl], CxxCodegenEnv)
+upsweepAndCodegenModules pkgName = foldMAccumErrors go
+  where
+    go
+      :: (Env [TcTopLevelDecl], CxxCodegenEnv)
+      -> G.SCC (MModule PhParse)
+      -> MgMonad (Env [TcTopLevelDecl], CxxCodegenEnv)
+    go _ (G.CyclicSCC modules) =
+      let mCycle = T.intercalate ", " $ map (pshow . nodeName) modules in
+      throwNonLocatedE CyclicErr mCycle
 
---     -- TODO: error catching & recovery
---     go (env, cxxModules) (G.AcyclicSCC modul) = do
---       tcModule <- checkModule env modul
---       let fqModuleName = FullyQualifiedName (Just pkgName) (nodeName modul)
---       moduleCxx <- mgToCxx (fqModuleName, tcModule) cxxModules
---       return ( M.insertWith (<>) (nodeName modul) [MModuleDecl tcModule] env
---              , M.insert fqModuleName moduleCxx cxxModules)
+    -- TODO: error catching & recovery
+    go (env, cxxModules) (G.AcyclicSCC modul) = do
+      tcModule <- checkModule env modul
+      let fqModuleName = FullyQualifiedName (Just pkgName) (nodeName modul)
+      moduleCxx <- mgToCxx (fqModuleName, tcModule) cxxModules
+      return ( M.insertWith (<>) (nodeName modul) [MModuleDecl tcModule] env
+             , M.insert fqModuleName moduleCxx cxxModules)
 
 
 -- | Checks if a list of strongly connected components contains cycles.

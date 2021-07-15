@@ -33,13 +33,15 @@ library
                 , transformers        >= 0.4  && < 0.6
 
   ghc-options:  -Wall
-  exposed-modules:  Env
+  exposed-modules:  Cxx.Syntax
+                  , Env
                   , Magnolia.Check
                   , Magnolia.Parser
                   , Magnolia.PPrint
                   , Magnolia.Syntax
                   , Magnolia.Util
                   , Make
+                  , MgToCxx
 
 executable magnolia
   default-language:    Haskell2010
