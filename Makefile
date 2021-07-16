@@ -14,9 +14,10 @@ test-targets = declScopeTests \
 		modeTests \
 		packageTests \
 		parsingTests \
+		regressionTests \
 		renamingTests \
 		requirementTests \
-	       	stateHandlingTests \
+	    	stateHandlingTests \
 		stmtTests
 
 tests: $(test-targets:%=check-output-%)
