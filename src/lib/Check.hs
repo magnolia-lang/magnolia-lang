@@ -580,11 +580,11 @@ annotateScopedExprStmt modul = go
         throwLocatedE TypeErr src $ "expected branches of conditional to " <>
           "have the same type but got " <> pshow (_ann tcTrueExpr) <>
           " and " <> pshow (_ann tcFalseExpr)
-      unless (  _ann tcTrueExpr == Unit
+      when (  _ann tcTrueExpr /= Unit
              && (scope /= falseScope || scope /= trueScope)) $
         throwLocatedE CompilerErr src $
           "if statement performed stateful computations in one of its " <>
-          "and also returned a value"
+          "branches and also returned a value"
       let tcExpr = MIf tcCond tcTrueExpr tcFalseExpr
       -- TODO: add sets of possible types to variables for type inference.
       -- TODO: can we set a variable to be "linearly assigned to" (only one
