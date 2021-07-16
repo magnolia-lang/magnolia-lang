@@ -353,7 +353,7 @@ castModule dstTyp origModule@(Ann declO (MModule srcTyp _ _ _)) = do
     handleSigDecl acc decl@(MTypeDecl _) = decl : acc
     handleSigDecl acc (MCallableDecl d) = case d of
       -- When casting to signature, axioms are stripped away.
-      Ann _ MAxiom {} -> acc
+      Ann _ (Callable Axiom _ _ _ _ _) -> acc
       _ -> MCallableDecl (prototypize <$$> d) : acc
 
     prototypize :: MCallableDecl' p -> MCallableDecl' p

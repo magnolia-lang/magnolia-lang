@@ -88,15 +88,6 @@ module Syntax (
   , TcTopLevelDecl
   , TcTypeDecl
   , TcTypedVar
-  -- ** AST-related patterns
-  , pattern MAxiom
-  , pattern MCon
-  , pattern MFunc
-  , pattern MImpl
-  , pattern MPred
-  , pattern MProc
-  , pattern MProg
-  , pattern MSig
   -- ** \"Primitive\" Magnolia types
   , pattern Pred
   , pattern Unit
@@ -615,46 +606,6 @@ instance HasSrcCtx (XAnn p e) => HasSrcCtx (Ann p e) where
   srcCtx = srcCtx . _ann
 
 -- === useful patterns ===
-
-pattern MSig
-  :: Name -> XPhasedContainer p (MDecl p) -> [MModuleDep p]
-  -> MModule' p
-pattern MSig name decls deps = MModule Signature name decls deps
-
-pattern MCon
-  :: Name -> XPhasedContainer p (MDecl p) -> [MModuleDep p]
-  -> MModule' p
-pattern MCon name decls deps = MModule Concept name decls deps
-
-pattern MProg
-  :: Name -> XPhasedContainer p (MDecl p) -> [MModuleDep p]
-  -> MModule' p
-pattern MProg name decls deps = MModule Program name decls deps
-
-pattern MImpl
-  :: Name -> XPhasedContainer p (MDecl p) -> [MModuleDep p]
-  -> MModule' p
-pattern MImpl name decls deps = MModule Implementation name decls deps
-
-pattern MAxiom
-  :: Name -> [TypedVar p] -> MType -> CGuard p -> CBody p -> MCallableDecl' p
-pattern MAxiom name args retType guard body =
-  Callable Axiom name args retType guard body
-
-pattern MFunc
-  :: Name -> [TypedVar p] -> MType -> CGuard p -> CBody p -> MCallableDecl' p
-pattern MFunc name args retType guard body =
-  Callable Function name args retType guard body
-
-pattern MPred
-  :: Name -> [TypedVar p] -> MType -> CGuard p -> CBody p -> MCallableDecl' p
-pattern MPred name args retType guard body =
-  Callable Predicate name args retType guard body
-
-pattern MProc
-  :: Name -> [TypedVar p] -> MType -> CGuard p -> CBody p -> MCallableDecl' p
-pattern MProc name args retType guard body =
-  Callable Procedure name args retType guard body
 
 pattern AbstractImportedDecl :: FullyQualifiedName -> SrcCtx
                              -> AbstractDeclOrigin
