@@ -7,6 +7,7 @@ module Magnolia.Check (
   ) where
 
 import Control.Applicative
+import Control.Monad (void)
 import Control.Monad.Except (foldM, lift, unless, when)
 --import Control.Monad.IO.Class (liftIO)
 import qualified Control.Monad.Trans.State as ST
@@ -21,6 +22,7 @@ import qualified Data.List as L
 import Data.List.NonEmpty (NonEmpty ((:|)), (<|))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
+import qualified Data.Map.NonEmpty as NEM
 import qualified Data.Set as S
 import qualified Data.Text.Lazy as T
 
@@ -794,16 +796,49 @@ insertAndMergeDecl env decl = do
           return (Just newConDeclO, newAbsDeclOs)
         _ -> return (mconDeclO1 <|> mconDeclO2, newAbsDeclOs)
 
-    mergeConcreteDeclOs :: ConcreteDeclOrigin -> ConcreteDeclOrigin
+    mergeConcreteDeclOs :: ConcreteDeclOrigin
+                        -> ConcreteDeclOrigin
                         -> MgMonad ConcreteDeclOrigin
-    mergeConcreteDeclOs conDeclO1 conDeclO2 =
-      if conDeclO1 == conDeclO2 then return conDeclO1
-      else let (src1, src2) = if conDeclO1 < conDeclO2
-                              then (srcCtx conDeclO1, srcCtx conDeclO2)
-                              else (srcCtx conDeclO2, srcCtx conDeclO1)
-           in throwLocatedE InvalidDeclErr errorLoc $
-                "got conflicting implementations for " <> nameAndProto <>
-                " at " <> pshow src1 <> " and " <> pshow src2
+    mergeConcreteDeclOs conDeclO1 conDeclO2
+      | ConcreteMagnoliaDecl declO1 <- conDeclO1 =
+          case conDeclO2 of
+            ConcreteMagnoliaDecl declO2 -> ConcreteMagnoliaDecl <$>
+              mergeExtractedDeclOs declO1 declO2 Nothing
+            ConcreteExternalDecl declOMap ->
+              mkMagnoliaAndExternalConcretesErr declO1 declOMap
+      | ConcreteExternalDecl declOMap1 <- conDeclO1 =
+          case conDeclO2 of
+            ConcreteMagnoliaDecl declO2 ->
+              mkMagnoliaAndExternalConcretesErr declO2 declOMap1
+            ConcreteExternalDecl declOMap2 -> do
+              mapM_ (checkExternalDeclO declOMap2) $ NEM.toList declOMap1
+              return . ConcreteExternalDecl $
+                NEM.union declOMap1 declOMap2
+      where
+        mergeExtractedDeclOs declO1 declO2 mbackend =
+          if declO1 == declO2 then return declO1
+          else let (src1, src2) = if declO1 < declO2
+                                  then (srcCtx declO1, srcCtx declO2)
+                                  else (srcCtx declO2, srcCtx declO1)
+              in throwLocatedE InvalidDeclErr errorLoc $
+                    "got conflicting implementations for " <> nameAndProto <>
+                    " at " <> pshow src1 <> " and " <> pshow src2 <>
+                    maybe "" ((" for backend " <>) . pshow) mbackend
+
+        checkExternalDeclO declOMap (backend, (declO1, _)) = do
+          case NEM.lookup backend declOMap of
+            Nothing -> return ()
+            Just (declO2, _) -> void $
+              mergeExtractedDeclOs declO1 declO2 (Just backend)
+
+        mkMagnoliaAndExternalConcretesErr magnoliaDeclO declOMap =
+          let orderedSrcs = L.sort $ map (srcCtx . fst . snd) $
+                NE.toList $ NEM.toList declOMap
+          in throwLocatedE InvalidDeclErr errorLoc $
+            "provided a Magnolia implementation for " <> nameAndProto <>
+            " at " <> pshow (srcCtx magnoliaDeclO) <> " but got external " <>
+            "implementation" <> (if null (tail orderedSrcs) then "" else "s") <>
+            " at " <> T.intercalate ", " (map pshow orderedSrcs)
 
     mergeAbstractDeclOs :: NE.NonEmpty AbstractDeclOrigin
                         -> NE.NonEmpty AbstractDeclOrigin

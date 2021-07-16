@@ -104,14 +104,16 @@ module Magnolia.Syntax (
   -- * Annotation utils
   -- ** Annotation types
   , AbstractDeclOrigin
-  , ConcreteDeclOrigin
+  , ConcreteDeclOrigin (..)
   , DeclOrigin (..)
   , SrcCtx (..)
   -- ** Annotation-related patterns
   , pattern AbstractImportedDecl
   , pattern AbstractLocalDecl
-  , pattern ConcreteImportedDecl
+  , pattern ConcreteExternalDecl
+  , pattern ConcreteImportedMagnoliaDecl
   , pattern ConcreteLocalDecl
+  , pattern ConcreteMagnoliaDecl
   -- ** Annotation wrapper utils
   , Ann (..)
   , XAnn
@@ -135,6 +137,7 @@ module Magnolia.Syntax (
 
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
+import qualified Data.Map.NonEmpty as NEM
 import qualified Data.Text.Lazy as T
 import Data.Void
 
@@ -301,6 +304,13 @@ data MCallableDecl' p =
            }
   deriving (Eq, Show)
 
+-- TODO: at the moment, with only C++ as a backend, we assume any external body
+--       comes from C++. When we actually implement other backends, we will need
+--       to carry information about the external bodies. For instance, a file
+--       can contain both a JS and a C++ implementation for the same external
+--       functions. These two concrete implementations will be joinable, since
+--       they are backend-dependent (and there is always only one backend).
+--       This will need to be handled at the ConcreteDecl level as well.
 data CBody p = ExternalBody | EmptyBody | MagnoliaBody (MExpr p)
   deriving (Eq, Show)
 type CGuard p = Maybe (MExpr p)
@@ -353,7 +363,7 @@ data MVarMode = MObs | MOut | MUnk | MUpd
 -- == code generation utils ==
 
 data Backend = Cxx | JavaScript | Python
-               deriving (Eq, Show)
+               deriving (Eq, Ord, Show)
 
 -- == annotation utils ==
 
@@ -418,8 +428,9 @@ data DeclOrigin
 
 -- | Wraps the source location information of a concrete declaration (i.e. a
 -- declaration that is not required).
-newtype ConcreteDeclOrigin = ConcreteDeclOrigin DeclOrigin
-                             deriving (Eq, Ord)
+newtype ConcreteDeclOrigin =
+  ConcreteDeclOrigin (Either DeclOrigin (NEM.NEMap Backend (DeclOrigin, Name)))
+  deriving (Eq, Ord)
 -- | Wraps the source location information of an abstract declaration (i.e. a
 -- declaration that is required).
 newtype AbstractDeclOrigin = AbstractDeclOrigin DeclOrigin
@@ -597,9 +608,6 @@ instance HasSrcCtx DeclOrigin where
 instance HasSrcCtx AbstractDeclOrigin where
   srcCtx (AbstractDeclOrigin declO) = srcCtx declO
 
-instance HasSrcCtx ConcreteDeclOrigin where
-  srcCtx (ConcreteDeclOrigin declO) = srcCtx declO
-
 instance HasSrcCtx (SrcCtx, a) where
   srcCtx (src, _) = src
 
@@ -615,12 +623,23 @@ pattern AbstractImportedDecl fqn src = AbstractDeclOrigin (ImportedDecl fqn src)
 pattern AbstractLocalDecl :: SrcCtx -> AbstractDeclOrigin
 pattern AbstractLocalDecl src = AbstractDeclOrigin (LocalDecl src)
 
-pattern ConcreteImportedDecl :: FullyQualifiedName -> SrcCtx
+pattern ConcreteExternalDecl :: NEM.NEMap Backend (DeclOrigin, Name)
                              -> ConcreteDeclOrigin
-pattern ConcreteImportedDecl fqn src = ConcreteDeclOrigin (ImportedDecl fqn src)
+pattern ConcreteExternalDecl declOMap = ConcreteDeclOrigin (Right declOMap)
+
+pattern ConcreteMagnoliaDecl :: DeclOrigin
+                             -> ConcreteDeclOrigin
+pattern ConcreteMagnoliaDecl declO = ConcreteDeclOrigin (Left declO)
+
+{-# COMPLETE ConcreteExternalDecl, ConcreteMagnoliaDecl #-}
+
+pattern ConcreteImportedMagnoliaDecl
+  :: FullyQualifiedName -> SrcCtx -> ConcreteDeclOrigin
+pattern ConcreteImportedMagnoliaDecl fqn src =
+  ConcreteDeclOrigin (Left (ImportedDecl fqn src))
 
 pattern ConcreteLocalDecl :: SrcCtx -> ConcreteDeclOrigin
-pattern ConcreteLocalDecl src = ConcreteDeclOrigin (LocalDecl src)
+pattern ConcreteLocalDecl src = ConcreteDeclOrigin (Left (LocalDecl src))
 
 -- === top level declarations manipulation ===
 
