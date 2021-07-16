@@ -29,7 +29,7 @@ data TestConfig = TestConfig { _testPass :: Pass
 data Pass = CheckPass
           | DepAnalPass
           | ParsePass
-          | ProgramCodegenPass
+          | SelfContainedProgramCodegenPass
           | StructurePreservingCodegenPass
 
 -- | Runs the compiler up to the pass specified in the test configuration, and
@@ -39,7 +39,7 @@ runTest config filePath = case _testPass config of
   DepAnalPass -> runAndLogErrs $ depAnalPass filePath
   ParsePass -> runAndLogErrs $ depAnalPass filePath >>= parsePass
   CheckPass -> runAndLogErrs $ depAnalPass filePath >>= parsePass >>= checkPass
-  ProgramCodegenPass -> case _testBackend config of
+  SelfContainedProgramCodegenPass -> case _testBackend config of
     Cxx -> undefined
     _ -> error "codegen not yet implemented"
   StructurePreservingCodegenPass ->
@@ -89,14 +89,15 @@ parseCompilerMode = mkInfo compilerMode
               help "Output directory for code generation")
 
     passOpts = [ ("check", CheckPass)
-               , ("codegen", ProgramCodegenPass)
+               , ("self-contained-codegen", SelfContainedProgramCodegenPass)
                , ("depanal", DepAnalPass)
                , ("parse", ParsePass)
                , ("structured-codegen", StructurePreservingCodegenPass)
                ]
     backendOpts = [ ("cpp", Cxx)
                   , ("javascript", JavaScript)
-                  , ("python", Python)]
+                  , ("python", Python)
+                  ]
 
     oneOf :: [(String, a)] -> ReadM a
     oneOf optPairs = eitherReader (\v -> case L.lookup v optPairs of

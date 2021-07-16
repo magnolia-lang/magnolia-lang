@@ -5,6 +5,7 @@ module Cxx.Syntax (
   , CxxDef (..)
   , CxxExpr (..)
   , CxxFunctionDef (..)
+  , CxxImport (..)
   , CxxLambdaCaptureDefault (..)
   , CxxModule (..)
   , CxxModuleRefSpecialization (..)

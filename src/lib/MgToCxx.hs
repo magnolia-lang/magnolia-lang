@@ -4,10 +4,9 @@
 
 module MgToCxx (
     mgToCxx
-  , mgPackageToCxxProgramPackage) where
+  , mgPackageToCxxSelfContainedProgramPackage) where
 
-import Control.Monad (join)
-import Control.Monad (foldM, unless)
+import Control.Monad (foldM, join, unless)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.List as L
 import qualified Data.List.NonEmpty as NE
@@ -33,25 +32,43 @@ import Magnolia.Util
 --  :: M.Map FullyQualifiedName (CxxModule, [(TcTypeDecl, CxxName)])
 --  -> MgMonad (CxxModule, [(TcTypeDecl, CxxName)])
 
-mgPackageToCxxProgramPackage :: TcPackage -> MgMonad CxxPackage
-mgPackageToCxxProgramPackage tcPkg = do
+mgPackageToCxxSelfContainedProgramPackage :: TcPackage -> MgMonad CxxPackage
+mgPackageToCxxSelfContainedProgramPackage tcPackage = do
   let allModules = join $
-        map (getModules . snd) $ M.toList (_packageDecls $ _elem tcPkg)
+        map (getModules . snd) $ M.toList (_packageDecls $ _elem tcPackage)
       programs = filter ((== Program) . moduleType) allModules
       externals = filter (isCxxExternal . moduleType) allModules
+      imports = gatherImports allModules
+  cxxPrograms <- gatherPrograms allModules
   -- TODO: generate imports from externals
   -- TODO: generate self-contained CxxModules from programs
-  undefined
+  return $ CxxPackage imports cxxPrograms
   where
     moduleType :: TcModule -> MModuleType
     moduleType (Ann _ (MModule moduleTy _ _ _)) = moduleTy
     moduleType (Ann _ (RefModule _ _ v)) = absurd v
 
+
+    gatherImports :: [TcModule] -> [CxxImport]
+    gatherImports [] = []
+    gatherImports (tcM:tcMs) = case moduleType tcM of
+      External Cxx fqName -> CxxImport fqName : gatherImports tcMs
+      _ -> gatherImports tcMs
+
+    gatherPrograms :: [TcModule] -> MgMonad [CxxModule]
+    gatherPrograms = foldM
+      (\acc -> ((:acc) <$>) . mgProgramToCxxProgramModule) [] .
+      filter ((== Program) . moduleType)
+
     isCxxExternal :: MModuleType -> Bool
     isCxxExternal (External Cxx _) = True
     isCxxExternal _ = False
 
-
+mgProgramToCxxProgramModule :: TcModule -> MgMonad CxxModule
+mgProgramToCxxProgramModule (Ann _ (RefModule _ _ v)) = absurd v
+mgProgramToCxxProgramModule (Ann _ (MModule Program _ _ _)) = do
+  undefined
+mgProgramToCxxProgramModule _ = error "expected program"
 
 mgToCxx
   :: (FullyQualifiedName, MModule PhCheck)

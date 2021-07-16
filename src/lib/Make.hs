@@ -53,7 +53,7 @@ checkPass = foldMAccumErrorsAndFail go M.empty
 
 programCodegenCxxPass :: TcGlobalEnv -> MgMonad [CxxPackage]
 programCodegenCxxPass = foldMAccumErrorsAndFail
-  (\acc -> ((:acc) <$>) . mgPackageToCxxProgramPackage) []
+  (\acc -> ((:acc) <$>) . mgPackageToCxxSelfContainedProgramPackage) []
 
 -- | Checks if a list of strongly connected components contains cycles.
 -- Does not fail, but logs an error for each detected cycle. The resulting
