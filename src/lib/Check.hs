@@ -525,13 +525,16 @@ annotateScopedExprStmt modul = go
       checkExprMode src tcExpr MObs
       return (scope, Ann (_ann tcExpr) (MValue tcExpr))
     MLet (Ann _ (Var mode name mTy)) mExpr -> do
-      unless (isNothing $ M.lookup name scope) $
-        throwLocatedE MiscErr src $ "variable already defined in scope: " <>
-          pshow name
+      let mboundVar = M.lookup name scope
+      unless (isNothing mboundVar) $
+        throwLocatedE MiscErr src $ "conflicting definitions for variable " <>
+          pshow name <> ". Attempted to define variable " <> pshow name <>
+          " with type " <> pshow mTy <> ", but a definition with type " <>
+          pshow ( _ann $ fromJust mboundVar) <> " already exists in scope"
       case mExpr of
         Nothing -> do
           when (isNothing mTy) $
-            throwLocatedE NotImplementedErr src $ "can not yet declare a " <>
+            throwLocatedE MiscErr src $ "can not declare a " <>
               "variable without specifying its type or an assignment " <>
               "expression"
           let (Just ty) = mTy
@@ -569,8 +572,8 @@ annotateScopedExprStmt modul = go
     MIf cond trueExpr falseExpr -> do
       tcCond <- annotateScopedExpr scope (Just Pred) cond
       unless (_ann tcCond == Pred) $
-        throwLocatedE TypeErr src $ "expected condition to have type " <>
-          pshow Pred <> " but got " <> pshow (_ann tcCond)
+        throwLocatedE TypeErr src $ "expected predicate but got expression " <>
+        "of type " <> pshow (_ann tcCond)
       checkExprMode src tcCond MObs
       (trueScope, tcTrueExpr) <- go scope mExprTy trueExpr
       checkExprMode src tcTrueExpr MObs
@@ -616,8 +619,8 @@ annotateScopedExprStmt modul = go
     MAssert cond -> do
       tcCond <- annotateScopedExpr scope (Just Pred) cond
       when (_ann tcCond /= Pred) $
-        throwLocatedE TypeErr src $ "expected expression to have type " <>
-          pshow Pred <> " in predicate but got " <> pshow (_ann tcCond)
+        throwLocatedE TypeErr src $ "expected predicate but got expression " <>
+          "of type " <> pshow (_ann tcCond)
       checkExprMode src tcCond MObs
       return (scope, Ann Unit (MAssert tcCond))
     MSkip -> return (scope, Ann Unit MSkip)

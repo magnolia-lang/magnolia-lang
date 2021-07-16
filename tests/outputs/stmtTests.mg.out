@@ -1,1 +1,15 @@
 tests/inputs/stmtTests.mg:18:9: Error: function not in scope in tests.inputs.stmtTests.StmtTests: _=_ with arguments of type (T1, T2)
+
+tests/inputs/stmtTests.mg:33:9: Type error in tests.inputs.stmtTests.VarExprTests: got conflicting type annotation for var x: x has type T but type annotation is U
+
+tests/inputs/stmtTests.mg:55:29: Type error in tests.inputs.stmtTests.CallExprTests: could not deduce return type of call to overload_return_type. Possible candidates have return types [T, U]. Consider adding a type annotation
+
+tests/inputs/stmtTests.mg:70:9: Error in tests.inputs.stmtTests.LetExprTests: conflicting definitions for variable x. Attempted to define variable x with type U, but a definition with type T already exists in scope
+
+tests/inputs/stmtTests.mg:76:9: Error in tests.inputs.stmtTests.LetExprTests: can not declare a variable without specifying its type or an assignment expression
+
+tests/inputs/stmtTests.mg:103:9: Type error in tests.inputs.stmtTests.IfExprTests: expected branches of conditional to have the same type but got T and U
+
+tests/inputs/stmtTests.mg:108:9: Type error in tests.inputs.stmtTests.IfExprTests: expected predicate but got expression of type T
+
+tests/inputs/stmtTests.mg:123:40: Type error in tests.inputs.stmtTests.AssertionTests: expected predicate but got expression of type T
