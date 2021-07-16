@@ -158,7 +158,7 @@ hackyPrelude genConcreteDefs = map (MCallableDecl . Ann newAnn) (unOps <> binOps
       ["&&", "||", "!=", "=>", "<=>"]
     newAnn = let absDeclOs = AbstractLocalDecl (SrcCtx Nothing) :| [] in
       if genConcreteDefs
-      then (Just $ ConcreteLocalDecl (SrcCtx Nothing), absDeclOs)
+      then (Just $ ConcreteLocalMagnoliaDecl (SrcCtx Nothing), absDeclOs)
       else (Nothing, absDeclOs)
     body = if genConcreteDefs then ExternalBody else EmptyBody
 
@@ -212,7 +212,7 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) =
   hackyScope <- foldM insertAndMergeDecl depScope (hackyPrelude isProgram)
   -- Step 3: register types
   -- TODO: remove name as parameter to "insertAndMergeDecl"
-  baseScope <- foldMAccumErrors registerType hackyScope types
+  baseScope <- foldMAccumErrors (registerType mbackend) hackyScope types
   -- Step 4: check and register protos
   protoScope <- do
     -- we first register all the protos without checking the guards
@@ -234,6 +234,10 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) =
                , _elem = MModule moduleType moduleName finalScope tcDeps
                }
   where
+    mbackend = case moduleType of
+        External backend _ -> Just backend
+        _ -> Nothing
+
     types :: [TcTypeDecl]
     types = map mkTypeDecl (getTypeDecls decls)
 
@@ -242,8 +246,8 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) =
       let absDecls = AbstractLocalDecl src :| []
           tcTy = Type n isReq
       in if isReq
-         then Ann (if isReq then Nothing else Just $ ConcreteLocalDecl src, absDecls) tcTy
-         else Ann (Just $ ConcreteLocalDecl src, absDecls) tcTy
+         then Ann (Nothing, absDecls) tcTy
+         else Ann (Just $ mkConcreteLocalDecl mbackend src n, absDecls) tcTy
 
     checkBody
       :: ModuleScope
@@ -281,8 +285,9 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) =
               "pattern matching fail in callable body check for " <> pshow fname
           Ann (_, absDeclOs) (Callable _ _ tcArgs _ tcGuard _) <-
             checkProto True env decl
-          let tcAnnDecl = Ann (Just $ ConcreteLocalDecl src, absDeclOs) $
-                Callable ctype fname tcArgs retType tcGuard tcBody
+          let tcAnnDecl =
+                Ann (Just $ ConcreteLocalMagnoliaDecl src, absDeclOs) $
+                  Callable ctype fname tcArgs retType tcGuard tcBody
           if bodyRetType == retType
           then insertAndMergeDecl env (MCallableDecl tcAnnDecl)
           else throwLocatedE TypeErr src $
@@ -859,12 +864,13 @@ checkTypeExists modul (src, name)
       Just matches -> when (null (getTypeDecls matches)) $
         throwLocatedE UnboundTypeErr src (pshow name)
 
-registerType :: ModuleScope -> TcTypeDecl -> MgMonad ModuleScope
-registerType modul annType =
-  foldM insertAndMergeDecl modul (mkTypeUtils annType)
+registerType :: Maybe Backend -> ModuleScope -> TcTypeDecl
+             -> MgMonad ModuleScope
+registerType mbackend modul annType =
+  foldM insertAndMergeDecl modul (mkTypeUtils mbackend annType)
 
-mkTypeUtils :: TcTypeDecl -> [TcDecl]
-mkTypeUtils annType@(Ann _ (Type _ isRequired)) =
+mkTypeUtils :: Maybe Backend -> TcTypeDecl -> [TcDecl]
+mkTypeUtils mbackend annType@(Ann _ (Type name isRequired)) =
     [ MTypeDecl annType
     , MCallableDecl (Ann newAnn equalityFnDecl)
     , MCallableDecl (Ann newAnn assignProcDecl)
@@ -872,10 +878,12 @@ mkTypeUtils annType@(Ann _ (Type _ isRequired)) =
   where
     newAnn = let (conDeclO, absDeclOs) = _ann annType in case conDeclO of
       Just _ -> _ann annType
-      Nothing -> if isRequired
-                 then (Nothing, absDeclOs)
-                 else let (AbstractLocalDecl src) = NE.head absDeclOs
-                      in (Just $ ConcreteLocalDecl src, absDeclOs)
+      Nothing ->
+        if isRequired
+        then (Nothing, absDeclOs)
+        else let (AbstractLocalDecl src) = NE.head absDeclOs
+        in (Just (mkConcreteLocalDecl mbackend src name), absDeclOs)
+
 
     mkVar mode nameStr =
       Ann (nodeName annType) $ Var mode (VarName nameStr) (nodeName annType)

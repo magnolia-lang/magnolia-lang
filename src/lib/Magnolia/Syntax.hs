@@ -104,15 +104,15 @@ module Magnolia.Syntax (
   -- * Annotation utils
   -- ** Annotation types
   , AbstractDeclOrigin
-  , ConcreteDeclOrigin (..)
+  , ConcreteDeclOrigin
+  , mkConcreteLocalDecl
   , DeclOrigin (..)
   , SrcCtx (..)
   -- ** Annotation-related patterns
-  , pattern AbstractImportedDecl
   , pattern AbstractLocalDecl
   , pattern ConcreteExternalDecl
   , pattern ConcreteImportedMagnoliaDecl
-  , pattern ConcreteLocalDecl
+  , pattern ConcreteLocalMagnoliaDecl
   , pattern ConcreteMagnoliaDecl
   -- ** Annotation wrapper utils
   , Ann (..)
@@ -427,10 +427,29 @@ data DeclOrigin
 
 
 -- | Wraps the source location information of a concrete declaration (i.e. a
--- declaration that is not required).
+-- declaration that is not required). If the inner constructor is Left, then
+-- the origin of the declaration is interpreted as being internal (i.e. the
+-- declaration is defined purely using Magnolia code). A contrario, if the
+-- inner constructor is Right, then the origin of the declaration is interpreted
+-- as being external (i.e. the declaration is defined to exist for at least one
+-- backend). In that case, the declaration is also accompanied with the name
+-- that corresponds to the function in the external context. One concrete
+-- declaration can be provided for each backend.
+-- TODO: perhaps carrying one single DeclOrigin/Name pair. Having two in
+-- contexts is maybe not that useful? We shall see.
 newtype ConcreteDeclOrigin =
   ConcreteDeclOrigin (Either DeclOrigin (NEM.NEMap Backend (DeclOrigin, Name)))
   deriving (Eq, Ord)
+
+-- | Exposed constructor for ConcreteDeclOrigins. If a backend is provided,
+-- produces an 'external' ConcreteDeclOrigin. Otherwise, produces an 'internal'
+-- one.
+mkConcreteLocalDecl :: Maybe Backend -> SrcCtx -> Name -> ConcreteDeclOrigin
+mkConcreteLocalDecl mbackend src name = case mbackend of
+  Nothing -> ConcreteLocalMagnoliaDecl src
+  Just backend ->
+    ConcreteExternalDecl (NEM.singleton backend (LocalDecl src, name))
+
 -- | Wraps the source location information of an abstract declaration (i.e. a
 -- declaration that is required).
 newtype AbstractDeclOrigin = AbstractDeclOrigin DeclOrigin
@@ -616,10 +635,6 @@ instance HasSrcCtx (XAnn p e) => HasSrcCtx (Ann p e) where
 
 -- === useful patterns ===
 
-pattern AbstractImportedDecl :: FullyQualifiedName -> SrcCtx
-                             -> AbstractDeclOrigin
-pattern AbstractImportedDecl fqn src = AbstractDeclOrigin (ImportedDecl fqn src)
-
 pattern AbstractLocalDecl :: SrcCtx -> AbstractDeclOrigin
 pattern AbstractLocalDecl src = AbstractDeclOrigin (LocalDecl src)
 
@@ -638,8 +653,9 @@ pattern ConcreteImportedMagnoliaDecl
 pattern ConcreteImportedMagnoliaDecl fqn src =
   ConcreteDeclOrigin (Left (ImportedDecl fqn src))
 
-pattern ConcreteLocalDecl :: SrcCtx -> ConcreteDeclOrigin
-pattern ConcreteLocalDecl src = ConcreteDeclOrigin (Left (LocalDecl src))
+pattern ConcreteLocalMagnoliaDecl :: SrcCtx -> ConcreteDeclOrigin
+pattern ConcreteLocalMagnoliaDecl src =
+  ConcreteDeclOrigin (Left (LocalDecl src))
 
 -- === top level declarations manipulation ===
 
