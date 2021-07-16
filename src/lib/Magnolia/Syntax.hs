@@ -105,13 +105,15 @@ module Magnolia.Syntax (
   -- ** Annotation types
   , AbstractDeclOrigin
   , ConcreteDeclOrigin
+  , mkConcreteLocalDecl
   , DeclOrigin (..)
   , SrcCtx (..)
   -- ** Annotation-related patterns
-  , pattern AbstractImportedDecl
   , pattern AbstractLocalDecl
-  , pattern ConcreteImportedDecl
-  , pattern ConcreteLocalDecl
+  , pattern ConcreteExternalDecl
+  , pattern ConcreteImportedMagnoliaDecl
+  , pattern ConcreteLocalMagnoliaDecl
+  , pattern ConcreteMagnoliaDecl
   -- ** Annotation wrapper utils
   , Ann (..)
   , XAnn
@@ -301,6 +303,13 @@ data MCallableDecl' p =
            }
   deriving (Eq, Show)
 
+-- TODO: at the moment, with only C++ as a backend, we assume any external body
+--       comes from C++. When we actually implement other backends, we will need
+--       to carry information about the external bodies. For instance, a file
+--       can contain both a JS and a C++ implementation for the same external
+--       functions. These two concrete implementations will be joinable, since
+--       they are backend-dependent (and there is always only one backend).
+--       This will need to be handled at the ConcreteDecl level as well.
 data CBody p = ExternalBody | EmptyBody | MagnoliaBody (MExpr p)
   deriving (Eq, Show)
 type CGuard p = Maybe (MExpr p)
@@ -353,7 +362,7 @@ data MVarMode = MObs | MOut | MUnk | MUpd
 -- == code generation utils ==
 
 data Backend = Cxx | JavaScript | Python
-               deriving (Eq, Show)
+               deriving (Eq, Ord, Show)
 
 -- == annotation utils ==
 
@@ -417,9 +426,26 @@ data DeclOrigin
 
 
 -- | Wraps the source location information of a concrete declaration (i.e. a
--- declaration that is not required).
-newtype ConcreteDeclOrigin = ConcreteDeclOrigin DeclOrigin
-                             deriving (Eq, Ord)
+-- declaration that is not required). If the inner constructor is Left, then
+-- the origin of the declaration is interpreted as being internal (i.e. the
+-- declaration is defined purely using Magnolia code). A contrario, if the
+-- inner constructor is Right, then the origin of the declaration is interpreted
+-- as being external (i.e. the declaration is defined to exist on some
+-- backend). In that case, the declaration is also accompanied with the name
+-- that corresponds to the function in the external context, and the relevant
+-- backend.
+newtype ConcreteDeclOrigin =
+  ConcreteDeclOrigin (Either DeclOrigin (DeclOrigin, Backend, Name))
+  deriving (Eq, Ord)
+
+-- | Exposed constructor for ConcreteDeclOrigins. If a backend is provided,
+-- produces an 'external' ConcreteDeclOrigin. Otherwise, produces an 'internal'
+-- one.
+mkConcreteLocalDecl :: Maybe Backend -> SrcCtx -> Name -> ConcreteDeclOrigin
+mkConcreteLocalDecl mbackend src name = case mbackend of
+  Nothing -> ConcreteLocalMagnoliaDecl src
+  Just backend -> ConcreteLocalExternalDecl backend name src
+
 -- | Wraps the source location information of an abstract declaration (i.e. a
 -- declaration that is required).
 newtype AbstractDeclOrigin = AbstractDeclOrigin DeclOrigin
@@ -594,11 +620,13 @@ instance HasSrcCtx DeclOrigin where
     LocalDecl src -> src
     ImportedDecl _ src -> src
 
+instance HasSrcCtx ConcreteDeclOrigin where
+  srcCtx (ConcreteDeclOrigin edeclO) = case edeclO of
+    Left declO -> srcCtx declO
+    Right (declO, _, _) -> srcCtx declO
+
 instance HasSrcCtx AbstractDeclOrigin where
   srcCtx (AbstractDeclOrigin declO) = srcCtx declO
-
-instance HasSrcCtx ConcreteDeclOrigin where
-  srcCtx (ConcreteDeclOrigin declO) = srcCtx declO
 
 instance HasSrcCtx (SrcCtx, a) where
   srcCtx (src, _) = src
@@ -608,19 +636,33 @@ instance HasSrcCtx (XAnn p e) => HasSrcCtx (Ann p e) where
 
 -- === useful patterns ===
 
-pattern AbstractImportedDecl :: FullyQualifiedName -> SrcCtx
-                             -> AbstractDeclOrigin
-pattern AbstractImportedDecl fqn src = AbstractDeclOrigin (ImportedDecl fqn src)
-
 pattern AbstractLocalDecl :: SrcCtx -> AbstractDeclOrigin
 pattern AbstractLocalDecl src = AbstractDeclOrigin (LocalDecl src)
 
-pattern ConcreteImportedDecl :: FullyQualifiedName -> SrcCtx
+pattern ConcreteExternalDecl :: DeclOrigin -> Backend -> Name
                              -> ConcreteDeclOrigin
-pattern ConcreteImportedDecl fqn src = ConcreteDeclOrigin (ImportedDecl fqn src)
+pattern ConcreteExternalDecl declO backend name =
+  ConcreteDeclOrigin (Right (declO, backend, name))
 
-pattern ConcreteLocalDecl :: SrcCtx -> ConcreteDeclOrigin
-pattern ConcreteLocalDecl src = ConcreteDeclOrigin (LocalDecl src)
+pattern ConcreteMagnoliaDecl :: DeclOrigin
+                             -> ConcreteDeclOrigin
+pattern ConcreteMagnoliaDecl declO = ConcreteDeclOrigin (Left declO)
+
+{-# COMPLETE ConcreteExternalDecl, ConcreteMagnoliaDecl #-}
+
+pattern ConcreteImportedMagnoliaDecl
+  :: FullyQualifiedName -> SrcCtx -> ConcreteDeclOrigin
+pattern ConcreteImportedMagnoliaDecl fqn src =
+  ConcreteDeclOrigin (Left (ImportedDecl fqn src))
+
+pattern ConcreteLocalMagnoliaDecl :: SrcCtx -> ConcreteDeclOrigin
+pattern ConcreteLocalMagnoliaDecl src =
+  ConcreteDeclOrigin (Left (LocalDecl src))
+
+pattern ConcreteLocalExternalDecl :: Backend -> Name -> SrcCtx
+                                  -> ConcreteDeclOrigin
+pattern ConcreteLocalExternalDecl backend name src =
+  ConcreteDeclOrigin (Right (LocalDecl src, backend, name))
 
 -- === top level declarations manipulation ===
 
