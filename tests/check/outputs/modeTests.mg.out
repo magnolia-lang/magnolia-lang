@@ -1,0 +1,19 @@
+tests/check/inputs/modeTests.mg:8:5: Mode error in tests.check.inputs.modeTests.modeTests_I: attempting to overload modes in definition of procedure overload_one_param: have modes (obs), but a declaration with modes (out) is already in scope
+
+tests/check/inputs/modeTests.mg:11:5: Mode error in tests.check.inputs.modeTests.modeTests_I: attempting to overload modes in definition of procedure overload_two_param: have modes (obs, out), but a declaration with modes (obs, upd) is already in scope
+
+tests/check/inputs/modeTests.mg:19:46: Mode error in tests.check.inputs.modeTests.modeTests_I: incompatible modes in call to in_out: expected out but got obs for argument #1
+
+tests/check/inputs/modeTests.mg:20:46: Mode error in tests.check.inputs.modeTests.modeTests_I: incompatible modes in call to in_upd: expected upd but got obs for argument #1
+
+tests/check/inputs/modeTests.mg:23:46: Mode error in tests.check.inputs.modeTests.modeTests_I: incompatible modes in call to in_obs: expected obs but got out for argument #1
+
+tests/check/inputs/modeTests.mg:25:46: Mode error in tests.check.inputs.modeTests.modeTests_I: incompatible modes in call to in_upd: expected upd but got out for argument #1
+
+tests/check/inputs/modeTests.mg:34:48: Mode error in tests.check.inputs.modeTests.modeTests_I: incompatible modes in call to in_2_obs: expected obs but got out for argument #1; expected obs but got out for argument #2
+
+tests/check/inputs/modeTests.mg:37:38: Mode error in tests.check.inputs.modeTests.modeTests_I: expected expression to have mode obs but it has mode unk
+
+tests/check/inputs/modeTests.mg:38:39: Mode error in tests.check.inputs.modeTests.modeTests_I: expected expression to have mode obs but it has mode out
+
+tests/check/inputs/modeTests.mg:47:51: Mode error in tests.check.inputs.modeTests.modeTests_I: argument in_out is 'out' but is not populated by the procedure body

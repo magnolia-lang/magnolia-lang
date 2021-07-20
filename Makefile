@@ -1,4 +1,5 @@
 mgn := cabal exec -v0 magnolia --
+pass := check
 
 build:
 	cabal new-build
@@ -9,27 +10,43 @@ clean:
 lint:
 	hlint src
 
-test-targets = declScopeTests \
-		externalTests \
-		modeTests \
-		package-name-with-hyphens \
-		packageTests \
-		parsingTests \
-		regressionTests \
-		renamingTests \
-		requirementTests \
-	    	stateHandlingTests \
-		stmtTests
+parse-test-targets = package-name-with-hyphens
 
-tests: $(test-targets:%=check-output-%)
+check-test-targets = declScopeTests \
+		     externalTests \
+		     modeTests \
+		     packageTests \
+		     parsingTests \
+		     regressionTests \
+		     renamingTests \
+		     requirementTests \
+	    	     stateHandlingTests \
+		     stmtTests
 
-update-tests: $(test-targets:%=update-output-%)
+self-contained-codegen-test-targets = externalTests \
+                                      generalTranslationTests
 
-check-output-%: tests/inputs/%.mg tests/outputs/%.mg.out build
+tests: tests-all
+
+tests-all:
+	for pass in parse check self-contained-codegen ; do \
+		make tests-pass pass=$$pass ; \
+	done
+
+update-tests:
+	for pass in parse check self-contained-codegen ; do \
+		make update-tests-pass pass=$$pass ; \
+	done
+
+tests-pass: $($(pass)-test-targets:%=check-output-%)
+
+update-tests-pass: $($(pass)-test-targets:%=update-output-%)
+
+check-output-%: tests/$(pass)/inputs/%.mg tests/$(pass)/outputs/%.mg.out build
 	$(eval tempfile := $(shell mktemp))
-	$(mgn) test --pass check $< > $(tempfile)
+	$(mgn) test --pass $(pass) $< > $(tempfile)
 	@diff $(tempfile) $(word 2, $^) > /dev/null && echo "OK" || (echo "Output is not matching for test file $<"; rm $(tempfile); exit 1)
 	@rm $(tempfile)
 
-update-output-%: tests/inputs/%.mg build
-	$(mgn) build $< > tests/outputs/$(notdir $<).out
+update-output-%: tests/$(pass)/inputs/%.mg build
+	$(mgn) test --pass $(pass) $< > tests/$(pass)/outputs/$(notdir $<).out

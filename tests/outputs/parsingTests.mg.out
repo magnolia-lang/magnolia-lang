@@ -1,7 +1,0 @@
-<unknown location>: Parse error: tests/inputs/parsingTests.mg:2:1:
-  |
-2 | <empty line>
-  | ^
-unexpected end of input
-expecting '_' or alphanumeric character
-

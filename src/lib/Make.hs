@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Make (
@@ -5,6 +6,7 @@ module Make (
     checkPass
   , depAnalPass
   , parsePass
+  , programCodegenCxxPass
   )
   where
 
@@ -14,12 +16,14 @@ import qualified Data.Graph as G
 import qualified Data.List as L
 import qualified Data.Map as M
 
-import Check
+import Cxx.Syntax
 import Env
-import Parser
-import PPrint
-import Syntax
-import Util
+import Magnolia.Check
+import Magnolia.Parser
+import Magnolia.PPrint
+import Magnolia.Syntax
+import Magnolia.Util
+import MgToCxx
 
 type TcGlobalEnv = Env (MPackage PhCheck)
 
@@ -27,9 +31,6 @@ type TcGlobalEnv = Env (MPackage PhCheck)
 
 depAnalPass :: FilePath -> MgMonad [PackageHead]
 depAnalPass filepath = loadDependencyGraph filepath >>= detectCycle
-  where
-    detectCycle = (L.reverse <$>) . foldMAccumErrors
-      (\acc c -> (:acc) <$> checkNoCycle c) []
 
 parsePass :: [PackageHead] -> MgMonad [ParsedPackage]
 parsePass pkgHeads =
@@ -49,6 +50,20 @@ checkPass = foldMAccumErrorsAndFail go M.empty
       tcPkg <- checkPackage env parsedPkg
       return $ M.insert (nodeName parsedPkg) tcPkg env
 
+-- | This function takes in a Map of typechecked packages, and produces, for
+-- each of them, a C++ package containing all the programs defined in
+programCodegenCxxPass :: TcGlobalEnv -> MgMonad [CxxPackage]
+programCodegenCxxPass = foldMAccumErrorsAndFail
+  (\acc -> ((:acc) <$>) . mgPackageToCxxSelfContainedProgramPackage) []
+
+-- | Checks if a list of strongly connected components contains cycles.
+-- Does not fail, but logs an error for each detected cycle. The resulting
+-- list contains exactly all the elements that were part of an acyclic strongly
+-- connected component.
+detectCycle :: (HasSrcCtx a, HasName a) => [G.SCC a] -> MgMonad [a]
+detectCycle = (L.reverse <$>) . foldMAccumErrors
+  (\acc c -> (:acc) <$> checkNoCycle c) []
+
 -- TODO: cache and choose what to reload with granularity
 -- | Takes the path towards a Magnolia package and constructs its dependency
 -- graph, which is returned as a topologically sorted list of strongly
@@ -57,7 +72,7 @@ checkPass = foldMAccumErrorsAndFail go M.empty
 -- For example, assuming a Magnolia package "A" depends on a Magnolia package
 -- "B", the result will be sorted like ["B", "A"].
 loadDependencyGraph :: FilePath -> MgMonad [G.SCC PackageHead]
-loadDependencyGraph = (topSortPackages <$>) . recover (go M.empty)
+loadDependencyGraph = (topSortPackageHeads <$>) . recover (go M.empty)
   where
     go :: M.Map Name PackageHead -> FilePath -> MgMonad (M.Map Name PackageHead)
     go loadedHeads filePath = do
@@ -78,7 +93,7 @@ loadDependencyGraph = (topSortPackages <$>) . recover (go M.empty)
               "name " <> pshow expectedPkgName <> " but got " <>
               pshow pkgName
           foldM go (M.insert pkgName packageHead loadedHeads) imports
-    topSortPackages pkgHeads = G.stronglyConnComp
+    topSortPackageHeads pkgHeads = G.stronglyConnComp
         [ ( pkgHead
           , _packageHeadName pkgHead
           , _packageHeadImports pkgHead
