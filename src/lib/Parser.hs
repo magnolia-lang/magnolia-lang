@@ -471,28 +471,35 @@ varName :: Parser Name
 varName = VarName <$> nameString
 
 packageName :: Parser Name
-packageName = PkgName <$> packageString
+packageName = fromFullyQualifiedName <$>
+  fullyQualifiedName NSDirectory NSPackage
 
 -- TODO: remove
 packageString :: Parser String
-packageString = do
-  (scopeS, nameS) <- fullyQualifiedNameString
-  return $ maybe "" (<> ".") scopeS <> nameS
+packageString = _name <$> packageName
 
-fullyQualifiedName :: NameSpace -> NameSpace -> Parser FullyQualifiedName
-fullyQualifiedName scopeNS nameNS = do
-  (scopeS, nameS) <- fullyQualifiedNameString
-  return $ FullyQualifiedName (Name scopeNS <$> scopeS) (Name nameNS nameS)
-
-fullyQualifiedNameString :: Parser (Maybe String, String)
-fullyQualifiedNameString = do
-  nameStrings <- nameString `sepBy1` char '.'
+fullyQualifiedName :: NameSpace -> NameSpace
+                   -> Parser FullyQualifiedName
+fullyQualifiedName scopeNs targetNs = do
+  nameStrings <- stringParser `sepBy1` char '.'
   -- nameStrings *must* contain at least one element here. Therefore, we can
   -- safely call last.
+  let targetName = Name targetNs (last nameStrings)
   case init nameStrings of
-    [] -> return (Nothing, last nameStrings)
-    ss -> return (Just $ L.intercalate "." ss, last nameStrings)
+    [] -> return $ FullyQualifiedName Nothing targetName
+    ss -> return $ FullyQualifiedName
+      (Just $ Name scopeNs (L.intercalate "." ss)) targetName
+  where
+    -- When parsing a package path through directories, for convenience, we
+    -- may want to allow hyphens as part of the names. We assume that directory
+    -- and filenames do not start with the character '-' though, as this may
+    -- lead to trouble when parsing command line options if one is not careful.
+    allowHyphens = scopeNs == NSDirectory && targetNs == NSPackage
+    stringParser = if allowHyphens
+      then lexeme . try $ (:) <$> nameChar <*> many (nameChar <|> char '-')
+      else nameString
 
+-- TODO: deprecate repl
 sourceFileString :: Parser String
 sourceFileString =
   lexeme . try $ (:) <$> sourceFileChar <*> many sourceFileChar <> string ".mg"

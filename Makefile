@@ -12,6 +12,7 @@ lint:
 test-targets = declScopeTests \
 		externalTests \
 		modeTests \
+		package-name-with-hyphens \
 		packageTests \
 		parsingTests \
 		regressionTests \
