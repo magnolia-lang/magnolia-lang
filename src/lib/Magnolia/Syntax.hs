@@ -422,8 +422,10 @@ data DeclOrigin
   -- annotations. At the package level, all the modules imported from
   -- different packages should carry this annotation.
   | ImportedDecl FullyQualifiedName SrcCtx
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Show)
 
+instance Ord DeclOrigin where
+  compare declO1 declO2 = compare (srcCtx declO1) (srcCtx declO2)
 
 -- | Wraps the source location information of a concrete declaration (i.e. a
 -- declaration that is not required). If the inner constructor is Left, then
@@ -435,16 +437,22 @@ data DeclOrigin
 -- that corresponds to the function in the external context, and the relevant
 -- backend.
 newtype ConcreteDeclOrigin =
-  ConcreteDeclOrigin (Either DeclOrigin (DeclOrigin, Backend, Name))
-  deriving (Eq, Ord)
+  ConcreteDeclOrigin (Either DeclOrigin
+                             (DeclOrigin, Backend, FullyQualifiedName))
+  deriving (Eq, Show)
 
--- | Exposed constructor for ConcreteDeclOrigins. If a backend is provided,
--- produces an 'external' ConcreteDeclOrigin. Otherwise, produces an 'internal'
--- one.
-mkConcreteLocalDecl :: Maybe Backend -> SrcCtx -> Name -> ConcreteDeclOrigin
-mkConcreteLocalDecl mbackend src name = case mbackend of
+instance Ord ConcreteDeclOrigin where
+  compare conDeclO1 conDeclO2 = compare (srcCtx conDeclO1) (srcCtx conDeclO2)
+
+-- | Exposed constructor for ConcreteDeclOrigins. If a backend and a scope
+-- name are provided, produces an external ConcreteDeclOrigin. Otherwise,
+-- produces an internal one.
+mkConcreteLocalDecl :: Maybe (Backend, Name) -> SrcCtx -> Name
+                    -> ConcreteDeclOrigin
+mkConcreteLocalDecl mexternalInfo src name = case mexternalInfo of
   Nothing -> ConcreteLocalMagnoliaDecl src
-  Just backend -> ConcreteLocalExternalDecl backend name src
+  Just (backend, scopeName) -> ConcreteLocalExternalDecl backend
+    (FullyQualifiedName (Just scopeName) name) src
 
 -- | Wraps the source location information of an abstract declaration (i.e. a
 -- declaration that is required).
@@ -639,10 +647,10 @@ instance HasSrcCtx (XAnn p e) => HasSrcCtx (Ann p e) where
 pattern AbstractLocalDecl :: SrcCtx -> AbstractDeclOrigin
 pattern AbstractLocalDecl src = AbstractDeclOrigin (LocalDecl src)
 
-pattern ConcreteExternalDecl :: DeclOrigin -> Backend -> Name
+pattern ConcreteExternalDecl :: DeclOrigin -> Backend -> FullyQualifiedName
                              -> ConcreteDeclOrigin
-pattern ConcreteExternalDecl declO backend name =
-  ConcreteDeclOrigin (Right (declO, backend, name))
+pattern ConcreteExternalDecl declO backend fqn =
+  ConcreteDeclOrigin (Right (declO, backend, fqn))
 
 pattern ConcreteMagnoliaDecl :: DeclOrigin
                              -> ConcreteDeclOrigin
@@ -659,10 +667,10 @@ pattern ConcreteLocalMagnoliaDecl :: SrcCtx -> ConcreteDeclOrigin
 pattern ConcreteLocalMagnoliaDecl src =
   ConcreteDeclOrigin (Left (LocalDecl src))
 
-pattern ConcreteLocalExternalDecl :: Backend -> Name -> SrcCtx
+pattern ConcreteLocalExternalDecl :: Backend -> FullyQualifiedName -> SrcCtx
                                   -> ConcreteDeclOrigin
-pattern ConcreteLocalExternalDecl backend name src =
-  ConcreteDeclOrigin (Right (LocalDecl src, backend, name))
+pattern ConcreteLocalExternalDecl backend fqn src =
+  ConcreteDeclOrigin (Right (LocalDecl src, backend, fqn))
 
 -- === top level declarations manipulation ===
 
