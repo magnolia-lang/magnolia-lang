@@ -1,4 +1,4 @@
-package tests.inputs.externalTests;
+package tests.check.inputs.externalTests;
 
 // TODO: implement external handling, and add tests.
 implementation ICxx = external C++ some.cxx.file {

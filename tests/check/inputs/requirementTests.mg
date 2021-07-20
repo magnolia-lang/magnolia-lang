@@ -1,4 +1,4 @@
-package tests.inputs.requirementTests;
+package tests.check.inputs.requirementTests;
 
 signature Req = {
     type T;

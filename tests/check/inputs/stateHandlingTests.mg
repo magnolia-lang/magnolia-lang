@@ -1,4 +1,4 @@
-package tests.inputs.stateHandlingTests;
+package tests.check.inputs.stateHandlingTests;
 
 implementation I = {
     type T;

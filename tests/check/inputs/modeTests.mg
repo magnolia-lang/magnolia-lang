@@ -1,4 +1,4 @@
-package tests.inputs.modeTests;
+package tests.check.inputs.modeTests;
 
 implementation modeTests_I = {
     type T;

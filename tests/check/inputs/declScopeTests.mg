@@ -1,4 +1,4 @@
-package tests.inputs.declScopeTests;
+package tests.check.inputs.declScopeTests;
 
 signature S = {
     /* A Magnolia signature can contain type declarations, as well as

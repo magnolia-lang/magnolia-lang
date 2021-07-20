@@ -1,0 +1,1 @@
+tests/check/inputs/renamingTests.mg:50:5: Declaration error in tests.check.inputs.renamingTests.RenamingOverload: got conflicting implementations for function _f(_t : _T) : _T at tests/check/inputs/renamingTests.mg:43:5 and tests/check/inputs/renamingTests.mg:50:5

@@ -1,4 +1,4 @@
-package tests.inputs.regressionTests;
+package tests.check.inputs.regressionTests;
 
 // Referencing https://github.com/magnolia-lang/magnolia-lang/issues/35
 implementation I35 = {

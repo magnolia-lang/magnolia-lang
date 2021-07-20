@@ -1,4 +1,4 @@
-package tests.inputs.renamingTests;
+package tests.check.inputs.renamingTests;
 
 implementation ToRename = {
     require type T1;

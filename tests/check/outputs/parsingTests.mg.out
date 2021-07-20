@@ -1,4 +1,4 @@
-<unknown location>: Parse error: tests/inputs/parsingTests.mg:2:1:
+<unknown location>: Parse error: tests/check/inputs/parsingTests.mg:2:1:
   |
 2 | <empty line>
   | ^
