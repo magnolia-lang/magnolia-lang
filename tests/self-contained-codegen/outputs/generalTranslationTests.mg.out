@@ -35,7 +35,7 @@ public:
 } // self_contained_codegen
 } // inputs
 } // generalTranslationTests
-#include "tests/self-contained-codegen/inputs/generalTranslationTests.hpp"
+#include "gen/tests/self-contained-codegen/inputs/generalTranslationTests.hpp"
 
 
 namespace tests {
