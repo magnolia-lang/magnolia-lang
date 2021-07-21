@@ -11,6 +11,7 @@ import Options.Applicative hiding (Success, Failure)
 import System.Console.Haskeline
 
 import Cxx.Syntax
+import Compiler
 import Env
 import Make
 import Magnolia.Parser
@@ -19,52 +20,8 @@ import Magnolia.Syntax
 import Magnolia.Util
 
 type TopEnv = Env (MPackage PhCheck)
-data CompilerMode = ReplMode | BuildMode FilePath | TestMode TestConfig FilePath
 
-data TestConfig = TestConfig { _testPass :: Pass
-                             , _testBackend :: Backend
-                             , _outputDirectory :: Maybe FilePath
-                             }
-
--- | Compiler passes
-data Pass = CheckPass
-          | DepAnalPass
-          | ParsePass
-          | SelfContainedProgramCodegenPass
-          | StructurePreservingCodegenPass
-
--- | Runs the compiler up to the pass specified in the test configuration, and
--- logs the errors encountered to standard output.
-runTest :: TestConfig -> FilePath -> IO ()
-runTest config filePath = case _testPass config of
-  DepAnalPass -> runAndLogErrs $ depAnalPass filePath
-  ParsePass -> runAndLogErrs $ depAnalPass filePath >>= parsePass
-  CheckPass -> runAndLogErrs $ depAnalPass filePath >>= parsePass >>= checkPass
-  SelfContainedProgramCodegenPass -> case _testBackend config of
-    Cxx -> do
-      (ecxxPkgs, errs) <- runMgMonad $ depAnalPass filePath
-                                    >>= parsePass
-                                    >>= checkPass
-                                    >>= programCodegenCxxPass
-      case ecxxPkgs of
-        Left () -> logErrs errs
-        Right cxxPkgs -> do
-          let sortedPkgs = L.sortOn _cxxPackageName cxxPkgs
-          mapM_ (pprintCxxAs CxxHeader) sortedPkgs
-          mapM_ (pprintCxxAs CxxImplementation) sortedPkgs
-    _ -> error "codegen not yet implemented"
-  StructurePreservingCodegenPass ->
-    error "structure preserving codegen not yet implemented"
-
--- === debugging utils ===
-
-logErrs :: S.Set Err -> IO ()
-logErrs errs = pprintList (L.sort (toList errs))
-
-runAndLogErrs :: MgMonad a -> IO ()
-runAndLogErrs m = runMgMonad m >>= \(_, errs) -> logErrs errs
-
--- === passes ===
+-- === parsing utils ===
 
 mkInfo :: Parser a -> ParserInfo a
 mkInfo p = info (p <**> helper) mempty
@@ -80,7 +37,7 @@ parseCompilerMode = mkInfo compilerMode
             (progDesc "Start Magnolia repl"))
 
     buildCmd = command "build"
-      (info (helper <*> (BuildMode <$> target))
+      (info (helper <*> (BuildMode <$> buildConfig <*> target))
             (progDesc "Compile a package"))
 
     testCmd = command "test"
@@ -88,16 +45,41 @@ parseCompilerMode = mkInfo compilerMode
             (progDesc "Test the compiler passes"))
 
     target = argument str (metavar "FILE" <> help "Source program")
-    testConfig = TestConfig <$>
+
+    buildConfig = Config SelfContainedProgramCodegenPass <$>
+      optBackend <*>
+      option (Just <$> str)
+             (long "output-directory" <>
+              short 'o' <>
+              help "Output directory for code generation") <*>
+      optImportDir <*>
+      flag WriteIfDoesNotExist OverwriteTargetFiles
+           (long "allow-overwrite" <>
+            help "Allow overwriting target files in the output directory")
+
+    testConfig = Config <$>
       option (oneOf passOpts)
              (long "pass" <> value CheckPass <>
               help ("Pass: " <> dispOpts passOpts)) <*>
-      option (oneOf backendOpts)
-             (long "backend" <> value Cxx <>
-              help ("Backend: " <> dispOpts backendOpts)) <*>
+      optBackend <*>
       option (Just <$> str)
              (long "output-directory" <> value Nothing <>
-              help "Output directory for code generation")
+              short 'o' <>
+              help "Output directory for code generation") <*>
+      optImportDir <*>
+      pure WriteIfDoesNotExist
+
+    optBackend =
+      option (oneOf backendOpts)
+             (long "backend" <> value Cxx <>
+              help ("Backend: " <> dispOpts backendOpts))
+
+    optImportDir =
+      option (Just <$> str)
+             (long "base-import-directory" <> value Nothing <>
+              short 'i' <>
+              help ("Base import directory for the generated code " <>
+                    "(defaults to the output directory)"))
 
     passOpts = [ ("check", CheckPass)
                , ("self-contained-codegen", SelfContainedProgramCodegenPass)
@@ -124,10 +106,10 @@ main = do
   compilerMode <- customExecParser (prefs showHelpOnEmpty) parseCompilerMode
   case compilerMode of
     ReplMode -> repl `runStateT` M.empty >> return ()
-    BuildMode filePath -> let config = TestConfig CheckPass Cxx Nothing
-                          in runTest config filePath
-    TestMode config filePath -> runTest config filePath
+    BuildMode config filePath -> filePath `runCompileWith` config
+    TestMode config filePath -> filePath `runTestWith` config
 
+-- === repl-related utils ===
 
 repl :: StateT TopEnv IO ()
 repl = runInputT defaultSettings go
