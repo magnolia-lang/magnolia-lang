@@ -13,12 +13,20 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-haskell@v1
+    - name: Set up Haskell
+      uses: actions/setup-haskell@v1
       with:
         ghc-version: 'latest'
         cabal-version: 'latest'
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    # We do not bother caching Python dependencies since we do not have many, as
+    # https://docs.github.com/en/actions/guides/building-and-testing-python
+    # indicates that this may have a negative impact on performance.
 
-    - name: Cache
+    - name: Cabal cache
       uses: actions/cache@v1
       env:
         cache-name: cache-cabal
@@ -30,11 +38,21 @@ jobs:
           ${{ runner.os }}-build-
           ${{ runner.os }}-
 
-    - name: Install dependencies
+    - name: Install Magnolia dependencies
       run: |
         cabal update
         cabal build --only-dependencies --enable-tests --enable-benchmarks
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest
+
     - name: Build
       run: make
-    - name: Run tests
-      run: make tests
+
+    - name: Run pass tests
+      run: make tests-all-passes
+
+    - name: Run frontend tests
+      run: make tests-frontend
