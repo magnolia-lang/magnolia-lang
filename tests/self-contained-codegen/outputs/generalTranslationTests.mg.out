@@ -62,7 +62,7 @@ namespace generalTranslationTests {
         else
         {
             ;
-        };
+        }
     };
     P::X P::binary_add(const P::X& lhs, const P::X& rhs) {
         return __ExternalImplementation.binary_add(lhs, rhs);
