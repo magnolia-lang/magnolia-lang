@@ -25,8 +25,6 @@ import Magnolia.Syntax
 import Magnolia.Util
 import MgToCxx
 
-type TcGlobalEnv = Env (MPackage PhCheck)
-
 -- -- === passes ===
 
 depAnalPass :: FilePath -> MgMonad [PackageHead]
@@ -42,17 +40,17 @@ parsePass pkgHeads =
 -- parsed packages. It is assumed that the packages passed as a parameter to
 -- checkPass are topologically sorted, so that each package is checked after
 -- its dependencies.
-checkPass :: [ParsedPackage] -> MgMonad TcGlobalEnv
+checkPass :: [ParsedPackage] -> MgMonad (Env TcPackage)
 checkPass = foldMAccumErrorsAndFail go M.empty
   where
-    go :: TcGlobalEnv -> ParsedPackage -> MgMonad TcGlobalEnv
+    go :: Env TcPackage -> ParsedPackage -> MgMonad (Env TcPackage)
     go env parsedPkg = do
       tcPkg <- checkPackage env parsedPkg
       return $ M.insert (nodeName parsedPkg) tcPkg env
 
 -- | This function takes in a Map of typechecked packages, and produces, for
 -- each of them, a C++ package containing all the programs defined in
-programCodegenCxxPass :: TcGlobalEnv -> MgMonad [CxxPackage]
+programCodegenCxxPass :: Env TcPackage -> MgMonad [CxxPackage]
 programCodegenCxxPass = foldMAccumErrorsAndFail
   (\acc -> ((:acc) <$>) . mgPackageToCxxSelfContainedProgramPackage) []
 
