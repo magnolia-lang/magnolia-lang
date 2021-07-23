@@ -1,5 +1,5 @@
 #include <iostream>
-#include "gen/fizzbuzz.hpp"
+#include "gen/examples/fizzbuzz/mg-src/fizzbuzz.hpp"
 
 int main(int argc, char **argv) {
     --argc;
@@ -9,7 +9,9 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    fizzbuzz::MyFizzBuzzProgram P;
+    // TODO: add a base build path to compiler args to avoid having so many
+    // nested useless folders when compiling from somewhere else.
+    examples::fizzbuzz::mg_src::fizzbuzz::MyFizzBuzzProgram P;
 
     std::cout << "Fizz my buzz: " << P.doFizzBuzz(atoi(argv[1])) << std::endl;
 }

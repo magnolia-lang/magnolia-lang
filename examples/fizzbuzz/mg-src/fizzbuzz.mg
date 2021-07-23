@@ -1,4 +1,4 @@
-package fizzbuzz;
+package examples.fizzbuzz.mg-src.fizzbuzz;
 
 // The longest fizzbuzz in the world!
 implementation ImplFizzBuzz = external C++ base.fizzbuzz_ops {

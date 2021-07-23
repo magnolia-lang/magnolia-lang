@@ -1,6 +1,9 @@
-#include "gen/fizzbuzz.hpp"
+#include "gen/examples/fizzbuzz/mg-src/fizzbuzz.hpp"
 
 
+namespace examples {
+namespace fizzbuzz {
+namespace mg_src {
 namespace fizzbuzz {
     MyFizzBuzzProgram::FizzBuzz MyFizzBuzzProgram::buzz() {
         return __fizzbuzz_ops.buzz();
@@ -38,4 +41,7 @@ namespace fizzbuzz {
     MyFizzBuzzProgram::IntLike MyFizzBuzzProgram::zero() {
         return __fizzbuzz_ops.zero();
     };
+} // examples
+} // fizzbuzz
+} // mg_src
 } // fizzbuzz

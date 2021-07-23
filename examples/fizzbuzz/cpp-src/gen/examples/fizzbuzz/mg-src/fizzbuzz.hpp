@@ -2,6 +2,9 @@
 #include <cassert>
 
 
+namespace examples {
+namespace fizzbuzz {
+namespace mg_src {
 namespace fizzbuzz {
 struct MyFizzBuzzProgram {
 private:
@@ -21,4 +24,7 @@ public:
     MyFizzBuzzProgram::IntLike three();
     MyFizzBuzzProgram::IntLike zero();
 };
+} // examples
+} // fizzbuzz
+} // mg_src
 } // fizzbuzz

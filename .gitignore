@@ -2,5 +2,8 @@
 dist-newstyle
 magnolia
 
+# examples generated for examples
+examples/*/bin
+
 # vim save files
 *.swp
