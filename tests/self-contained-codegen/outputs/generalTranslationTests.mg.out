@@ -18,8 +18,6 @@ public:
     void all_statements(const P::X& x_obs, P::X& x_upd, P::X& x_out);
     P::X binary_add(const P::X& lhs, const P::X& rhs);
     P::X call_f_overloaded_on_return_type();
-    bool eq(const P::X& e1, const P::X& e2);
-    bool eq(const P::Y& e1, const P::Y& e2);
     void helper_assign(P::X& x_out);
     P::X mkX();
     void some_f_overloaded_on_return_type0(P::X& o);
@@ -52,10 +50,10 @@ namespace generalTranslationTests {
         }();
         P::X x_var_unassigned;
         P::X x_var_assigned = x_obs;
-        assert(P::eq(x_obs, x_obs));
+        assert((x_obs) == (x_obs));
         P::helper_assign(x_upd);
-        x_out = P::eq(x_obs, x_obs) ? x_out : x_obs;
-        if (P::eq(x_obs, x_obs))
+        x_out = (x_obs) == (x_obs) ? x_out : x_obs;
+        if ((x_obs) == (x_obs))
         {
             ;
         }
@@ -69,12 +67,6 @@ namespace generalTranslationTests {
     };
     P::X P::call_f_overloaded_on_return_type() {
         return P::some_f_overloaded_on_return_type<X>();
-    };
-    bool P::eq(const P::X& e1, const P::X& e2) {
-        return __ExternalImplementation.eq(e1, e2);
-    };
-    bool P::eq(const P::Y& e1, const P::Y& e2) {
-        return __ExternalImplementation.eq(e1, e2);
     };
     void P::helper_assign(P::X& x_out) {
         x_out = P::mkX();
