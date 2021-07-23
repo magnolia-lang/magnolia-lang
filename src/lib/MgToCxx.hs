@@ -71,7 +71,7 @@ mgPackageToCxxSelfContainedProgramPackage tcPkg =
         Nothing -> throwLocatedE MiscErr (srcCtx $ _ann tcM) $
           "external C++ block " <> pshow structName <> " was specified " <>
           "without an include path"
-        Just pathName -> return $ mkCxxRelativeIncludeFromName pathName : acc
+        Just pathName -> return $ mkCxxRelativeCxxIncludeFromName pathName : acc
       _ -> return acc) []
 
     gatherPrograms :: [TcModule] -> MgMonad [CxxModule]
