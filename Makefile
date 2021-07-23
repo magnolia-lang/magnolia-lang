@@ -59,3 +59,14 @@ check-output-%: tests/$(pass)/inputs/%.mg tests/$(pass)/outputs/%.mg.out build
 
 update-output-%: tests/$(pass)/inputs/%.mg build
 	$(mgn) test --pass $(pass) --output-directory=$(tests-out-dir) $< > tests/$(pass)/outputs/$(notdir $<).out
+
+example-names = fizzbuzz
+
+build-examples: $(example-names:%=build-example-%)
+
+build-example-%: examples/% build
+	$(eval example-name := $(notdir $<))
+	$(mgn) build --output-directory $</cpp-src/gen --base-import-directory gen --allow-overwrite $</mg-src/$(example-name).mg
+	@cd $<; make
+	# TODO(bchetioui): add hashtree tool to check generation is a noop
+	# TODO(bchetioui): add to CI

@@ -3,6 +3,7 @@
 module Cxx.Syntax (
     -- * C++ AST
     CxxAccessSpec (..)
+  , CxxBinOp (..)
   , CxxDef (..)
   , CxxExpr (..)
   , CxxFunctionDef (..)
@@ -16,6 +17,7 @@ module Cxx.Syntax (
   , CxxStmtBlock
   , CxxStmtInline (..)
   , CxxType (..)
+  , CxxUnOp (..)
   , CxxVar (..)
     -- * name-related utils
   , CxxName
@@ -345,7 +347,17 @@ data CxxExpr = -- | A call to a function.
              | CxxVarRef CxxName
                -- | An if-then-else expression.
              | CxxIfExpr CxxCond CxxExpr CxxExpr
+               -- | A unary operator wrapper for convenience.
+             | CxxUnOp CxxUnOp CxxExpr
+               -- | A binary operator wrapper for convenience.
+             | CxxBinOp CxxBinOp CxxExpr CxxExpr
                deriving (Eq, Ord, Show)
+
+data CxxUnOp = CxxLogicalNot
+               deriving (Eq, Ord, Show)
+
+data CxxBinOp = CxxLogicalAnd | CxxLogicalOr | CxxEqual
+                deriving (Eq, Ord, Show)
 
 data CxxLambdaCaptureDefault = CxxLambdaCaptureDefaultValue
                              | CxxLambdaCaptureDefaultReference
@@ -521,7 +533,7 @@ instance Pretty CxxStmtInline where
     CxxSkip -> ""
 
 instance Pretty CxxExpr where
-  pretty expr = case expr of
+  pretty inExpr = case inExpr of
     CxxCall name templateParams args -> p name <> (case templateParams of
         [] -> ""
         _  -> "<" <> hsep (punctuate comma (map p templateParams)) <> ">") <>
@@ -532,6 +544,19 @@ instance Pretty CxxExpr where
     CxxVarRef name -> p name
     CxxIfExpr cond trueExpr falseExpr -> p cond <+> "?" <+> p trueExpr <+>
       ":" <+> p falseExpr
+    CxxUnOp unOp expr -> p unOp <> p expr
+    CxxBinOp binOp lhsExpr rhsExpr ->
+      -- TODO: add parens only when necessary
+      parens (p lhsExpr) <+> p binOp <+> parens (p rhsExpr)
+
+instance Pretty CxxUnOp where
+  pretty CxxLogicalNot = "!"
+
+instance Pretty CxxBinOp where
+  pretty binOp = case binOp of
+    CxxLogicalOr -> "||"
+    CxxLogicalAnd -> "&&"
+    CxxEqual -> "=="
 
 instance Pretty CxxLambdaCaptureDefault where
   -- When capturing by value, we explicitly capture "this", to avoid the
