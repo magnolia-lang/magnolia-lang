@@ -67,6 +67,6 @@ build-examples: $(example-names:%=build-example-%)
 build-example-%: examples/% build
 	$(eval example-name := $(notdir $<))
 	$(mgn) build --output-directory $</cpp-src/gen --base-import-directory gen --allow-overwrite $</mg-src/$(example-name).mg
-	@cd $<; make
+	make -C $<
 	# TODO(bchetioui): add hashtree tool to check generation is a noop
 	# TODO(bchetioui): add to CI
