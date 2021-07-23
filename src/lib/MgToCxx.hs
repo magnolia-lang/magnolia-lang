@@ -136,10 +136,20 @@ mgProgramToCxxProgramModule pkgName
         -- (1) are not called "_=_" (assignment is always pre-generated)
         -- (2) do not contain predicates as parameters (the only methods that
         --     allow this are pre-generated predicate functions)
+        -- (3) are not equality predicates over elements of the same type.
         -- This is because we assume all of these to have a canonical
         -- external implementation.
+        -- TODO: (3) may change. For the moment, it seems convenient to do that.
         _name (nodeName callable) /= "_=_" &&
-        all ((/= Pred) . _varType . _elem) (_callableArgs callable)
+        all ((/= Pred) . _varType . _elem) (_callableArgs callable) &&
+        not (isEqualityPredicateOverType callable)
+
+    isEqualityPredicateOverType :: MCallableDecl' p -> Bool
+    isEqualityPredicateOverType callable =
+      case _callableArgs callable of
+        [arg1, arg2] -> _varType (_elem arg1) == _varType (_elem arg2) &&
+          _callableReturnType callable == Pred
+        _ -> False
 
     returnTypeOverloads :: S.Set (Name, [MType])
     returnTypeOverloads =
@@ -412,14 +422,19 @@ mgExprToCxxExpr returnTypeOverloadsNameAliasMap = goExpr
     goExpr annInExpr@(Ann ty inExpr) = case inExpr of
       MVar (Ann _ v) -> CxxVarRef <$> mkCxxName (_varName v)
       MCall name args _ -> do
-        parentModuleName <- getParentModuleName
-        cxxModuleName <- mkCxxName parentModuleName
-        cxxName <- mkCxxClassMemberAccess cxxModuleName <$> mkCxxName name
-        let inputProto = (name, map _ann args)
-        cxxTemplateArgs <- mapM mkCxxName
-          [ty | inputProto `M.member` returnTypeOverloadsNameAliasMap]
-        cxxArgs <- mapM goExpr args
-        return $ CxxCall cxxName cxxTemplateArgs cxxArgs
+        mCxxExpr <- tryMgCallToCxxSpecialOpExpr returnTypeOverloadsNameAliasMap
+          name args ty
+        case mCxxExpr of
+          Just cxxExpr -> return cxxExpr
+          Nothing -> do
+            parentModuleName <- getParentModuleName
+            cxxModuleName <- mkCxxName parentModuleName
+            cxxName <- mkCxxClassMemberAccess cxxModuleName <$> mkCxxName name
+            let inputProto = (name, map _ann args)
+            cxxTemplateArgs <- mapM mkCxxName
+              [ty | inputProto `M.member` returnTypeOverloadsNameAliasMap]
+            cxxArgs <- mapM goExpr args
+            return $ CxxCall cxxName cxxTemplateArgs cxxArgs
       MBlockExpr blockTy exprs -> do
         cxxExprs <- mapM goStmt (NE.toList exprs)
         case blockTy of
@@ -435,6 +450,42 @@ mgExprToCxxExpr returnTypeOverloadsNameAliasMap = goExpr
     goStmt = mgExprToCxxStmt returnTypeOverloadsNameAliasMap
     mgToCxxLambdaRef = return . CxxLambdaCall CxxLambdaCaptureDefaultReference
     mgToCxxLambdaVal = return . CxxLambdaCall CxxLambdaCaptureDefaultValue
+
+-- TODO: for the moment, this assumes no '_:T ==_:T' predicate is implemented
+-- in Magnolia, although it will be possible to define one manually. Therefore,
+-- this will have to be improved later.
+-- | Takes the name of a function, its arguments and its return type, and
+-- produces a unop or binop expression node if it can be expressed as such in
+-- C++. For the moment, functions that can be expressed like that include the
+-- equality predicate between two elements of the same type, and predicate
+-- combinators (such as '_&&_' and '_||_').
+tryMgCallToCxxSpecialOpExpr :: M.Map (Name, [MType]) Name
+                            -> Name -> [TcExpr] -> MType
+                            -> MgMonad (Maybe CxxExpr)
+tryMgCallToCxxSpecialOpExpr returnTypeOverloadsNameAliasMap name args retTy = do
+  cxxArgs <- mapM (mgExprToCxxExpr returnTypeOverloadsNameAliasMap) args
+  case (cxxArgs, retTy : map _ann args ) of
+    ([cxxExpr], [Pred, Pred]) -> return $ unPredCombinator cxxExpr
+    ([cxxLhsExpr, cxxRhsExpr], [Pred, Pred, Pred]) ->
+      return $ binPredCombinator cxxLhsExpr cxxRhsExpr
+    ([cxxLhsExpr, cxxRhsExpr], [Pred, a, b]) -> return $
+      if a == b && name == FuncName "_==_"
+      then return $ CxxBinOp CxxEqual cxxLhsExpr cxxRhsExpr
+      else Nothing
+    _ -> return Nothing
+  where
+    unPredCombinator cxxExpr =
+      let mCxxUnOp = case name of
+            FuncName "!_" -> Just CxxLogicalNot
+            _ -> Nothing
+      in mCxxUnOp >>= \op -> Just $ CxxUnOp op cxxExpr
+
+    binPredCombinator cxxLhsExpr cxxRhsExpr =
+      let mCxxBinOp = case name of
+            FuncName "_&&_" -> Just CxxLogicalAnd
+            FuncName "_||_" -> Just CxxLogicalOr
+            _ -> Nothing
+      in mCxxBinOp >>= \op -> Just $ CxxBinOp op cxxLhsExpr cxxRhsExpr
 
 mkCxxNamespaces :: FullyQualifiedName -> MgMonad [CxxNamespaceName]
 mkCxxNamespaces fqName = maybe (return []) split (_scopeName fqName)
