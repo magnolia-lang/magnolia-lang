@@ -200,7 +200,7 @@ instance Pretty (MCallableDecl' p) where
       prettyArgs = case callableType of
         Procedure -> parens $ hsep $ punctuate comma (map p args)
         _ -> parens $ hsep $ punctuate comma $
-            map (\(Ann _ a) -> p (nodeName a) <+> ":" <+> p (_varType a)) args
+            map (\(Ann _ a) -> p (getName a) <+> ":" <+> p (_varType a)) args
 
 instance Pretty MCallableType where
   pretty callableType = case callableType of
@@ -214,7 +214,7 @@ instance Pretty (MExpr' p) where
     where
       pNoSemi :: MExpr' p -> Doc ann
       pNoSemi expr = case expr of
-        MVar v -> p (nodeName v)
+        MVar v -> p (getName v)
         MCall name args mcast -> let parglist = map (pNoSemi . _elem) args in
           p name <> parens (hsep (punctuate comma parglist)) <>
           (case mcast of Nothing -> ""; Just cast -> " : " <> p cast)

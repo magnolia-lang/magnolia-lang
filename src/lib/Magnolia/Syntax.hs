@@ -555,51 +555,51 @@ deriving instance Show (MPackage' PhCheck)
 -- === useful typeclasses ===
 
 class HasName n where
-  nodeName :: n -> Name
+  getName :: n -> Name
 
 instance HasName PackageHead where
-  nodeName = fromFullyQualifiedName  . _packageHeadName
+  getName = fromFullyQualifiedName  . _packageHeadName
 
 instance HasName (e p) => HasName (Ann p e) where
-  nodeName = nodeName . _elem
+  getName = getName . _elem
 
 instance HasName (MPackage' p) where
-  nodeName = _packageName
+  getName = _packageName
 
 instance HasName (MPackageDep' p) where
-  nodeName (MPackageDep name) = fromFullyQualifiedName name
+  getName (MPackageDep name) = fromFullyQualifiedName name
 
 instance HasName (MTopLevelDecl p) where
-  nodeName topLevelDecl = case topLevelDecl of
-    MNamedRenamingDecl namedRenaming -> nodeName namedRenaming
-    MModuleDecl modul -> nodeName modul
-    MSatisfactionDecl satisfaction -> nodeName satisfaction
+  getName topLevelDecl = case topLevelDecl of
+    MNamedRenamingDecl namedRenaming -> getName namedRenaming
+    MModuleDecl modul -> getName modul
+    MSatisfactionDecl satisfaction -> getName satisfaction
 
 instance HasName (MNamedRenaming' p) where
-  nodeName (MNamedRenaming name _) = name
+  getName (MNamedRenaming name _) = name
 
 instance HasName (MModule' p) where
-  nodeName (MModule _ name _) = name
+  getName (MModule _ name _) = name
 
 instance HasName (MSatisfaction' p) where
-  nodeName (MSatisfaction name _ _ _) = name
+  getName (MSatisfaction name _ _ _) = name
 
 instance HasName (MModuleDep' p) where
-  nodeName (MModuleDep name _ _) = fromFullyQualifiedName name
+  getName (MModuleDep name _ _) = fromFullyQualifiedName name
 
 instance HasName (MDecl p) where
-  nodeName decl = case decl of
-    MTypeDecl tdecl -> nodeName tdecl
-    MCallableDecl cdecl -> nodeName cdecl
+  getName decl = case decl of
+    MTypeDecl tdecl -> getName tdecl
+    MCallableDecl cdecl -> getName cdecl
 
 instance HasName (MTypeDecl' p) where
-  nodeName (Type name _) = name
+  getName (Type name _) = name
 
 instance HasName (MCallableDecl' p) where
-  nodeName (Callable _ name _ _ _ _) = name
+  getName (Callable _ name _ _ _ _) = name
 
 instance HasName (MVar typAnnType p) where
-  nodeName (Var _ name _) = name
+  getName (Var _ name _) = name
 
 class HasDependencies a where
   dependencies :: a -> [FullyQualifiedName]

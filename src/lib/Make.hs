@@ -46,7 +46,7 @@ checkPass = foldMAccumErrorsAndFail go M.empty
     go :: Env TcPackage -> ParsedPackage -> MgMonad (Env TcPackage)
     go env parsedPkg = do
       tcPkg <- checkPackage env parsedPkg
-      return $ M.insert (nodeName parsedPkg) tcPkg env
+      return $ M.insert (getName parsedPkg) tcPkg env
 
 -- | This function takes in a Map of typechecked packages, and produces, for
 -- each of them, a C++ package containing all the programs defined in

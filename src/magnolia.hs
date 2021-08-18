@@ -164,7 +164,7 @@ execCmd cmd = case cmd of
       env <- get
       let extractPkgModules =
             getModules . join . M.elems . _packageDecls . _elem
-          matches = filter (\m -> nodeName m == modName) $
+          matches = filter (\m -> getName m == modName) $
             join . M.elems $ M.map extractPkgModules env
       case matches of
         []   -> liftIO $ pprint "No such module has been loaded"
@@ -183,7 +183,7 @@ execCmd cmd = case cmd of
         Just (Ann _ pkg) -> do
           let modules = getModules . join . M.elems $ _packageDecls pkg
           liftIO . putStrLn $
-              L.intercalate "\n" (map (_name . nodeName) modules)
+              L.intercalate "\n" (map (_name . getName) modules)
 
     listPackages :: StateT TopEnv IO ()
     listPackages = do

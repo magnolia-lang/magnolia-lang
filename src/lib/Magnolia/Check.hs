@@ -69,7 +69,7 @@ checkPackage globalEnv (Ann src (MPackage name decls deps)) =
                    -> MgMonad (Env [TcTopLevelDecl])
     updateEnvWith' f env' e = do
       result <- f env' e
-      return $ M.insertWith (<>) (nodeName e) [result] env'
+      return $ M.insertWith (<>) (getName e) [result] env'
 
     loadDependencies = foldMAccumErrors loadDependency M.empty deps
 
@@ -77,12 +77,12 @@ checkPackage globalEnv (Ann src (MPackage name decls deps)) =
                    -> MPackageDep PhParse
                    -> MgMonad (Env [TcTopLevelDecl])
     loadDependency localEnv (Ann src' dep) =
-      case M.lookup (nodeName dep) globalEnv of
+      case M.lookup (getName dep) globalEnv of
         Nothing -> throwLocatedE MiscErr src' $ "attempted to load package " <>
-          pshow (nodeName dep) <> " but package couldn't be found"
+          pshow (getName dep) <> " but package couldn't be found"
         Just (Ann _ pkg) ->
           let importedLocalDecls =
-                M.map (foldl (importLocal (nodeName dep)) [])
+                M.map (foldl (importLocal (getName dep)) [])
                       (_packageDecls pkg)
           in return $ M.unionWith (<>) importedLocalDecls localEnv
 
@@ -98,7 +98,7 @@ checkPackage globalEnv (Ann src (MPackage name decls deps)) =
 
     mkImportedDecl :: HasName a => Name -> SrcCtx -> a -> DeclOrigin
     mkImportedDecl depName src' node =
-      ImportedDecl (FullyQualifiedName (Just depName) (nodeName node)) src'
+      ImportedDecl (FullyQualifiedName (Just depName) (getName node)) src'
 
 -- | Checks that a named renaming is valid, i.e. that it can be fully inlined.
 checkNamedRenaming :: Env [TcTopLevelDecl]
@@ -318,12 +318,12 @@ checkModuleExpr tlDecls moduleType
 
     checkArgIsUpdated :: VarScope -> TypedVar PhParse -> MgMonad ()
     checkArgIsUpdated scope (Ann src arg) = case _varMode arg of
-      MOut -> case M.lookup (nodeName arg) scope of
+      MOut -> case M.lookup (getName arg) scope of
         Nothing -> throwLocatedE CompilerErr src $ "argument " <>
-          pshow (nodeName arg) <> " is out of scope after consistency checks "
+          pshow (getName arg) <> " is out of scope after consistency checks "
         Just v -> unless (_varMode (_elem v) == MUpd) $
           throwLocatedE ModeMismatchErr src $ "argument " <>
-          pshow (nodeName arg) <> " is 'out' but is not populated by the " <>
+          pshow (getName arg) <> " is 'out' but is not populated by the " <>
           "procedure body"
       _ -> return ()
 
@@ -336,7 +336,7 @@ checkModuleExpr tlDecls moduleType
       MTypeDecl (Ann (Just _, _) _) -> return ()
       _ -> do
         moduleName <- getParentModuleName
-        throwLocatedE InvalidDeclErr modSrc $ pshow (nodeName decl) <>
+        throwLocatedE InvalidDeclErr modSrc $ pshow (getName decl) <>
           " was left unimplemented in " <> pshow moduleType <> " " <>
           pshow moduleName
 
@@ -526,7 +526,7 @@ annotateScopedExprStmt modul = go
                   (\a l -> case _elem a of MVar v -> v:l ; _ -> l) [] tcArgs
                 updateMode (Ann vty v) = case _varMode v of
                   MOut -> Ann vty (v { _varMode = MUpd }) ; _ -> Ann vty v
-                endScope = foldr (M.adjust updateMode . nodeName) scope vArgs
+                endScope = foldr (M.adjust updateMode . getName) scope vArgs
             return (endScope, tcAnnExpr)
             -- TODO: ignore modes when overloading functions
     MBlockExpr blockType exprStmts -> case blockType of
@@ -713,11 +713,11 @@ insertAndMergeDecl env decl = do
   where
     (errorLoc, nameAndProto) = case decl of
       MTypeDecl (Ann (_, absDeclOs1) _) ->
-        (srcCtx $ NE.head absDeclOs1, "type " <> pshow (nodeName decl))
+        (srcCtx $ NE.head absDeclOs1, "type " <> pshow (getName decl))
       MCallableDecl (Ann (_, absDeclOs1) c) ->
         (srcCtx $ NE.head absDeclOs1, pshow (c { _callableBody = EmptyBody }))
 
-    name = nodeName decl
+    name = getName decl
     mkNewDeclList = case decl of
       MTypeDecl tdecl ->
         (:[]) . MTypeDecl <$> mergeTypes tdecl (M.lookup name env)
@@ -731,7 +731,7 @@ insertAndMergeDecl env decl = do
       Nothing -> return annT1
       Just [MTypeDecl annT2@(Ann _ t2)] -> do
         newAnns <- mergeAnns (_ann annT1) (_ann annT2)
-        let newType = Type (nodeName t1)
+        let newType = Type (getName t1)
                            (_typeIsRequired t1 && _typeIsRequired t2)
         return $ Ann newAnns newType
       Just someList ->
@@ -883,8 +883,8 @@ mkTypeUtils mexternalInfo annType@(Ann _ (Type _ isRequired)) =
     eqFnName = FuncName "_==_"
     assignProcName = ProcName "_=_"
 
-    mkVar mode nameStr = Ann (nodeName annType) $
-      Var mode (VarName nameStr) (nodeName annType)
+    mkVar mode nameStr = Ann (getName annType) $
+      Var mode (VarName nameStr) (getName annType)
     eqFnDecl = Callable Function eqFnName (map (mkVar MObs) ["e1", "e2"]) Pred
                         Nothing body
     assignProcDecl = Callable Procedure assignProcName

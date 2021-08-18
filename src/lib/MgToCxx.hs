@@ -51,10 +51,10 @@ mapMAccumErrors f = foldMAccumErrors (\acc a -> (acc <>) . (:[]) <$> f a) []
 -- different programs is code generated twice – once for each program.
 mgPackageToCxxSelfContainedProgramPackage :: TcPackage -> MgMonad CxxPackage
 mgPackageToCxxSelfContainedProgramPackage tcPkg =
-  enter (nodeName tcPkg) $ do
+  enter (getName tcPkg) $ do
     let allModules = join $
           map (getModules . snd) $ M.toList (_packageDecls $ _elem tcPkg)
-        cxxPkgName = nodeName tcPkg
+        cxxPkgName = getName tcPkg
     cxxIncludes <- (mkCxxSystemInclude "cassert":) <$>
       gatherCxxIncludes allModules
     cxxPrograms <- gatherPrograms allModules
@@ -74,7 +74,7 @@ mgPackageToCxxSelfContainedProgramPackage tcPkg =
 
     gatherPrograms :: [TcModule] -> MgMonad [CxxModule]
     gatherPrograms = foldM
-      (\acc -> ((:acc) <$>) . mgProgramToCxxProgramModule (nodeName tcPkg)) [] .
+      (\acc -> ((:acc) <$>) . mgProgramToCxxProgramModule (getName tcPkg)) [] .
       filter ((== Program) . moduleType)
 
 mgProgramToCxxProgramModule :: Name -> TcModule -> MgMonad CxxModule
@@ -83,7 +83,7 @@ mgProgramToCxxProgramModule
   enter name $ do
     let moduleFqName = FullyQualifiedName (Just pkgName) name
         boundNames = S.fromList . map _name $
-          name : M.keys decls <> map nodeName deps
+          name : M.keys decls <> map getName deps
 
         declsToGen = filter declFilter declsAsList
         typeDecls = getTypeDecls declsToGen
@@ -137,7 +137,7 @@ mgProgramToCxxProgramModule
         -- This is because we assume all of these to have a canonical
         -- external implementation.
         -- TODO: (3) may change. For the moment, it seems convenient to do that.
-        _name (nodeName callable) /= "_=_" &&
+        _name (getName callable) /= "_=_" &&
         all ((/= Pred) . _varType . _elem) (_callableArgs callable) &&
         not (isEqualityPredicateOverType callable)
 
@@ -238,7 +238,7 @@ mgCallableDeclToCxx returnTypeOverloadsNameAliasMap extObjectsMap
     -- We synthesize a function call
     cxxExtFnName <- mkCxxObjectMemberAccess cxxExtObjectName <$>
       mkCxxName (_targetName extFqn)
-    cxxArgExprs <- mapM ((CxxVarRef <$>) . mkCxxName . nodeName) args
+    cxxArgExprs <- mapM ((CxxVarRef <$>) . mkCxxName . getName) args
     let cxxBody = [ CxxStmtInline . CxxReturn . Just $
                       CxxCall cxxExtFnName [] cxxArgExprs
                   ]

@@ -239,7 +239,7 @@ lookupTopLevelRef src env ref = case M.lookup (_targetName ref) env of
     unless (null $ tail compatibleMatches) $ -- more than one match
       throwLocatedE AmbiguousTopLevelRefErr src $ pshow ref <>
         "'. Candidates are: " <> T.intercalate ", " (
-          map (\m -> pshow $ toFQN (nodeName m) (_ann m)) compatibleMatches)
+          map (\m -> pshow $ toFQN (getName m) (_ann m)) compatibleMatches)
     return $ head compatibleMatches
 
 -- | Topologically sorts top-level named elements (i.e. named renamings
@@ -247,7 +247,7 @@ lookupTopLevelRef src env ref = case M.lookup (_targetName ref) env of
 topSortTopLevelE :: (HasDependencies a, HasName a) => Name -> [a] -> [G.SCC a]
 topSortTopLevelE pkgName elems = G.stronglyConnComp
   [ ( e
-    , nodeName e
+    , getName e
     , map _targetName $ filter isLocalFullyQualifiedName (dependencies e)
     )
     | e <- elems
@@ -260,7 +260,7 @@ topSortTopLevelE pkgName elems = G.stronglyConnComp
 -- returns the vertex contained in the acyclic component.
 checkNoCycle :: (HasSrcCtx a, HasName a) => G.SCC a -> MgMonad a
 checkNoCycle (G.CyclicSCC vertices) =
-  let cyclicErr = T.intercalate ", " $ map (pshow . nodeName) vertices in
+  let cyclicErr = T.intercalate ", " $ map (pshow . getName) vertices in
   throwLocatedE CyclicErr (srcCtx (head vertices)) cyclicErr
 checkNoCycle (G.AcyclicSCC vertex) = return vertex
 
