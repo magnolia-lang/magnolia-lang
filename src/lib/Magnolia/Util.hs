@@ -27,10 +27,10 @@ module Magnolia.Util (
   -- * Top-level manipulation utils
   , lookupTopLevelRef
   , topSortTopLevelE
-  -- * Renaming manipulation utils
+  , isLocalTopLevelDeclOrigin
+   -- * Renaming manipulation utils
   , renamingBlockToInlineRenamings
   -- * Declaration manipulation utils
-  , isLocalDecl
   -- * Expression manipulations utils
   , isValueExpr
   )
@@ -186,7 +186,7 @@ isPkgPath s = ".mg" `L.isSuffixOf` s
 -- === top-level manipulation ===
 
 lookupTopLevelRef
-  :: ( XAnn PhCheck e ~ DeclOrigin
+  :: ( XAnn PhCheck e ~ TopLevelDeclOrigin
      , Show (e PhCheck)
      , Pretty (e PhCheck)
      , HasName (e PhCheck)
@@ -197,7 +197,7 @@ lookupTopLevelRef src env ref = case M.lookup (_targetName ref) env of
   Just [] -> throwLocatedE CompilerErr src $
     "name " <> pshow (_targetName ref) <> " exists but is not bound to anything"
   Just matches -> do
-    let localDecls = filter isLocalDecl matches
+    localDecls <- filterM (isLocalTopLevelDeclOrigin . _ann) matches
     compatibleMatches <- case _scopeName ref of
       Nothing ->
         -- There are two valid cases in which it is possible not to
@@ -224,22 +224,17 @@ lookupTopLevelRef src env ref = case M.lookup (_targetName ref) env of
               "there are several locally defined top-level constructs " <>
               "with the name " <> pshow (_targetName ref) <> " in scope"
           return localDecls
-        else let matchesImportScope match = case _ann match of
-                    ImportedDecl fqn _ -> Just scopeName == _scopeName fqn
-                    _ -> False
+        else let matchesImportScope (Ann (TopLevelDeclOrigin fqn _) _) =
+                  Just scopeName == _scopeName fqn
              in return $ filter matchesImportScope matches
     -- The reference is only valid when a match exists and is unambiguous,
     -- i.e. in cases when compatibleMatches contains exactly one element.
     when (null compatibleMatches) $ -- no match
       throwLocatedE UnboundTopLevelErr src $ pshow ref
-    parentPkgName <- getParentPackageName
-    let toFQN n declO = case declO of
-          LocalDecl {} -> FullyQualifiedName (Just parentPkgName) n
-          ImportedDecl fqn _ -> fqn
     unless (null $ tail compatibleMatches) $ -- more than one match
       throwLocatedE AmbiguousTopLevelRefErr src $ pshow ref <>
         "'. Candidates are: " <> T.intercalate ", " (
-          map (\m -> pshow $ toFQN (getName m) (_ann m)) compatibleMatches)
+          map (pshow . getName . _ann) compatibleMatches)
     return $ head compatibleMatches
 
 -- | Topologically sorts top-level named elements (i.e. named renamings
@@ -264,6 +259,12 @@ checkNoCycle (G.CyclicSCC vertices) =
   throwLocatedE CyclicErr (srcCtx (head vertices)) cyclicErr
 checkNoCycle (G.AcyclicSCC vertex) = return vertex
 
+-- | Checks whether the 'TopLevelDeclOrigin' passed as a parameter refers
+-- to an element in the current parent package.
+isLocalTopLevelDeclOrigin :: TopLevelDeclOrigin -> MgMonad Bool
+isLocalTopLevelDeclOrigin (TopLevelDeclOrigin fqn _) =
+  (== _scopeName fqn) . Just <$> getParentPackageName
+
 -- === renamings manipulation ===
 
 renamingBlockToInlineRenamings :: TcRenamingBlock -> [InlineRenaming]
@@ -271,11 +272,6 @@ renamingBlockToInlineRenamings (Ann _ (MRenamingBlock _ renamings)) =
     map mkInlineRenaming renamings
   where mkInlineRenaming (Ann _ r) = case r of InlineRenaming ir -> ir
                                                RefRenaming v -> absurd v
-
--- === declaration manipulation ===
-
-isLocalDecl :: XAnn p e ~ DeclOrigin => Ann p e -> Bool
-isLocalDecl d = case _ann d of LocalDecl {} -> True ; _ -> False
 
 -- === expression manipulation ===
 

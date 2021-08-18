@@ -111,6 +111,7 @@ module Magnolia.Syntax (
   , ConcreteDeclOrigin
   , mkConcreteLocalDecl
   , DeclOrigin (..)
+  , TopLevelDeclOrigin (..)
   , SrcCtx (..)
   -- ** Annotation-related patterns
   , pattern AbstractLocalDecl
@@ -427,7 +428,23 @@ data ErrType = AmbiguousFunctionRefErr
              | UnboundVarErr
                deriving (Eq, Ord, Show)
 
+-- | Wraps the source location where a module was declared as well as the fully
+-- qualified name it is resolved too.
+data TopLevelDeclOrigin = TopLevelDeclOrigin FullyQualifiedName SrcCtx
+                          deriving (Eq, Show)
+
+instance Ord TopLevelDeclOrigin where
+  compare modO1 modO2 = compare (srcCtx modO1) (srcCtx modO2)
+
 -- | Wraps the source location information of a declaration.
+-- TODO: perhaps this declorigin should also wrap the original name used in the
+--       definition, as well as the name of its scope.
+--       This type should be split in two, probably: one type used at the module
+--       level, and one type used at the package level. There is actually no
+--       reason to use this type for both, so long as the relevant information
+--       can be extracted. DeclOrigin vs ModuleOrigin makes more sense.
+--       We should also start thinking about testing annotations added to the
+--       compiler.
 data DeclOrigin
   -- | Annotates a local declaration. At the module level, any declaration
   -- carries a local annotation. At the package level, only the modules
@@ -492,13 +509,13 @@ type family XAnn p (e :: * -> *) where
   XAnn PhCheck MPackageDep' = SrcCtx
 
   XAnn PhParse MNamedRenaming' = SrcCtx
-  XAnn PhCheck MNamedRenaming' = DeclOrigin
+  XAnn PhCheck MNamedRenaming' = TopLevelDeclOrigin
 
   XAnn PhParse MSatisfaction' = SrcCtx
-  XAnn PhCheck MSatisfaction' = DeclOrigin
+  XAnn PhCheck MSatisfaction' = TopLevelDeclOrigin
 
   XAnn PhParse MModule' = SrcCtx
-  XAnn PhCheck MModule' = DeclOrigin
+  XAnn PhCheck MModule' = TopLevelDeclOrigin
 
   XAnn PhParse MModuleExpr' = SrcCtx
   XAnn PhCheck MModuleExpr' = SrcCtx
@@ -601,6 +618,9 @@ instance HasName (MCallableDecl' p) where
 instance HasName (MVar typAnnType p) where
   getName (Var _ name _) = name
 
+instance HasName TopLevelDeclOrigin where
+  getName (TopLevelDeclOrigin fqn _) = fromFullyQualifiedName fqn
+
 class HasDependencies a where
   dependencies :: a -> [FullyQualifiedName]
 
@@ -647,6 +667,9 @@ instance HasSrcCtx SrcCtx where
 
 instance HasSrcCtx PackageHead where
   srcCtx = _packageHeadSrcCtx
+
+instance HasSrcCtx TopLevelDeclOrigin where
+  srcCtx (TopLevelDeclOrigin _ src) = src
 
 instance HasSrcCtx DeclOrigin where
   srcCtx declO = case declO of

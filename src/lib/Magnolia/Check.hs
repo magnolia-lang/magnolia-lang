@@ -82,30 +82,30 @@ checkPackage globalEnv (Ann src (MPackage name decls deps)) =
           pshow (getName dep) <> " but package couldn't be found"
         Just (Ann _ pkg) ->
           let importedLocalDecls =
-                M.map (foldl (importLocal (getName dep)) [])
+                M.map (filter (isLocalTopLevelDecl (getName dep)))
                       (_packageDecls pkg)
           in return $ M.unionWith (<>) importedLocalDecls localEnv
 
-    importLocal depName acc decl = case decl of
-      MNamedRenamingDecl (Ann (LocalDecl src') node) ->
-        MNamedRenamingDecl (Ann (mkImportedDecl depName src' node) node):acc
-      MModuleDecl (Ann (LocalDecl src') node) ->
-        MModuleDecl (Ann (mkImportedDecl depName src' node) node):acc
-      MSatisfactionDecl (Ann (LocalDecl src') node) ->
-        MSatisfactionDecl (Ann (mkImportedDecl depName src' node) node):acc
-      -- We do not import non-local decls from other packages.
-      _ -> acc
 
-    mkImportedDecl :: HasName a => Name -> SrcCtx -> a -> DeclOrigin
-    mkImportedDecl depName src' node =
-      ImportedDecl (FullyQualifiedName (Just depName) (getName node)) src'
+    isLocalTopLevelDecl :: Name -> TcTopLevelDecl -> Bool
+    isLocalTopLevelDecl pkgDepName tld = case tld of
+      MNamedRenamingDecl nr -> topLevelDeclOScope nr == Just pkgDepName
+      MModuleDecl m -> topLevelDeclOScope m == Just pkgDepName
+      MSatisfactionDecl sd -> topLevelDeclOScope sd == Just pkgDepName
+
+    topLevelDeclOScope :: XAnn p e ~ TopLevelDeclOrigin
+                       => Ann p e -> Maybe Name
+    topLevelDeclOScope (Ann (TopLevelDeclOrigin fqn _) _) = _scopeName fqn
 
 -- | Checks that a named renaming is valid, i.e. that it can be fully inlined.
 checkNamedRenaming :: Env [TcTopLevelDecl]
                    -> MNamedRenaming PhParse
                    -> MgMonad TcNamedRenaming
-checkNamedRenaming env (Ann src (MNamedRenaming name renamingBlock)) =
-  Ann (LocalDecl src) . MNamedRenaming name <$>
+checkNamedRenaming env (Ann src (MNamedRenaming name renamingBlock)) = do
+  tldeclO <- do
+    scopeName <- Just <$> getParentPackageName
+    pure $ TopLevelDeclOrigin (FullyQualifiedName scopeName name) src
+  Ann tldeclO . MNamedRenaming name <$>
     checkRenamingBlock (M.map getNamedRenamings env) renamingBlock
 
 -- | Checks that a renaming block is valid.
@@ -180,7 +180,10 @@ checkModule :: Env [TcTopLevelDecl] -> MModule PhParse -> MgMonad TcModule
 checkModule tlDecls (Ann src (MModule moduleType name moduleExpr)) =
   enter name $ do
     tcModuleExpr <- checkModuleExpr tlDecls moduleType moduleExpr
-    return $ Ann (LocalDecl src) (MModule moduleType name tcModuleExpr)
+    parentPkgName <- getParentPackageName
+    let tlDeclO = TopLevelDeclOrigin
+          (FullyQualifiedName (Just parentPkgName) name) src
+    pure $ Ann tlDeclO (MModule moduleType name tcModuleExpr)
 
 -- TODO: can variables exist without a type in the scope?
 -- TODO: replace things with relevant sets
@@ -205,8 +208,12 @@ checkModuleExpr tlDecls moduleType
 checkModuleExpr tlDecls moduleType
                 (Ann modSrc (MModuleDef decls deps renamingBlocks)) = do
   moduleName <- getParentModuleName
-  when (maybe False (any isLocalDecl . getModules)
-              (M.lookup moduleName tlDecls)) $
+  let anyM f = foldr (\inp bf -> f inp >>= \c -> if c then pure True else bf)
+                     (pure False)
+  localMatchExists <- maybe (pure False)
+      (anyM (isLocalTopLevelDeclOrigin . _ann) . getModules)
+      (M.lookup moduleName tlDecls)
+  when localMatchExists $
     throwLocatedE MiscErr modSrc $ "duplicate local module name " <>
       pshow moduleName <> " in package."
   let callables = getCallableDecls decls
@@ -946,12 +953,8 @@ checkModuleDep :: Env [TcTopLevelDecl]
                -> MModuleDep PhParse
                -> MgMonad TcModuleDep
 checkModuleDep env (Ann src (MModuleDep fqRef renamings castToSig)) = do
-  (Ann refDeclO _) <- lookupTopLevelRef src (M.map getModules env) fqRef
-  parentPackageName <- getParentPackageName
-  let resolvedRef = case refDeclO of
-        LocalDecl {} -> FullyQualifiedName (Just parentPackageName)
-                                           (_targetName fqRef)
-        ImportedDecl fqName _ -> fqName
+  (Ann (TopLevelDeclOrigin resolvedRef _) _) <-
+    lookupTopLevelRef src (M.map getModules env) fqRef
   tcRenamings <-
     mapM (checkRenamingBlock (M.map getNamedRenamings env)) renamings
   return $ Ann src (MModuleDep resolvedRef tcRenamings castToSig)
