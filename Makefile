@@ -6,7 +6,7 @@ build:
 	cabal new-build
 
 install:
-	cabal install --installdir=. --overwrite-policy=always
+	cabal new-install --installdir=. --overwrite-policy=always
 
 clean:
 	cabal new-clean
