@@ -35,6 +35,9 @@ errors.
 Another option to explore Magnolia source files is to explore them using the
 `repl` option instead:
 
+⚠️  The repl feature, while functional, is outdated, and likely on the way to
+being deprecated. ⚠️ 
+
 ```bash
 magnolia repl
 mgn> help

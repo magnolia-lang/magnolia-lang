@@ -105,7 +105,10 @@ main :: IO ()
 main = do
   compilerMode <- customExecParser (prefs showHelpOnEmpty) parseCompilerMode
   case compilerMode of
-    ReplMode -> repl `runStateT` M.empty >> return ()
+    ReplMode -> putStrLn ("WARNING: the repl is outdated, and likely going " <>
+                          "towards deprecation")
+                >> repl `runStateT` M.empty
+                >> return ()
     BuildMode config filePath -> filePath `runCompileWith` config
     TestMode config filePath -> filePath `runTestWith` config
 
