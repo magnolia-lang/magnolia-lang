@@ -32,6 +32,8 @@ module Magnolia.Syntax (
   , MExpr' (..)
   , MModule
   , MModule' (..)
+  , MModuleExpr
+  , MModuleExpr' (..)
   , MModuleDep
   , MModuleDep' (..)
   , MModuleType (..)
@@ -53,7 +55,6 @@ module Magnolia.Syntax (
   , MTypeDecl' (..)
   , MVar (..)
   , MVarMode (..)
-  , RenamedModule (..)
   , TypedVar
   , TypedVar'
   -- ** AST nodes after the parsing phase
@@ -64,6 +65,7 @@ module Magnolia.Syntax (
   , ParsedMaybeTypedVar
   , ParsedModule
   , ParsedModuleDep
+  , ParsedModuleExpr
   , ParsedNamedRenaming
   , ParsedPackage
   , ParsedRenaming
@@ -80,6 +82,7 @@ module Magnolia.Syntax (
   , TcMaybeTypedVar
   , TcModule
   , TcModuleDep
+  , TcModuleExpr
   , TcNamedRenaming
   , TcPackage
   , TcRenaming
@@ -171,6 +174,7 @@ type TcRenamingBlock = MRenamingBlock PhCheck
 type TcRenaming = MRenaming PhCheck
 type TcModule = MModule PhCheck
 type TcModuleDep = MModuleDep PhCheck
+type TcModuleExpr = MModuleExpr PhCheck
 type TcDecl = MDecl PhCheck
 type TcCallableDecl = MCallableDecl PhCheck
 type TcTypeDecl = MTypeDecl PhCheck
@@ -187,6 +191,7 @@ type ParsedRenamingBlock = MRenamingBlock PhParse
 type ParsedRenaming = MRenaming PhParse
 type ParsedModule = MModule PhParse
 type ParsedModuleDep = MModuleDep PhParse
+type ParsedModuleExpr = MModuleExpr PhParse
 type ParsedDecl = MDecl PhParse
 type ParsedCallableDecl = MCallableDecl PhParse
 type ParsedTypeDecl = MTypeDecl PhParse
@@ -250,14 +255,16 @@ data MNamedRenaming' p = MNamedRenaming Name (MRenamingBlock p)
 
 type MSatisfaction p = Ann p MSatisfaction'
 data MSatisfaction' p =
-  MSatisfaction Name (RenamedModule p) (Maybe (RenamedModule p)) (RenamedModule p)
-
-data RenamedModule p = RenamedModule (MModule p) [MRenamingBlock p]
+  MSatisfaction Name (MModuleExpr p) (Maybe (MModuleExpr p)) (MModuleExpr p)
 
 type MModule p = Ann p MModule'
-data MModule' p = MModule MModuleType Name (XPhasedContainer p (MDecl p))
-                                           [MModuleDep p]
-                | RefModule MModuleType Name (XRef p)
+data MModule' p = MModule MModuleType Name (MModuleExpr p)
+
+type MModuleExpr p = Ann p MModuleExpr'
+data MModuleExpr' p =
+    MModuleDef (XPhasedContainer p (MDecl p)) [MModuleDep p]
+               [MRenamingBlock p]
+  | MModuleRef (XRef p) [MRenamingBlock p]
 
 -- Expose out for DAG building
 type MModuleDep p = Ann p MModuleDep'
@@ -484,6 +491,9 @@ type family XAnn p (e :: * -> *) where
   XAnn PhParse MModule' = SrcCtx
   XAnn PhCheck MModule' = DeclOrigin
 
+  XAnn PhParse MModuleExpr' = SrcCtx
+  XAnn PhCheck MModuleExpr' = SrcCtx
+
   XAnn PhParse MModuleDep' = SrcCtx
   XAnn PhCheck MModuleDep' = SrcCtx
 
@@ -528,7 +538,7 @@ deriving instance Show (MRenamingBlock' PhCheck)
 deriving instance Show (MModuleDep' PhCheck)
 deriving instance Show (MNamedRenaming' PhCheck)
 deriving instance Show (MModule' PhCheck)
-deriving instance Show (RenamedModule PhCheck)
+deriving instance Show (MModuleExpr' PhCheck)
 deriving instance Show (MSatisfaction' PhCheck)
 deriving instance Show (MTopLevelDecl PhCheck)
 deriving instance Show (MPackage' PhCheck)
@@ -560,8 +570,7 @@ instance HasName (MNamedRenaming' p) where
   nodeName (MNamedRenaming name _) = name
 
 instance HasName (MModule' p) where
-  nodeName (MModule _ name _ _) = name
-  nodeName (RefModule _ name _) = name
+  nodeName (MModule _ name _) = name
 
 instance HasName (MSatisfaction' p) where
   nodeName (MSatisfaction name _ _ _) = name
@@ -593,14 +602,20 @@ instance HasDependencies PackageHead where
   dependencies = _packageHeadImports
 
 instance HasDependencies (MModule' PhParse) where
-  dependencies modul = case modul of
-    MModule _ _ _ deps -> map (_depName . _elem) deps
-    RefModule _ _ refName -> [refName]
+  dependencies (MModule _ _ moduleExpr) = dependencies moduleExpr
 
 instance HasDependencies (MModule' PhCheck) where
+  dependencies (MModule _ _ moduleExpr) = dependencies moduleExpr
+
+instance HasDependencies (MModuleExpr' PhParse) where
+  dependencies moduleExpr = case moduleExpr of
+    MModuleDef _ deps _ -> map (_depName . _elem) deps
+    MModuleRef refName _ -> [refName]
+
+instance HasDependencies (MModuleExpr' PhCheck) where
   dependencies modul = case modul of
-    MModule _ _ _ deps -> map (_depName . _elem) deps
-    RefModule _ _ v -> absurd v
+    MModuleDef _ deps _ -> map (_depName . _elem) deps
+    MModuleRef v _ -> absurd v
 
 instance HasDependencies (MNamedRenaming' PhParse) where
   dependencies (MNamedRenaming _ renamingBlock) =
@@ -695,9 +710,9 @@ getNamedRenamings = foldl extractNamedRenaming []
 -- === modules manipulation ===
 
 moduleDecls :: MModule PhCheck -> Env [TcDecl]
-moduleDecls (Ann _ modul) = case modul of
-  MModule _ _ decls _ -> decls
-  RefModule _ _ v -> absurd v
+moduleDecls (Ann _ (MModule _ _ (Ann _ moduleExpr))) = case moduleExpr of
+  MModuleDef decls _ _ -> decls
+  MModuleRef v _ -> absurd v
 
 -- === module declarations manipulation ===
 

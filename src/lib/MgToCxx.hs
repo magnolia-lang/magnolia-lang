@@ -14,7 +14,6 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
 import Data.Maybe (isJust)
 import qualified Data.Set as S
-import Data.Void (absurd)
 
 import Cxx.Syntax
 import Env
@@ -62,8 +61,7 @@ mgPackageToCxxSelfContainedProgramPackage tcPkg =
     return $ CxxPackage cxxPkgName cxxIncludes cxxPrograms
   where
     moduleType :: TcModule -> MModuleType
-    moduleType (Ann _ (MModule moduleTy _ _ _)) = moduleTy
-    moduleType (Ann _ (RefModule _ _ v)) = absurd v
+    moduleType (Ann _ (MModule moduleTy _ _)) = moduleTy
 
     gatherCxxIncludes :: [TcModule] -> MgMonad [CxxInclude]
     gatherCxxIncludes = foldMAccumErrors (\acc tcM -> case moduleType tcM of
@@ -80,9 +78,8 @@ mgPackageToCxxSelfContainedProgramPackage tcPkg =
       filter ((== Program) . moduleType)
 
 mgProgramToCxxProgramModule :: Name -> TcModule -> MgMonad CxxModule
-mgProgramToCxxProgramModule _ (Ann _ (RefModule _ _ v)) = absurd v
-mgProgramToCxxProgramModule pkgName
-                            (Ann _ (MModule Program name decls deps)) =
+mgProgramToCxxProgramModule
+  pkgName (Ann _ (MModule Program name (Ann _ (MModuleDef decls deps _)))) =
   enter name $ do
     let moduleFqName = FullyQualifiedName (Just pkgName) name
         boundNames = S.fromList . map _name $

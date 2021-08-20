@@ -175,21 +175,35 @@ mkScopeVarsImmutable = M.map mkImmutable
       let newMode = case mode of MOut -> MUnk ; MUnk -> MUnk ; _ -> MObs
       in Ann src (Var newMode name ty)
 
+checkModule :: Env [TcTopLevelDecl] -> MModule PhParse -> MgMonad TcModule
+checkModule tlDecls (Ann src (MModule moduleType name moduleExpr)) =
+  enter name $ do
+    tcModuleExpr <- checkModuleExpr tlDecls moduleType moduleExpr
+    return $ Ann (LocalDecl src) (MModule moduleType name tcModuleExpr)
+
 -- TODO: can variables exist without a type in the scope?
 -- TODO: replace things with relevant sets
 -- TODO: handle circular dependencies
-checkModule
+checkModuleExpr
   :: Env [TcTopLevelDecl]
-  -> MModule PhParse
-  -> MgMonad TcModule
-checkModule tlDecls (Ann src (RefModule typ name ref)) = enter name $ do
+  -> MModuleType
+  -> ParsedModuleExpr
+  -> MgMonad TcModuleExpr
+checkModuleExpr tlDecls moduleType
+                (Ann src (MModuleRef ref renamingBlocks)) = do
   -- TODO: cast module: do we need to check out the deps?
-  ~(Ann _ (MModule _ _ decls deps)) <-
-    lookupTopLevelRef src (M.map getModules tlDecls) ref >>= castModule typ
-  return $ Ann (LocalDecl src) $ MModule typ name decls deps
+  ~(Ann _ (MModule _ _ (Ann _ (MModuleDef decls deps refRenamingBlocks)))) <-
+        lookupTopLevelRef src (M.map getModules tlDecls) ref
+    >>= castModule moduleType
+  tcRenamingBlocks <-
+    mapM (checkRenamingBlock (M.map getNamedRenamings tlDecls)) renamingBlocks
+  renamedDecls <- foldM applyRenamingBlock decls tcRenamingBlocks
+  return $ Ann src $
+    MModuleDef renamedDecls deps (refRenamingBlocks <> tcRenamingBlocks)
 
-checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) =
-  enter moduleName $ do
+checkModuleExpr tlDecls moduleType
+                (Ann modSrc (MModuleDef decls deps renamingBlocks)) = do
+  moduleName <- getParentModuleName
   when (maybe False (any isLocalDecl . getModules)
               (M.lookup moduleName tlDecls)) $
     throwLocatedE MiscErr modSrc $ "duplicate local module name " <>
@@ -228,9 +242,11 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) =
     traverse_ (traverse_ (recover checkImplemented)) finalScope
   -- TODO: check that name is unique?
   -- TODO: make module
-  return $ Ann { _ann = LocalDecl modSrc
-               , _elem = MModule moduleType moduleName finalScope tcDeps
-               }
+  -- Step 7: everything is fine inside the module expression, check renamings
+  tcRenamingBlocks <-
+    mapM (checkRenamingBlock (M.map getNamedRenamings tlDecls)) renamingBlocks
+  tcRenamedDecls <- foldM applyRenamingBlock finalScope tcRenamingBlocks
+  return $ Ann modSrc $ MModuleDef tcRenamedDecls tcDeps tcRenamingBlocks
   where
     mexternalInfo = case moduleType of
         External backend fqn -> Just (backend, _targetName fqn)
@@ -317,16 +333,18 @@ checkModule tlDecls (Ann modSrc (MModule moduleType moduleName decls deps)) =
     checkImplemented decl = case decl of
       MCallableDecl (Ann (Just _, _) _) -> return ()
       MTypeDecl (Ann (Just _, _) _) -> return ()
-      _ -> throwLocatedE InvalidDeclErr modSrc $ pshow (nodeName decl) <>
-        " was left unimplemented in " <> pshow moduleType <> " " <>
-        pshow moduleName
+      _ -> do
+        moduleName <- getParentModuleName
+        throwLocatedE InvalidDeclErr modSrc $ pshow (nodeName decl) <>
+          " was left unimplemented in " <> pshow moduleType <> " " <>
+          pshow moduleName
 
 -- TODO: finish module casting.
 castModule
   :: MModuleType
   -> MModule PhCheck
   -> MgMonad (MModule PhCheck)
-castModule dstTyp origModule@(Ann declO (MModule srcTyp _ _ _)) = do
+castModule dstTyp origModule@(Ann declO (MModule srcTyp _ _)) = do
   let moduleWithSwappedType = return $ swapTyp <$$> origModule
       moduleAsSig = return $ mkSignature <$$> origModule
   case (srcTyp, dstTyp) of
@@ -347,14 +365,17 @@ castModule dstTyp origModule@(Ann declO (MModule srcTyp _ _ _)) = do
     noCast = throwLocatedE MiscErr (srcCtx declO) $
       pshow srcTyp <> " can not be casted to " <> pshow dstTyp
     swapTyp :: MModule' PhCheck -> MModule' PhCheck
-    swapTyp (MModule _ name decls deps) = MModule dstTyp name decls deps
-    swapTyp (RefModule _ _ v) = absurd v
+    swapTyp (MModule _ name moduleExpr) = MModule dstTyp name moduleExpr
+
+    moduleExprToSignature :: TcModuleExpr -> TcModuleExpr
+    moduleExprToSignature (Ann src (MModuleDef decls deps renamings)) =
+      Ann src $ MModuleDef (M.map mkSigDecls decls) deps renamings
+    moduleExprToSignature (Ann _ (MModuleRef v _)) = absurd v
 
     mkSignature :: MModule' PhCheck -> MModule' PhCheck
-    mkSignature (MModule _ name decls deps) =
+    mkSignature (MModule _ name moduleExpr) =
       -- TODO: should we do something with deps?
-      MModule Signature name (M.map mkSigDecls decls) deps
-    mkSignature (RefModule _ _ v) = absurd v
+      MModule Signature name (moduleExprToSignature moduleExpr)
 
     -- TODO: make the lists non-empty in AST
     mkSigDecls :: [TcDecl] -> [TcDecl]
@@ -370,9 +391,6 @@ castModule dstTyp origModule@(Ann declO (MModule srcTyp _ _ _)) = do
     prototypize :: MCallableDecl' p -> MCallableDecl' p
     prototypize (Callable ctype name args retType guard _) =
       Callable ctype name args retType guard EmptyBody
-
-castModule _ (Ann _ (RefModule _ _ v)) = absurd v
--- TODO: sanity check modes
 
 annotateScopedExprStmt ::
   ModuleScope ->

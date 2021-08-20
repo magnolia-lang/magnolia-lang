@@ -6,7 +6,7 @@ module Magnolia.Parser (parsePackage, parsePackageHead, parseReplCommand) where
 import Control.Monad.Combinators.Expr
 import Control.Monad.Except (void, when)
 import Data.Functor (($>))
-import Data.Maybe (fromMaybe, isNothing)
+import Data.Maybe (isNothing)
 import Data.Void
 import Text.Megaparsec
 import Text.Megaparsec.Char
@@ -126,25 +126,10 @@ topLevelDecl =  try (MModuleDecl <$> moduleDecl)
             <|> (MSatisfactionDecl <$> satisfaction)
 
 moduleDecl :: Parser ParsedModule
-moduleDecl = do
+moduleDecl = annot $ do
   typ <- moduleType
   name <- ModName <$> nameString
   symbol "="
-  inlineModule typ name <|> moduleRef typ name
-
-moduleType :: Parser MModuleType
-moduleType = (keyword ConceptKW >> return Concept)
-          <|> (keyword ImplementationKW >> return Implementation)
-          <|> (keyword SignatureKW >> return Signature)
-          <|> (keyword ProgramKW >> return Program)
-
-moduleRef :: MModuleType -> Name -> Parser ParsedModule
-moduleRef typ name = annot $ do
-  refName <- fullyQualifiedName NSPackage NSModule
-  return $ RefModule typ name refName
-
-inlineModule :: MModuleType -> Name -> Parser ParsedModule
-inlineModule inTyp name = annot $ do
   mexternal <- option Nothing (do
     keyword ExternalKW
     backend <- choice [ keyword CxxKW >> return Cxx
@@ -152,12 +137,30 @@ inlineModule inTyp name = annot $ do
                       , keyword PythonKW >> return Python]
     externalName <- fullyQualifiedName NSDirectory NSPackage
     return . Just $ External backend externalName)
-  let typ = fromMaybe inTyp mexternal
+  case mexternal of
+    Nothing -> MModule typ name <$> (moduleDef typ <|> moduleRef)
+    Just tyExt -> MModule tyExt name <$> moduleDef tyExt
+
+moduleType :: Parser MModuleType
+moduleType = (keyword ConceptKW >> return Concept)
+          <|> (keyword ImplementationKW >> return Implementation)
+          <|> (keyword SignatureKW >> return Signature)
+          <|> (keyword ProgramKW >> return Program)
+
+moduleRef :: Parser ParsedModuleExpr
+moduleRef = annot $ do
+  refName <- fullyQualifiedName NSPackage NSModule
+  renamingBlocks <- many renamingBlock
+  return $ MModuleRef refName renamingBlocks
+
+moduleDef :: MModuleType -> Parser ParsedModuleExpr
+moduleDef typ = annot $ do
   declsAndDeps <- braces $ many (try (Left <$> declaration typ)
                                  <|> (Right <$> moduleDependency))
   let decls = [decl | (Left decl) <- declsAndDeps]
       deps  = [dep  | (Right dep) <- declsAndDeps]
-  return $ MModule typ name decls deps
+  renamingBlocks <- many renamingBlock
+  return $ MModuleDef decls deps renamingBlocks
 
 renamingDecl :: Parser ParsedNamedRenaming
 renamingDecl = annot $ do
@@ -168,24 +171,14 @@ renamingDecl = annot $ do
 
 satisfaction :: Parser ParsedSatisfaction
 satisfaction = annot $ do
-  -- TODO: add renamings
   keyword SatisfactionKW
   name <- SatName <$> nameString
   symbol "="
-  initialModule <- renamedModule
-  withModule <- optional $ keyword WithKW >> renamedModule
-  modeledModule <- keyword ModelsKW >> renamedModule
+  initialModule <- moduleExpr
+  withModule <- optional $ keyword WithKW >> moduleExpr
+  modeledModule <- keyword ModelsKW >> moduleExpr
   return $ MSatisfaction name initialModule withModule modeledModule
-  where
-    -- TODO: fresh gen?
-    anonName = GenName "__anonymous_module_name__"
-    typ = Concept
-    anonModule = moduleRef typ anonName <|> inlineModule typ anonName
-
-    renamedModule = do
-      modul <- anonModule
-      renamingBlocks <- many renamingBlock
-      return $ RenamedModule modul renamingBlocks
+  where moduleExpr = moduleDef Concept <|> moduleRef
 
 
 declaration :: MModuleType -> Parser ParsedDecl

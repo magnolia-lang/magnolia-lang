@@ -49,3 +49,21 @@ implementation RenamingOverload = {
     type _T;
     function _f(_t: _T): _T = _t; // should fail
 }
+
+signature RenamedModuleExprDef = {
+    type T;
+}[T => T1];
+
+signature CheckRenamedModuleExprDef = {
+    use RenamedModuleExprDef;
+    function f(): T1; // should succeed
+    function g(): T;  // should fail
+}
+
+signature RenamedModuleExprRef = RenamedModuleExprDef[T1 => T2];
+
+signature CheckRenamedModuleExprRef = {
+    use RenamedModuleExprRef;
+    function f(): T2; // should succeed
+    function g(): T1; // should fail
+}

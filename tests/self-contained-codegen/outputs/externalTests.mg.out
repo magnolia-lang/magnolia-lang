@@ -1,4 +1,4 @@
-tests/self-contained-codegen/inputs/externalTests.mg:5:25: Error in tests.self-contained-codegen.inputs.externalTests: external C++ block ExtWithoutFilePath was specified without an include path
+tests/self-contained-codegen/inputs/externalTests.mg:5:1: Error in tests.self-contained-codegen.inputs.externalTests: external C++ block ExtWithoutFilePath was specified without an include path
 
 tests/self-contained-codegen/inputs/externalTests.mg:24:5: Error in tests.self-contained-codegen.inputs.externalTests.ProgramThatReliesOnWrongBackendType: attempted to generate C++ code relying on external type TyStruct.T but it is declared as having a JavaScript backend
 

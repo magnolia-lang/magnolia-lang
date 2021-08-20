@@ -126,24 +126,21 @@ instance Pretty (MNamedRenaming' PhCheck) where
 instance Pretty (MSatisfaction' PhCheck) where
   pretty = undefined -- TODO
 
-instance Pretty (RenamedModule PhCheck) where
-  pretty (RenamedModule modul renamingBlocks) =
-    let renamingTrailer = if null renamingBlocks then ""
-                          else align (vsep (map p renamingBlocks))
-    in p modul <> renamingTrailer
-
 instance Pretty (MModule' PhCheck) where
-  pretty (MModule moduleType name declMap depList) =
-    vsep [ nest 4 (vsep (  p moduleType <+> p name <+> "= {"
-                        :  map p depList
-                        <> map ((<> ";") . p)
-                               (join (M.elems declMap))
-                        ))
-         , "}"
-         ]
+  pretty (MModule moduleType name moduleExpr) =
+    header <+> p moduleExpr
+    where
+      header = case moduleType of
+        External {} -> p Implementation <+> p name <+> "=" <+> p moduleType
+        _ -> p moduleType <+> p name <+> "="
 
-
-  pretty (RefModule _ _ v) = absurd v
+instance Pretty (MModuleExpr' PhCheck) where
+  pretty (MModuleDef decls deps renamingBlocks) =
+    lbrace <> line <>
+    indent 4 (vsep (map p deps <>
+                    map ((<> semi) . p) (join (M.elems decls)))) <> line <>
+    rbrace <> align (vsep $ map p renamingBlocks)
+  pretty (MModuleRef v _) = absurd v
 
 instance Pretty (MModuleDep' PhCheck) where
   pretty (MModuleDep name renamingBlocks castToSig) =
