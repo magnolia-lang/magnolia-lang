@@ -151,8 +151,11 @@ instance Pretty (MModuleDep' PhCheck) where
                  else "") <> ";"
 
 instance Pretty (MRenamingBlock' PhCheck) where
-  pretty (MRenamingBlock renamings) =
-    brackets $ hsep (punctuate comma (map p renamings))
+  pretty (MRenamingBlock renamingBlockTy renamings) =
+    let content = hsep (punctuate comma (map p renamings))
+    in case renamingBlockTy of
+      PartialRenamingBlock -> "[[" <> content <> "]]"
+      TotalRenamingBlock -> brackets content
 
 instance Pretty (MRenaming' PhCheck) where
   pretty renaming = case renaming of

@@ -292,8 +292,13 @@ moduleDependency = annot $ do
   return $ MModuleDep name renamings castToSignature
 
 renamingBlock :: Parser ParsedRenamingBlock
-renamingBlock = annot $
-  MRenamingBlock <$> brackets (renaming `sepBy` symbol ",")
+renamingBlock = annot $ do
+  (renamings, renamingBlockType) <-
+        ((,PartialRenamingBlock) <$>
+            doubleBrackets (renaming `sepBy` symbol ","))
+    <|> ((,TotalRenamingBlock) <$>
+            brackets (renaming `sepBy` symbol ","))
+  return $ MRenamingBlock renamingBlockType renamings
 
 renaming :: Parser ParsedRenaming
 renaming = try inlineRenaming
@@ -364,6 +369,9 @@ braces = between (symbol "{") (symbol "}")
 
 brackets :: Parser a -> Parser a
 brackets = between (symbol "[") (symbol "]")
+
+doubleBrackets :: Parser a -> Parser a
+doubleBrackets = between (symbol "[[") (symbol "]]")
 
 parens :: Parser a -> Parser a
 parens = between (symbol "(") (symbol ")")

@@ -37,6 +37,10 @@ implementation SwapTypesMultipleSteps = {
     function _t1(): T1 = __t1(); // should succeed
 }
 
+implementation NonExistentSourcesInTotalAndPartialRenaming = {
+    use ToRename[Z => Z]; // should fail
+    use ToRename[[Z => Z]]; // should succeed
+}
 
 implementation ToRenameExt = external C++ ToRenameExtCxx {
     type T;

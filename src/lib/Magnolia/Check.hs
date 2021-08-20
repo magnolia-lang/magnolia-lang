@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Magnolia.Check (
@@ -114,15 +115,15 @@ checkNamedRenaming env (Ann src (MNamedRenaming name renamingBlock)) =
 checkRenamingBlock :: Env [TcNamedRenaming]
                    -> MRenamingBlock PhParse
                    -> MgMonad TcRenamingBlock
-checkRenamingBlock env (Ann src (MRenamingBlock renamingList)) =
-  Ann src . MRenamingBlock <$>
+checkRenamingBlock env (Ann src (MRenamingBlock renamingBlockTy renamingList)) =
+  Ann src . MRenamingBlock renamingBlockTy <$>
     (foldr (<>) [] <$> mapM inlineRenaming renamingList)
   where
     inlineRenaming :: MRenaming PhParse -> MgMonad [TcRenaming]
     inlineRenaming (Ann src' renaming) = case renaming of
       InlineRenaming ir -> return [Ann (LocalDecl src') (InlineRenaming ir)]
       RefRenaming ref -> do
-        Ann _ (MNamedRenaming _ (Ann _ (MRenamingBlock renamings))) <-
+        Ann _ (MNamedRenaming _ (Ann _ (MRenamingBlock _ renamings))) <-
           lookupTopLevelRef src' env ref
         return renamings
 
@@ -972,8 +973,6 @@ mkEnvFromDep env (Ann src (MModuleDep fqRef tcRenamings castToSig)) = do
       -- TODO: gather here env of known renamings
   foldM applyRenamingBlock localDecls tcRenamings
 
--- TODO: cleanup duplicates, make a set of MDecl instead of a list?
--- TODO: finish renamings
 -- TODO: add annotations to renamings, work with something better than just
 --       name.
 -- TODO: improve error diagnostics
@@ -981,17 +980,17 @@ applyRenamingBlock
   :: ModuleScope
   -> MRenamingBlock PhCheck
   -> MgMonad ModuleScope
-applyRenamingBlock modul renamingBlock@(Ann src (MRenamingBlock renamings)) = do
+applyRenamingBlock modul
+                   renamingBlock@(Ann src
+                                      (MRenamingBlock rBlockTy renamings)) = do
   -- TODO: pass renaming decls to expand them
   let inlineRenamings = renamingBlockToInlineRenamings renamingBlock
       renamingMap = M.fromList inlineRenamings
-      (sources, targets) = ( L.map fst inlineRenamings
-                           , L.map snd inlineRenamings
-                           )
+      (sources, targets) = unzip inlineRenamings
       -- TODO: will have to modify when renamings can be more atomic and
       -- namespace can be specified.
-      filterSources sourceNames namespace =
-        filter (\n -> isNothing $ M.lookup (Name namespace (_name n)) modul)
+      filterSources sourceNames ns =
+        filter (\n -> isNothing $ M.lookup (Name ns (_name n)) modul)
                 sourceNames
       unknownSources =
         foldl filterSources sources [NSFunction, NSProcedure, NSType]
@@ -1009,31 +1008,35 @@ applyRenamingBlock modul renamingBlock@(Ann src (MRenamingBlock renamings)) = do
       -- TODO: another view is that max 1 renaming can be applied for each
       -- name. Could optimize later if need be.
       occurOnBothSides = L.filter (`elem` targets) sources
-      unambiguousRenamings = filter (\(source, _) ->
-                                     source `notElem` occurOnBothSides)
-                                    inlineRenamings
+      unambiguousRenamings = filter
+        (\(source, _) -> source `notElem` occurOnBothSides) inlineRenamings
       -- TODO: cleanup
       r' = zip occurOnBothSides
-                    [GenName ("gen#" ++ show i) | i <- [1..] :: [Int]]
+               [GenName ("gen#" ++ show i) | i <- [1..] :: [Int]]
       r'' = unambiguousRenamings <>
               [(freeName, fromJust $ M.lookup source renamingMap) |
                (source, freeName) <- r']
   (modul', renamings') <- do
     when (M.size renamingMap /= L.length renamings) $
       throwLocatedE MiscErr src "duplicate source in renaming block"
-    unless (null unknownSources) $
-      throwLocatedE MiscErr src $ "renaming block has unknown sources: " <>
-        pshow unknownSources
+    case rBlockTy of
+      PartialRenamingBlock -> pure ()
+      TotalRenamingBlock ->
+        unless (null unknownSources) $
+          throwLocatedE MiscErr src $
+            "total renaming block contains unknown sources: " <>
+            T.intercalate ", " (map pshow unknownSources)
     if null occurOnBothSides
     then return (modul, inlineRenamings)
-    else
-      let annR' = map (Ann (LocalDecl (SrcCtx Nothing)) . InlineRenaming) r'
-      in applyRenamingBlock modul (MRenamingBlock annR' <$$ renamingBlock)
-          >>= \modul' -> return (modul', r'')
-  return $ M.fromListWith (<>) $ L.map (\(k, decls) ->
-          (tryAllRenamings replaceName k renamings',
-           L.map (flip (tryAllRenamings applyRenaming) renamings') decls)) $
-           M.toList modul'
+    else let annR' = map (Ann (LocalDecl (SrcCtx Nothing)) . InlineRenaming) r'
+             renamingBlock' = MRenamingBlock rBlockTy annR' <$$ renamingBlock
+         in (,r'') <$> applyRenamingBlock modul renamingBlock'
+  pure $ M.fromListWith (<>) $
+    L.map (\(k, decls) ->
+            ( tryAllRenamings replaceName k renamings'
+            , L.map (flip (tryAllRenamings applyRenaming) renamings') decls
+            )
+          ) $ M.toList modul'
   where tryAllRenamings renamingFun target = foldl renamingFun target
 
 -- TODO: specialize replacements based on namespaces?
