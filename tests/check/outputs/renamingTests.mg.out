@@ -1,5 +1,7 @@
-tests/check/inputs/renamingTests.mg:50:5: Declaration error in tests.check.inputs.renamingTests.RenamingOverload: got conflicting implementations for function _f(_t : _T) : _T at tests/check/inputs/renamingTests.mg:43:5 and tests/check/inputs/renamingTests.mg:50:5
+tests/check/inputs/renamingTests.mg:41:17: Error in tests.check.inputs.renamingTests.NonExistentSourcesInTotalAndPartialRenaming: total renaming block contains unknown sources: Z
 
-tests/check/inputs/renamingTests.mg:60:5: Error: type not in scope in tests.check.inputs.renamingTests.CheckRenamedModuleExprDef: T
+tests/check/inputs/renamingTests.mg:54:5: Declaration error in tests.check.inputs.renamingTests.RenamingOverload: got conflicting implementations for function _f(_t : _T) : _T at tests/check/inputs/renamingTests.mg:47:5 and tests/check/inputs/renamingTests.mg:54:5
 
-tests/check/inputs/renamingTests.mg:68:5: Error: type not in scope in tests.check.inputs.renamingTests.CheckRenamedModuleExprRef: T1
+tests/check/inputs/renamingTests.mg:64:5: Error: type not in scope in tests.check.inputs.renamingTests.CheckRenamedModuleExprDef: T
+
+tests/check/inputs/renamingTests.mg:72:5: Error: type not in scope in tests.check.inputs.renamingTests.CheckRenamedModuleExprRef: T1

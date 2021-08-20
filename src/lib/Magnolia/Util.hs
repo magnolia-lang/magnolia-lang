@@ -267,7 +267,7 @@ checkNoCycle (G.AcyclicSCC vertex) = return vertex
 -- === renamings manipulation ===
 
 renamingBlockToInlineRenamings :: TcRenamingBlock -> [InlineRenaming]
-renamingBlockToInlineRenamings (Ann _ (MRenamingBlock renamings)) =
+renamingBlockToInlineRenamings (Ann _ (MRenamingBlock _ renamings)) =
     map mkInlineRenaming renamings
   where mkInlineRenaming (Ann _ r) = case r of InlineRenaming ir -> ir
                                                RefRenaming v -> absurd v

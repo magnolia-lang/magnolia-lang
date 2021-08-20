@@ -47,6 +47,7 @@ module Magnolia.Syntax (
   , MRenaming' (..)
   , MRenamingBlock
   , MRenamingBlock' (..)
+  , MRenamingBlockType (..)
   , MSatisfaction
   , MSatisfaction' (..)
   , MTopLevelDecl (..)
@@ -275,8 +276,16 @@ data MModuleDep' p = MModuleDep { _depName :: FullyQualifiedName
                                 , _depCastToSig :: Bool
                                 }
 
+-- | There are two types of renaming blocks: partial renaming blocks, and
+-- total renaming blocks. A partial renaming block is a renaming block that
+-- may contain source names that do not exist in the module expression it is
+-- applied to. In contrast, a total renaming block expects that all its source
+-- names exist in the module expression it is applied to.
 type MRenamingBlock p = Ann p MRenamingBlock'
-newtype MRenamingBlock' p = MRenamingBlock [MRenaming p]
+data MRenamingBlock' p = MRenamingBlock MRenamingBlockType [MRenaming p]
+
+data MRenamingBlockType = PartialRenamingBlock | TotalRenamingBlock
+                          deriving (Eq, Show)
 
 type MRenaming p = Ann p MRenaming'
 data MRenaming' p = InlineRenaming InlineRenaming
@@ -622,7 +631,7 @@ instance HasDependencies (MNamedRenaming' PhParse) where
     dependencies renamingBlock
 
 instance HasDependencies (MRenamingBlock' PhParse) where
-  dependencies (MRenamingBlock renamings) =
+  dependencies (MRenamingBlock _ renamings) =
     foldr (\(Ann _ r) acc -> case r of RefRenaming n -> n:acc ; _ -> acc) []
           renamings
 
