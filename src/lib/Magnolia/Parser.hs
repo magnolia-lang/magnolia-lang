@@ -14,7 +14,7 @@ import Text.Megaparsec.Char
 import qualified Data.List as L
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Text.Lazy as T
-import qualified Text.Megaparsec.Char.Lexer as L
+import qualified Text.Megaparsec.Char.Lexer as Lex
 
 import Env
 import Magnolia.Syntax
@@ -447,19 +447,25 @@ keyword kw = (lexeme . try) $ string s *> notFollowedBy nameChar
       ImportKW         -> "imports"
 
 sc :: Parser ()
-sc = L.space space1 skipLineComment skipBlockComment
+sc = skipMany $
+  choice [ hidden space1
+         , hidden $ Lex.skipLineComment "//"
+         , hidden $ Lex.skipBlockCommentNested "/*<" ">*/"
+         , hidden $ Lex.skipBlockComment "/*" "*/"
+         ]
 
-skipLineComment :: Parser ()
-skipLineComment = string "//" >> void (takeWhileP (Just "character") (/= '\n'))
+-- skipLineComment :: Parser ()
+-- skipLineComment = Lex.skipLineComment "//"
 
-skipBlockComment :: Parser ()
-skipBlockComment = string "/*" >> void (manyTill anySingle (symbol "*/"))
+-- skipBlockComment :: Parser ()
+-- skipBlockComment =
+--   Lex.skipBlockCommentNested "/*<" ">*/" <> Lex.skipBlockComment "/*" "*/"
 
 lexeme :: Parser a -> Parser a
-lexeme = L.lexeme sc
+lexeme = Lex.lexeme sc
 
 symbol :: String -> Parser ()
-symbol = void . L.symbol sc
+symbol = void . Lex.symbol sc
 
 semi :: Parser ()
 semi = symbol ";"
