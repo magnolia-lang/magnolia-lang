@@ -14,8 +14,8 @@ clean:
 lint:
 	hlint src
 
-parse-test-targets = commentTests \
-                     package-name-with-hyphens
+parse-test-targets = package-name-with-hyphens \
+		     syntaxTests
 
 check-test-targets = declScopeTests \
 		     externalTests \

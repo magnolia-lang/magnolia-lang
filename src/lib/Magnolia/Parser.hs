@@ -347,14 +347,14 @@ ops = [ map unOp ["+", "-", "!", "~"]                -- unary ops
       ]
 
 unOp :: String -> Operator Parser ParsedExpr
-unOp s = Prefix $ unOpCall <$> withSrc (symbol s)
+unOp s = Prefix $ unOpCall <$> withSrc (symOp s)
   where
     unOpCall (src, _) e =
       Ann { _ann = src, _elem = MCall (FuncName (s <> "_")) [e] Nothing }
 
 
 binOp :: String -> Operator Parser ParsedExpr
-binOp s = InfixL $ binOpCall <$> withSrc (symbol s)
+binOp s = InfixL $ binOpCall <$> withSrc (symOp s)
   where
     binOpCall :: (SrcCtx, a) -> ParsedExpr -> ParsedExpr -> ParsedExpr
     binOpCall (src, _) e1 e2 =
@@ -466,6 +466,11 @@ lexeme = Lex.lexeme sc
 
 symbol :: String -> Parser ()
 symbol = void . Lex.symbol sc
+
+symOp :: String -> Parser ()
+symOp s = lexeme . try $ string s >> notFollowedBy symChar
+  where
+    symChar = choice $ map char "!%&*+-./<=>|~"
 
 semi :: Parser ()
 semi = symbol ";"
