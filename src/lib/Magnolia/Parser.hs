@@ -126,20 +126,24 @@ topLevelDecl =  try (MModuleDecl <$> moduleDecl)
             <|> (MSatisfactionDecl <$> satisfaction)
 
 moduleDecl :: Parser ParsedModule
-moduleDecl = annot $ do
+moduleDecl = label "module" $ annot $ do
   typ <- moduleType
   name <- ModName <$> nameString
   symbol "="
-  mexternal <- option Nothing (do
-    keyword ExternalKW
-    backend <- choice [ keyword CxxKW >> return Cxx
-                      , keyword JavaScriptKW >> return JavaScript
-                      , keyword PythonKW >> return Python]
-    externalName <- fullyQualifiedName NSDirectory NSPackage
-    return . Just $ External backend externalName)
-  case mexternal of
-    Nothing -> MModule typ name <$> (moduleDef typ <|> moduleRef)
-    Just tyExt -> MModule tyExt name <$> moduleDef tyExt
+  case typ of
+    Implementation -> do
+      mexternal <- option Nothing (do
+        keyword ExternalKW
+        backend <- choice [ keyword CxxKW >> return Cxx
+                          , keyword JavaScriptKW >> return JavaScript
+                          , keyword PythonKW >> return Python]
+        externalName <- fullyQualifiedName NSDirectory NSPackage
+        return . Just $ External backend externalName)
+      case mexternal of
+        Nothing -> MModule typ name <$> moduleExpr typ
+        Just tyExt -> MModule tyExt name <$> moduleExpr tyExt
+    _ -> MModule typ name <$> moduleExpr typ
+  where moduleExpr typ = moduleDef typ <|> moduleRef
 
 moduleType :: Parser MModuleType
 moduleType = (keyword ConceptKW >> return Concept)
