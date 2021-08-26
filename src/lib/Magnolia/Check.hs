@@ -867,6 +867,7 @@ mkTypeUtils :: Maybe (Backend, Name) -> TcTypeDecl -> [TcDecl]
 mkTypeUtils mexternalInfo annType@(Ann _ (Type _ isRequired)) =
     [ MTypeDecl annType
     , MCallableDecl (Ann (mkNewAnn eqFnName) eqFnDecl)
+    , MCallableDecl (Ann (mkNewAnn neqFnName) neqFnDecl)
     , MCallableDecl (Ann (mkNewAnn assignProcName) assignProcDecl)
     ]
   where
@@ -881,12 +882,15 @@ mkTypeUtils mexternalInfo annType@(Ann _ (Type _ isRequired)) =
           in (Just (mkConcreteLocalDecl mexternalInfo src fname), absDeclOs)
 
     eqFnName = FuncName "_==_"
+    neqFnName = FuncName "_!=_"
     assignProcName = ProcName "_=_"
 
     mkVar mode nameStr = Ann (nodeName annType) $
       Var mode (VarName nameStr) (nodeName annType)
     eqFnDecl = Callable Function eqFnName (map (mkVar MObs) ["e1", "e2"]) Pred
                         Nothing body
+    neqFnDecl = Callable Function neqFnName (map (mkVar MObs) ["e1", "e2"]) Pred
+                         Nothing body
     assignProcDecl = Callable Procedure assignProcName
                               [mkVar MOut "var", mkVar MObs "expr"] Unit
                               Nothing body

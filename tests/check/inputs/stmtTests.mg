@@ -122,3 +122,13 @@ concept AssertionTests = {
     // should fail
     axiom axiom_with_func() = { assert func(); }
 }
+
+implementation GeneratedFunctionsTest = {
+    type T;
+
+    procedure generated_functions_test(obs t: T) = {
+        var t_var = t;
+        t == t;
+        t != t;
+    }
+}
