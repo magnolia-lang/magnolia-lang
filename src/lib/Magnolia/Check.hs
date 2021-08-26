@@ -146,15 +146,18 @@ hackyPrelude :: Bool -> [TcDecl]
 --       Then, these could be safely merged when imported in scope.
 --       At the moment, this can cause problems when merging programs together.
 --       This shall be handled later.
-hackyPrelude genConcreteDefs = map (MCallableDecl . Ann newAnn) (unOps <> binOps)
+hackyPrelude genConcreteDefs = map (MCallableDecl . Ann newAnn)
+  (unOps <> binOps <> [falseOp, trueOp])
   where
     lhsVar = Ann Pred $ Var MObs (VarName "#pred1#") Pred
     rhsVar = Ann Pred $ Var MObs (VarName "#pred2#") Pred
-    mkFn args nameStr =
-      Callable Function (FuncName nameStr) args Pred Nothing body
-    unOps = [mkFn [lhsVar] "!_"]
-    binOps = map (\s -> mkFn [lhsVar, rhsVar] ("_" <> s <> "_"))
+    mkPred args nameStr =
+      Callable Predicate (FuncName nameStr) args Pred Nothing body
+    unOps = [mkPred [lhsVar] "!_"]
+    binOps = map (\s -> mkPred [lhsVar, rhsVar] ("_" <> s <> "_"))
       ["&&", "||", "!=", "=>", "<=>"]
+    falseOp = mkPred [] "FALSE"
+    trueOp = mkPred [] "TRUE"
     newAnn = let absDeclOs = AbstractLocalDecl (SrcCtx Nothing) :| [] in
       if genConcreteDefs
       then (Just $ ConcreteLocalMagnoliaDecl (SrcCtx Nothing), absDeclOs)

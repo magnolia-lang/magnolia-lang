@@ -47,6 +47,9 @@ program P = {
 
         // if-then-else statement
         if x_obs == x_obs then {} else {};
+
+        // true, false constants
+        if TRUE() || FALSE() then {} else {};
     }
 
     // overloading on return types

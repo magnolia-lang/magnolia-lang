@@ -139,7 +139,15 @@ mgProgramToCxxProgramModule
         -- TODO: (3) may change. For the moment, it seems convenient to do that.
         _name (nodeName callable) /= "_=_" &&
         all ((/= Pred) . _varType . _elem) (_callableArgs callable) &&
-        not (isEqualityPredicateOverType callable)
+        not (isEqualityPredicateOverType callable) &&
+        not (isGeneratedConstantPredicate callable)
+
+    -- TODO: cleanup once builtins are implemented properly
+    isGeneratedConstantPredicate :: MCallableDecl' p -> Bool
+    isGeneratedConstantPredicate (Callable _ cname cargs retTy _ _) =
+      case (retTy, cargs) of
+        (Pred, []) -> cname `elem` [FuncName "FALSE", FuncName "TRUE"]
+        _ -> False
 
     isEqualityPredicateOverType :: MCallableDecl' p -> Bool
     isEqualityPredicateOverType callable =
@@ -454,23 +462,29 @@ mgExprToCxxExpr returnTypeOverloadsNameAliasMap = goExpr
 -- | Takes the name of a function, its arguments and its return type, and
 -- produces a unop or binop expression node if it can be expressed as such in
 -- C++. For the moment, functions that can be expressed like that include the
--- equality predicate between two elements of the same type, and predicate
--- combinators (such as '_&&_' and '_||_').
+-- equality predicate between two elements of the same type, predicate
+-- combinators (such as '_&&_' and '_||_'), and the boolean constants 'TRUE',
+-- and 'FALSE'.
 tryMgCallToCxxSpecialOpExpr :: M.Map (Name, [MType]) Name
                             -> Name -> [TcExpr] -> MType
                             -> MgMonad (Maybe CxxExpr)
 tryMgCallToCxxSpecialOpExpr returnTypeOverloadsNameAliasMap name args retTy = do
   cxxArgs <- mapM (mgExprToCxxExpr returnTypeOverloadsNameAliasMap) args
   case (cxxArgs, retTy : map _ann args ) of
-    ([cxxExpr], [Pred, Pred]) -> return $ unPredCombinator cxxExpr
+    ([cxxExpr], [Pred, Pred]) -> pure $ unPredCombinator cxxExpr
     ([cxxLhsExpr, cxxRhsExpr], [Pred, Pred, Pred]) ->
-      return $ binPredCombinator cxxLhsExpr cxxRhsExpr
+      pure $ binPredCombinator cxxLhsExpr cxxRhsExpr
     ([cxxLhsExpr, cxxRhsExpr], [Pred, a, b]) -> return $
       if a == b && name == FuncName "_==_"
-      then return $ CxxBinOp CxxEqual cxxLhsExpr cxxRhsExpr
+      then pure $ CxxBinOp CxxEqual cxxLhsExpr cxxRhsExpr
       else Nothing
+    ([], [Pred]) -> pure constPred
     _ -> return Nothing
   where
+    constPred = case name of FuncName "FALSE" -> Just CxxFalse
+                             FuncName "TRUE"  -> Just CxxTrue
+                             _      -> Nothing
+
     unPredCombinator cxxExpr =
       let mCxxUnOp = case name of
             FuncName "!_" -> Just CxxLogicalNot

@@ -351,6 +351,8 @@ data CxxExpr = -- | A call to a function.
              | CxxUnOp CxxUnOp CxxExpr
                -- | A binary operator wrapper for convenience.
              | CxxBinOp CxxBinOp CxxExpr CxxExpr
+             | CxxTrue
+             | CxxFalse
                deriving (Eq, Ord, Show)
 
 data CxxUnOp = CxxLogicalNot
@@ -548,6 +550,8 @@ instance Pretty CxxExpr where
     CxxBinOp binOp lhsExpr rhsExpr ->
       -- TODO: add parens only when necessary
       parens (p lhsExpr) <+> p binOp <+> parens (p rhsExpr)
+    CxxTrue -> "true"
+    CxxFalse -> "false"
 
 instance Pretty CxxUnOp where
   pretty CxxLogicalNot = "!"
