@@ -1,1 +1,1 @@
-tests/check/inputs/packageTests.mg:6:5: Error: could not disambiguate between top-level references in tests.check.inputs.packageTests.B: A'. Candidates are: tests.check.inputs.packageTestsDependencies.sig_A_1.A, tests.check.inputs.packageTestsDependencies.sig_A_2.A
+tests/check/inputs/packageTests.mg:6:9: Error: could not disambiguate between top-level references in tests.check.inputs.packageTests.B: A'. Candidates are: tests.check.inputs.packageTestsDependencies.sig_A_1.A, tests.check.inputs.packageTestsDependencies.sig_A_2.A

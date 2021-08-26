@@ -6,7 +6,7 @@ module Magnolia.Parser (parsePackage, parsePackageHead, parseReplCommand) where
 import Control.Monad.Combinators.Expr
 import Control.Monad.Except (void, when)
 import Data.Functor (($>))
-import Data.Maybe (isNothing)
+import Data.Maybe (isJust, isNothing)
 import Data.Void
 import Text.Megaparsec
 import Text.Megaparsec.Char
@@ -158,13 +158,38 @@ moduleRef = annot $ do
   return $ MModuleRef refName renamingBlocks
 
 moduleDef :: MModuleType -> Parser ParsedModuleExpr
-moduleDef typ = annot $ do
-  declsAndDeps <- braces $ many (try (Left <$> declaration typ)
-                                 <|> (Right <$> moduleDependency))
+moduleDef moduleTyp = annot $ do
+  declsAndDeps <- braces $ many (do
+    isRequired <- isJust <$> optional (keyword RequireKW)
+    (Left <$> declaration isRequired) <|>
+      (if isRequired
+       then Right <$> dependency
+       else keyword UseKW >> Right <$> dependency))
   let decls = [decl | (Left decl) <- declsAndDeps]
       deps  = [dep  | (Right dep) <- declsAndDeps]
   renamingBlocks <- many renamingBlock
-  return $ MModuleDef decls deps renamingBlocks
+  pure $ MModuleDef decls deps renamingBlocks
+  where
+    declaration :: Bool -> Parser ParsedDecl
+    declaration hasRequiredKeyword = label "declaration" $ do
+      let isRequired = case moduleTyp of
+            External {} -> hasRequiredKeyword
+            _ -> True
+          -- By default, type declarations are specifications in all modules,
+          -- except in external block, where they are concrete
+          -- instantiations unless RequireKW is specified.
+          -- TODO: allow requiring callables in externals as well.
+      (MTypeDecl <$> typeDecl isRequired) <|>
+        (MCallableDecl <$> callable moduleTyp) <* many semi
+
+    dependency :: Parser ParsedModuleDep
+    dependency = label "module dependency" $ annot $ do
+      castToSignature <- isJust <$> optional (keyword SignatureKW)
+      name <- let nameParser = fullyQualifiedName NSPackage NSModule
+              in if castToSignature then parens nameParser else nameParser
+      renamings <- many renamingBlock
+      semi
+      pure $ MModuleDep name renamings castToSignature
 
 renamingDecl :: Parser ParsedNamedRenaming
 renamingDecl = annot $ do
@@ -183,21 +208,6 @@ satisfaction = annot $ do
   modeledModule <- keyword ModelsKW >> moduleExpr
   return $ MSatisfaction name initialModule withModule modeledModule
   where moduleExpr = moduleDef Concept <|> moduleRef
-
-
-declaration :: MModuleType -> Parser ParsedDecl
-declaration mtyp = do
-  -- TODO: should we carry around the 'require' keyword for callables too?
-  choice [ keyword RequireKW *> declaration' True
-           -- By default, type declarations are specifications in all modules,
-           -- except in external block, where they must are concrete
-           -- instantiations unless RequireKW is specified.
-         , case mtyp of External {} -> declaration' False
-                        _           -> declaration' True
-         ] <* many semi
-  where
-    declaration' isRequired =  (MTypeDecl <$> typeDecl isRequired)
-                           <|> (MCallableDecl <$> callable mtyp)
 
 typeDecl :: Bool -> Parser ParsedTypeDecl
 typeDecl isRequired = annot $ do
@@ -250,8 +260,13 @@ varMode = try (keyword ObsKW >> return MObs)
 expr :: Parser ParsedExpr
 expr = makeExprParser leafExpr ops
   where
-    leafExpr = blockExpr
-           <|> try ifExpr
+    leafExpr = -- Statements
+               assertStmt
+           <|> letStmt
+           <|> try assignStmt
+               -- "Expressions"
+           <|> blockExpr
+           <|> ifExpr
            <|> try (callableCall FuncName)
            <|> try (keyword CallKW *> callableCall ProcName)
            <|> annot (keyword ValueKW >> MValue <$> expr)
@@ -261,21 +276,22 @@ expr = makeExprParser leafExpr ops
 
 blockExpr :: Parser ParsedExpr
 blockExpr = annot $ do
-  block <- braces (many (exprStmt <* some semi))
+  block <- braces (many (expr <* some semi))
   block' <- if null block then (:[]) <$> annot (return MSkip)
             else return block
   let blockType = if any isValueExpr block' then MValueBlock
                   else MEffectfulBlock
   return $ MBlockExpr blockType (NE.fromList block')
 
+-- TODO: re-habilitate the 'end' keyword, or force users to put brackets.
 ifExpr :: Parser ParsedExpr
 ifExpr = annot $ do
   keyword IfKW
   cond <- expr
   keyword ThenKW
-  bTrue <- expr
+  tbranch <- expr
   keyword ElseKW
-  MIf cond bTrue <$> expr
+  MIf cond tbranch <$> expr
 
 callableCall :: (String -> Name) -> Parser ParsedExpr
 callableCall nameCons = annot $ do
@@ -283,17 +299,6 @@ callableCall nameCons = annot $ do
   args <- parens (expr `sepBy` symbol ",")
   ann <- optional (symbol ":" *> typeName)
   return $ MCall name args ann
-
-moduleDependency :: Parser ParsedModuleDep
-moduleDependency = annot $ do
-  choice [keyword UseKW, keyword RequireKW]
-  (castToSignature, name) <-
-    try (keyword SignatureKW *>
-          ((True,) <$> fullyQualifiedName NSPackage NSModule))
-      <|> (False,) <$> fullyQualifiedName NSPackage NSModule
-  renamings <- many renamingBlock
-  semi
-  return $ MModuleDep name renamings castToSignature
 
 renamingBlock :: Parser ParsedRenamingBlock
 renamingBlock = annot $ do
@@ -314,9 +319,6 @@ inlineRenaming = annot $ do
   symbol "=>"
   target <- try symOpName <|> (UnspecName <$> nameString)
   return $ InlineRenaming (source, target)
-
-exprStmt :: Parser ParsedExpr
-exprStmt = assertStmt <|> try letStmt <|> try assignStmt <|> expr
 
 assertStmt :: Parser ParsedExpr
 assertStmt = keyword AssertKW *> annot (MAssert <$> expr)
