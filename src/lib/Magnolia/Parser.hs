@@ -206,7 +206,8 @@ satisfaction = annot $ do
   symbol "="
   initialModule <- moduleExpr
   withModule <- optional $ keyword WithKW >> moduleExpr
-  modeledModule <- keyword ModelsKW >> moduleExpr
+  modeledModule <-
+    choice [keyword ModelsKW, keyword ApproximatesKW] >> moduleExpr
   return $ MSatisfaction name initialModule withModule modeledModule
   where moduleExpr = moduleDef Concept <|> moduleCastedRef <|> moduleRef
 
@@ -404,7 +405,7 @@ data Keyword = ConceptKW | ImplementationKW | ProgramKW | SignatureKW
              | ExternalKW
              | CxxKW | JavaScriptKW | PythonKW
              | RenamingKW | SatisfactionKW
-             | ModelsKW | WithKW
+             | ModelsKW | ApproximatesKW | WithKW
              | AxiomKW | FunctionKW | PredicateKW | ProcedureKW | TheoremKW
              | TypeKW
              | RequireKW | UseKW
@@ -429,6 +430,7 @@ keyword kw = (lexeme . try) $ string s *> notFollowedBy nameChar
       RenamingKW       -> "renaming"
       SatisfactionKW   -> "satisfaction"
       ModelsKW         -> "models"
+      ApproximatesKW   -> "approximates"
       WithKW           -> "with"
       AxiomKW          -> "axiom"
       FunctionKW       -> "function"

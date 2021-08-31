@@ -66,3 +66,10 @@ implementation TestSymbolicOperators = {
 
     // TODO: perform precedence tests somewhere
 }
+
+// WIP satisfaction tests
+// Satisfaction using the models keyword
+satisfaction S1 = {} with {} models {};
+
+// Satisfaction using the approximates keyword
+satisfaction S2 = {} with {} approximates {};
