@@ -5,8 +5,8 @@ integration](https://github.com/magnolia-lang/magnolia-lang/actions/workflows/ci
 
 Magnolia is a research programming language based on the theory of institutions.
 
-⚠️ The compiler is still at an experimental stage, and not yet fully functional.
-Do not rely on anything to remain stable for the moment. ⚠️
+⚠️  The compiler is still at an experimental stage. Expect bugs, sharp edges, and
+changing APIs. ⚠️
 
 ## Getting started
 
