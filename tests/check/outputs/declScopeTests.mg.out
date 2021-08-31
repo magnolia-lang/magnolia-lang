@@ -16,12 +16,6 @@ tests/check/inputs/declScopeTests.mg:55:5: Declaration context error in tests.ch
 
 tests/check/inputs/declScopeTests.mg:62:13: Declaration error in tests.check.inputs.declScopeTests.P: T was left unimplemented in program P
 
-tests/check/inputs/declScopeTests.mg:62:13: Declaration error in tests.check.inputs.declScopeTests.P: _!=_ was left unimplemented in program P
-
-tests/check/inputs/declScopeTests.mg:62:13: Declaration error in tests.check.inputs.declScopeTests.P: _==_ was left unimplemented in program P
-
-tests/check/inputs/declScopeTests.mg:62:13: Declaration error in tests.check.inputs.declScopeTests.P: _=_ was left unimplemented in program P
-
 tests/check/inputs/declScopeTests.mg:62:13: Declaration error in tests.check.inputs.declScopeTests.P: axiomBody was left unimplemented in program P
 
 tests/check/inputs/declScopeTests.mg:62:13: Declaration error in tests.check.inputs.declScopeTests.P: funProto was left unimplemented in program P

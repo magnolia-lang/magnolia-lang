@@ -20,6 +20,7 @@ parse-test-targets = package-name-with-hyphens \
 check-test-targets = declScopeTests \
 		     externalTests \
 		     modeTests \
+		     moduleTests \
 		     packageTests \
 		     parsingTests \
 		     regressionTests \

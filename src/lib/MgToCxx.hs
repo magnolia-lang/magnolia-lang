@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
@@ -128,33 +129,12 @@ mgProgramToCxxProgramModule
     declFilter :: TcDecl -> Bool
     declFilter decl = case decl of
       MTypeDecl _ -> True
-      MCallableDecl (Ann _ callable) ->
-        -- Only accept callables if they:
-        -- (1) are not called "_=_" (assignment is always pre-generated)
-        -- (2) do not contain predicates as parameters (the only methods that
-        --     allow this are pre-generated predicate functions)
-        -- (3) are not equality predicates over elements of the same type.
-        -- This is because we assume all of these to have a canonical
-        -- external implementation.
-        -- TODO: (3) may change. For the moment, it seems convenient to do that.
-        _name (nodeName callable) /= "_=_" &&
-        all ((/= Pred) . _varType . _elem) (_callableArgs callable) &&
-        not (isEqualityPredicateOverType callable) &&
-        not (isGeneratedConstantPredicate callable)
+      -- Only generate callables that are not assumed built-in.
+      MCallableDecl (Ann _ callable) -> not $ isBuiltin callable
 
-    -- TODO: cleanup once builtins are implemented properly
-    isGeneratedConstantPredicate :: MCallableDecl' p -> Bool
-    isGeneratedConstantPredicate (Callable _ cname cargs retTy _ _) =
-      case (retTy, cargs) of
-        (Pred, []) -> cname `elem` [FuncName "FALSE", FuncName "TRUE"]
-        _ -> False
-
-    isEqualityPredicateOverType :: MCallableDecl' p -> Bool
-    isEqualityPredicateOverType callable =
-      case _callableArgs callable of
-        [arg1, arg2] -> _varType (_elem arg1) == _varType (_elem arg2) &&
-          _callableReturnType callable == Pred
-        _ -> False
+    isBuiltin :: MCallableDecl' p -> Bool
+    isBuiltin (Callable _ _ _ _ _ body) = case body of BuiltinBody -> True
+                                                       _ -> False
 
     returnTypeOverloads :: S.Set (Name, [MType])
     returnTypeOverloads =
@@ -372,6 +352,9 @@ mgFnBodyToCxxStmtBlock returnTypeOverloadsNameAliasMap
     pshow name
   ExternalBody -> throwNonLocatedE CompilerErr $
     "attempted to generate implementation code for external callable " <>
+    pshow name
+  BuiltinBody -> throwNonLocatedE CompilerErr $
+    "attempted to generate implementation code for builtin callable " <>
     pshow name
   -- TODO: this is not extremely pretty. Can we easily do something better?
   MagnoliaBody (Ann _ (MBlockExpr _ exprs)) ->

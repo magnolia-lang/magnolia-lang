@@ -1,7 +1,1 @@
-tests/check/inputs/externalTests.mg:25:9: Declaration error in tests.check.inputs.externalTests.UnifyDifferentConcreteType: got conflicting implementations for function _!=_(e1 : T, e2 : T) : Predicate at tests/check/inputs/externalTests.mg:5:5 and tests/check/inputs/externalTests.mg:9:5
-
-tests/check/inputs/externalTests.mg:25:9: Declaration error in tests.check.inputs.externalTests.UnifyDifferentConcreteType: got conflicting implementations for function _==_(e1 : T, e2 : T) : Predicate at tests/check/inputs/externalTests.mg:5:5 and tests/check/inputs/externalTests.mg:9:5
-
-tests/check/inputs/externalTests.mg:25:9: Declaration error in tests.check.inputs.externalTests.UnifyDifferentConcreteType: got conflicting implementations for procedure _=_(out var : T, obs expr : T) at tests/check/inputs/externalTests.mg:5:5 and tests/check/inputs/externalTests.mg:9:5
-
 tests/check/inputs/externalTests.mg:25:9: Declaration error in tests.check.inputs.externalTests.UnifyDifferentConcreteType: got conflicting implementations for type T at tests/check/inputs/externalTests.mg:5:5 and tests/check/inputs/externalTests.mg:9:5

@@ -141,6 +141,7 @@ instance Pretty (MModuleExpr' PhCheck) where
                     map ((<> semi) . p) (join (M.elems decls)))) <> line <>
     rbrace <> align (vsep $ map p renamingBlocks)
   pretty (MModuleRef v _) = absurd v
+  pretty (MModuleAsSignature v _) = absurd v
 
 instance Pretty (MModuleDep' PhCheck) where
   pretty (MModuleDep name renamingBlocks castToSig) =
@@ -191,6 +192,7 @@ instance Pretty (MCallableDecl' p) where
         pbody = case cbody of EmptyBody -> ""
                               MagnoliaBody body -> " = " <> p body
                               ExternalBody -> " = <external impl>;"
+                              BuiltinBody -> " (builtin);"
         pguard = case mguard of Nothing -> ""
                                 Just guard -> " guard " <> p guard
     in p callableType <+> p name <> prettyArgs <>

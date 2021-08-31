@@ -137,13 +137,13 @@ moduleDecl = label "module" $ annot $ do
         backend <- choice [ keyword CxxKW >> return Cxx
                           , keyword JavaScriptKW >> return JavaScript
                           , keyword PythonKW >> return Python]
-        externalName <- fullyQualifiedName NSDirectory NSPackage
+        externalName <- fullyQualifiedName NSPackage NSModule
         return . Just $ External backend externalName)
       case mexternal of
         Nothing -> MModule typ name <$> moduleExpr typ
         Just tyExt -> MModule tyExt name <$> moduleExpr tyExt
     _ -> MModule typ name <$> moduleExpr typ
-  where moduleExpr typ = moduleDef typ <|> moduleRef
+  where moduleExpr typ = moduleDef typ <|> moduleCastedRef <|> moduleRef
 
 moduleType :: Parser MModuleType
 moduleType = (keyword ConceptKW >> return Concept)
@@ -157,13 +157,20 @@ moduleRef = annot $ do
   renamingBlocks <- many renamingBlock
   return $ MModuleRef refName renamingBlocks
 
+moduleCastedRef :: Parser ParsedModuleExpr
+moduleCastedRef = annot $ do
+  keyword SignatureKW
+  refName <- parens $ fullyQualifiedName NSPackage NSModule
+  renamingBlocks <- many renamingBlock
+  return $ MModuleAsSignature refName renamingBlocks
+
 moduleDef :: MModuleType -> Parser ParsedModuleExpr
 moduleDef moduleTyp = annot $ do
   declsAndDeps <- braces $ many (do
-    isRequired <- isJust <$> optional (keyword RequireKW)
-    (Left <$> declaration isRequired) <|>
-      (if isRequired
-       then Right <$> dependency
+    isExplicitlyRequired <- isJust <$> optional (keyword RequireKW)
+    (Left <$> declaration isExplicitlyRequired) <|>
+      (if isExplicitlyRequired
+       then Right <$> dependency -- TODO: explicitly require things in dep
        else keyword UseKW >> Right <$> dependency))
   let decls = [decl | (Left decl) <- declsAndDeps]
       deps  = [dep  | (Right dep) <- declsAndDeps]
@@ -171,15 +178,9 @@ moduleDef moduleTyp = annot $ do
   pure $ MModuleDef decls deps renamingBlocks
   where
     declaration :: Bool -> Parser ParsedDecl
-    declaration hasRequiredKeyword = label "declaration" $ do
-      let isRequired = case moduleTyp of
-            External {} -> hasRequiredKeyword
-            _ -> True
-          -- By default, type declarations are specifications in all modules,
-          -- except in external block, where they are concrete
-          -- instantiations unless RequireKW is specified.
-          -- TODO: allow requiring callables in externals as well.
-      (MTypeDecl <$> typeDecl isRequired) <|>
+    declaration isExplicitlyRequired = label "declaration" $ do
+      -- TODO: allow requiring callables in externals as well.
+      (MTypeDecl <$> typeDecl isExplicitlyRequired) <|>
         (MCallableDecl <$> callable moduleTyp) <* many semi
 
     dependency :: Parser ParsedModuleDep
@@ -207,7 +208,7 @@ satisfaction = annot $ do
   withModule <- optional $ keyword WithKW >> moduleExpr
   modeledModule <- keyword ModelsKW >> moduleExpr
   return $ MSatisfaction name initialModule withModule modeledModule
-  where moduleExpr = moduleDef Concept <|> moduleRef
+  where moduleExpr = moduleDef Concept <|> moduleCastedRef <|> moduleRef
 
 typeDecl :: Bool -> Parser ParsedTypeDecl
 typeDecl isRequired = annot $ do
