@@ -155,7 +155,7 @@ hackyPrelude = map (MCallableDecl . Ann newAnn)
       Callable Predicate (FuncName nameStr) args Pred Nothing BuiltinBody
     unOps = [mkPred [lhsVar] "!_"]
     binOps = map (\s -> mkPred [lhsVar, rhsVar] ("_" <> s <> "_"))
-      ["&&", "||", "!=", "=>", "<=>"]
+      ["&&", "||", "!=", "==", "=>", "<=>"]
     falseOp = mkPred [] "FALSE"
     trueOp = mkPred [] "TRUE"
     newAnn = let absDeclOs = AbstractLocalDecl (SrcCtx Nothing) :| [] in
