@@ -1019,10 +1019,11 @@ checkModuleDep env (Ann src (MModuleDep fqRef renamings castToSig)) = do
 
 mkEnvFromDep :: Env [TcTopLevelDecl] -> TcModuleDep -> MgMonad (Env [TcDecl])
 mkEnvFromDep env (Ann src (MModuleDep fqRef tcRenamings castToSig)) = do
-  tlRef <- lookupTopLevelRef src (M.map getModules env) fqRef
+  (Ann _ (MModule _ _ moduleExpr)) <-
+    lookupTopLevelRef src (M.map getModules env) fqRef
   decls <- if castToSig
-           then throwLocatedE NotImplementedErr src "casting to signature"
-           else return $ moduleDecls tlRef
+           then moduleExprDecls <$> castModuleExpr Signature moduleExpr
+           else pure $ moduleExprDecls moduleExpr
   -- We add a new local annotation, where the source information comes from
   -- the dependency declaration.
   let mkLocalDecl d = let localDecl = AbstractLocalDecl src in case d of

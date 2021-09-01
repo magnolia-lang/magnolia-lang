@@ -39,3 +39,13 @@ implementation ASourceImplementation = {
 // should fail
 implementation DerivedExternalWithoutCastFromProgram =
     external C++ path.to.file.dot.struct4 ASourceImplementation;
+
+// should succeed
+program UseASourceExternal = {
+    use ASourceExternal;
+}
+
+// should fail
+program UseASourceExternalAsSignature = {
+    use signature(ASourceExternal);
+}
