@@ -15,7 +15,9 @@ import Data.Text.Prettyprint.Doc
 import Data.Text.Prettyprint.Doc.Render.Text
 import Data.Void (absurd)
 
+import Backend
 import Env
+import Err
 import Magnolia.Syntax
 
 -- The below pprinting and error-handling related utils are directly inspired
@@ -128,11 +130,7 @@ instance Pretty (MSatisfaction' PhCheck) where
 
 instance Pretty (MModule' PhCheck) where
   pretty (MModule moduleType name moduleExpr) =
-    header <+> p moduleExpr
-    where
-      header = case moduleType of
-        External {} -> p Implementation <+> p name <+> "=" <+> p moduleType
-        _ -> p moduleType <+> p name <+> "="
+    p moduleType <+> p name <+> "=" <+> p moduleExpr
 
 instance Pretty (MModuleExpr' PhCheck) where
   pretty (MModuleDef decls deps renamingBlocks) =
@@ -142,6 +140,8 @@ instance Pretty (MModuleExpr' PhCheck) where
     rbrace <> align (vsep $ map p renamingBlocks)
   pretty (MModuleRef v _) = absurd v
   pretty (MModuleAsSignature v _) = absurd v
+  pretty (MModuleExternal backend fqn moduleExpr') =
+    "external" <+> p backend <+> p fqn <+> p moduleExpr'
 
 instance Pretty (MModuleDep' PhCheck) where
   pretty (MModuleDep name renamingBlocks castToSig) =
@@ -169,7 +169,6 @@ instance Pretty MModuleType where
     Concept -> "concept"
     Implementation -> "implementation"
     Program -> "program"
-    External backend fqn -> "external" <+> p backend <+> p fqn
 
 instance Pretty Backend where
   pretty backend = case backend of

@@ -55,7 +55,7 @@ implementation I = {
     axiom axiomBody() = {};
 };
 
-implementation IExt = external C++ Ext {
+implementation IExt = external C++ File.Ext {
     type U;
 }
 

@@ -17,8 +17,10 @@ import qualified Data.Text.Lazy as T
 import qualified Text.Megaparsec.Char.Lexer as Lex
 
 import Env
+import Err
 import Magnolia.Syntax
 import Magnolia.Util
+import Monad
 
 type Parser = Parsec Void String
 
@@ -130,20 +132,21 @@ moduleDecl = label "module" $ annot $ do
   typ <- moduleType
   name <- ModName <$> nameString
   symbol "="
-  case typ of
-    Implementation -> do
-      mexternal <- option Nothing (do
-        keyword ExternalKW
-        backend <- choice [ keyword CxxKW >> return Cxx
-                          , keyword JavaScriptKW >> return JavaScript
-                          , keyword PythonKW >> return Python]
-        externalName <- fullyQualifiedName NSPackage NSModule
-        return . Just $ External backend externalName)
-      case mexternal of
-        Nothing -> MModule typ name <$> moduleExpr typ
-        Just tyExt -> MModule tyExt name <$> moduleExpr tyExt
-    _ -> MModule typ name <$> moduleExpr typ
-  where moduleExpr typ = moduleDef typ <|> moduleCastedRef <|> moduleRef
+  (src, mexternal) <- withSrc $ option Nothing (do
+    keyword ExternalKW
+    backend <- choice [ keyword CxxKW >> return Cxx
+                      , keyword JavaScriptKW >> return JavaScript
+                      , keyword PythonKW >> return Python]
+    externalFqn <- fullyQualifiedName NSPackage NSModule
+    return $ Just (backend, externalFqn))
+  case mexternal of
+    Nothing -> MModule typ name <$> moduleExpr False
+    Just (backend, externalFqn) ->
+      MModule typ name . Ann src . MModuleExternal backend externalFqn <$>
+        moduleExpr True
+  where
+    moduleExpr isExternal =
+      moduleDef isExternal <|> moduleCastedRef <|> moduleRef
 
 moduleType :: Parser MModuleType
 moduleType = (keyword ConceptKW >> return Concept)
@@ -164,8 +167,8 @@ moduleCastedRef = annot $ do
   renamingBlocks <- many renamingBlock
   return $ MModuleAsSignature refName renamingBlocks
 
-moduleDef :: MModuleType -> Parser ParsedModuleExpr
-moduleDef moduleTyp = annot $ do
+moduleDef :: Bool -> Parser ParsedModuleExpr
+moduleDef isExternal = annot $ do
   declsAndDeps <- braces $ many (do
     isExplicitlyRequired <- isJust <$> optional (keyword RequireKW)
     (Left <$> declaration isExplicitlyRequired) <|>
@@ -181,7 +184,7 @@ moduleDef moduleTyp = annot $ do
     declaration isExplicitlyRequired = label "declaration" $ do
       -- TODO: allow requiring callables in externals as well.
       (MTypeDecl <$> typeDecl isExplicitlyRequired) <|>
-        (MCallableDecl <$> callable moduleTyp) <* many semi
+        (MCallableDecl <$> callable isExternal) <* many semi
 
     dependency :: Parser ParsedModuleDep
     dependency = label "module dependency" $ annot $ do
@@ -209,7 +212,7 @@ satisfaction = annot $ do
   modeledModule <-
     choice [keyword ModelsKW, keyword ApproximatesKW] >> moduleExpr
   return $ MSatisfaction name initialModule withModule modeledModule
-  where moduleExpr = moduleDef Concept <|> moduleCastedRef <|> moduleRef
+  where moduleExpr = moduleDef False <|> moduleCastedRef <|> moduleRef
 
 typeDecl :: Bool -> Parser ParsedTypeDecl
 typeDecl isRequired = annot $ do
@@ -217,8 +220,8 @@ typeDecl isRequired = annot $ do
   name <- typeName <* semi -- TODO: make expr
   return $ Type name isRequired
 
-callable :: MModuleType -> Parser ParsedCallableDecl
-callable mtyp = annot $ do
+callable :: Bool -> Parser ParsedCallableDecl
+callable isExternal = annot $ do
   callableType <- (keyword AxiomKW >> return Axiom)
               <|> (keyword TheoremKW >> return Axiom)
               <|> (keyword FunctionKW >> return Function)
@@ -237,7 +240,7 @@ callable mtyp = annot $ do
   mBody <- optional (blockExpr
                 <|> (symbol "=" *> (blockExpr <|> (expr <* semi))))
   when (isNothing mBody) semi
-  let body = maybe (case mtyp of External {} -> ExternalBody ; _ -> EmptyBody)
+  let body = maybe (if isExternal then ExternalBody else EmptyBody)
                    MagnoliaBody mBody
   return $ Callable callableType name args retType guard body
 

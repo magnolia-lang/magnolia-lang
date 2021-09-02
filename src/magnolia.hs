@@ -18,6 +18,7 @@ import Magnolia.Parser
 import Magnolia.PPrint
 import Magnolia.Syntax
 import Magnolia.Util
+import Monad
 
 type TopEnv = Env (MPackage PhCheck)
 

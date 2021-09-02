@@ -42,7 +42,7 @@ implementation NonExistentSourcesInTotalAndPartialRenaming = {
     use ToRename[[Z => Z]]; // should succeed
 }
 
-implementation ToRenameExt = external C++ ToRenameExtCxx {
+implementation ToRenameExt = external C++ File.ToRenameExtCxx {
     type T;
     function f(t: T): T;
 }

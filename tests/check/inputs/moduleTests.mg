@@ -49,3 +49,17 @@ program UseASourceExternal = {
 program UseASourceExternalAsSignature = {
     use signature(ASourceExternal);
 }
+
+// should fail
+implementation AnExternalWithoutFilePath = external C++ ExtWithoutFilePath {
+    type T;
+}
+
+// should succeed
+program DerivedExternalProgram = external C++ path.to.file.dot.struct4 {
+    type T;
+}
+
+// should succeed
+program DerivedExternalFromOtherExternalSignature =
+    external C++ path.to.file.dot.struct5 signature(DerivedExternalProgram);

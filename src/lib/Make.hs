@@ -24,6 +24,7 @@ import Magnolia.PPrint
 import Magnolia.Syntax
 import Magnolia.Util
 import MgToCxx
+import Monad
 
 -- -- === passes ===
 

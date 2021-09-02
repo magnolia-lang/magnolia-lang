@@ -11,3 +11,5 @@ tests/check/inputs/moduleTests.mg:41:43: Declaration error in tests.check.inputs
 tests/check/inputs/moduleTests.mg:49:41: Declaration error in tests.check.inputs.moduleTests.UseASourceExternalAsSignature: T was left unimplemented in program UseASourceExternalAsSignature
 
 tests/check/inputs/moduleTests.mg:49:41: Declaration error in tests.check.inputs.moduleTests.UseASourceExternalAsSignature: id was left unimplemented in program UseASourceExternalAsSignature
+
+tests/check/inputs/moduleTests.mg:55:5: Error in tests.check.inputs.moduleTests.AnExternalWithoutFilePath: external C++ block ExtWithoutFilePath was specified without an include path

@@ -1,10 +1,7 @@
 package tests.self-contained-codegen.inputs.externalTests;
 
-// TODO: some parts of this file will have to be moved when targeting different 
+// TODO: some parts of this file will have to be moved when targeting different
 // backends
-implementation MgImpl = external C++ ExtWithoutFilePath {
-    type T;
-}
 
 implementation MgImplType_JS = external JavaScript IncludeFile.TyStruct {
     type T;

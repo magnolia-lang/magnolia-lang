@@ -1,5 +1,3 @@
-tests/self-contained-codegen/inputs/externalTests.mg:5:1: Error in tests.self-contained-codegen.inputs.externalTests: external C++ block ExtWithoutFilePath was specified without an include path
+tests/self-contained-codegen/inputs/externalTests.mg:21:9: Error in tests.self-contained-codegen.inputs.externalTests.ProgramThatReliesOnWrongBackendType: attempted to generate C++ code relying on external type TyStruct.T but it is declared as having a JavaScript backend
 
-tests/self-contained-codegen/inputs/externalTests.mg:24:9: Error in tests.self-contained-codegen.inputs.externalTests.ProgramThatReliesOnWrongBackendType: attempted to generate C++ code relying on external type TyStruct.T but it is declared as having a JavaScript backend
-
-tests/self-contained-codegen/inputs/externalTests.mg:30:9: Error in tests.self-contained-codegen.inputs.externalTests.ProgramThatReliesOnWrongBackendCallable: attempted to generate C++ code relying on external function FnStruct.identity but it is declared as having a JavaScript backend
+tests/self-contained-codegen/inputs/externalTests.mg:27:9: Error in tests.self-contained-codegen.inputs.externalTests.ProgramThatReliesOnWrongBackendCallable: attempted to generate C++ code relying on external function FnStruct.identity but it is declared as having a JavaScript backend

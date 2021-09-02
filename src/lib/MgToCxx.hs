@@ -15,12 +15,13 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
 import Data.Maybe (isJust)
 import qualified Data.Set as S
+import Data.Void (absurd)
 
 import Cxx.Syntax
 import Env
 import Magnolia.PPrint
 import Magnolia.Syntax
-import Magnolia.Util
+import Monad
 
 -- | Not really a map, but a wrapper over 'foldMAccumErrors' that allows writing
 -- code like
@@ -56,22 +57,46 @@ mgPackageToCxxSelfContainedProgramPackage tcPkg =
     let allModules = join $
           map (getModules . snd) $ M.toList (_packageDecls $ _elem tcPkg)
         cxxPkgName = nodeName tcPkg
-    cxxIncludes <- (mkCxxSystemInclude "cassert":) <$>
-      gatherCxxIncludes allModules
+        cxxIncludes = mkCxxSystemInclude "cassert" :
+          gatherCxxIncludes allModules
     cxxPrograms <- gatherPrograms allModules
     return $ CxxPackage cxxPkgName cxxIncludes cxxPrograms
   where
     moduleType :: TcModule -> MModuleType
     moduleType (Ann _ (MModule moduleTy _ _)) = moduleTy
 
-    gatherCxxIncludes :: [TcModule] -> MgMonad [CxxInclude]
-    gatherCxxIncludes = foldMAccumErrors (\acc tcM -> case moduleType tcM of
-      External Cxx structName -> case _scopeName structName of
-        Nothing -> throwLocatedE MiscErr (srcCtx $ _ann tcM) $
-          "external C++ block " <> pshow structName <> " was specified " <>
-          "without an include path"
-        Just pathName -> return $ mkCxxRelativeCxxIncludeFromName pathName : acc
-      _ -> return acc) []
+    gatherCxxIncludes :: [TcModule] -> [CxxInclude]
+    gatherCxxIncludes tcModules = S.toList $ foldl
+      (\acc (Ann _ (MModule _ _ tcModuleExpr)) ->
+        let newCxxIncludes = extractIncludeFromModuleExpr tcModuleExpr
+        in acc `S.union` newCxxIncludes) S.empty tcModules
+
+    extractIncludeFromModuleExpr :: TcModuleExpr -> S.Set CxxInclude
+    extractIncludeFromModuleExpr (Ann _ moduleExpr) = case moduleExpr of
+      MModuleRef v _ -> absurd v
+      MModuleAsSignature v _ -> absurd v
+      MModuleExternal _ _ v -> absurd v
+      MModuleDef decls _ _ -> do
+        let innerFoldFn acc tcDecl =
+              maybe acc (`S.insert` acc) (extractExternalReference tcDecl)
+        foldl (foldl innerFoldFn) S.empty decls
+
+    -- TODO(bchetioui, 2021/09/02): this does not work if there exists a fully
+    -- parameterized external module (i.e. one that does not contain any
+    -- concrete external definition). This edge case will be properly handled
+    -- once some tweaks are made on {Concrete,Abstract}DeclOrigin annotations
+    -- in a WIP change.
+    extractExternalReference :: TcDecl -> Maybe CxxInclude
+    extractExternalReference tcDecl = case tcDecl of
+      MTypeDecl (Ann (mconDeclO, _) _) ->
+        mconDeclO >>= mkCxxIncludeFromConDeclO
+      MCallableDecl (Ann (mconDeclO, _) _) ->
+        mconDeclO >>= mkCxxIncludeFromConDeclO
+
+    mkCxxIncludeFromConDeclO :: ConcreteDeclOrigin -> Maybe CxxInclude
+    mkCxxIncludeFromConDeclO (ConcreteExternalDecl _ extDeclDetails) = Just $
+      mkCxxRelativeCxxIncludeFromPath (externalDeclFilePath extDeclDetails)
+    mkCxxIncludeFromConDeclO _ = Nothing
 
     gatherPrograms :: [TcModule] -> MgMonad [CxxModule]
     gatherPrograms = foldM
@@ -156,12 +181,12 @@ mgProgramToCxxProgramModule
 
     accExtFqn :: S.Set Name -> TcDecl -> S.Set Name
     accExtFqn acc (MTypeDecl (Ann (mconDeclO, _) _)) = case mconDeclO of
-      Just (ConcreteExternalDecl _ _ fqn) ->
-        let ~(Just scopeName) = _scopeName fqn in S.insert scopeName acc
+      Just (ConcreteExternalDecl _ extDeclDetails) ->
+        S.insert (externalDeclModuleName extDeclDetails) acc
       _ -> acc
     accExtFqn acc (MCallableDecl (Ann (mconDeclO, _) _)) = case mconDeclO of
-      Just (ConcreteExternalDecl _ _ fqn) ->
-        let ~(Just scopeName) = _scopeName fqn in S.insert scopeName acc
+      Just (ConcreteExternalDecl _ _extDeclDetails) ->
+        S.insert (externalDeclModuleName _extDeclDetails) acc
       _ -> acc
 
 mgProgramToCxxProgramModule _ _ = error "expected program"
@@ -186,16 +211,18 @@ registerFreshName boundNs name = let newName = freshName name boundNs
 mgTyDeclToCxxTypeDef :: TcTypeDecl -> MgMonad CxxDef
 mgTyDeclToCxxTypeDef (Ann (conDeclO, absDeclOs) (Type targetTyName _)) = do
   cxxTargetTyName <- mkCxxName targetTyName
-  let ~(Just (ConcreteExternalDecl _ backend extFqn)) = conDeclO
-      ~(Just extStructName) = _scopeName extFqn
+  let ~(Just (ConcreteExternalDecl _ extDeclDetails)) = conDeclO
+      backend = externalDeclBackend extDeclDetails
+      extStructName = externalDeclModuleName extDeclDetails
+      extTyName = externalDeclElementName extDeclDetails
   unless (backend == Cxx) $
     throwLocatedE MiscErr (srcCtx $ NE.head absDeclOs) $
       "attempted to generate C++ code relying on external type " <>
-      pshow extFqn <> " but it is declared as having a " <> pshow backend <>
-      " backend"
+      pshow (FullyQualifiedName (Just extStructName) extTyName) <> " but " <>
+      "it is declared as having a " <> pshow backend <> " backend"
   cxxSourceTyName <-
     mkCxxNamespaceMemberAccess <$> mkCxxName extStructName
-                               <*> mkCxxName (_targetName extFqn)
+                               <*> mkCxxName extTyName
   return $ CxxTypeDef cxxSourceTyName cxxTargetTyName
 
 
@@ -210,13 +237,15 @@ mgCallableDeclToCxx returnTypeOverloadsNameAliasMap extObjectsMap
     -- is declared externally, and potentially renamed.
     -- In this case, to generate the API function, we need to perform
     -- an inline call to the external function.
-    let ~(Just (ConcreteExternalDecl _ backend extFqn)) = conDeclO
-        ~(Just extStructName) = _scopeName extFqn
+    let ~(Just (ConcreteExternalDecl _ extDeclDetails)) = conDeclO
+        backend = externalDeclBackend extDeclDetails
+        extStructName = externalDeclModuleName extDeclDetails
+        extCallableName = externalDeclElementName extDeclDetails
     unless (backend == Cxx) $
       throwLocatedE MiscErr (srcCtx $ NE.head absDeclOs) $
         "attempted to generate C++ code relying on external function " <>
-        pshow extFqn <> " but it is declared as having a " <>
-        pshow backend <> " backend"
+        pshow (FullyQualifiedName (Just extStructName) extCallableName) <>
+        " but it is declared as having a " <> pshow backend <> " backend"
     let mgFnWithDummyMgBody = Ann (conDeclO, absDeclOs) $
           (_elem mgFn) { _callableBody = MagnoliaBody (Ann retTy MSkip) }
         ~(Just cxxExtObjectName) = M.lookup extStructName extObjectsMap
@@ -225,7 +254,7 @@ mgCallableDeclToCxx returnTypeOverloadsNameAliasMap extObjectsMap
       returnTypeOverloadsNameAliasMap extObjectsMap mgFnWithDummyMgBody
     -- We synthesize a function call
     cxxExtFnName <- mkCxxObjectMemberAccess cxxExtObjectName <$>
-      mkCxxName (_targetName extFqn)
+      mkCxxName extCallableName
     cxxArgExprs <- mapM ((CxxVarRef <$>) . mkCxxName . nodeName) args
     let cxxBody = [ CxxStmtInline . CxxReturn . Just $
                       CxxCall cxxExtFnName [] cxxArgExprs

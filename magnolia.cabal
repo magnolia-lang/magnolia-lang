@@ -35,15 +35,18 @@ library
                 , transformers         >= 0.4  && < 0.6
 
   ghc-options:  -Wall
-  exposed-modules:  Compiler
+  exposed-modules:  Backend
+                  , Compiler
                   , Cxx.Syntax
                   , Env
+                  , Err
                   , Magnolia.Check
                   , Magnolia.Parser
                   , Magnolia.PPrint
                   , Magnolia.Syntax
                   , Magnolia.Util
                   , Make
+                  , Monad
                   , MgToCxx
 
 executable magnolia

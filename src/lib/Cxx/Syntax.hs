@@ -26,7 +26,7 @@ module Cxx.Syntax (
   , mkCxxName
   , mkCxxNamespaceMemberAccess
   , mkCxxObjectMemberAccess
-  , mkCxxRelativeCxxIncludeFromName
+  , mkCxxRelativeCxxIncludeFromPath
   , mkCxxRelativeMgIncludeFromName
   , mkCxxSystemInclude
   , mkCxxType
@@ -49,7 +49,7 @@ import Data.Text.Prettyprint.Doc.Render.Text
 import Env
 import Magnolia.PPrint
 import Magnolia.Syntax
-import Magnolia.Util
+import Monad
 
 -- | A name (or identifier) in a C++ context. There are three types of names:
 -- * simple names, created using the 'CxxName' constructor;
@@ -220,10 +220,10 @@ mkCxxRelativeMgIncludeFromName =
 
 -- | Exposed constructor for C++ relative includes of external C++ files.
 -- Includes created through this constructor are given a ".hpp" suffix.
-mkCxxRelativeCxxIncludeFromName :: Name -> CxxInclude
-mkCxxRelativeCxxIncludeFromName =
+mkCxxRelativeCxxIncludeFromPath :: FilePath -> CxxInclude
+mkCxxRelativeCxxIncludeFromPath =
   CxxInclude RelativeCxxDir . (<> ".hpp") .
-    map (\c -> if c == '.' then '/' else c) . _name
+    map (\c -> if c == '.' then '/' else c)
 
 -- | Exposed constructor for C++ system includes. No suffix is appended to the
 -- filepath passed as a parameter through this constructor.

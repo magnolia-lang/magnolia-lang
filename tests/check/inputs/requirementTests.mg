@@ -5,17 +5,17 @@ signature Req = {
     function f(): T;
 }
 
-implementation IExtReq1 = external C++ ExtReq1 {
+implementation IExtReq1 = external C++ File.ExtReq1 {
     type T;
     function f(): T;
 }
 
-implementation IExtReq2 = external C++ ExtReq2 {
+implementation IExtReq2 = external C++ File.ExtReq2 {
     type T;
     function f(): T;
 }
 
-implementation IExtReq3 = external C++ ExtReq3 {
+implementation IExtReq3 = external C++ File.ExtReq3 {
     type T;
     require type T; // should succeed
     type T; // should fail

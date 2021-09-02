@@ -27,8 +27,8 @@ import Env
 import Cxx.Syntax
 import Magnolia.PPrint
 import Magnolia.Syntax
-import Magnolia.Util
 import Make
+import Monad
 
 data CompilerMode = ReplMode
                   | BuildMode Config FilePath
