@@ -111,13 +111,15 @@ module Magnolia.Syntax (
   -- ** Annotation types
   , AbstractDeclOrigin
   , ConcreteDeclOrigin (GeneratedBuiltin)
+  , DeclOrigin (..)
+  , ExternalDeclDetails
+  , SrcCtx (..)
+  -- ** Annotation constructors and projections
   , externalDeclBackend
   , externalDeclElementName
   , externalDeclFilePath
   , externalDeclModuleName
   , mkConcreteLocalDecl
-  , DeclOrigin (..)
-  , SrcCtx (..)
   -- ** Annotation-related patterns
   , pattern AbstractLocalDecl
   , pattern ConcreteExternalDecl
