@@ -720,7 +720,7 @@ pattern ConcreteMagnoliaDecl :: DeclOrigin
                              -> ConcreteDeclOrigin
 pattern ConcreteMagnoliaDecl declO = ConcreteDeclOrigin (Left declO)
 
-{-# COMPLETE ConcreteExternalDecl, ConcreteMagnoliaDecl #-}
+{-# COMPLETE ConcreteExternalDecl, ConcreteMagnoliaDecl, GeneratedBuiltin #-}
 
 pattern ConcreteImportedMagnoliaDecl
   :: FullyQualifiedName -> SrcCtx -> ConcreteDeclOrigin
