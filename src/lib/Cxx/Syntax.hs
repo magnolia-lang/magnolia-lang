@@ -49,8 +49,8 @@ import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
 import qualified Data.List as L
 import qualified Data.Set as S
-import qualified Data.Text.Lazy as T
-import qualified Data.Text.Lazy.IO as TIO
+import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 
 import Prettyprinter
 import Prettyprinter.Render.Text
@@ -468,7 +468,7 @@ data CxxOutMode = CxxHeader | CxxImplementation
 -- file. A base path can be provided to derive includes correctly.
 pprintCxxPackage :: Maybe FilePath -> CxxOutMode -> CxxPackage -> IO ()
 pprintCxxPackage mbasePath cxxOutMode =
-  TIO.putStrLn . renderLazy . layoutPretty defaultLayoutOptions .
+  TIO.putStrLn . renderStrict . layoutPretty defaultLayoutOptions .
     prettyCxxPackage mbasePath cxxOutMode
 
 -- | Pretty formats a C++ package as an implementation file or as a header

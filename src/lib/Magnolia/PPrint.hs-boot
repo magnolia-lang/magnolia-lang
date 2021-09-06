@@ -2,8 +2,8 @@
 
 module Magnolia.PPrint where
 
+import Data.Text as T (Text)
 import Prettyprinter (Pretty)
-import Data.Text.Lazy as T (Text)
 
 import Backend
 import Env

@@ -31,7 +31,7 @@ parseCompilerMode :: ParserInfo CompilerMode
 parseCompilerMode = mkInfo compilerMode
   where
     compilerMode :: Parser CompilerMode
-    compilerMode = subparser $ replCmd <> buildCmd <> testCmd
+    compilerMode = subparser $ replCmd <> buildCmd <> dumpCmd <> testCmd
 
     replCmd = command "repl"
       (info (helper <*> pure ReplMode)
@@ -40,6 +40,10 @@ parseCompilerMode = mkInfo compilerMode
     buildCmd = command "build"
       (info (helper <*> (BuildMode <$> buildConfig <*> target))
             (progDesc "Compile a package"))
+
+    dumpCmd = command "dump"
+      (info (helper <*> (DumpMode <$> dumpConfig <*> target))
+            (progDesc "Dump the serialized output of the type checking phase"))
 
     testCmd = command "test"
       (info (helper <*> (TestMode <$> testConfig <*> target))
@@ -56,7 +60,11 @@ parseCompilerMode = mkInfo compilerMode
       optImportDir <*>
       flag WriteIfDoesNotExist OverwriteTargetFiles
            (long "allow-overwrite" <>
-            help "Allow overwriting target files in the output directory")
+            help "Allow overwriting target files in the output directory") <*>
+      pure Xml
+
+    dumpConfig = Config CheckPass Cxx Nothing Nothing WriteIfDoesNotExist <$>
+      optSerializatioNFormat
 
     testConfig = Config <$>
       option (oneOf passOpts)
@@ -68,7 +76,14 @@ parseCompilerMode = mkInfo compilerMode
               short 'o' <>
               help "Output directory for code generation") <*>
       optImportDir <*>
-      pure WriteIfDoesNotExist
+      pure WriteIfDoesNotExist <*>
+      optSerializatioNFormat
+
+    optSerializatioNFormat =
+      option (oneOf serializationFormatOpts)
+             (long "serialization-format" <> value Xml <>
+              help ("Serialization format: " <>
+                    dispOpts serializationFormatOpts))
 
     optBackend =
       option (oneOf backendOpts)
@@ -82,11 +97,16 @@ parseCompilerMode = mkInfo compilerMode
               help ("Base import directory for the generated code " <>
                     "(defaults to the output directory)"))
 
+    serializationFormatOpts = [ ("xml", Xml)
+                              , ("json", Json)
+                              ]
+
     passOpts = [ ("check", CheckPass)
                , ("self-contained-codegen", SelfContainedProgramCodegenPass)
                , ("depanal", DepAnalPass)
                , ("parse", ParsePass)
                , ("structured-codegen", StructurePreservingCodegenPass)
+               , ("serialization", SerializationPass)
                ]
     backendOpts = [ ("cpp", Cxx)
                   , ("javascript", JavaScript)
@@ -112,6 +132,7 @@ main = do
                 >> return ()
     BuildMode config filePath -> filePath `runCompileWith` config
     TestMode config filePath -> filePath `runTestWith` config
+    DumpMode config filePath -> filePath `runDumpWith` config
 
 -- === repl-related utils ===
 

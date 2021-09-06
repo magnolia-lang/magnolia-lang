@@ -7,7 +7,7 @@ module Err (
   )
   where
 
-import Data.Text.Lazy as T
+import Data.Text as T
 
 import Env
 

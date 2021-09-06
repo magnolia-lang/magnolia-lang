@@ -30,7 +30,7 @@ import qualified Control.Monad.Trans.Reader as R
 import qualified Control.Monad.Trans.State as St
 import qualified Data.List as L
 import qualified Data.Set as S
-import qualified Data.Text.Lazy as T
+import qualified Data.Text as T
 
 import Env
 import Err

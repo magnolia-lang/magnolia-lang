@@ -4,16 +4,16 @@
 module Magnolia.Parser (parsePackage, parsePackageHead, parseReplCommand) where
 
 import Control.Monad.Combinators.Expr
-import Control.Monad.Except (void, when)
+import Control.Monad.State (void, when, State, evalState, get, put, lift)
 import Data.Functor (($>))
 import Data.Maybe (isJust, isNothing)
 import Data.Void
-import Text.Megaparsec
+import Text.Megaparsec hiding (parse, State)
 import Text.Megaparsec.Char
 
 import qualified Data.List as L
 import qualified Data.List.NonEmpty as NE
-import qualified Data.Text.Lazy as T
+import qualified Data.Text as T
 import qualified Text.Megaparsec.Char.Lexer as Lex
 
 import Env
@@ -22,7 +22,13 @@ import Magnolia.Syntax
 import Magnolia.Util
 import Monad
 
-type Parser = Parsec Void String
+-- | 'Parser' contains an inner state meant to correspond to the last source
+-- position preceding space.
+type Parser = ParsecT Void String (State SourcePos)
+
+parse :: Parser a -> String -> String -> Either (ParseErrorBundle String Void) a
+parse p filepath content =
+  runParserT p filepath content `evalState` initialPos filepath
 
 -- === exception handling utils ===
 
@@ -455,19 +461,17 @@ keyword kw = (lexeme . try) $ string s *> notFollowedBy nameChar
       ImportKW         -> "imports"
 
 sc :: Parser ()
-sc = skipMany $
-  choice [ hidden space1
-         , hidden $ Lex.skipLineComment "//"
-         , hidden $ Lex.skipBlockCommentNested "/*<" ">*/"
-         , hidden $ Lex.skipBlockComment "/*" "*/"
-         ]
-
--- skipLineComment :: Parser ()
--- skipLineComment = Lex.skipLineComment "//"
-
--- skipBlockComment :: Parser ()
--- skipBlockComment =
---   Lex.skipBlockCommentNested "/*<" ">*/" <> Lex.skipBlockComment "/*" "*/"
+sc = do
+  -- We store the source position before applying the space consumer, so as
+  -- to be able to omit trailing whitespace when constructing spans.
+  sourcePos <- getSourcePos
+  lift $ put sourcePos
+  skipMany $
+    choice [ hidden space1
+           , hidden $ Lex.skipLineComment "//"
+           , hidden $ Lex.skipBlockCommentNested "/*<" ">*/"
+           , hidden $ Lex.skipBlockComment "/*" "*/"
+           ]
 
 lexeme :: Parser a -> Parser a
 lexeme = Lex.lexeme sc
@@ -545,7 +549,9 @@ withSrc ::
 withSrc p = do
   start <- mkSrcPos <$> getSourcePos
   element <- p
-  end <- mkSrcPos <$> getSourcePos
+  -- The end of the span should be retrieved from the inner parser state,
+  -- since subsequent white space may have been parsed here.
+  end <- mkSrcPos <$> lift get
   return (SrcCtx $ Just (start, end), element)
   where
     mkSrcPos s = (sourceName s, unPos $ sourceLine s, unPos $ sourceColumn s)

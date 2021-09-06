@@ -32,6 +32,8 @@ check-test-targets = declScopeTests \
 self-contained-codegen-test-targets = externalTests \
                                       generalTranslationTests
 
+serialization-test-targets = onePackageTests
+
 tests: tests-all-passes # do not run python tests for convenience
 
 tests-all: tests-all-passes tests-frontend
@@ -40,12 +42,12 @@ tests-frontend:
 	pytest -v tests/frontend/test_frontend.py
 
 tests-all-passes:
-	for pass in parse check self-contained-codegen ; do \
+	for pass in parse check self-contained-codegen serialization ; do \
 		make tests-pass pass=$$pass ; \
 	done
 
 update-tests:
-	for pass in parse check self-contained-codegen ; do \
+	for pass in parse check self-contained-codegen serialization ; do \
 		make update-tests-pass pass=$$pass ; \
 	done
 

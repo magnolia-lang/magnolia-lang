@@ -72,6 +72,7 @@ module Magnolia.Syntax (
   , ParsedModuleExpr
   , ParsedNamedRenaming
   , ParsedPackage
+  , ParsedPackageDep
   , ParsedRenaming
   , ParsedRenamingBlock
   , ParsedSatisfaction
@@ -89,6 +90,7 @@ module Magnolia.Syntax (
   , TcModuleExpr
   , TcNamedRenaming
   , TcPackage
+  , TcPackageDep
   , TcRenaming
   , TcRenamingBlock
   , TcSatisfaction
@@ -185,6 +187,7 @@ data PackageHead = PackageHead { _packageHeadPath :: FilePath
 
 type Tc e = Ann PhCheck e
 type TcPackage = MPackage PhCheck
+type TcPackageDep = MPackageDep PhCheck
 type TcTopLevelDecl = MTopLevelDecl PhCheck
 type TcNamedRenaming = MNamedRenaming PhCheck
 type TcRenamingBlock = MRenamingBlock PhCheck
@@ -202,6 +205,7 @@ type TcSatisfaction = MSatisfaction PhCheck
 
 type Parsed e = Ann PhParse e
 type ParsedPackage = MPackage PhParse
+type ParsedPackageDep = MPackageDep PhParse
 type ParsedTopLevelDecl = MTopLevelDecl PhParse
 type ParsedNamedRenaming = MNamedRenaming PhParse
 type ParsedRenamingBlock = MRenamingBlock PhParse
@@ -389,10 +393,11 @@ pattern Unit :: MType
 pattern Unit = GenName "Unit"
 
 data MCallableType = Axiom | Function | Predicate | Procedure
-                    deriving (Eq, Ord, Show)
+                     deriving (Eq, Ord, Show)
 
 -- TODO: make a constructor for coercedexpr to remove (Maybe MType) from calls?
 type MExpr p = Ann p MExpr'
+-- TODO: enforce statically typing of variable in MVar constructor
 data MExpr' p = MVar (MaybeTypedVar p)
               -- TODO: add Procedure/FunctionLike namespaces to Name?
               | MCall Name [MExpr p] (Maybe MType)

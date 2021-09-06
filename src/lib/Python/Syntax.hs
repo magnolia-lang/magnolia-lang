@@ -38,8 +38,8 @@ module Python.Syntax (
 
 import qualified Data.List as L
 import qualified Data.List.NonEmpty as NE
-import qualified Data.Text.Lazy as T
-import qualified Data.Text.Lazy.IO as TIO
+import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 import Prettyprinter
 import Prettyprinter.Render.Text
 
@@ -254,7 +254,7 @@ p = pretty
 -- imports correctly.
 pprintPyPackage :: Maybe FilePath -> PyPackage -> IO ()
 pprintPyPackage mbasePath =
-  TIO.putStrLn . renderLazy . layoutPretty defaultLayoutOptions .
+  TIO.putStrLn . renderStrict . layoutPretty defaultLayoutOptions .
     prettyPyPackage mbasePath
 
 -- | Pretty formats a Python package. A base path can be provided to derive

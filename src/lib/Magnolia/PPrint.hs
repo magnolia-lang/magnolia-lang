@@ -9,11 +9,12 @@ module Magnolia.PPrint (pprint, pprintList, pshow, render) where
 import Control.Monad (join)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
-import qualified Data.Text.Lazy as T
-import qualified Data.Text.Lazy.IO as TIO
+import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
+import Data.Void (absurd)
+
 import Prettyprinter
 import Prettyprinter.Render.Text
-import Data.Void (absurd)
 
 import Backend
 import Env
@@ -34,7 +35,7 @@ printDoc :: Doc ann -> IO ()
 printDoc = TIO.putStrLn . render
 
 render :: Doc ann -> T.Text
-render = renderLazy . layoutPretty defaultLayoutOptions
+render = renderStrict . layoutPretty defaultLayoutOptions
 
 pshow :: Pretty a => a -> T.Text
 pshow = render . p

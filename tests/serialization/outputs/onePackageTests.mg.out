@@ -1,0 +1,1766 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <packages>
+        <package name="tests.serialization.inputs.onePackageTests">
+            <top-level-decls>
+                <top-level-decl top-level-decl-type="module">
+                    <module module-type="implementation" name="ExternalModule">
+                        <module-expression>
+                            <declarations>
+                                <callable
+                                  callable-type="predicate"
+                                  name="!_"
+                                  return-type="Predicate">
+                                    <arguments>
+                                        <var
+                                          mode="obs"
+                                          name="#pred1#"
+                                          type="Predicate"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location is-provided="false"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="predicate"
+                                  name="FALSE"
+                                  return-type="Predicate">
+                                    <arguments/>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location is-provided="false"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="predicate"
+                                  name="TRUE"
+                                  return-type="Predicate">
+                                    <arguments/>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location is-provided="false"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <type name="U">
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="12"
+                                              end-line="7"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="7"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="external">
+                                        <originates-from is-local="true">
+                                            <source-location
+                                              end-col="12"
+                                              end-line="7"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="7"/>
+                                        </originates-from>
+                                        <external-decl-details
+                                          backend="C++"
+                                          decl-name="U"
+                                          filepath="path.to.file"
+                                          module-name="struct"/>
+                                    </concrete-origin>
+                                </type>
+                                <callable
+                                  callable-type="function"
+                                  name="_!=_"
+                                  return-type="Predicate">
+                                    <arguments>
+                                        <var
+                                          mode="obs"
+                                          name="e1"
+                                          type="U"/>
+                                        <var
+                                          mode="obs"
+                                          name="e2"
+                                          type="U"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="12"
+                                              end-line="7"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="7"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="predicate"
+                                  name="_!=_"
+                                  return-type="Predicate">
+                                    <arguments>
+                                        <var
+                                          mode="obs"
+                                          name="#pred1#"
+                                          type="Predicate"/>
+                                        <var
+                                          mode="obs"
+                                          name="#pred2#"
+                                          type="Predicate"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location is-provided="false"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="predicate"
+                                  name="_&amp;&amp;_"
+                                  return-type="Predicate">
+                                    <arguments>
+                                        <var
+                                          mode="obs"
+                                          name="#pred1#"
+                                          type="Predicate"/>
+                                        <var
+                                          mode="obs"
+                                          name="#pred2#"
+                                          type="Predicate"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location is-provided="false"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="predicate"
+                                  name="_&lt;=&gt;_"
+                                  return-type="Predicate">
+                                    <arguments>
+                                        <var
+                                          mode="obs"
+                                          name="#pred1#"
+                                          type="Predicate"/>
+                                        <var
+                                          mode="obs"
+                                          name="#pred2#"
+                                          type="Predicate"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location is-provided="false"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="function"
+                                  name="_==_"
+                                  return-type="Predicate">
+                                    <arguments>
+                                        <var
+                                          mode="obs"
+                                          name="e1"
+                                          type="U"/>
+                                        <var
+                                          mode="obs"
+                                          name="e2"
+                                          type="U"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="12"
+                                              end-line="7"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="7"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="predicate"
+                                  name="_==_"
+                                  return-type="Predicate">
+                                    <arguments>
+                                        <var
+                                          mode="obs"
+                                          name="#pred1#"
+                                          type="Predicate"/>
+                                        <var
+                                          mode="obs"
+                                          name="#pred2#"
+                                          type="Predicate"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location is-provided="false"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="predicate"
+                                  name="_=&gt;_"
+                                  return-type="Predicate">
+                                    <arguments>
+                                        <var
+                                          mode="obs"
+                                          name="#pred1#"
+                                          type="Predicate"/>
+                                        <var
+                                          mode="obs"
+                                          name="#pred2#"
+                                          type="Predicate"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location is-provided="false"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="procedure"
+                                  name="_=_"
+                                  return-type="Unit">
+                                    <arguments>
+                                        <var
+                                          mode="out"
+                                          name="var"
+                                          type="U"/>
+                                        <var
+                                          mode="obs"
+                                          name="expr"
+                                          type="U"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="12"
+                                              end-line="7"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="7"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="predicate"
+                                  name="_||_"
+                                  return-type="Predicate">
+                                    <arguments>
+                                        <var
+                                          mode="obs"
+                                          name="#pred1#"
+                                          type="Predicate"/>
+                                        <var
+                                          mode="obs"
+                                          name="#pred2#"
+                                          type="Predicate"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location is-provided="false"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="function"
+                                  name="external_f"
+                                  return-type="U">
+                                    <arguments/>
+                                    <body>
+                                        <callable-body body-type="provided-externally"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="30"
+                                              end-line="9"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="9"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="external">
+                                        <originates-from is-local="true">
+                                            <source-location
+                                              end-col="30"
+                                              end-line="9"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="9"/>
+                                        </originates-from>
+                                        <external-decl-details
+                                          backend="C++"
+                                          decl-name="external_f"
+                                          filepath="path.to.file"
+                                          module-name="struct"/>
+                                    </concrete-origin>
+                                </callable>
+                            </declarations>
+                            <dependencies/>
+                            <renaming-blocks/>
+                            <source-location
+                              end-col="2"
+                              end-line="10"
+                              filename="tests/serialization/inputs/onePackageTests.mg"
+                              is-provided="true"
+                              start-col="66"
+                              start-line="5"/>
+                        </module-expression>
+                        <originates-from is-local="true">
+                            <source-location
+                              end-col="2"
+                              end-line="10"
+                              filename="tests/serialization/inputs/onePackageTests.mg"
+                              is-provided="true"
+                              start-col="1"
+                              start-line="5"/>
+                        </originates-from>
+                    </module>
+                </top-level-decl>
+                <top-level-decl top-level-decl-type="module">
+                    <module module-type="implementation" name="LocalModule">
+                        <module-expression>
+                            <declarations>
+                                <callable
+                                  callable-type="predicate"
+                                  name="!_"
+                                  return-type="Predicate">
+                                    <arguments>
+                                        <var
+                                          mode="obs"
+                                          name="#pred1#"
+                                          type="Predicate"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location is-provided="false"/>
+                                        </abstract-origin>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="52"
+                                              end-line="17"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="9"
+                                              start-line="17"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="predicate"
+                                  name="FALSE"
+                                  return-type="Predicate">
+                                    <arguments/>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location is-provided="false"/>
+                                        </abstract-origin>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="52"
+                                              end-line="17"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="9"
+                                              start-line="17"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <type name="T">
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="12"
+                                              end-line="14"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="14"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                </type>
+                                <callable
+                                  callable-type="predicate"
+                                  name="TRUE"
+                                  return-type="Predicate">
+                                    <arguments/>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location is-provided="false"/>
+                                        </abstract-origin>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="52"
+                                              end-line="17"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="9"
+                                              start-line="17"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <type name="U">
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="52"
+                                              end-line="17"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="9"
+                                              start-line="17"/>
+                                        </abstract-origin>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="12"
+                                              end-line="7"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="7"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="external">
+                                        <originates-from is-local="true">
+                                            <source-location
+                                              end-col="12"
+                                              end-line="7"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="7"/>
+                                        </originates-from>
+                                        <external-decl-details
+                                          backend="C++"
+                                          decl-name="U"
+                                          filepath="path.to.file"
+                                          module-name="struct"/>
+                                    </concrete-origin>
+                                </type>
+                                <callable
+                                  callable-type="function"
+                                  name="_!=_"
+                                  return-type="Predicate">
+                                    <arguments>
+                                        <var
+                                          mode="obs"
+                                          name="e1"
+                                          type="T"/>
+                                        <var
+                                          mode="obs"
+                                          name="e2"
+                                          type="T"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="12"
+                                              end-line="14"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="14"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="predicate"
+                                  name="_!=_"
+                                  return-type="Predicate">
+                                    <arguments>
+                                        <var
+                                          mode="obs"
+                                          name="#pred1#"
+                                          type="Predicate"/>
+                                        <var
+                                          mode="obs"
+                                          name="#pred2#"
+                                          type="Predicate"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location is-provided="false"/>
+                                        </abstract-origin>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="52"
+                                              end-line="17"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="9"
+                                              start-line="17"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="function"
+                                  name="_!=_"
+                                  return-type="Predicate">
+                                    <arguments>
+                                        <var
+                                          mode="obs"
+                                          name="e1"
+                                          type="U"/>
+                                        <var
+                                          mode="obs"
+                                          name="e2"
+                                          type="U"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="52"
+                                              end-line="17"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="9"
+                                              start-line="17"/>
+                                        </abstract-origin>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="12"
+                                              end-line="7"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="7"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="predicate"
+                                  name="_&amp;&amp;_"
+                                  return-type="Predicate">
+                                    <arguments>
+                                        <var
+                                          mode="obs"
+                                          name="#pred1#"
+                                          type="Predicate"/>
+                                        <var
+                                          mode="obs"
+                                          name="#pred2#"
+                                          type="Predicate"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location is-provided="false"/>
+                                        </abstract-origin>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="52"
+                                              end-line="17"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="9"
+                                              start-line="17"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="predicate"
+                                  name="_&lt;=&gt;_"
+                                  return-type="Predicate">
+                                    <arguments>
+                                        <var
+                                          mode="obs"
+                                          name="#pred1#"
+                                          type="Predicate"/>
+                                        <var
+                                          mode="obs"
+                                          name="#pred2#"
+                                          type="Predicate"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location is-provided="false"/>
+                                        </abstract-origin>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="52"
+                                              end-line="17"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="9"
+                                              start-line="17"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="function"
+                                  name="_==_"
+                                  return-type="Predicate">
+                                    <arguments>
+                                        <var
+                                          mode="obs"
+                                          name="e1"
+                                          type="T"/>
+                                        <var
+                                          mode="obs"
+                                          name="e2"
+                                          type="T"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="12"
+                                              end-line="14"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="14"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="predicate"
+                                  name="_==_"
+                                  return-type="Predicate">
+                                    <arguments>
+                                        <var
+                                          mode="obs"
+                                          name="#pred1#"
+                                          type="Predicate"/>
+                                        <var
+                                          mode="obs"
+                                          name="#pred2#"
+                                          type="Predicate"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location is-provided="false"/>
+                                        </abstract-origin>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="52"
+                                              end-line="17"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="9"
+                                              start-line="17"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="function"
+                                  name="_==_"
+                                  return-type="Predicate">
+                                    <arguments>
+                                        <var
+                                          mode="obs"
+                                          name="e1"
+                                          type="U"/>
+                                        <var
+                                          mode="obs"
+                                          name="e2"
+                                          type="U"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="52"
+                                              end-line="17"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="9"
+                                              start-line="17"/>
+                                        </abstract-origin>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="12"
+                                              end-line="7"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="7"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="predicate"
+                                  name="_=&gt;_"
+                                  return-type="Predicate">
+                                    <arguments>
+                                        <var
+                                          mode="obs"
+                                          name="#pred1#"
+                                          type="Predicate"/>
+                                        <var
+                                          mode="obs"
+                                          name="#pred2#"
+                                          type="Predicate"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location is-provided="false"/>
+                                        </abstract-origin>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="52"
+                                              end-line="17"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="9"
+                                              start-line="17"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="procedure"
+                                  name="_=_"
+                                  return-type="Unit">
+                                    <arguments>
+                                        <var
+                                          mode="out"
+                                          name="var"
+                                          type="T"/>
+                                        <var
+                                          mode="obs"
+                                          name="expr"
+                                          type="T"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="12"
+                                              end-line="14"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="14"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="procedure"
+                                  name="_=_"
+                                  return-type="Unit">
+                                    <arguments>
+                                        <var
+                                          mode="out"
+                                          name="var"
+                                          type="U"/>
+                                        <var
+                                          mode="obs"
+                                          name="expr"
+                                          type="U"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="52"
+                                              end-line="17"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="9"
+                                              start-line="17"/>
+                                        </abstract-origin>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="12"
+                                              end-line="7"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="7"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="predicate"
+                                  name="_||_"
+                                  return-type="Predicate">
+                                    <arguments>
+                                        <var
+                                          mode="obs"
+                                          name="#pred1#"
+                                          type="Predicate"/>
+                                        <var
+                                          mode="obs"
+                                          name="#pred2#"
+                                          type="Predicate"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="built-in"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location is-provided="false"/>
+                                        </abstract-origin>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="52"
+                                              end-line="17"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="9"
+                                              start-line="17"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="built-in"/>
+                                </callable>
+                                <callable
+                                  callable-type="function"
+                                  name="external_f"
+                                  return-type="U">
+                                    <arguments/>
+                                    <body>
+                                        <callable-body body-type="provided-externally"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="52"
+                                              end-line="17"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="9"
+                                              start-line="17"/>
+                                        </abstract-origin>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="30"
+                                              end-line="9"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="9"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="external">
+                                        <originates-from is-local="true">
+                                            <source-location
+                                              end-col="30"
+                                              end-line="9"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="9"/>
+                                        </originates-from>
+                                        <external-decl-details
+                                          backend="C++"
+                                          decl-name="external_f"
+                                          filepath="path.to.file"
+                                          module-name="struct"/>
+                                    </concrete-origin>
+                                </callable>
+                                <callable
+                                  callable-type="function"
+                                  name="localAbstractFunction"
+                                  return-type="T">
+                                    <arguments/>
+                                    <body>
+                                        <callable-body body-type="not-provided"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="41"
+                                              end-line="20"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="20"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                </callable>
+                                <callable
+                                  callable-type="procedure"
+                                  name="localAbstractProcedure"
+                                  return-type="Unit">
+                                    <arguments>
+                                        <var
+                                          mode="upd"
+                                          name="t"
+                                          type="T"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="not-provided"/>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="48"
+                                              end-line="22"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="22"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                </callable>
+                                <callable
+                                  callable-type="procedure"
+                                  name="localConcreteCallable"
+                                  return-type="Unit">
+                                    <arguments>
+                                        <var
+                                          mode="obs"
+                                          name="t_obs"
+                                          type="T"/>
+                                        <var
+                                          mode="out"
+                                          name="t_out"
+                                          type="T"/>
+                                        <var
+                                          mode="upd"
+                                          name="t_upd"
+                                          type="T"/>
+                                    </arguments>
+                                    <body>
+                                        <callable-body body-type="provided-locally">
+                                            <effectful-block type="Unit">
+                                                <statement>
+                                                    <call
+                                                      has-explicit-cast="False"
+                                                      name="_=_"
+                                                      type="Unit">
+                                                        <arg>
+                                                            <var-ref type="T">
+                                                                <var
+                                                                  mode="out"
+                                                                  name="t_out"
+                                                                  type="T"/>
+                                                            </var-ref>
+                                                            <var-ref type="T">
+                                                                <var
+                                                                  mode="obs"
+                                                                  name="t_obs"
+                                                                  type="T"/>
+                                                            </var-ref>
+                                                        </arg>
+                                                    </call>
+                                                    <call
+                                                      has-explicit-cast="False"
+                                                      name="_=_"
+                                                      type="Unit">
+                                                        <arg>
+                                                            <var-ref type="T">
+                                                                <var
+                                                                  mode="upd"
+                                                                  name="t_out"
+                                                                  type="T"/>
+                                                            </var-ref>
+                                                            <value-block type="T">
+                                                                <statement>
+                                                                    <value type="T">
+                                                                        <expr>
+                                                                            <call
+                                                                              has-explicit-cast="False"
+                                                                              name="localAbstractFunction"
+                                                                              type="T">
+                                                                                <arg/>
+                                                                            </call>
+                                                                        </expr>
+                                                                    </value>
+                                                                </statement>
+                                                            </value-block>
+                                                        </arg>
+                                                    </call>
+                                                    <var-decl type="Unit">
+                                                        <var
+                                                          mode="out"
+                                                          name="t_var_unassigned"
+                                                          type="T"/>
+                                                    </var-decl>
+                                                    <var-decl type="Unit">
+                                                        <var
+                                                          mode="upd"
+                                                          name="t_var_assigned"
+                                                          type="T"/>
+                                                        <initial-value>
+                                                            <var-ref type="T">
+                                                                <var
+                                                                  mode="obs"
+                                                                  name="t_obs"
+                                                                  type="T"/>
+                                                            </var-ref>
+                                                        </initial-value>
+                                                    </var-decl>
+                                                    <assert type="Unit">
+                                                        <call
+                                                          has-explicit-cast="False"
+                                                          name="_==_"
+                                                          type="Predicate">
+                                                            <arg>
+                                                                <var-ref type="T">
+                                                                    <var
+                                                                      mode="obs"
+                                                                      name="t_obs"
+                                                                      type="T"/>
+                                                                </var-ref>
+                                                                <var-ref type="T">
+                                                                    <var
+                                                                      mode="obs"
+                                                                      name="t_obs"
+                                                                      type="T"/>
+                                                                </var-ref>
+                                                            </arg>
+                                                        </call>
+                                                    </assert>
+                                                    <call
+                                                      has-explicit-cast="False"
+                                                      name="localAbstractProcedure"
+                                                      type="Unit">
+                                                        <arg>
+                                                            <var-ref type="T">
+                                                                <var
+                                                                  mode="upd"
+                                                                  name="t_upd"
+                                                                  type="T"/>
+                                                            </var-ref>
+                                                        </arg>
+                                                    </call>
+                                                    <call
+                                                      has-explicit-cast="False"
+                                                      name="_=_"
+                                                      type="Unit">
+                                                        <arg>
+                                                            <var-ref type="T">
+                                                                <var
+                                                                  mode="upd"
+                                                                  name="t_out"
+                                                                  type="T"/>
+                                                            </var-ref>
+                                                            <if type="T">
+                                                                <condition>
+                                                                    <call
+                                                                      has-explicit-cast="False"
+                                                                      name="_==_"
+                                                                      type="Predicate">
+                                                                        <arg>
+                                                                            <var-ref type="T">
+                                                                                <var
+                                                                                  mode="obs"
+                                                                                  name="t_obs"
+                                                                                  type="T"/>
+                                                                            </var-ref>
+                                                                            <var-ref type="T">
+                                                                                <var
+                                                                                  mode="obs"
+                                                                                  name="t_obs"
+                                                                                  type="T"/>
+                                                                            </var-ref>
+                                                                        </arg>
+                                                                    </call>
+                                                                </condition>
+                                                                <true-branch>
+                                                                    <var-ref type="T">
+                                                                        <var
+                                                                          mode="obs"
+                                                                          name="t_out"
+                                                                          type="T"/>
+                                                                    </var-ref>
+                                                                </true-branch>
+                                                                <false-branch>
+                                                                    <var-ref type="T">
+                                                                        <var
+                                                                          mode="obs"
+                                                                          name="t_obs"
+                                                                          type="T"/>
+                                                                    </var-ref>
+                                                                </false-branch>
+                                                            </if>
+                                                        </arg>
+                                                    </call>
+                                                    <if type="Unit">
+                                                        <condition>
+                                                            <call
+                                                              has-explicit-cast="False"
+                                                              name="_==_"
+                                                              type="Predicate">
+                                                                <arg>
+                                                                    <var-ref type="T">
+                                                                        <var
+                                                                          mode="obs"
+                                                                          name="t_obs"
+                                                                          type="T"/>
+                                                                    </var-ref>
+                                                                    <var-ref type="T">
+                                                                        <var
+                                                                          mode="obs"
+                                                                          name="t_obs"
+                                                                          type="T"/>
+                                                                    </var-ref>
+                                                                </arg>
+                                                            </call>
+                                                        </condition>
+                                                        <true-branch>
+                                                            <effectful-block type="Unit">
+                                                                <statement>
+                                                                    <skip type="Unit"/>
+                                                                </statement>
+                                                            </effectful-block>
+                                                        </true-branch>
+                                                        <false-branch>
+                                                            <effectful-block type="Unit">
+                                                                <statement>
+                                                                    <skip type="Unit"/>
+                                                                </statement>
+                                                            </effectful-block>
+                                                        </false-branch>
+                                                    </if>
+                                                    <if type="Unit">
+                                                        <condition>
+                                                            <call
+                                                              has-explicit-cast="False"
+                                                              name="_||_"
+                                                              type="Predicate">
+                                                                <arg>
+                                                                    <call
+                                                                      has-explicit-cast="False"
+                                                                      name="TRUE"
+                                                                      type="Predicate">
+                                                                        <arg/>
+                                                                    </call>
+                                                                    <call
+                                                                      has-explicit-cast="False"
+                                                                      name="FALSE"
+                                                                      type="Predicate">
+                                                                        <arg/>
+                                                                    </call>
+                                                                </arg>
+                                                            </call>
+                                                        </condition>
+                                                        <true-branch>
+                                                            <effectful-block type="Unit">
+                                                                <statement>
+                                                                    <skip type="Unit"/>
+                                                                </statement>
+                                                            </effectful-block>
+                                                        </true-branch>
+                                                        <false-branch>
+                                                            <effectful-block type="Unit">
+                                                                <statement>
+                                                                    <skip type="Unit"/>
+                                                                </statement>
+                                                            </effectful-block>
+                                                        </false-branch>
+                                                    </if>
+                                                </statement>
+                                            </effectful-block>
+                                        </callable-body>
+                                    </body>
+                                    <abstract-origins>
+                                        <abstract-origin>
+                                            <source-location
+                                              end-col="6"
+                                              end-line="52"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="25"/>
+                                        </abstract-origin>
+                                    </abstract-origins>
+                                    <concrete-origin origin="magnolia">
+                                        <originates-from is-local="true">
+                                            <source-location
+                                              end-col="6"
+                                              end-line="52"
+                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                              is-provided="true"
+                                              start-col="5"
+                                              start-line="25"/>
+                                        </originates-from>
+                                    </concrete-origin>
+                                </callable>
+                            </declarations>
+                            <dependencies>
+                                <module-dependency dependency-type="use">
+                                    <module-expression>
+                                        <declarations>
+                                            <callable
+                                              callable-type="predicate"
+                                              name="!_"
+                                              return-type="Predicate">
+                                                <arguments>
+                                                    <var
+                                                      mode="obs"
+                                                      name="#pred1#"
+                                                      type="Predicate"/>
+                                                </arguments>
+                                                <body>
+                                                    <callable-body body-type="built-in"/>
+                                                </body>
+                                                <abstract-origins>
+                                                    <abstract-origin>
+                                                        <source-location is-provided="false"/>
+                                                    </abstract-origin>
+                                                </abstract-origins>
+                                                <concrete-origin origin="built-in"/>
+                                            </callable>
+                                            <callable
+                                              callable-type="predicate"
+                                              name="FALSE"
+                                              return-type="Predicate">
+                                                <arguments/>
+                                                <body>
+                                                    <callable-body body-type="built-in"/>
+                                                </body>
+                                                <abstract-origins>
+                                                    <abstract-origin>
+                                                        <source-location is-provided="false"/>
+                                                    </abstract-origin>
+                                                </abstract-origins>
+                                                <concrete-origin origin="built-in"/>
+                                            </callable>
+                                            <callable
+                                              callable-type="predicate"
+                                              name="TRUE"
+                                              return-type="Predicate">
+                                                <arguments/>
+                                                <body>
+                                                    <callable-body body-type="built-in"/>
+                                                </body>
+                                                <abstract-origins>
+                                                    <abstract-origin>
+                                                        <source-location is-provided="false"/>
+                                                    </abstract-origin>
+                                                </abstract-origins>
+                                                <concrete-origin origin="built-in"/>
+                                            </callable>
+                                            <type name="U">
+                                                <abstract-origins>
+                                                    <abstract-origin>
+                                                        <source-location
+                                                          end-col="12"
+                                                          end-line="7"
+                                                          filename="tests/serialization/inputs/onePackageTests.mg"
+                                                          is-provided="true"
+                                                          start-col="5"
+                                                          start-line="7"/>
+                                                    </abstract-origin>
+                                                </abstract-origins>
+                                                <concrete-origin origin="external">
+                                                    <originates-from is-local="true">
+                                                        <source-location
+                                                          end-col="12"
+                                                          end-line="7"
+                                                          filename="tests/serialization/inputs/onePackageTests.mg"
+                                                          is-provided="true"
+                                                          start-col="5"
+                                                          start-line="7"/>
+                                                    </originates-from>
+                                                    <external-decl-details
+                                                      backend="C++"
+                                                      decl-name="U"
+                                                      filepath="path.to.file"
+                                                      module-name="struct"/>
+                                                </concrete-origin>
+                                            </type>
+                                            <callable
+                                              callable-type="predicate"
+                                              name="_!=_"
+                                              return-type="Predicate">
+                                                <arguments>
+                                                    <var
+                                                      mode="obs"
+                                                      name="e1"
+                                                      type="U"/>
+                                                    <var
+                                                      mode="obs"
+                                                      name="e2"
+                                                      type="U"/>
+                                                </arguments>
+                                                <body>
+                                                    <callable-body body-type="built-in"/>
+                                                </body>
+                                                <abstract-origins>
+                                                    <abstract-origin>
+                                                        <source-location
+                                                          end-col="12"
+                                                          end-line="7"
+                                                          filename="tests/serialization/inputs/onePackageTests.mg"
+                                                          is-provided="true"
+                                                          start-col="5"
+                                                          start-line="7"/>
+                                                    </abstract-origin>
+                                                </abstract-origins>
+                                                <concrete-origin origin="built-in"/>
+                                            </callable>
+                                            <callable
+                                              callable-type="predicate"
+                                              name="_!=_"
+                                              return-type="Predicate">
+                                                <arguments>
+                                                    <var
+                                                      mode="obs"
+                                                      name="#pred1#"
+                                                      type="Predicate"/>
+                                                    <var
+                                                      mode="obs"
+                                                      name="#pred2#"
+                                                      type="Predicate"/>
+                                                </arguments>
+                                                <body>
+                                                    <callable-body body-type="built-in"/>
+                                                </body>
+                                                <abstract-origins>
+                                                    <abstract-origin>
+                                                        <source-location is-provided="false"/>
+                                                    </abstract-origin>
+                                                </abstract-origins>
+                                                <concrete-origin origin="built-in"/>
+                                            </callable>
+                                            <callable
+                                              callable-type="predicate"
+                                              name="_&amp;&amp;_"
+                                              return-type="Predicate">
+                                                <arguments>
+                                                    <var
+                                                      mode="obs"
+                                                      name="#pred1#"
+                                                      type="Predicate"/>
+                                                    <var
+                                                      mode="obs"
+                                                      name="#pred2#"
+                                                      type="Predicate"/>
+                                                </arguments>
+                                                <body>
+                                                    <callable-body body-type="built-in"/>
+                                                </body>
+                                                <abstract-origins>
+                                                    <abstract-origin>
+                                                        <source-location is-provided="false"/>
+                                                    </abstract-origin>
+                                                </abstract-origins>
+                                                <concrete-origin origin="built-in"/>
+                                            </callable>
+                                            <callable
+                                              callable-type="predicate"
+                                              name="_&lt;=&gt;_"
+                                              return-type="Predicate">
+                                                <arguments>
+                                                    <var
+                                                      mode="obs"
+                                                      name="#pred1#"
+                                                      type="Predicate"/>
+                                                    <var
+                                                      mode="obs"
+                                                      name="#pred2#"
+                                                      type="Predicate"/>
+                                                </arguments>
+                                                <body>
+                                                    <callable-body body-type="built-in"/>
+                                                </body>
+                                                <abstract-origins>
+                                                    <abstract-origin>
+                                                        <source-location is-provided="false"/>
+                                                    </abstract-origin>
+                                                </abstract-origins>
+                                                <concrete-origin origin="built-in"/>
+                                            </callable>
+                                            <callable
+                                              callable-type="predicate"
+                                              name="_==_"
+                                              return-type="Predicate">
+                                                <arguments>
+                                                    <var
+                                                      mode="obs"
+                                                      name="e1"
+                                                      type="U"/>
+                                                    <var
+                                                      mode="obs"
+                                                      name="e2"
+                                                      type="U"/>
+                                                </arguments>
+                                                <body>
+                                                    <callable-body body-type="built-in"/>
+                                                </body>
+                                                <abstract-origins>
+                                                    <abstract-origin>
+                                                        <source-location
+                                                          end-col="12"
+                                                          end-line="7"
+                                                          filename="tests/serialization/inputs/onePackageTests.mg"
+                                                          is-provided="true"
+                                                          start-col="5"
+                                                          start-line="7"/>
+                                                    </abstract-origin>
+                                                </abstract-origins>
+                                                <concrete-origin origin="built-in"/>
+                                            </callable>
+                                            <callable
+                                              callable-type="predicate"
+                                              name="_==_"
+                                              return-type="Predicate">
+                                                <arguments>
+                                                    <var
+                                                      mode="obs"
+                                                      name="#pred1#"
+                                                      type="Predicate"/>
+                                                    <var
+                                                      mode="obs"
+                                                      name="#pred2#"
+                                                      type="Predicate"/>
+                                                </arguments>
+                                                <body>
+                                                    <callable-body body-type="built-in"/>
+                                                </body>
+                                                <abstract-origins>
+                                                    <abstract-origin>
+                                                        <source-location is-provided="false"/>
+                                                    </abstract-origin>
+                                                </abstract-origins>
+                                                <concrete-origin origin="built-in"/>
+                                            </callable>
+                                            <callable
+                                              callable-type="predicate"
+                                              name="_=&gt;_"
+                                              return-type="Predicate">
+                                                <arguments>
+                                                    <var
+                                                      mode="obs"
+                                                      name="#pred1#"
+                                                      type="Predicate"/>
+                                                    <var
+                                                      mode="obs"
+                                                      name="#pred2#"
+                                                      type="Predicate"/>
+                                                </arguments>
+                                                <body>
+                                                    <callable-body body-type="built-in"/>
+                                                </body>
+                                                <abstract-origins>
+                                                    <abstract-origin>
+                                                        <source-location is-provided="false"/>
+                                                    </abstract-origin>
+                                                </abstract-origins>
+                                                <concrete-origin origin="built-in"/>
+                                            </callable>
+                                            <callable
+                                              callable-type="procedure"
+                                              name="_=_"
+                                              return-type="Unit">
+                                                <arguments>
+                                                    <var
+                                                      mode="out"
+                                                      name="var"
+                                                      type="U"/>
+                                                    <var
+                                                      mode="obs"
+                                                      name="expr"
+                                                      type="U"/>
+                                                </arguments>
+                                                <body>
+                                                    <callable-body body-type="built-in"/>
+                                                </body>
+                                                <abstract-origins>
+                                                    <abstract-origin>
+                                                        <source-location
+                                                          end-col="12"
+                                                          end-line="7"
+                                                          filename="tests/serialization/inputs/onePackageTests.mg"
+                                                          is-provided="true"
+                                                          start-col="5"
+                                                          start-line="7"/>
+                                                    </abstract-origin>
+                                                </abstract-origins>
+                                                <concrete-origin origin="built-in"/>
+                                            </callable>
+                                            <callable
+                                              callable-type="predicate"
+                                              name="_||_"
+                                              return-type="Predicate">
+                                                <arguments>
+                                                    <var
+                                                      mode="obs"
+                                                      name="#pred1#"
+                                                      type="Predicate"/>
+                                                    <var
+                                                      mode="obs"
+                                                      name="#pred2#"
+                                                      type="Predicate"/>
+                                                </arguments>
+                                                <body>
+                                                    <callable-body body-type="built-in"/>
+                                                </body>
+                                                <abstract-origins>
+                                                    <abstract-origin>
+                                                        <source-location is-provided="false"/>
+                                                    </abstract-origin>
+                                                </abstract-origins>
+                                                <concrete-origin origin="built-in"/>
+                                            </callable>
+                                            <callable
+                                              callable-type="function"
+                                              name="external_f"
+                                              return-type="U">
+                                                <arguments/>
+                                                <body>
+                                                    <callable-body body-type="provided-externally"/>
+                                                </body>
+                                                <abstract-origins>
+                                                    <abstract-origin>
+                                                        <source-location
+                                                          end-col="30"
+                                                          end-line="9"
+                                                          filename="tests/serialization/inputs/onePackageTests.mg"
+                                                          is-provided="true"
+                                                          start-col="5"
+                                                          start-line="9"/>
+                                                    </abstract-origin>
+                                                </abstract-origins>
+                                                <concrete-origin origin="external">
+                                                    <originates-from is-local="true">
+                                                        <source-location
+                                                          end-col="30"
+                                                          end-line="9"
+                                                          filename="tests/serialization/inputs/onePackageTests.mg"
+                                                          is-provided="true"
+                                                          start-col="5"
+                                                          start-line="9"/>
+                                                    </originates-from>
+                                                    <external-decl-details
+                                                      backend="C++"
+                                                      decl-name="external_f"
+                                                      filepath="path.to.file"
+                                                      module-name="struct"/>
+                                                </concrete-origin>
+                                            </callable>
+                                        </declarations>
+                                        <dependencies/>
+                                        <renaming-blocks>
+                                            <renaming-block renaming-block-type="total">
+                                                <renamings>
+                                                    <renaming source-name="U" target-name="T">
+                                                        <originates-from is-local="true">
+                                                            <source-location
+                                                              end-col="28"
+                                                              end-line="3"
+                                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                                              is-provided="true"
+                                                              start-col="22"
+                                                              start-line="3"/>
+                                                        </originates-from>
+                                                    </renaming>
+                                                </renamings>
+                                                <source-location
+                                                  end-col="33"
+                                                  end-line="17"
+                                                  filename="tests/serialization/inputs/onePackageTests.mg"
+                                                  is-provided="true"
+                                                  start-col="23"
+                                                  start-line="17"/>
+                                            </renaming-block>
+                                            <renaming-block renaming-block-type="partial">
+                                                <renamings>
+                                                    <renaming source-name="T" target-name="U">
+                                                        <originates-from is-local="true">
+                                                            <source-location
+                                                              end-col="41"
+                                                              end-line="17"
+                                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                                              is-provided="true"
+                                                              start-col="35"
+                                                              start-line="17"/>
+                                                        </originates-from>
+                                                    </renaming>
+                                                    <renaming source-name="U" target-name="U">
+                                                        <originates-from is-local="true">
+                                                            <source-location
+                                                              end-col="49"
+                                                              end-line="17"
+                                                              filename="tests/serialization/inputs/onePackageTests.mg"
+                                                              is-provided="true"
+                                                              start-col="43"
+                                                              start-line="17"/>
+                                                        </originates-from>
+                                                    </renaming>
+                                                </renamings>
+                                                <source-location
+                                                  end-col="51"
+                                                  end-line="17"
+                                                  filename="tests/serialization/inputs/onePackageTests.mg"
+                                                  is-provided="true"
+                                                  start-col="33"
+                                                  start-line="17"/>
+                                            </renaming-block>
+                                        </renaming-blocks>
+                                        <source-location
+                                          end-col="51"
+                                          end-line="17"
+                                          filename="tests/serialization/inputs/onePackageTests.mg"
+                                          is-provided="true"
+                                          start-col="9"
+                                          start-line="17"/>
+                                    </module-expression>
+                                </module-dependency>
+                            </dependencies>
+                            <renaming-blocks/>
+                            <source-location
+                              end-col="2"
+                              end-line="53"
+                              filename="tests/serialization/inputs/onePackageTests.mg"
+                              is-provided="true"
+                              start-col="30"
+                              start-line="12"/>
+                        </module-expression>
+                        <originates-from is-local="true">
+                            <source-location
+                              end-col="2"
+                              end-line="53"
+                              filename="tests/serialization/inputs/onePackageTests.mg"
+                              is-provided="true"
+                              start-col="1"
+                              start-line="12"/>
+                        </originates-from>
+                    </module>
+                </top-level-decl>
+                <top-level-decl top-level-decl-type="named-renaming">
+                    <named-renaming name="Renaming">
+                        <renaming-block renaming-block-type="total">
+                            <renamings>
+                                <renaming source-name="U" target-name="T">
+                                    <originates-from is-local="true">
+                                        <source-location
+                                          end-col="28"
+                                          end-line="3"
+                                          filename="tests/serialization/inputs/onePackageTests.mg"
+                                          is-provided="true"
+                                          start-col="22"
+                                          start-line="3"/>
+                                    </originates-from>
+                                </renaming>
+                            </renamings>
+                            <source-location
+                              end-col="29"
+                              end-line="3"
+                              filename="tests/serialization/inputs/onePackageTests.mg"
+                              is-provided="true"
+                              start-col="21"
+                              start-line="3"/>
+                        </renaming-block>
+                        <originates-from is-local="true">
+                            <source-location
+                              end-col="29"
+                              end-line="3"
+                              filename="tests/serialization/inputs/onePackageTests.mg"
+                              is-provided="true"
+                              start-col="1"
+                              start-line="3"/>
+                        </originates-from>
+                    </named-renaming>
+                </top-level-decl>
+            </top-level-decls>
+            <package-dependencies/>
+        </package>
+    </packages>
+</root>
+

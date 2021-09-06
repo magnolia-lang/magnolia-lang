@@ -15,7 +15,7 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
 import Data.Maybe (isJust)
 import qualified Data.Set as S
-import qualified Data.Text.Lazy as T
+import qualified Data.Text as T
 import Data.Void (absurd)
 
 import Cxx.Syntax

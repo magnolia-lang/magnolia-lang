@@ -1,7 +1,10 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Compiler (
     -- * Compiler configuration-related data structures
     CompilerMode (..)
   , Config (..)
+  , SerializationFormat (..)
   , WriteToFsBehavior (..)
   , Pass (..)
     -- * Compiler mode-related utils
@@ -10,15 +13,18 @@ module Compiler (
   , logErrs
     -- ** Build mode
   , runCompileWith
+    -- ** Dump mode
+  , runDumpWith
   )
   where
 
 import Control.Applicative
 import Control.Monad (when)
 import qualified Data.List as L
+import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
 import qualified Data.Set as S
-import qualified Data.Text.Lazy as T
+import qualified Data.Text as T
 import System.Directory (createDirectoryIfMissing, doesFileExist, doesPathExist)
 import System.FilePath (takeDirectory)
 import System.IO.Error (alreadyExistsErrorType, ioeSetErrorType)
@@ -29,10 +35,12 @@ import Magnolia.PPrint
 import Magnolia.Syntax
 import Python.Syntax
 import Make
+import MgToXml
 import Monad
 
 data CompilerMode = ReplMode
                   | BuildMode Config FilePath
+                  | DumpMode Config FilePath
                   | TestMode Config FilePath
 
 -- | Configuration for the compiler.
@@ -54,6 +62,9 @@ data Config = Config { -- | Up to (and including) what pass the compiler should
                        -- | What the behavior of the compiler should be when
                        -- attempting to write to the file system.
                      , _configWriteToFsBehavior :: WriteToFsBehavior
+                       -- | What format to use to serialize the output of the
+                       -- compiler. Only relevant in dump mode at the moment.
+                     , _configSerializationFormat :: SerializationFormat
                      }
 
 -- | Compiler passes
@@ -61,6 +72,7 @@ data Pass = CheckPass
           | DepAnalPass
           | ParsePass
           | SelfContainedProgramCodegenPass
+          | SerializationPass
           | StructurePreservingCodegenPass
 
 instance Show Pass where
@@ -69,9 +81,12 @@ instance Show Pass where
     DepAnalPass -> "dependency analysis"
     ParsePass -> "parse"
     SelfContainedProgramCodegenPass -> "self-contained code generation"
+    SerializationPass -> "serialization"
     StructurePreservingCodegenPass -> "structure preserving code generation"
 
 data WriteToFsBehavior = OverwriteTargetFiles | WriteIfDoesNotExist
+
+data SerializationFormat = Xml | Json
 
 -- === test mode-related utils ===
 
@@ -108,6 +123,7 @@ runTestWith filePath config = case _configPass config of
                        _configOutputDirectory config
           mapM_ (pprintPyPackage outDir) sortedPkgs
     _ -> fail "codegen not yet implemented"
+  SerializationPass -> filePath `runDumpWith` config
   StructurePreservingCodegenPass ->
     fail "structure preserving codegen not yet implemented"
 
@@ -204,6 +220,22 @@ runCompileWith filePath config = case _configOutputDirectory config of
       when pathExists $ ioError $
         fileExistsError $ "could not write to \"" <> path <> "\""
       writeFile path content
+
+-- | Compiles a file and its dependencies, and serializes the output of the
+-- consistency-/type-checking phase to the format specified in the
+-- configuration.
+runDumpWith :: FilePath -> Config -> IO ()
+runDumpWith filePath config = case _configSerializationFormat config of
+  Json ->
+    fail "JSON serialization not yet implemented"
+  Xml -> do
+    (epkgMap, errs) <-
+      runMgMonad $ depAnalPass filePath >>= parsePass >>= checkPass
+    case epkgMap of
+      Left () -> pprintListToXMLDocument "errors" $ L.sort (S.toList errs)
+      Right pkgMap -> pprintListToXMLDocument "packages"
+        (map snd $ M.toList pkgMap)
+
 
 -- === common utils ===
 
