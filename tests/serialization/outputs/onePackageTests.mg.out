@@ -87,7 +87,7 @@
                                     </concrete-origin>
                                 </type>
                                 <callable
-                                  callable-type="function"
+                                  callable-type="predicate"
                                   name="_!=_"
                                   return-type="Predicate">
                                     <arguments>
@@ -189,7 +189,7 @@
                                     <concrete-origin origin="built-in"/>
                                 </callable>
                                 <callable
-                                  callable-type="function"
+                                  callable-type="predicate"
                                   name="_==_"
                                   return-type="Predicate">
                                     <arguments>
@@ -511,7 +511,7 @@
                                     </concrete-origin>
                                 </type>
                                 <callable
-                                  callable-type="function"
+                                  callable-type="predicate"
                                   name="_!=_"
                                   return-type="Predicate">
                                     <arguments>
@@ -574,7 +574,7 @@
                                     <concrete-origin origin="built-in"/>
                                 </callable>
                                 <callable
-                                  callable-type="function"
+                                  callable-type="predicate"
                                   name="_!=_"
                                   return-type="Predicate">
                                     <arguments>
@@ -679,7 +679,7 @@
                                     <concrete-origin origin="built-in"/>
                                 </callable>
                                 <callable
-                                  callable-type="function"
+                                  callable-type="predicate"
                                   name="_==_"
                                   return-type="Predicate">
                                     <arguments>
@@ -742,7 +742,7 @@
                                     <concrete-origin origin="built-in"/>
                                 </callable>
                                 <callable
-                                  callable-type="function"
+                                  callable-type="predicate"
                                   name="_==_"
                                   return-type="Predicate">
                                     <arguments>

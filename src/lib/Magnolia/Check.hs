@@ -1069,23 +1069,23 @@ registerType modul modifiers annType =
 mkTypeUtils :: [MModifier] -> TcTypeDecl -> [TcDecl]
 mkTypeUtils modifiers annType =
     [ MTypeDecl modifiers annType
-    , MCallableDecl [] (Ann newAnn eqFnDecl)
-    , MCallableDecl [] (Ann newAnn neqFnDecl)
+    , MCallableDecl [] (Ann newAnn eqPredDecl)
+    , MCallableDecl [] (Ann newAnn neqPredDecl)
     , MCallableDecl [] (Ann newAnn assignProcDecl)
     ]
   where
     newAnn = (Just GeneratedBuiltin, snd $ _ann annType)
 
-    eqFnName = FuncName "_==_"
-    neqFnName = FuncName "_!=_"
+    eqPredName = FuncName "_==_"
+    neqPredName = FuncName "_!=_"
     assignProcName = ProcName "_=_"
 
     mkVar mode nameStr = Ann (nodeName annType) $
       Var mode (VarName nameStr) (nodeName annType)
-    eqFnDecl = Callable Function eqFnName (map (mkVar MObs) ["e1", "e2"]) Pred
-                        Nothing BuiltinBody
-    neqFnDecl = Callable Function neqFnName (map (mkVar MObs) ["e1", "e2"]) Pred
-                         Nothing BuiltinBody
+    eqPredDecl = Callable Predicate eqPredName (map (mkVar MObs) ["e1", "e2"])
+                          Pred Nothing BuiltinBody
+    neqPredDecl = Callable Predicate neqPredName (map (mkVar MObs) ["e1", "e2"])
+                           Pred Nothing BuiltinBody
     assignProcDecl = Callable Procedure assignProcName
                               [mkVar MOut "var", mkVar MObs "expr"] Unit
                               Nothing BuiltinBody
