@@ -139,7 +139,7 @@ instance Pretty (MModuleExpr' PhCheck) where
                     map ((<> semi) . p) (join (M.elems decls)))) <> line <>
     rbrace <> align (vsep $ map p renamingBlocks)
   pretty (MModuleRef v _) = absurd v
-  pretty (MModuleAsSignature v _) = absurd v
+  pretty (MModuleFunctorApplication _ v) = absurd v
   pretty (MModuleExternal backend fqn moduleExpr') =
     "external" <+> p backend <+> p fqn <+> p moduleExpr'
 

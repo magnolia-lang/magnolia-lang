@@ -8,7 +8,7 @@ module Magnolia.Check (
   ) where
 
 import Control.Applicative
-import Control.Monad.Except (foldM, lift, unless, when)
+import Control.Monad.Except (foldM, join, lift, unless, when)
 --import Control.Monad.IO.Class (liftIO)
 import qualified Control.Monad.Trans.State as ST
 --import Debug.Trace (trace)
@@ -207,13 +207,17 @@ checkModuleExpr tlDecls moduleType mexternalInfo
     MModuleDef renamedDecls deps (refRenamingBlocks <> tcRenamingBlocks)
 
 checkModuleExpr tlDecls moduleType mexternalInfo
-                (Ann src (MModuleAsSignature ref renamingBlocks)) =
-  let moduleRefExpr = Ann src $ MModuleRef ref renamingBlocks in
-  checkModuleExpr tlDecls Signature Nothing moduleRefExpr >>= \moduleExpr ->
-    (case mexternalInfo of
-        Nothing -> pure moduleExpr
-        Just (backend, fqn) -> externalizeModuleExpr backend fqn src moduleExpr)
-    >>= castModuleExpr moduleType
+    (Ann src (MModuleFunctorApplication moduleFunctor moduleExpr)) = do
+  tcNestedModuleExpr <-
+    checkModuleExpr tlDecls Implementation Nothing moduleExpr
+  let applyFunctor aModuleExpr = case moduleFunctor of
+        ExtractSignature -> castModuleExpr Signature aModuleExpr
+        Functionalize -> undefined
+  (case mexternalInfo of
+    Nothing -> applyFunctor tcNestedModuleExpr
+    Just (backend, fqn) -> applyFunctor tcNestedModuleExpr >>=
+      externalizeModuleExpr backend fqn src) >>=
+    castModuleExpr moduleType
 
 checkModuleExpr tlDecls moduleType Nothing
                 (Ann src (MModuleExternal backend fqn moduleExpr)) = do
@@ -338,6 +342,64 @@ checkModuleExpr tlDecls moduleType mexternalInfo
           "procedure body"
       _ -> return ()
 
+-- let applyFunctor aModuleExpr = case moduleFunctor of
+--         ExtractSignature -> castModuleExpr Signature aModuleExpr
+--         Functionalize -> undefined
+
+applyFunctorToModuleExpr :: MModuleFunctor
+                         -> TcModuleExpr
+                         -> MgMonad TcModuleExpr
+applyFunctorToModuleExpr moduleFunctor tcModuleExpr@(Ann src tcModuleExpr')
+  | ExtractSignature <- moduleFunctor = castModuleExpr Signature tcModuleExpr
+  | MModuleRef v _ <- tcModuleExpr' = absurd v
+  | MModuleFunctorApplication _ v <- tcModuleExpr' = absurd v
+  | MModuleExternal _ _ v <- tcModuleExpr' = absurd v
+  | MModuleDef declMap deps renamings <- tcModuleExpr' = undefined
+
+functionalizeDecl :: TcDecl -> MgMonad (NE.NonEmpty TcDecl)
+functionalizeDecl tcDecl = case tcDecl of
+  MCallableDecl (Ann declOs (Callable Procedure name args retTy mguard body)) ->
+    let isUpdatedArg (Ann _ v) = _varMode v `L.elem` [MOut, MUpd]
+        outArgNos = map (\(n, Ann _ v) -> (n, _varType v)) $
+          filter (isUpdatedArg . snd) $ zip [1..] args
+    in case body of
+        EmptyBody -> undefined
+        ExternalBody -> undefined
+        MagnoliaBody tcExpr -> undefined
+    -- Synthesizing a valid function here requires:
+    --  - generating a new name for each argument projection
+    --  - if an external body is provided, produce empty bodies because
+    --    we can not assume them to be provided externally – they will thus
+    --  - have to be implemented
+  _ -> pure $ tcDecl :| []
+
+-- | Generates a set of functions for every procedure defined in the input
+-- module expression.
+functionalizeModuleExpr :: TcModuleExpr -> MgMonad TcModuleExpr
+functionalizeModuleExpr (Ann src tcModuleExpr')
+  | MModuleRef v _ <- tcModuleExpr' = absurd v
+  | MModuleFunctorApplication _ v <- tcModuleExpr' = absurd v
+  | MModuleExternal _ _ v <- tcModuleExpr' = absurd v
+  | MModuleDef declMap deps renamings <- tcModuleExpr' = do
+    let declList = join $ map snd $ M.toList declMap
+    functionalizedDeclList <-
+      join <$> mapM ((NE.toList <$>) . functionalizeDecl) declList
+    let functionalizedDeclMap = M.fromListWith (<>) $
+          map (\e -> (nodeName e, [e])) functionalizedDeclList
+    pure $ Ann src $ MModuleDef functionalizedDeclMap deps renamings
+  where
+    functionalizeDecl :: TcDecl -> MgMonad (NE.NonEmpty TcDecl)
+    functionalizeDecl tcDecl = case tcDecl of
+      MCallableDecl (Ann declOs
+                         (Callable Procedure name args retTy mguard body)) ->
+        -- Synthesizing a valid function here requires:
+        --  - generating a new name for each argument projection
+        --  - if an external body is provided, produce empty bodies because
+        --    we can not assume them to be provided externally – they will thus
+        --  - have to be implemented
+        undefined
+      _ -> pure $ tcDecl :| []
+
 -- | Casts a module expression to the module type passed as a parameter.
 -- When casting to 'Signature', axioms are stripped from the module expression,
 -- and implemented functions are abstracted.
@@ -357,7 +419,7 @@ checkModuleExpr tlDecls moduleType mexternalInfo
 castModuleExpr :: MModuleType -> TcModuleExpr -> MgMonad TcModuleExpr
 castModuleExpr targetModuleType tcModuleExpr
   | MModuleRef v _ <- _elem tcModuleExpr = absurd v
-  | MModuleAsSignature v _ <- _elem tcModuleExpr = absurd v
+  | MModuleFunctorApplication _ v <- _elem tcModuleExpr = absurd v
   | MModuleExternal _ _ v <- _elem tcModuleExpr = absurd v
   | MModuleDef decls deps renamings <- _elem tcModuleExpr =
     case targetModuleType of
@@ -422,7 +484,7 @@ externalizeModuleExpr :: Backend -- ^ the backend of the external module
                       -> MgMonad TcModuleExpr
 externalizeModuleExpr backend extModuleFqn src tcModuleExpr
   | MModuleRef v _ <- _elem tcModuleExpr = absurd v
-  | MModuleAsSignature v _ <- _elem tcModuleExpr = absurd v
+  | MModuleFunctorApplication _ v <- _elem tcModuleExpr = absurd v
   | MModuleExternal _ _ v <- _elem tcModuleExpr = absurd v
   | MModuleDef decls deps renamings <- _elem tcModuleExpr = do
       traverse_ (

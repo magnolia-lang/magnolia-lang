@@ -144,9 +144,6 @@ moduleDecl = label "module" $ annot $ do
     Just (backend, externalFqn) ->
       MModule typ name . Ann src . MModuleExternal backend externalFqn <$>
         moduleExpr True
-  where
-    moduleExpr isExternal =
-      moduleDef isExternal <|> moduleCastedRef <|> moduleRef
 
 moduleType :: Parser MModuleType
 moduleType = (keyword ConceptKW >> return Concept)
@@ -154,18 +151,23 @@ moduleType = (keyword ConceptKW >> return Concept)
           <|> (keyword SignatureKW >> return Signature)
           <|> (keyword ProgramKW >> return Program)
 
+moduleExpr :: Bool -> Parser ParsedModuleExpr
+moduleExpr isExternal =
+  moduleDef isExternal <|> moduleFunctorApplication isExternal <|> moduleRef
+
 moduleRef :: Parser ParsedModuleExpr
 moduleRef = annot $ do
   refName <- fullyQualifiedName NSPackage NSModule
   renamingBlocks <- many renamingBlock
   return $ MModuleRef refName renamingBlocks
 
-moduleCastedRef :: Parser ParsedModuleExpr
-moduleCastedRef = annot $ do
-  keyword SignatureKW
-  refName <- parens $ fullyQualifiedName NSPackage NSModule
-  renamingBlocks <- many renamingBlock
-  return $ MModuleAsSignature refName renamingBlocks
+moduleFunctorApplication :: Bool -> Parser ParsedModuleExpr
+moduleFunctorApplication isExternal = annot $ do
+  moduleFunctor <- choice [ keyword SignatureKW >> pure ExtractSignature
+                          , keyword FunctionalizeKW >> pure Functionalize
+                          ]
+  nestedModuleExpr <- parens $ moduleExpr isExternal
+  pure $ MModuleFunctorApplication moduleFunctor nestedModuleExpr
 
 moduleDef :: Bool -> Parser ParsedModuleExpr
 moduleDef isExternal = annot $ do
@@ -207,12 +209,12 @@ satisfaction = annot $ do
   keyword SatisfactionKW
   name <- SatName <$> nameString
   symbol "="
-  initialModule <- moduleExpr
-  withModule <- optional $ keyword WithKW >> moduleExpr
+  let moduleExpr' = moduleExpr False
+  initialModule <- moduleExpr'
+  withModule <- optional $ keyword WithKW >> moduleExpr'
   modeledModule <-
-    choice [keyword ModelsKW, keyword ApproximatesKW] >> moduleExpr
+    choice [keyword ModelsKW, keyword ApproximatesKW] >> moduleExpr'
   return $ MSatisfaction name initialModule withModule modeledModule
-  where moduleExpr = moduleDef False <|> moduleCastedRef <|> moduleRef
 
 typeDecl :: Bool -> Parser ParsedTypeDecl
 typeDecl isRequired = annot $ do
@@ -417,6 +419,7 @@ data Keyword = ConceptKW | ImplementationKW | ProgramKW | SignatureKW
              | AssertKW | CallKW | IfKW | ThenKW | ElseKW | LetKW | SkipKW
              | ValueKW
              | PackageKW | ImportKW
+             | FunctionalizeKW
 
 keyword :: Keyword -> Parser ()
 keyword kw = (lexeme . try) $ string s *> notFollowedBy nameChar
@@ -457,6 +460,7 @@ keyword kw = (lexeme . try) $ string s *> notFollowedBy nameChar
       ValueKW          -> "value"
       PackageKW        -> "package"
       ImportKW         -> "imports"
+      FunctionalizeKW  -> "functionalize"
 
 sc :: Parser ()
 sc = skipMany $

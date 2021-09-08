@@ -37,6 +37,7 @@ module Magnolia.Syntax (
   , MModuleExpr' (..)
   , MModuleDep
   , MModuleDep' (..)
+  , MModuleFunctor (..)
   , MModuleType (..)
   , MNamedRenaming
   , MNamedRenaming' (..)
@@ -274,8 +275,21 @@ data MModuleExpr' p =
     MModuleDef (XPhasedContainer p (MDecl p)) [MModuleDep p]
                [MRenamingBlock p]
   | MModuleRef (XRef p) [MRenamingBlock p]
-  | MModuleAsSignature (XRef p) [MRenamingBlock p]
-  | MModuleExternal Backend FullyQualifiedName (XExternalModule p)
+  | MModuleFunctorApplication MModuleFunctor (XNestedModuleExpr p)
+  | MModuleExternal Backend FullyQualifiedName (XNestedModuleExpr p)
+
+-- | Module functors are (for the moment) hard-coded common transformations
+-- on modules.
+data MModuleFunctor =
+    -- | A functor intended to extract the signature of a module
+    ExtractSignature
+    -- | A functor intended to transform all procedure definitions in a module
+    -- into a set of equivalent function definitions.
+  | Functionalize
+    -- | Like 'Functionalize', but also preserves the original procedure
+    -- definition.
+  | AlsoFunctionalize
+    deriving (Eq, Show)
 
 -- Expose out for DAG building
 type MModuleDep p = Ann p MModuleDep'
@@ -569,11 +583,11 @@ type family XRef p where
   XRef PhParse = FullyQualifiedName
   XRef PhCheck = Void
 
--- | The goal of XExternalModule is to flatten external module expressions
+-- | The goal of XNestedModuleExpr is to flatten nested module expressions
 -- during the type checking phase. See 'MModuleExpr\''.
-type family XExternalModule p where
-  XExternalModule PhParse = ParsedModuleExpr
-  XExternalModule PhCheck = Void
+type family XNestedModuleExpr p where
+  XNestedModuleExpr PhParse = ParsedModuleExpr
+  XNestedModuleExpr PhCheck = Void
 
 -- === standalone show instances ===
 
@@ -655,14 +669,14 @@ instance HasDependencies (MModuleExpr' PhParse) where
   dependencies moduleExpr = case moduleExpr of
     MModuleDef _ deps _ -> map (_depName . _elem) deps
     MModuleRef refName _ -> [refName]
-    MModuleAsSignature refName _ -> [refName]
+    MModuleFunctorApplication _ moduleExpr' -> dependencies moduleExpr'
     MModuleExternal _ _ moduleExpr' -> dependencies moduleExpr'
 
 instance HasDependencies (MModuleExpr' PhCheck) where
   dependencies modul = case modul of
     MModuleDef _ deps _ -> map (_depName . _elem) deps
     MModuleRef v _ -> absurd v
-    MModuleAsSignature v _ -> absurd v
+    MModuleFunctorApplication _ v -> absurd v
     MModuleExternal _ _ v -> absurd v
 
 instance HasDependencies (MNamedRenaming' PhParse) where
@@ -769,7 +783,7 @@ moduleExprDecls :: TcModuleExpr -> Env [TcDecl]
 moduleExprDecls (Ann _ moduleExpr) = case moduleExpr of
   MModuleDef decls _ _ -> decls
   MModuleRef v _ -> absurd v
-  MModuleAsSignature v _ -> absurd v
+  MModuleFunctorApplication _ v -> absurd v
   MModuleExternal _ _ v -> absurd v
 
 -- === module declarations manipulation ===
