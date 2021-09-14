@@ -37,8 +37,8 @@ type ExternalInfo = (Backend, FullyQualifiedName)
 -- Within 'checkPackage', we assume that all the other packages on which the
 -- input depends have been previously type checked and are accessible through
 -- the environment passed as the first argument.
-checkPackage :: Env TcPackage    -- ^ an environment of loaded packages
-             -> MPackage PhParse -- ^ the package to typecheck
+checkPackage :: Env TcPackage -- ^ an environment of loaded packages
+             -> ParsedPackage -- ^ the package to typecheck
              -> MgMonad TcPackage
 checkPackage globalEnv (Ann src (MPackage name decls deps)) =
     enter name $ do
@@ -105,7 +105,7 @@ checkPackage globalEnv (Ann src (MPackage name decls deps)) =
 
 -- | Checks that a named renaming is valid, i.e. that it can be fully inlined.
 checkNamedRenaming :: Env [TcTopLevelDecl]
-                   -> MNamedRenaming PhParse
+                   -> ParsedNamedRenaming
                    -> MgMonad TcNamedRenaming
 checkNamedRenaming env (Ann src (MNamedRenaming name renamingBlock)) =
   Ann (LocalDecl src) . MNamedRenaming name <$>
@@ -116,13 +116,13 @@ checkNamedRenaming env (Ann src (MNamedRenaming name renamingBlock)) =
 --       For instance, the part where we check whether a name is mapped to
 --       two targets.
 checkRenamingBlock :: Env [TcNamedRenaming]
-                   -> MRenamingBlock PhParse
+                   -> ParsedRenamingBlock
                    -> MgMonad TcRenamingBlock
 checkRenamingBlock env (Ann src (MRenamingBlock renamingBlockTy renamingList)) =
   Ann src . MRenamingBlock renamingBlockTy <$>
     (foldr (<>) [] <$> mapM inlineRenaming renamingList)
   where
-    inlineRenaming :: MRenaming PhParse -> MgMonad [TcRenaming]
+    inlineRenaming :: ParsedRenaming -> MgMonad [TcRenaming]
     inlineRenaming (Ann src' renaming) = case renaming of
       InlineRenaming ir -> return [Ann (LocalDecl src') (InlineRenaming ir)]
       RefRenaming ref -> do
@@ -178,7 +178,7 @@ mkScopeVarsImmutable = M.map mkImmutable
       let newMode = case mode of MOut -> MUnk ; MUnk -> MUnk ; _ -> MObs
       in Ann src (Var newMode name ty)
 
-checkModule :: Env [TcTopLevelDecl] -> MModule PhParse -> MgMonad TcModule
+checkModule :: Env [TcTopLevelDecl] -> ParsedModule -> MgMonad TcModule
 checkModule tlDecls (Ann src (MModule moduleType name moduleExpr)) =
   enter name $ do
     tcModuleExpr <- checkModuleExpr tlDecls moduleType Nothing moduleExpr
@@ -268,7 +268,7 @@ checkModuleExpr tlDecls moduleType mexternalInfo
   tcRenamedDecls <- foldM applyRenamingBlock finalScope tcRenamingBlocks
   pure $ Ann modSrc $ MModuleDef tcRenamedDecls tcDeps tcRenamingBlocks
   where
-    mkTypeDecl :: MTypeDecl PhParse -> MgMonad TcTypeDecl
+    mkTypeDecl :: ParsedTypeDecl -> MgMonad TcTypeDecl
     mkTypeDecl (Ann src (Type n isExplicitlyRequired)) =
       let absDecls = AbstractLocalDecl src :| []
           tcTy = Type n isExplicitlyRequired
@@ -336,7 +336,7 @@ checkCallable _ mexternalInfo env
         Callable ctype name tcArgs retType tcGuard (MagnoliaBody tcBodyExpr)
   insertAndMergeDecl env (MCallableDecl tcCallableDecl)
   where
-    checkArgIsUpdated :: VarScope -> TypedVar PhParse -> MgMonad ()
+    checkArgIsUpdated :: VarScope -> ParsedTypedVar -> MgMonad ()
     checkArgIsUpdated scope (Ann argSrc arg) = case _varMode arg of
       MOut -> case M.lookup (nodeName arg) scope of
         Nothing -> throwLocatedE CompilerErr argSrc $ "argument " <>
@@ -558,8 +558,8 @@ annotateScopedExprStmt ::
   ModuleScope ->
   VarScope ->
   Maybe MType ->
-  MExpr PhParse ->
-  MgMonad (VarScope, MExpr PhCheck)
+  ParsedExpr ->
+  MgMonad (VarScope, TcExpr)
 annotateScopedExprStmt modul = go
   where
   -- mExprTy is a parameter to disambiguate function calls overloaded
@@ -567,8 +567,8 @@ annotateScopedExprStmt modul = go
   -- without it, and there is thus no guarantee that the resulting annotated
   -- expression will carry the specified type annotation. If this is important,
   -- it must be checked outside the call.
-  go :: VarScope -> Maybe MType -> MExpr PhParse
-     -> MgMonad (VarScope, MExpr PhCheck)
+  go :: VarScope -> Maybe MType -> ParsedExpr
+     -> MgMonad (VarScope, TcExpr)
   go scope mExprTy (Ann src expr) = case expr of
     -- TODO: annotate type and mode on variables
     -- TODO: deal with mode
@@ -846,8 +846,8 @@ annotateScopedExprStmt modul = go
     MUpd -> True
     _ -> instanceMode == targetedMode
 
-  annotateScopedExpr :: VarScope -> Maybe MType -> MExpr PhParse
-                     -> MgMonad (MExpr PhCheck)
+  annotateScopedExpr :: VarScope -> Maybe MType -> ParsedExpr
+                     -> MgMonad (TcExpr)
   annotateScopedExpr sc mTy' e' =
     let inScope = case _elem e' of MVar _ -> sc ; _ -> mkScopeVarsImmutable sc
     in snd <$> annotateScopedExprStmt modul inScope mTy' e'
@@ -1058,7 +1058,7 @@ mkTypeUtils annType =
 registerProto ::
   Bool -> -- whether to register/check guards or not
   ModuleScope ->
-  MCallableDecl PhParse ->
+  ParsedCallableDecl ->
   MgMonad ModuleScope
 registerProto checkGuards modul annCallable = do
   tcProto <- checkProto checkGuards modul annCallable
@@ -1070,8 +1070,8 @@ registerProto checkGuards modul annCallable = do
 checkProto
   :: Bool
   -> ModuleScope
-  -> MCallableDecl PhParse
-  -> MgMonad (MCallableDecl PhCheck)
+  -> ParsedCallableDecl
+  -> MgMonad TcCallableDecl
 checkProto checkGuards env
     (Ann src (Callable ctype name args retType mguard _)) = do
   tcArgs <- checkArgs args
@@ -1085,7 +1085,7 @@ checkProto checkGuards env
   return Ann { _ann = (Nothing, AbstractLocalDecl src :| [])
              , _elem = Callable ctype name tcArgs retType tcGuard EmptyBody
              }
-  where checkArgs :: [TypedVar PhParse] -> MgMonad [TypedVar PhCheck]
+  where checkArgs :: [ParsedTypedVar] -> MgMonad [TypedVar PhCheck]
         checkArgs vars = do
           -- TODO: make sure there is no need to check
           --when (ctype /= Function) $ error "TODO: proc/axiom/pred"
@@ -1095,13 +1095,13 @@ checkProto checkGuards env
             "duplicate argument names in declaration of " <> pshow name
           else mapM checkArgType vars
 
-        checkArgType :: TypedVar PhParse -> MgMonad (TypedVar PhCheck)
+        checkArgType :: ParsedTypedVar -> MgMonad (TypedVar PhCheck)
         checkArgType (Ann argSrc (Var mode varName typ)) = do
           checkTypeExists env (argSrc, typ)
           return $ Ann typ (Var mode varName typ)
 
 checkModuleDep :: Env [TcTopLevelDecl]
-               -> MModuleDep PhParse
+               -> ParsedModuleDep
                -> MgMonad TcModuleDep
 checkModuleDep env (Ann src (MModuleDep fqRef renamings castToSig)) = do
   (Ann refDeclO _) <- lookupTopLevelRef src (M.map getModules env) fqRef
@@ -1229,7 +1229,7 @@ applyRenaming decl renaming = case decl of
       :: MaybeTypedVar PhCheck -> MaybeTypedVar PhCheck
     applyRenamingInMaybeTypedVar (Ann typAnn (Var mode name typ)) =
       Ann (replaceName' typAnn) $ Var mode name (replaceName' <$> typ)
-    applyRenamingInExpr :: MExpr PhCheck -> MExpr PhCheck
+    applyRenamingInExpr :: TcExpr -> TcExpr
     applyRenamingInExpr (Ann typAnn expr) =
       Ann (replaceName' typAnn) (applyRenamingInExpr' expr)
     applyRenamingInExpr' expr = case expr of

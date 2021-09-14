@@ -157,8 +157,8 @@ mgProgramToCxxProgramModule
       MCallableDecl (Ann _ callable) -> not $ isBuiltin callable
 
     isBuiltin :: MCallableDecl' p -> Bool
-    isBuiltin (Callable _ _ _ _ _ body) = case body of BuiltinBody -> True
-                                                       _ -> False
+    isBuiltin cdecl = case _callableBody cdecl of BuiltinBody -> True
+                                                  _ -> False
 
     returnTypeOverloads :: S.Set (Name, [MType])
     returnTypeOverloads =
