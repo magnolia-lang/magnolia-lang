@@ -8,7 +8,7 @@ module Magnolia.Check (
   ) where
 
 import Control.Applicative
-import Control.Monad.Except (foldM, lift, unless, when)
+import Control.Monad.Except (foldM, join, lift, unless, when)
 --import Control.Monad.IO.Class (liftIO)
 import qualified Control.Monad.Trans.State as ST
 --import Debug.Trace (trace)
@@ -30,6 +30,8 @@ import Magnolia.PPrint
 import Magnolia.Syntax
 import Magnolia.Util
 import Monad
+
+type ExternalInfo = (Backend, FullyQualifiedName)
 
 -- | Typechecks a Magnolia package based on a pre-typechecked environment.
 -- Within 'checkPackage', we assume that all the other packages on which the
@@ -162,7 +164,6 @@ hackyPrelude = map (MCallableDecl . Ann newAnn)
     newAnn = let absDeclOs = AbstractLocalDecl (SrcCtx Nothing) :| [] in
              (Just GeneratedBuiltin, absDeclOs)
 
--- TODO: enforce type in scope?
 initScope :: [TypedVar p] -> VarScope
 initScope = M.fromList . map mkScopeVar
   where
@@ -181,7 +182,8 @@ checkModule :: Env [TcTopLevelDecl] -> MModule PhParse -> MgMonad TcModule
 checkModule tlDecls (Ann src (MModule moduleType name moduleExpr)) =
   enter name $ do
     tcModuleExpr <- checkModuleExpr tlDecls moduleType Nothing moduleExpr
-    return $ Ann (LocalDecl src) (MModule moduleType name tcModuleExpr)
+    checkModuleExprFitsModuleType moduleType tcModuleExpr
+    pure $ Ann (LocalDecl src) (MModule moduleType name tcModuleExpr)
 
 -- TODO: can variables exist without a type in the scope?
 -- TODO: replace things with relevant sets
@@ -189,31 +191,26 @@ checkModule tlDecls (Ann src (MModule moduleType name moduleExpr)) =
 checkModuleExpr
   :: Env [TcTopLevelDecl]
   -> MModuleType
-  -> Maybe (Backend, FullyQualifiedName)
+  -> Maybe ExternalInfo
   -> ParsedModuleExpr
   -> MgMonad TcModuleExpr
-checkModuleExpr tlDecls moduleType mexternalInfo
-                (Ann src (MModuleRef ref renamingBlocks)) = do
+checkModuleExpr tlDecls _ _ (Ann src (MModuleRef ref renamingBlocks)) = do
   -- TODO: cast module: do we need to check out the deps?
   ~(Ann _ (MModuleDef decls deps refRenamingBlocks)) <-
     lookupTopLevelRef src (M.map getModules tlDecls) ref >>=
-      \(~(Ann _ (MModule _ _ moduleExpr))) -> case mexternalInfo of
-        Nothing -> pure moduleExpr
-        Just (backend, fqn) -> externalizeModuleExpr backend fqn src moduleExpr
+      \(~(Ann _ (MModule _ _ moduleExpr))) -> pure moduleExpr
   tcRenamingBlocks <-
     mapM (checkRenamingBlock (M.map getNamedRenamings tlDecls)) renamingBlocks
   renamedDecls <- foldM applyRenamingBlock decls tcRenamingBlocks
-  castModuleExpr moduleType $ Ann src $
-    MModuleDef renamedDecls deps (refRenamingBlocks <> tcRenamingBlocks)
+  let tcModuleExpr =  Ann src $
+        MModuleDef renamedDecls deps (refRenamingBlocks <> tcRenamingBlocks)
+  pure tcModuleExpr
 
-checkModuleExpr tlDecls moduleType mexternalInfo
-                (Ann src (MModuleAsSignature ref renamingBlocks)) =
-  let moduleRefExpr = Ann src $ MModuleRef ref renamingBlocks in
-  checkModuleExpr tlDecls Signature Nothing moduleRefExpr >>= \moduleExpr ->
-    (case mexternalInfo of
-        Nothing -> pure moduleExpr
-        Just (backend, fqn) -> externalizeModuleExpr backend fqn src moduleExpr)
-    >>= castModuleExpr moduleType
+checkModuleExpr tlDecls _ _
+                (Ann src (MModuleAsSignature ref renamingBlocks)) = do
+  let moduleRefExpr = Ann src $ MModuleRef ref renamingBlocks
+  checkModuleExpr tlDecls Implementation Nothing moduleRefExpr
+    >>= castModuleExpr Signature
 
 checkModuleExpr tlDecls moduleType Nothing
                 (Ann src (MModuleExternal backend fqn moduleExpr)) = do
@@ -222,11 +219,11 @@ checkModuleExpr tlDecls moduleType Nothing
   checkModuleExpr tlDecls moduleType mexternalInfo moduleExpr
     >>= externalizeModuleExpr backend fqn src
 
-checkModuleExpr _ _ (Just (ebackend, estructName))
+checkModuleExpr _ _ (Just (extBackend, extStructName))
                 (Ann src (MModuleExternal backend fqn _)) =
   throwLocatedE MiscErr src $ "can not nest external " <> pshow backend <>
-    " structure " <> pshow fqn <> " in parent external " <> pshow ebackend <>
-    " structure " <> pshow estructName
+    " structure " <> pshow fqn <> " in parent external " <> pshow extBackend <>
+    " structure " <> pshow extStructName
 
 checkModuleExpr tlDecls moduleType mexternalInfo
                 (Ann modSrc (MModuleDef decls deps renamingBlocks)) = do
@@ -244,7 +241,7 @@ checkModuleExpr tlDecls moduleType mexternalInfo
       tcDeps <- mapM (checkModuleDep tlDecls) deps
       depScope <- foldM (\acc dep -> mkEnvFromDep tlDecls dep
                                   >>= mergeModules acc) M.empty tcDeps
-      return (depScope, tcDeps)
+      pure (depScope, tcDeps)
   -- TODO: hacky step, make prelude.
   -- Step 2: register predicate functions if needed
   hackyScope <- foldM insertAndMergeDecl depScope hackyPrelude
@@ -261,13 +258,15 @@ checkModuleExpr tlDecls moduleType mexternalInfo
     -- guard
     foldMAccumErrors (registerProto True) protoScopeWithoutGuards callables
   -- Step 5: check bodies if allowed
-  finalScope <- foldMAccumErrors checkBody protoScope callables
-  -- Step 6: everything is fine inside the module expression, check renamings
+  finalScope <-
+    foldMAccumErrors (checkCallable moduleType mexternalInfo)
+                     protoScope callables
+  -- Step 6: everything declared locally is fine inside the module expression,
+  --         check renamings
   tcRenamingBlocks <-
     mapM (checkRenamingBlock (M.map getNamedRenamings tlDecls)) renamingBlocks
   tcRenamedDecls <- foldM applyRenamingBlock finalScope tcRenamingBlocks
-  castModuleExpr moduleType $
-    Ann modSrc $ MModuleDef tcRenamedDecls tcDeps tcRenamingBlocks
+  pure $ Ann modSrc $ MModuleDef tcRenamedDecls tcDeps tcRenamingBlocks
   where
     mkTypeDecl :: MTypeDecl PhParse -> MgMonad TcTypeDecl
     mkTypeDecl (Ann src (Type n isExplicitlyRequired)) =
@@ -279,64 +278,155 @@ checkModuleExpr tlDecls moduleType mexternalInfo
            conDeclO <- mkConcreteLocalDecl mexternalInfo src n
            pure $ Ann (Just conDeclO, absDecls) tcTy
 
-    checkBody
-      :: ModuleScope
-      -> MCallableDecl PhParse
-      -> MgMonad ModuleScope
-    checkBody env decl@(Ann src (Callable ctype fname args retType _ cbody))
-      -- TODO: move consistency check here to another function, for clarity.
-      | moduleType /= Concept, Axiom <- ctype =
-          throwLocatedE DeclContextErr src
-            "axioms can only be declared in concepts"
-      | EmptyBody <- cbody, Axiom <- ctype =
-          throwLocatedE InvalidDeclErr src "axiom without a body"
-      | moduleType `notElem` [Implementation, Program], MagnoliaBody _ <- cbody,
-        ctype `elem` [Function, Predicate, Procedure] =
-          throwLocatedE InvalidDeclErr src $ pshow ctype <>
-            " can not have a body in " <> pshow moduleType
-      | EmptyBody <- cbody = checkProto True env decl >> return env
-      | BuiltinBody <- cbody = checkProto True env decl >> return env
-      -- In this case, the body of the function is not empty. It is either
-      -- external (in which case, we only check the proto with the guard once
-      -- again), or internal (in which case we need to type check it).
-      | otherwise = do
-          (tcBody, bodyRetType) <- case cbody of
-            MagnoliaBody expr -> do
-              (finalScope, tcExpr) <-
-                annotateScopedExprStmt env (initScope args) (Just retType) expr
-              mapM_ (checkArgIsUpdated finalScope) args
-              return (MagnoliaBody tcExpr, _ann tcExpr)
-            -- TODO: check whether final scope satisfies mode contract
-            ExternalBody -> return (ExternalBody, retType)
-            _ -> throwLocatedE CompilerErr src $
-              "pattern matching fail in callable body check for " <> pshow fname
-          Ann (_, absDeclOs) (Callable _ _ tcArgs _ tcGuard _) <-
-            checkProto True env decl
-          conDeclO <- mkConcreteLocalDecl mexternalInfo src fname
-          let tcAnnDecl = Ann (Just conDeclO, absDeclOs) $
-                Callable ctype fname tcArgs retType tcGuard tcBody
-          case (cbody, conDeclO) of
-            (ExternalBody, ConcreteExternalDecl {}) -> return ()
-            (MagnoliaBody _, ConcreteLocalMagnoliaDecl _) -> return ()
-            _ -> throwLocatedE CompilerErr src $
-              pshow fname <> "'s annotation is mismatched wrt its body"
-          if bodyRetType == retType
-          then insertAndMergeDecl env (MCallableDecl tcAnnDecl)
-          else throwLocatedE TypeErr src $
-            "expected return type to be " <> pshow retType <> " in " <>
-            pshow ctype <> " but return value has type " <>
-            pshow bodyRetType
+-- | Checks that the declaration of a callable is valid depending on the
+-- surrounding module type, and the surrounding module scope (i.e. all the types
+-- and callables concretely or abstractly defined in the surrounding module).
+checkCallable :: MModuleType        -- ^ the type of the surrounding module
+              -> Maybe ExternalInfo -- ^ information about an external wrapper
+                                    --   block if it exists
+              -> ModuleScope        -- ^ the surrounding module scope
+              -> ParsedCallableDecl
+              -> MgMonad ModuleScope
+checkCallable _ _ env decl@(Ann _ (Callable _ _ _ _ _ BuiltinBody)) =
+  checkProto True env decl >> pure env
 
+checkCallable parentModuleType _ _ (Ann src (Callable Axiom _ _ _ _ _))
+  | parentModuleType /= Concept =
+      throwLocatedE DeclContextErr src "axioms can only be declared in concepts"
+
+checkCallable _ _ _ (Ann src (Callable Axiom name _ _ _ EmptyBody)) =
+  throwLocatedE InvalidDeclErr src $
+    "axiom " <> pshow name <> " was declared without a body"
+
+checkCallable _ _ env decl@(Ann _ (Callable _ _ _ _ _ EmptyBody)) =
+  checkProto True env decl >> pure env
+
+checkCallable parentModuleType _ _ (Ann src (Callable ctype name _ _ _ body))
+  | parentModuleType `elem` [Signature, Concept] &&
+    body `notElem` [BuiltinBody, EmptyBody] &&
+    ctype /= Axiom =
+      throwLocatedE InvalidDeclErr src $
+        pshow ctype <> " " <> pshow name <> " can not have a body in " <>
+        pshow parentModuleType
+
+checkCallable _ mexternalInfo env
+             decl@(Ann src (Callable ctype name _ retType _ ExternalBody )) = do
+  Ann (_, absDeclOs) (Callable _ _ tcArgs _ tcGuard _) <-
+    checkProto True env decl
+  conDeclO <- mkConcreteLocalDecl mexternalInfo src name
+  let tcCallableDecl = Ann (Just conDeclO, absDeclOs) $
+        Callable ctype name tcArgs retType tcGuard ExternalBody
+  insertAndMergeDecl env (MCallableDecl tcCallableDecl)
+
+checkCallable _ mexternalInfo env
+             decl@(Ann src (Callable ctype name args retType _
+                                     (MagnoliaBody bodyExpr))) = do
+  (finalScope, tcBodyExpr) <-
+    annotateScopedExprStmt env (initScope args) (Just retType) bodyExpr
+  unless (_ann tcBodyExpr == retType) $
+    throwLocatedE TypeErr src $
+      "expected return type to be " <> pshow retType <> " in " <>
+      pshow ctype <> " but return value has type " <>
+      pshow (_ann tcBodyExpr)
+  mapM_ (checkArgIsUpdated finalScope) args
+  Ann (_, absDeclOs) (Callable _ _ tcArgs _ tcGuard _) <-
+    checkProto True env decl
+  conDeclO <- mkConcreteLocalDecl mexternalInfo src name
+  let tcCallableDecl = Ann (Just conDeclO, absDeclOs) $
+        Callable ctype name tcArgs retType tcGuard (MagnoliaBody tcBodyExpr)
+  insertAndMergeDecl env (MCallableDecl tcCallableDecl)
+  where
     checkArgIsUpdated :: VarScope -> TypedVar PhParse -> MgMonad ()
-    checkArgIsUpdated scope (Ann src arg) = case _varMode arg of
+    checkArgIsUpdated scope (Ann argSrc arg) = case _varMode arg of
       MOut -> case M.lookup (nodeName arg) scope of
-        Nothing -> throwLocatedE CompilerErr src $ "argument " <>
+        Nothing -> throwLocatedE CompilerErr argSrc $ "argument " <>
           pshow (nodeName arg) <> " is out of scope after consistency checks "
         Just v -> unless (_varMode (_elem v) == MUpd) $
-          throwLocatedE ModeMismatchErr src $ "argument " <>
-          pshow (nodeName arg) <> " is 'out' but is not populated by the " <>
-          "procedure body"
-      _ -> return ()
+          throwLocatedE ModeMismatchErr argSrc $ "argument " <>
+            pshow (nodeName arg) <> " is 'out' but is not populated by the " <>
+            "procedure body"
+      _ -> pure ()
+
+-- | Checks that a module expression is an inhabitant of the module type passed
+-- as a parameter.
+checkModuleExprFitsModuleType :: MModuleType -> TcModuleExpr -> MgMonad ()
+checkModuleExprFitsModuleType targetModuleType tcModuleExpr
+  | MModuleRef v _ <- _elem tcModuleExpr = absurd v
+  | MModuleAsSignature v _ <- _elem tcModuleExpr = absurd v
+  | MModuleExternal _ _ v <- _elem tcModuleExpr = absurd v
+  | MModuleDef decls _ _ <- _elem tcModuleExpr =
+    case targetModuleType of
+      -- Signatures do not carry axioms, nor callable bodies. Therefore, we
+      -- strip them from the declarations.
+      Signature -> do
+        let concreteDecls = filter (not . isAbstractDecl) (joinDecls decls)
+        unless (null concreteDecls) $
+          throwLocatedE InvalidDeclErr (srcCtx tcModuleExpr) $
+            pshow targetModuleType <> " should not contain concrete " <>
+            "declarations but the following declarations have bodies: " <>
+            T.intercalate ", " (map pWithLocInfo concreteDecls)
+      -- Concepts are signatures that can carry axioms.
+      Concept -> do
+        let concreteNonAxiomDecls =
+              filter (not . (\d -> isAbstractDecl d || isAxiom d))
+                     (joinDecls decls)
+        unless (null concreteNonAxiomDecls) $
+          throwLocatedE InvalidDeclErr (srcCtx tcModuleExpr) $
+            pshow targetModuleType <> " should not contain concrete " <>
+            "declarations but the following declarations have bodies: " <>
+            T.intercalate ", " (map pWithLocInfo concreteNonAxiomDecls)
+      -- Implementations are the most permissive block: every type of
+      -- declaration can be carried around (though axioms can not be directly
+      -- defined in them).
+      Implementation -> pure ()
+      -- Programs are implementations in which all declarations must be
+      -- associated with a concrete definition.
+      Program ->
+        mapM_ (recover (checkConcrete (srcCtx tcModuleExpr))) (joinDecls decls)
+  where
+    pWithLocInfo :: TcDecl -> T.Text
+    pWithLocInfo tcDecl =
+      let pLocatedDecl name src = pshow name <> " (declared at " <>
+            pshow src <> ")"
+      in case tcDecl of
+          MTypeDecl (Ann (_, absDeclOs) (Type tyName _)) ->
+            "type " <> pLocatedDecl tyName (srcCtx $ NE.head absDeclOs)
+          MCallableDecl (Ann (_, absDeclOs)
+                            (Callable callableTy callableName _ _ _ _)) ->
+            pshow callableTy <> " " <>
+            pLocatedDecl callableName (srcCtx $ NE.head absDeclOs)
+
+    joinDecls :: M.Map Name [TcDecl] -> [TcDecl]
+    joinDecls decls = join (map snd $ M.toList decls)
+
+    -- Builtin declarations are considered to be both abstract and concrete
+    isAbstractDecl :: TcDecl -> Bool
+    isAbstractDecl tcDecl =
+      let mconDeclO = case tcDecl of
+            MCallableDecl (Ann (x, _) _) -> x
+            MTypeDecl (Ann (x, _) _) -> x
+      in case mconDeclO of Nothing -> True
+                           Just GeneratedBuiltin -> True
+                           Just _ -> False
+
+    isAxiom :: TcDecl -> Bool
+    isAxiom (MCallableDecl (Ann _ (Callable Axiom _ _ _ _ _))) = True
+    isAxiom _ = False
+
+-- | Checks whether a declaration is concrete/implemented. The source location
+-- provided by the first parameter is used to locate potential errors.
+checkConcrete :: SrcCtx
+              -> TcDecl
+              -> MgMonad ()
+checkConcrete src tcDecl = do
+  let isImplemented = case tcDecl of
+        MTypeDecl (Ann (mconDeclO, _) _) -> isJust mconDeclO
+        MCallableDecl (Ann (mconDeclO, _) _) -> isJust mconDeclO
+  unless isImplemented $ do
+    moduleName <- getParentModuleName
+    throwLocatedE InvalidDeclErr src $
+      pshow (nodeName tcDecl) <> " was left unimplemented in module " <>
+      pshow moduleName
 
 -- | Casts a module expression to the module type passed as a parameter.
 -- When casting to 'Signature', axioms are stripped from the module expression,
@@ -377,17 +467,8 @@ castModuleExpr targetModuleType tcModuleExpr
       -- Programs are implementations in which all declarations must be
       -- associated with a concrete definition.
       Program -> do
-        let checkImplemented :: TcDecl -> MgMonad ()
-            checkImplemented decl = do
-              let isImplemented = case decl of
-                    MTypeDecl (Ann (mconDeclO, _) _) -> isJust mconDeclO
-                    MCallableDecl (Ann (mconDeclO, _) _) -> isJust mconDeclO
-              unless isImplemented $ do
-                moduleName <- getParentModuleName
-                throwLocatedE InvalidDeclErr (srcCtx tcModuleExpr) $
-                  pshow (nodeName decl) <> " was left unimplemented in " <>
-                  "program " <> pshow moduleName
-        traverse_ (traverse_ (recover checkImplemented)) decls
+        traverse_ (
+          traverse_ (recover (checkConcrete (srcCtx tcModuleExpr)))) decls
         pure tcModuleExpr
   where
     isAxiom :: TcDecl -> Bool
@@ -417,7 +498,7 @@ castModuleExpr targetModuleType tcModuleExpr
 externalizeModuleExpr :: Backend -- ^ the backend of the external module
                       -> FullyQualifiedName -- ^ the path to the external module
                       -> SrcCtx -- ^ the source context corresponding to where
-                                -- the externalization is requested
+                                --   the externalization is requested
                       -> TcModuleExpr
                       -> MgMonad TcModuleExpr
 externalizeModuleExpr backend extModuleFqn src tcModuleExpr

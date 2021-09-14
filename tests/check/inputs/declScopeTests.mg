@@ -80,3 +80,19 @@ program P = {
     // Invalid declarations
     axiom axiomBody() = {}; // TODO: unimplemented error should be removed
 };
+
+signature InvalidUseSignature = { // should fail
+    use IExt;
+};
+
+concept InvalidUseConcept = { // should fail
+    use IExt;
+};
+
+implementation ValidUseImplementation = { // should succeed
+    use IExt;
+};
+
+program ValidUseProgram = { // should succeed
+    use IExt;
+};

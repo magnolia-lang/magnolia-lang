@@ -1,15 +1,15 @@
-tests/check/inputs/moduleTests.mg:20:34: Declaration error in tests.check.inputs.moduleTests.DerivedProgramWithCast: T was left unimplemented in program DerivedProgramWithCast
+tests/check/inputs/moduleTests.mg:20:34: Declaration error in tests.check.inputs.moduleTests.DerivedProgramWithCast: T was left unimplemented in module DerivedProgramWithCast
 
-tests/check/inputs/moduleTests.mg:20:34: Declaration error in tests.check.inputs.moduleTests.DerivedProgramWithCast: id was left unimplemented in program DerivedProgramWithCast
+tests/check/inputs/moduleTests.mg:20:34: Declaration error in tests.check.inputs.moduleTests.DerivedProgramWithCast: id was left unimplemented in module DerivedProgramWithCast
 
-tests/check/inputs/moduleTests.mg:28:43: Declaration error in tests.check.inputs.moduleTests.DerivedExternalWithoutCastFromExternal: T was previously implemented at tests/check/inputs/moduleTests.mg:4:5 and can not be reimplemented in external path.to.file.dot.struct3
+tests/check/inputs/moduleTests.mg:28:5: Declaration error in tests.check.inputs.moduleTests.DerivedExternalWithoutCastFromExternal: T was previously implemented at tests/check/inputs/moduleTests.mg:4:5 and can not be reimplemented in external path.to.file.dot.struct3
 
-tests/check/inputs/moduleTests.mg:28:43: Declaration error in tests.check.inputs.moduleTests.DerivedExternalWithoutCastFromExternal: id was previously implemented at tests/check/inputs/moduleTests.mg:5:5 and can not be reimplemented in external path.to.file.dot.struct3
+tests/check/inputs/moduleTests.mg:28:5: Declaration error in tests.check.inputs.moduleTests.DerivedExternalWithoutCastFromExternal: id was previously implemented at tests/check/inputs/moduleTests.mg:5:5 and can not be reimplemented in external path.to.file.dot.struct3
 
-tests/check/inputs/moduleTests.mg:41:43: Declaration error in tests.check.inputs.moduleTests.DerivedExternalWithoutCastFromProgram: id was previously implemented at tests/check/inputs/moduleTests.mg:36:5 and can not be reimplemented in external path.to.file.dot.struct4
+tests/check/inputs/moduleTests.mg:41:5: Declaration error in tests.check.inputs.moduleTests.DerivedExternalWithoutCastFromProgram: id was previously implemented at tests/check/inputs/moduleTests.mg:36:5 and can not be reimplemented in external path.to.file.dot.struct4
 
-tests/check/inputs/moduleTests.mg:49:41: Declaration error in tests.check.inputs.moduleTests.UseASourceExternalAsSignature: T was left unimplemented in program UseASourceExternalAsSignature
+tests/check/inputs/moduleTests.mg:49:41: Declaration error in tests.check.inputs.moduleTests.UseASourceExternalAsSignature: T was left unimplemented in module UseASourceExternalAsSignature
 
-tests/check/inputs/moduleTests.mg:49:41: Declaration error in tests.check.inputs.moduleTests.UseASourceExternalAsSignature: id was left unimplemented in program UseASourceExternalAsSignature
+tests/check/inputs/moduleTests.mg:49:41: Declaration error in tests.check.inputs.moduleTests.UseASourceExternalAsSignature: id was left unimplemented in module UseASourceExternalAsSignature
 
 tests/check/inputs/moduleTests.mg:55:5: Error in tests.check.inputs.moduleTests.AnExternalWithoutFilePath: external C++ block ExtWithoutFilePath was specified without an include path

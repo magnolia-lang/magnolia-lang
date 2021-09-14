@@ -462,7 +462,7 @@ data ConcreteDeclOrigin =
     ConcreteDeclOrigin (Either DeclOrigin
                                (DeclOrigin, ExternalDeclDetails))
   | GeneratedBuiltin
-  deriving (Eq, Show)
+    deriving (Eq, Show)
 
 instance Ord ConcreteDeclOrigin where
   compare conDeclO1 conDeclO2 = compare (srcCtx conDeclO1) (srcCtx conDeclO2)
