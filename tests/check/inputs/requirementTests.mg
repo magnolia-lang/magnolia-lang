@@ -18,7 +18,11 @@ implementation IExtReq2 = external C++ File.ExtReq2 {
 implementation IExtReq3 = external C++ File.ExtReq3 {
     type T;
     require type T; // should succeed
-    type T; // should fail
+    type T; // should succeed; this was previously tagged as "should fail", but
+            // within the module expression, this is a perfectly valid
+            // declaration; the externalization of the declarations should
+            // happen after the whole module expression has been reduced, i.e.
+            // this whole module expression reduces to "type T;".
 }
 
 implementation MergingImpls = {

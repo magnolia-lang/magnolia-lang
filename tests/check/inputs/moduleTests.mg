@@ -63,3 +63,21 @@ program DerivedExternalProgram = external C++ path.to.file.dot.struct4 {
 // should succeed
 program DerivedExternalFromOtherExternalSignature =
     external C++ path.to.file.dot.struct5 signature(DerivedExternalProgram);
+
+implementation ASourceExternalWithARequirement = external C++ path.to.file.dot.struct5 {
+    require type U;
+    type T;
+    function f(): T;
+}
+
+// should succeed
+implementation MergeExternalWithItselfWithSameRequirements = {
+    use ASourceExternalWithARequirement;
+    use ASourceExternalWithARequirement;
+}
+
+// should fail
+implementation MergeExternalWithItselfWithDifferentRequirements = {
+    use ASourceExternalWithARequirement;
+    use ASourceExternalWithARequirement[U => V];
+}

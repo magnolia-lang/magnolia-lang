@@ -140,13 +140,12 @@ moduleDecl = label "module" $ annot $ do
     externalFqn <- fullyQualifiedName NSPackage NSModule
     return $ Just (backend, externalFqn))
   case mexternal of
-    Nothing -> MModule typ name <$> moduleExpr False
+    Nothing -> MModule typ name <$> moduleExpr
     Just (backend, externalFqn) ->
       MModule typ name . Ann src . MModuleExternal backend externalFqn <$>
-        moduleExpr True
+        moduleExpr
   where
-    moduleExpr isExternal =
-      moduleDef isExternal <|> moduleCastedRef <|> moduleRef
+    moduleExpr = moduleDef <|> moduleCastedRef <|> moduleRef
 
 moduleType :: Parser MModuleType
 moduleType = (keyword ConceptKW >> return Concept)
@@ -167,8 +166,8 @@ moduleCastedRef = annot $ do
   renamingBlocks <- many renamingBlock
   return $ MModuleAsSignature refName renamingBlocks
 
-moduleDef :: Bool -> Parser ParsedModuleExpr
-moduleDef isExternal = annot $ do
+moduleDef :: Parser ParsedModuleExpr
+moduleDef = annot $ do
   declsAndDeps <- braces $ many (do
     isExplicitlyRequired <- isJust <$> optional (keyword RequireKW)
     (Left <$> declaration isExplicitlyRequired) <|>
@@ -184,7 +183,7 @@ moduleDef isExternal = annot $ do
     declaration isExplicitlyRequired = label "declaration" $ do
       -- TODO: allow requiring callables in externals as well.
       (MTypeDecl <$> typeDecl isExplicitlyRequired) <|>
-        (MCallableDecl <$> callable isExternal) <* many semi
+        (MCallableDecl <$> callable) <* many semi
 
     dependency :: Parser ParsedModuleDep
     dependency = label "module dependency" $ annot $ do
@@ -212,7 +211,7 @@ satisfaction = annot $ do
   modeledModule <-
     choice [keyword ModelsKW, keyword ApproximatesKW] >> moduleExpr
   return $ MSatisfaction name initialModule withModule modeledModule
-  where moduleExpr = moduleDef False <|> moduleCastedRef <|> moduleRef
+  where moduleExpr = moduleDef <|> moduleCastedRef <|> moduleRef
 
 typeDecl :: Bool -> Parser ParsedTypeDecl
 typeDecl isRequired = annot $ do
@@ -220,8 +219,8 @@ typeDecl isRequired = annot $ do
   name <- typeName <* semi -- TODO: make expr
   return $ Type name isRequired
 
-callable :: Bool -> Parser ParsedCallableDecl
-callable isExternal = annot $ do
+callable :: Parser ParsedCallableDecl
+callable = annot $ do
   callableType <- (keyword AxiomKW >> return Axiom)
               <|> (keyword TheoremKW >> return Axiom)
               <|> (keyword FunctionKW >> return Function)
@@ -240,8 +239,7 @@ callable isExternal = annot $ do
   mBody <- optional (blockExpr
                 <|> (symbol "=" *> (blockExpr <|> (expr <* semi))))
   when (isNothing mBody) semi
-  let body = maybe (if isExternal then ExternalBody else EmptyBody)
-                   MagnoliaBody mBody
+  let body = maybe EmptyBody MagnoliaBody mBody
   return $ Callable callableType name args retType guard body
 
 annVar :: MVarMode -> Parser ParsedTypedVar

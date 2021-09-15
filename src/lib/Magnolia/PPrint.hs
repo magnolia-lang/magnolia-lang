@@ -176,7 +176,7 @@ instance Pretty Backend where
     JavaScript -> "JavaScript"
     Python -> "Python"
 
-instance Pretty (MDecl p) where
+instance Pretty (MDecl PhCheck) where
   pretty decl = case decl of
     MTypeDecl tdecl -> pretty tdecl
     MCallableDecl cdecl -> pretty cdecl
@@ -185,12 +185,12 @@ instance Pretty (MTypeDecl' p) where
   pretty (Type typ isRequired) = (if isRequired then "require" else "") <>
     "type" <+> p typ
 
-instance Pretty (MCallableDecl' p) where
+instance Pretty (MCallableDecl' PhCheck) where
   pretty (Callable callableType name args ret mguard cbody) =
     let pret = if callableType == Function then " : " <> p ret else ""
         pbody = case cbody of EmptyBody -> ""
                               MagnoliaBody body -> " = " <> p body
-                              ExternalBody -> " = <external impl>;"
+                              ExternalBody () -> " = <external impl>;"
                               BuiltinBody -> " (builtin);"
         pguard = case mguard of Nothing -> ""
                                 Just guard -> " guard " <> p guard

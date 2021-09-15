@@ -231,7 +231,8 @@ mgCallableDeclToCxx
   -> TcCallableDecl
   -> MgMonad CxxDef
 mgCallableDeclToCxx returnTypeOverloadsNameAliasMap extObjectsMap
-  mgFn@(Ann (conDeclO, absDeclOs) (Callable _ _ args retTy _ ExternalBody)) = do
+  mgFn@(Ann (conDeclO, absDeclOs)
+            (Callable _ _ args retTy _ (ExternalBody _))) = do
     -- This case is hit when one of the API functions we want to expose
     -- is declared externally, and potentially renamed.
     -- In this case, to generate the API function, we need to perform
@@ -378,7 +379,7 @@ mgFnBodyToCxxStmtBlock returnTypeOverloadsNameAliasMap
   EmptyBody -> throwNonLocatedE CompilerErr $
     "attempted to generate implementation code for unimplemented callable " <>
     pshow name
-  ExternalBody -> throwNonLocatedE CompilerErr $
+  ExternalBody () -> throwNonLocatedE CompilerErr $
     "attempted to generate implementation code for external callable " <>
     pshow name
   BuiltinBody -> throwNonLocatedE CompilerErr $

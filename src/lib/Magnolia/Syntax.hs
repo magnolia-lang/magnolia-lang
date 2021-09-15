@@ -115,11 +115,14 @@ module Magnolia.Syntax (
   , ExternalDeclDetails
   , SrcCtx (..)
   -- ** Annotation constructors and projections
+  , concreteDeclOriginRequirements
   , externalDeclBackend
   , externalDeclElementName
   , externalDeclFilePath
   , externalDeclModuleName
+  , externalDeclRequirements
   , mkConcreteLocalDecl
+  , transformRequirements
   -- ** Annotation-related patterns
   , pattern AbstractLocalDecl
   , pattern ConcreteExternalDecl
@@ -313,7 +316,14 @@ data MModuleType = Signature
 
 data MDecl p = MTypeDecl (MTypeDecl p)
              | MCallableDecl (MCallableDecl p)
-               deriving (Eq, Show)
+
+deriving instance Eq (MDecl PhParse)
+deriving instance Ord (MDecl PhParse)
+deriving instance Show (MDecl PhParse)
+
+deriving instance Eq (MDecl PhCheck)
+deriving instance Ord (MDecl PhCheck)
+deriving instance Show (MDecl PhCheck)
 
 type MTypeDecl p = Ann p MTypeDecl'
 data MTypeDecl' p = Type { _typeName :: MType
@@ -330,7 +340,14 @@ data MCallableDecl' p =
            , _callableGuard :: CGuard p
            , _callableBody :: CBody p
            }
-  deriving (Eq, Show)
+
+deriving instance Eq (MCallableDecl' PhParse)
+deriving instance Ord (MCallableDecl' PhParse)
+deriving instance Show (MCallableDecl' PhParse)
+
+deriving instance Eq (MCallableDecl' PhCheck)
+deriving instance Ord (MCallableDecl' PhCheck)
+deriving instance Show (MCallableDecl' PhCheck)
 
 -- TODO: at the moment, with only C++ as a backend, we assume any external body
 --       comes from C++. When we actually implement other backends, we will need
@@ -339,11 +356,19 @@ data MCallableDecl' p =
 --       functions. These two concrete implementations will be joinable, since
 --       they are backend-dependent (and there is always only one backend).
 --       This will need to be handled at the ConcreteDecl level as well.
-data CBody p = ExternalBody
+data CBody p = ExternalBody (XExternalBody p)
              | EmptyBody
              | MagnoliaBody (MExpr p)
              | BuiltinBody
-               deriving (Eq, Show)
+
+deriving instance Eq (CBody PhParse)
+deriving instance Ord (CBody PhParse)
+deriving instance Show (CBody PhParse)
+
+deriving instance Eq (CBody PhCheck)
+deriving instance Ord (CBody PhCheck)
+deriving instance Show (CBody PhCheck)
+
 type CGuard p = Maybe (MExpr p)
 
 type MType = Name
@@ -357,7 +382,7 @@ pattern Unit :: MType
 pattern Unit = GenName "Unit"
 
 data MCallableType = Axiom | Function | Predicate | Procedure
-                    deriving (Eq, Show)
+                    deriving (Eq, Ord, Show)
 
 -- TODO: make a constructor for coercedexpr to remove (Maybe MType) from calls?
 type MExpr p = Ann p MExpr'
@@ -370,10 +395,10 @@ data MExpr' p = MVar (MaybeTypedVar p)
               | MIf (MExpr p) (MExpr p) (MExpr p)
               | MAssert (MExpr p)
               | MSkip
-                deriving (Eq, Show)
+                deriving (Eq, Ord, Show)
 
 data MBlockType = MValueBlock | MEffectfulBlock
-                  deriving (Eq, Show)
+                  deriving (Eq, Ord, Show)
 
 type TypedVar p = Ann p TypedVar'
 type TypedVar' = MVar MType
@@ -385,11 +410,11 @@ data MVar typAnnType p = Var { _varMode :: MVarMode
                              , _varName :: Name
                              , _varType :: typAnnType
                              }
-                         deriving (Eq, Show)
+                         deriving (Eq, Ord, Show)
 
 -- Mode is either Obs (const), Out (unset ref), Upd (ref), or Unk(nown)
 data MVarMode = MObs | MOut | MUnk | MUpd
-                deriving (Eq, Show)
+                deriving (Eq, Ord, Show)
 
 -- == annotation utils ==
 
@@ -411,6 +436,13 @@ data ExternalDeclDetails =
                         -- | The name of the declaration within the external
                         -- module
                       , _externalDeclElementName :: Name
+                        -- | The requirements to instantiate in the external
+                        -- module. The key in the map corresponds to the
+                        -- original required declaration, while the value
+                        -- corresponds to the same declaration with
+                        -- relevant renamings applied to it in the module
+                        -- considered.
+                      , _externalDeclRequirements :: M.Map TcDecl TcDecl
                       }
   deriving (Eq, Ord, Show)
 
@@ -429,6 +461,10 @@ externalDeclModuleName = _externalDeclModuleName
 -- | See '_externalDeclElementName'.
 externalDeclElementName :: ExternalDeclDetails -> Name
 externalDeclElementName = _externalDeclElementName
+
+-- | See '_externalDeclRequirements'.
+externalDeclRequirements :: ExternalDeclDetails -> M.Map TcDecl TcDecl
+externalDeclRequirements = _externalDeclRequirements
 
 -- | Wraps the source location information of a declaration.
 data DeclOrigin
@@ -473,32 +509,69 @@ instance Ord ConcreteDeclOrigin where
 -- correspond to the name of the external data structure for the relevant
 -- backend.
 -- TODO: fix data types to get more type safety when it comes to the names.
-mkConcreteLocalDecl :: Maybe (Backend, FullyQualifiedName)
+mkConcreteLocalDecl :: Maybe (Backend, FullyQualifiedName, [TcDecl])
                     -> SrcCtx
                     -> Name
                     -> MgMonad ConcreteDeclOrigin
 mkConcreteLocalDecl mexternalInfo src name = case mexternalInfo of
   Nothing -> pure $ ConcreteLocalMagnoliaDecl src
-  Just backendAndFqn -> mkExternalDeclDetails backendAndFqn src name
+  Just backendFqnReqs -> mkExternalDeclDetails backendFqnReqs src name
     >>= \extDeclDetails -> pure $ ConcreteLocalExternalDecl extDeclDetails src
 
 -- | Safely builds external declaration details based on a backend, its fully
 -- qualified name (where the '_scopeName' corresponds to the path to the
 -- external file, and the '_targetName' corresponds to the name of the
--- external module within that file), the source information of the external
--- declaration within the Magnolia package, and the name of the declaration
--- within the external module.
+-- external module within that file), the abstract requirements for the
+-- external module, the source information of the external declaration within
+-- the Magnolia package, and the name of the declaration within the external
+-- module.
 -- Throws an error if the path to the external file is 'Nothing'.
-mkExternalDeclDetails :: (Backend, FullyQualifiedName)
+mkExternalDeclDetails :: (Backend, FullyQualifiedName, [TcDecl])
                       -> SrcCtx
                       -> Name
                       -> MgMonad ExternalDeclDetails
-mkExternalDeclDetails (backend, extModuleFqn) src declName =
+mkExternalDeclDetails (backend, extModuleFqn, requirements) src declName =
   case _scopeName extModuleFqn of
     Nothing -> throwLocatedE MiscErr src $ "external " <> pshow backend <>
       " block " <> pshow extModuleFqn <> " was specified without an include path"
     Just (Name _ filepath) -> pure $
       ExternalDeclDetails backend filepath (_targetName extModuleFqn) declName
+                          (M.fromList (map (\d -> (d, d)) requirements))
+
+-- | Extracts the requirements of an external module that are wrapped within a
+-- 'ConcreteDeclOrigin' if relevant.
+-- These requirements are used to disambiguate between external callables that
+-- expose the same prototype but may rely on different assumptions. For example,
+-- given the following implementation IExt:
+--
+-- implementation IExt = external C++ SomeFile.SomeStruct {
+--   require type U;
+--   type T;
+--   function f(): T;
+-- }
+--
+-- the lines \'use IExt[U => U];\' and \'use IExt[U => V];\' each import a
+-- different version of f() in scope: one that assumes that U is bound to U,
+-- and one that assumes that U is bound to V.
+concreteDeclOriginRequirements :: ConcreteDeclOrigin -> [TcDecl]
+concreteDeclOriginRequirements conDeclO = case conDeclO of
+  GeneratedBuiltin -> []
+  ConcreteMagnoliaDecl _ -> []
+  ConcreteExternalDecl _ extDeclDetails ->
+    M.elems $ externalDeclRequirements extDeclDetails
+
+-- | Applies a transformation to the requirements of an external module
+-- that are wrapped within a 'ConcreteDeclOrigin' if relevant.
+transformRequirements :: (TcDecl -> TcDecl)
+                      -> ConcreteDeclOrigin
+                      -> ConcreteDeclOrigin
+transformRequirements f conDeclO = case conDeclO of
+  GeneratedBuiltin -> conDeclO
+  ConcreteMagnoliaDecl _ -> conDeclO
+  ConcreteExternalDecl declO extDeclDetails ->
+    let newRequirements = M.map f (_externalDeclRequirements extDeclDetails)
+    in ConcreteExternalDecl declO
+        extDeclDetails { _externalDeclRequirements = newRequirements }
 
 -- | Wraps the source location information of an abstract declaration (i.e. a
 -- declaration that is required).
@@ -574,6 +647,13 @@ type family XRef p where
 type family XExternalModule p where
   XExternalModule PhParse = ParsedModuleExpr
   XExternalModule PhCheck = Void
+
+-- | The goal of XExternalBody is to allow refining parsed declarations into
+-- external ones after the parsing phase – more cleanly separating
+-- interpretation from parsing.
+type family XExternalBody p where
+  XExternalBody PhParse = Void
+  XExternalBody PhCheck = ()
 
 -- === standalone show instances ===
 

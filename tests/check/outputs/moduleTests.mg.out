@@ -13,3 +13,7 @@ tests/check/inputs/moduleTests.mg:49:41: Declaration error in tests.check.inputs
 tests/check/inputs/moduleTests.mg:49:41: Declaration error in tests.check.inputs.moduleTests.UseASourceExternalAsSignature: id was left unimplemented in module UseASourceExternalAsSignature
 
 tests/check/inputs/moduleTests.mg:55:5: Error in tests.check.inputs.moduleTests.AnExternalWithoutFilePath: external C++ block ExtWithoutFilePath was specified without an include path
+
+tests/check/inputs/moduleTests.mg:82:9: Declaration error in tests.check.inputs.moduleTests.MergeExternalWithItselfWithDifferentRequirements: function f() : T declared at tests/check/inputs/moduleTests.mg:70:5 was imported twice with conflicting requirements. Consider renaming one of the imported instances.
+
+tests/check/inputs/moduleTests.mg:82:9: Declaration error in tests.check.inputs.moduleTests.MergeExternalWithItselfWithDifferentRequirements: type T declared at tests/check/inputs/moduleTests.mg:69:5 was imported twice with conflicting requirements. Consider renaming one of the imported instances.
