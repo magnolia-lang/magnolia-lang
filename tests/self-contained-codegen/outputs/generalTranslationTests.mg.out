@@ -39,6 +39,18 @@ private:
 } // self_contained_codegen
 } // inputs
 } // generalTranslationTests
+
+namespace tests {
+namespace self_contained_codegen {
+namespace inputs {
+namespace generalTranslationTests {
+struct P2 {
+
+};
+} // tests
+} // self_contained_codegen
+} // inputs
+} // generalTranslationTests
 #include "gen/tests/self-contained-codegen/inputs/generalTranslationTests.hpp"
 
 
@@ -94,6 +106,16 @@ namespace generalTranslationTests {
     void P::some_f_overloaded_on_return_type0(P::Y& o) {
         o = P::_mkY();
     };
+} // tests
+} // self_contained_codegen
+} // inputs
+} // generalTranslationTests
+
+namespace tests {
+namespace self_contained_codegen {
+namespace inputs {
+namespace generalTranslationTests {
+    
 } // tests
 } // self_contained_codegen
 } // inputs

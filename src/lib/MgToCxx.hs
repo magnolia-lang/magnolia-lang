@@ -140,7 +140,8 @@ mgProgramToCxxProgramModule
         -- define. This should be a valid way to do things in C++ thanks to
         -- SFINAE.
         (dummyStructNames, boundNames''') =
-          let nbDummyStructs = maximum $ map (length . snd) referencedExternals
+          let nbDummyStructs = safeMaximum 0 $
+                map (length . snd) referencedExternals
           in runState (mapM (\_ -> freshNameM (TypeName "dummy_struct"))
                             [1..nbDummyStructs]) boundNames''
 
@@ -170,6 +171,9 @@ mgProgramToCxxProgramModule
             returnTypeOverloadsNameAliasMap
     return $ CxxModule moduleCxxNamespaces moduleCxxName $ L.sortOn snd defs
   where
+    safeMaximum :: Ord a => a -> [a] -> a
+    safeMaximum defaultValue l = maximum $ defaultValue : l
+
     declFilter :: TcDecl -> Bool
     declFilter decl = case decl of
       MTypeDecl _ -> True

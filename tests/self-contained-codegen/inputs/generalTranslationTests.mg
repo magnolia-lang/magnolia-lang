@@ -74,3 +74,6 @@ program P = {
     function call_f_overloaded_on_return_type(): X =
         some_f_overloaded_on_return_type();
 };
+
+// generating an empty program, should succeed
+program P2 = {};
