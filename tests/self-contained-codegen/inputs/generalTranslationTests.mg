@@ -1,13 +1,25 @@
 package tests.self-contained-codegen.inputs.generalTranslationTests;
 
 implementation MgImpl = external C++ E.ExternalImplementation {
-    type X;
+    require type X;
     type Y;
     function mkX(): X;
     function mkY(): Y;
     // TODO(bchetioui, 20/07/21): disallow such names in externals, as this is
     // not a valid C++ identifier. We let this pass to not overload the PR.
     function _+_(lhs: X, rhs: X): X;
+};
+
+implementation MgSomeTypes = external C++ E.ExternalImplementationSomeTypes {
+    require type A;
+    type B;
+};
+
+implementation MgSomeMoreTypes = external C++ E.ExternalImplementationSomeMoreTypes {
+    require type A;
+    require type B;
+    require type C;
+    type AConcreteType;
 };
 
 implementation Helper = {
@@ -21,6 +33,8 @@ implementation Helper = {
 
 program P = {
     use MgImpl[mkY => _mkY];
+    use MgSomeTypes[A => Y, B => X];
+    use MgSomeMoreTypes[A => Y, B => X, C => Y];
     use Helper;
 
     procedure all_statements(obs x_obs: X, upd x_upd: X, out x_out: X) {

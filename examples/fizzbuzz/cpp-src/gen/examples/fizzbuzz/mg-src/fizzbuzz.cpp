@@ -8,7 +8,7 @@ namespace fizzbuzz {
     MyFizzBuzzProgram::FizzBuzz MyFizzBuzzProgram::buzz() {
         return __fizzbuzz_ops.buzz();
     };
-    MyFizzBuzzProgram::FizzBuzz MyFizzBuzzProgram::doFizzBuzz(const MyFizzBuzzProgram::IntLike& i) {
+    MyFizzBuzzProgram::FizzBuzz MyFizzBuzzProgram::doFizzBuzz(const MyFizzBuzzProgram::Int32& i) {
         if (((MyFizzBuzzProgram::modulo(i, MyFizzBuzzProgram::three())) == (MyFizzBuzzProgram::zero())) && ((MyFizzBuzzProgram::modulo(i, MyFizzBuzzProgram::five())) == (MyFizzBuzzProgram::zero())))
             return MyFizzBuzzProgram::fizzbuzz();
         else
@@ -20,7 +20,7 @@ namespace fizzbuzz {
                 else
                     return MyFizzBuzzProgram::nope();
     };
-    MyFizzBuzzProgram::IntLike MyFizzBuzzProgram::five() {
+    MyFizzBuzzProgram::Int32 MyFizzBuzzProgram::five() {
         return __fizzbuzz_ops.five();
     };
     MyFizzBuzzProgram::FizzBuzz MyFizzBuzzProgram::fizz() {
@@ -29,16 +29,16 @@ namespace fizzbuzz {
     MyFizzBuzzProgram::FizzBuzz MyFizzBuzzProgram::fizzbuzz() {
         return __fizzbuzz_ops.fizzbuzz();
     };
-    MyFizzBuzzProgram::IntLike MyFizzBuzzProgram::modulo(const MyFizzBuzzProgram::IntLike& a, const MyFizzBuzzProgram::IntLike& modulus) {
+    MyFizzBuzzProgram::Int32 MyFizzBuzzProgram::modulo(const MyFizzBuzzProgram::Int32& a, const MyFizzBuzzProgram::Int32& modulus) {
         return __fizzbuzz_ops.modulo(a, modulus);
     };
     MyFizzBuzzProgram::FizzBuzz MyFizzBuzzProgram::nope() {
         return __fizzbuzz_ops.nope();
     };
-    MyFizzBuzzProgram::IntLike MyFizzBuzzProgram::three() {
+    MyFizzBuzzProgram::Int32 MyFizzBuzzProgram::three() {
         return __fizzbuzz_ops.three();
     };
-    MyFizzBuzzProgram::IntLike MyFizzBuzzProgram::zero() {
+    MyFizzBuzzProgram::Int32 MyFizzBuzzProgram::zero() {
         return __fizzbuzz_ops.zero();
     };
 } // examples

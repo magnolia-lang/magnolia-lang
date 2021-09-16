@@ -7,7 +7,7 @@ module MgToCxx (
   )
   where
 
-import Control.Monad (foldM, join, unless)
+import Control.Monad.State
 --import Control.Monad.IO.Class (liftIO)
 import qualified Data.List as L
 import qualified Data.List.NonEmpty as NE
@@ -21,6 +21,15 @@ import Env
 import Magnolia.PPrint
 import Magnolia.Syntax
 import Monad
+
+-- | A helper data type to wrap the requirements found in 'ExternalDeclDetails'.
+data Requirement = Requirement { -- | The original required declaration
+                                 _requiredDecl :: TcDecl
+                                 -- | The declaration supposed to fullfill
+                                 --   the requirement.
+                               , _parameterDecl :: TcDecl
+                               }
+                   deriving (Eq, Ord)
 
 -- | Not really a map, but a wrapper over 'foldMAccumErrors' that allows writing
 -- code like
@@ -112,41 +121,52 @@ mgProgramToCxxProgramModule
 
         declsToGen = filter declFilter declsAsList
         typeDecls = getTypeDecls declsToGen
+        callableDecls = getCallableDecls declsToGen
 
+        -- TODO: join boundNames handling into one op returning everything
         (boundNames', returnTypeOverloadsNameAliasMap) =
           foldl (\(boundNs, nameMap) rTyO ->
                 let (boundNs', newName) = registerFreshName boundNs (fst rTyO)
                 in (boundNs', M.insert rTyO newName nameMap))
             (boundNames, M.empty) (S.toList returnTypeOverloads)
 
-        (boundNames'', extObjectsNameMap) =
-          foldl (\(boundNs, nameMap) inName ->
-                let inName' = inName { _name = "__" <> _name inName }
-                    (boundNs', newName) = registerFreshName boundNs inName'
-                in (boundNs', M.insert inName newName nameMap))
-            (boundNames', M.empty) referencedExternals
+        (extObjectsNameMap, boundNames'') =
+          let (extObjectNames, boundNs) = mapM (freshExtObjectName . fst)
+                referencedExternals `runState` boundNames'
+          in (M.fromList $ zip referencedExternals extObjectNames, boundNs)
 
-        callableDecls = getCallableDecls declsToGen
+        -- We generate a number of empty structs in order to parameterize
+        -- external modules with requirements so as to extract the types they
+        -- define. This should be a valid way to do things in C++ thanks to
+        -- SFINAE.
+        (dummyStructNames, boundNames''') =
+          let nbDummyStructs = maximum $ map (length . snd) referencedExternals
+          in runState (mapM (\_ -> freshNameM (TypeName "dummy_struct"))
+                            [1..nbDummyStructs]) boundNames''
 
     moduleCxxNamespaces <- mkCxxNamespaces moduleFqName
     moduleCxxName <- mkCxxName name
 
     extObjectsCxxNameMap <- mapM mkCxxName extObjectsNameMap
-    extObjectsDef <- mapMAccumErrors (\(structName, objCxxName) ->
-          mkCxxType structName
-        >>= \cxxTy -> return (CxxExternalInstance cxxTy objCxxName))
+    extObjectsDef <- mapMAccumErrors
+      ((CxxExternalInstance <$>) . uncurry (uncurry mkCxxObject))
       (M.toList extObjectsCxxNameMap)
 
-    cxxTyDefs <- mapMAccumErrors mgTyDeclToCxxTypeDef typeDecls
+    dummyStructCxxNames <- mapM mkCxxName dummyStructNames
+
+    cxxTyDefs <-
+      mapMAccumErrors (mgTyDeclToCxxTypeDef dummyStructCxxNames) typeDecls
 
     cxxFnDefs <- mapMAccumErrors
       (mgCallableDeclToCxx returnTypeOverloadsNameAliasMap extObjectsCxxNameMap)
       callableDecls
 
-    defs <- ((map (CxxPrivate,) extObjectsDef <>) <$>) $
+    let cxxDummyStructDefs = map CxxDummyModule dummyStructCxxNames
+
+    defs <- ((map (CxxPrivate,) (extObjectsDef <> cxxDummyStructDefs) <>) <$>) $
       (map (CxxPublic,) <$>) $
         ((cxxTyDefs <> cxxFnDefs) <>) <$>
-          mgReturnTypeOverloadsToCxxTemplatedDefs boundNames''
+          mgReturnTypeOverloadsToCxxTemplatedDefs boundNames'''
             returnTypeOverloadsNameAliasMap
     return $ CxxModule moduleCxxNamespaces moduleCxxName $ L.sortOn snd defs
   where
@@ -173,22 +193,80 @@ mgProgramToCxxProgramModule
         ) S.empty $ M.map getCallableDecls decls
 
     declsAsList :: [TcDecl]
-    declsAsList = join (map snd (M.toList decls))
+    declsAsList = join $ M.elems decls
 
-    referencedExternals :: [Name]
-    referencedExternals = S.toList $ foldl accExtFqn S.empty declsAsList
+    referencedExternals :: [(Name, [Requirement])]
+    referencedExternals = S.toList $ foldl accExtReqs S.empty declsAsList
 
-    accExtFqn :: S.Set Name -> TcDecl -> S.Set Name
-    accExtFqn acc (MTypeDecl (Ann (mconDeclO, _) _)) = case mconDeclO of
+    -- TODO: extract ExternalDeclDetails module name, requirements, and
+    accExtReqs :: S.Set (Name, [Requirement]) -> TcDecl
+               -> S.Set (Name, [Requirement])
+    accExtReqs acc (MTypeDecl (Ann (mconDeclO, _) _)) = case mconDeclO of
       Just (ConcreteExternalDecl _ extDeclDetails) ->
-        S.insert (externalDeclModuleName extDeclDetails) acc
+        S.insert ( externalDeclModuleName extDeclDetails
+                 , map (uncurry Requirement) $
+                    M.toList $ externalDeclRequirements extDeclDetails
+                 ) acc
       _ -> acc
-    accExtFqn acc (MCallableDecl (Ann (mconDeclO, _) _)) = case mconDeclO of
-      Just (ConcreteExternalDecl _ _extDeclDetails) ->
-        S.insert (externalDeclModuleName _extDeclDetails) acc
+    accExtReqs acc (MCallableDecl (Ann (mconDeclO, _) _)) = case mconDeclO of
+      Just (ConcreteExternalDecl _ extDeclDetails) ->
+        S.insert ( externalDeclModuleName extDeclDetails
+                 , map (uncurry Requirement) $
+                    M.toList $ externalDeclRequirements extDeclDetails
+                 ) acc
       _ -> acc
+
+    freshNameM :: Name -> State (S.Set String) Name
+    freshNameM n = do
+      env <- get
+      let freeName = freshName n env
+      modify (S.insert $ _name freeName)
+      pure freeName
+
+    freshExtObjectName :: Name -> State (S.Set String) Name
+    freshExtObjectName n = freshNameM n { _name = "__" <> _name n }
+
 
 mgProgramToCxxProgramModule _ _ = error "expected program"
+
+-- | Produces a C++ object from a data structure to instantiate along with
+-- the required template parameters if necessary.
+mkCxxObject :: Name          -- ^ the data structure to instantiate
+            -> [Requirement] -- ^ the required arguments to the
+                             --   data structure
+            -> CxxName       -- ^ the name given to the resulting
+                             --   object
+            -> MgMonad CxxObject
+mkCxxObject structName [] targetCxxName = do
+  structCxxName <- mkCxxName structName
+  pure $ CxxObject (CxxCustomType structCxxName) targetCxxName
+mkCxxObject structName requirements@(_:_) targetCxxName = do
+  let sortedRequirements = L.sortBy orderRequirements requirements
+  structCxxName <- mkCxxName structName
+  cxxTemplateParameters <- mapM (mkCxxName . nodeName . _parameterDecl)
+                                sortedRequirements
+  pure $ CxxObject (CxxCustomTemplatedType structCxxName cxxTemplateParameters)
+                   targetCxxName
+
+-- | Defines an ordering on 'Requirement'. The convention is that type
+-- declarations are lower than callable declarations, and elements of the
+-- same type are ordered lexicographically on their names.
+orderRequirements :: Requirement -> Requirement -> Ordering
+orderRequirements (Requirement (MTypeDecl tcTy1) _)
+                  (Requirement tcDecl2 _) = case tcDecl2 of
+  MTypeDecl tcTy2 -> nodeName tcTy1 `compare` nodeName tcTy2
+  MCallableDecl _ -> LT
+orderRequirements (Requirement (MCallableDecl tcCallable1) _)
+                  (Requirement tcDecl2 _) = case tcDecl2 of
+  MTypeDecl _ -> GT
+  MCallableDecl tcCallable2 ->
+    nodeName tcCallable1 `compare` nodeName tcCallable2
+
+-- | Produces a list of ordered requirements from an 'ExternalDeclDetails'.
+-- See 'orderRequirements' for details on the ordering.
+orderedRequirements :: ExternalDeclDetails -> [Requirement]
+orderedRequirements extDeclDetails = L.sortBy orderRequirements $
+  map (uncurry Requirement) $ M.toList $ externalDeclRequirements extDeclDetails
 
 -- | Produces a fresh name based on an initial input name and a set of bound
 -- strings. If the input name's String component is not in the set of bound
@@ -207,27 +285,42 @@ registerFreshName :: S.Set String -> Name -> (S.Set String, Name)
 registerFreshName boundNs name = let newName = freshName name boundNs
                                  in (S.insert (_name newName) boundNs, newName)
 
-mgTyDeclToCxxTypeDef :: TcTypeDecl -> MgMonad CxxDef
-mgTyDeclToCxxTypeDef (Ann (conDeclO, absDeclOs) (Type targetTyName _)) = do
+-- | Produces a C++ typedef from a Magnolia type declaration. A list of dummy
+-- structures is provided as a parameter, and can be used to parameterize the
+-- structure from which to extract the source type if it has requirements.
+mgTyDeclToCxxTypeDef :: [CxxName]  -- ^ the names of the dummy data structures
+                     -> TcTypeDecl
+                     -> MgMonad CxxDef
+mgTyDeclToCxxTypeDef dummyStructCxxNames
+                     (Ann (conDeclO, absDeclOs) (Type targetTyName _)) = do
   cxxTargetTyName <- mkCxxName targetTyName
   let ~(Just (ConcreteExternalDecl _ extDeclDetails)) = conDeclO
       backend = externalDeclBackend extDeclDetails
       extStructName = externalDeclModuleName extDeclDetails
       extTyName = externalDeclElementName extDeclDetails
+      extTyNbRequirements = M.size $ externalDeclRequirements extDeclDetails
   unless (backend == Cxx) $
     throwLocatedE MiscErr (srcCtx $ NE.head absDeclOs) $
       "attempted to generate C++ code relying on external type " <>
       pshow (FullyQualifiedName (Just extStructName) extTyName) <> " but " <>
       "it is declared as having a " <> pshow backend <> " backend"
-  cxxSourceTyName <-
-    mkCxxNamespaceMemberAccess <$> mkCxxName extStructName
-                               <*> mkCxxName extTyName
+  cxxExtStructName <- mkCxxName extStructName
+  cxxExtTyName <- mkCxxName extTyName
+  let cxxSourceTyName = case extTyNbRequirements of
+        0 ->
+          mkCxxClassMemberAccess (CxxCustomType cxxExtStructName) cxxExtTyName
+        _ -> let paramStructs = zipWith const dummyStructCxxNames
+                  [1..extTyNbRequirements]
+             in mkCxxClassMemberAccess
+              (CxxCustomTemplatedType cxxExtStructName paramStructs)
+              cxxExtTyName
   return $ CxxTypeDef cxxSourceTyName cxxTargetTyName
 
 
+-- TODO: extObjectsMap here should also contain the requirements, and easy!
 mgCallableDeclToCxx
   :: M.Map (Name, [MType]) Name
-  -> M.Map Name CxxName
+  -> M.Map (Name, [Requirement]) CxxName
   -> TcCallableDecl
   -> MgMonad CxxDef
 mgCallableDeclToCxx returnTypeOverloadsNameAliasMap extObjectsMap
@@ -241,6 +334,7 @@ mgCallableDeclToCxx returnTypeOverloadsNameAliasMap extObjectsMap
         backend = externalDeclBackend extDeclDetails
         extStructName = externalDeclModuleName extDeclDetails
         extCallableName = externalDeclElementName extDeclDetails
+        extOrderedRequirements = orderedRequirements extDeclDetails
     unless (backend == Cxx) $
       throwLocatedE MiscErr (srcCtx $ NE.head absDeclOs) $
         "attempted to generate C++ code relying on external function " <>
@@ -248,7 +342,8 @@ mgCallableDeclToCxx returnTypeOverloadsNameAliasMap extObjectsMap
         " but it is declared as having a " <> pshow backend <> " backend"
     let mgFnWithDummyMgBody = Ann (conDeclO, absDeclOs) $
           (_elem mgFn) { _callableBody = MagnoliaBody (Ann retTy MSkip) }
-        ~(Just cxxExtObjectName) = M.lookup extStructName extObjectsMap
+        ~(Just cxxExtObjectName) =
+          M.lookup (extStructName, extOrderedRequirements) extObjectsMap
 
     ~(CxxFunctionDef cxxFnDef) <- mgCallableDeclToCxx
       returnTypeOverloadsNameAliasMap extObjectsMap mgFnWithDummyMgBody
@@ -446,7 +541,8 @@ mgExprToCxxExpr returnTypeOverloadsNameAliasMap = goExpr
           Nothing -> do
             parentModuleName <- getParentModuleName
             cxxModuleName <- mkCxxName parentModuleName
-            cxxName <- mkCxxClassMemberAccess cxxModuleName <$> mkCxxName name
+            cxxName <- mkCxxClassMemberAccess (CxxCustomType cxxModuleName) <$>
+              mkCxxName name
             let inputProto = (name, map _ann args)
             cxxTemplateArgs <- mapM mkCxxName
               [ty | inputProto `M.member` returnTypeOverloadsNameAliasMap]

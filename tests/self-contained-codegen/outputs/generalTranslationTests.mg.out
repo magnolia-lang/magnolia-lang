@@ -8,12 +8,13 @@ namespace inputs {
 namespace generalTranslationTests {
 struct P {
 private:
-    ExternalImplementation __ExternalImplementation;
-protected:
-    
+    struct dummy_struct {};
+    struct dummy_struct0 {};
+    struct dummy_struct1 {};
 public:
-    typedef ExternalImplementation::X X;
-    typedef ExternalImplementation::Y Y;
+    typedef ExternalImplementation<dummy_struct>::Y Y;
+    typedef ExternalImplementationSomeMoreTypes<dummy_struct, dummy_struct0, dummy_struct1>::AConcreteType AConcreteType;
+    typedef ExternalImplementationSomeTypes<dummy_struct>::B X;
     P::Y _mkY();
     void all_statements(const P::X& x_obs, P::X& x_upd, P::X& x_out);
     P::X binary_add(const P::X& lhs, const P::X& rhs);
@@ -28,6 +29,11 @@ public:
         some_f_overloaded_on_return_type0(o);
         return o;
     };
+private:
+    ExternalImplementation<X> __ExternalImplementation;
+    ExternalImplementationSomeMoreTypes<Y, X, Y> __ExternalImplementationSomeMoreTypes;
+    ExternalImplementationSomeTypes<Y> __ExternalImplementationSomeTypes;
+
 };
 } // tests
 } // self_contained_codegen

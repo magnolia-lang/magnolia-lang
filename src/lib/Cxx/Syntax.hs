@@ -11,6 +11,7 @@ module Cxx.Syntax (
   , CxxLambdaCaptureDefault (..)
   , CxxModule (..)
   , CxxNamespaceName
+  , CxxObject (..)
   , CxxOutMode (..)
   , CxxPackage (..)
   , CxxStmt (..)
@@ -51,20 +52,19 @@ import Magnolia.PPrint
 import Magnolia.Syntax
 import Monad
 
--- | A name (or identifier) in a C++ context. There are three types of names:
+-- | A name (or identifier) in a C++ context. There are two types of names:
 -- * simple names, created using the 'CxxName' constructor;
--- * \"qualified\" names, created using the 'CxxNestedName' constructor, which
--- represent either an access to a member of a class/namespace, or to a member
--- of an object.
+-- * \"qualified\" names, created using the 'CxxClassMemberName',
+--   'CxxNamespaceMemberName', or 'CxxObjectMemberName' constructors.
 data CxxName = -- | A simple identifier
                CxxName String
-               -- | A nested identifier
-             | CxxNestedName CxxMemberAccessKind CxxName CxxName
+               -- | An identifier corresponding to a member of a class
+             | CxxClassMemberName CxxType CxxName
+               -- | An identifier corresponding to a member of a namespace
+             | CxxNamespaceMemberName CxxName CxxName
+               -- | An identifier corresponding to a member of an object
+             | CxxObjectMemberName CxxName CxxName
                deriving (Eq, Ord, Show)
-
-data CxxMemberAccessKind = CxxClassOrNamespaceMember
-                         | CxxObjectMember
-                           deriving (Eq, Ord, Show)
 
 -- TODO: handle operators and "invalid C++ names", maybe?
 -- | Makes a CxxName out of a Name. The function may throw an error if the name
@@ -131,15 +131,15 @@ customCxxTranslations = M.fromList
 
 -- | Given two C++ names N1 and N2, builds the C++ name N1::N2.
 mkCxxNamespaceMemberAccess :: CxxName -> CxxName -> CxxName
-mkCxxNamespaceMemberAccess = CxxNestedName CxxClassOrNamespaceMember
+mkCxxNamespaceMemberAccess = CxxNamespaceMemberName
 
--- | Convenience alias for 'mkCxxNamespaceMemberAccess'.
-mkCxxClassMemberAccess :: CxxName -> CxxName -> CxxName
-mkCxxClassMemberAccess = mkCxxNamespaceMemberAccess
+-- | Given a C++ type T and a C++ name N, builds the C++ name T::N.
+mkCxxClassMemberAccess :: CxxType -> CxxName -> CxxName
+mkCxxClassMemberAccess = CxxClassMemberName
 
 -- | Given two C++ names N1 and N2, builds the C++ name N1.N2.
 mkCxxObjectMemberAccess :: CxxName -> CxxName -> CxxName
-mkCxxObjectMemberAccess = CxxNestedName CxxObjectMember
+mkCxxObjectMemberAccess = CxxObjectMemberName
 
 -- | Makes a CxxType out of a Magnolia type. The function may throw an error
 -- if the name of the type can not be used in C++.
@@ -156,8 +156,9 @@ mkClassMemberCxxType typeName = case typeName of
   Unit -> return CxxVoid
   Pred -> return CxxBool
   _ -> do
-    moduleCxxName <- getParentModuleName >>= mkCxxName
-    cxxTyName <- mkCxxClassMemberAccess moduleCxxName <$> mkCxxName typeName
+    cxxModuleName <- getParentModuleName >>= mkCxxName
+    cxxTyName <- mkCxxClassMemberAccess (CxxCustomType cxxModuleName) <$>
+      mkCxxName typeName
     return $ CxxCustomType cxxTyName
 
 -- | The set of reserved keywords in C++.
@@ -241,40 +242,53 @@ data CxxModule =
               -- to the API exposed by the corresponding Magnolia module.
             , _cxxModuleDefinitions :: [(CxxAccessSpec, CxxDef)]
             }
-  deriving Show
+  deriving (Eq, Ord, Show)
 
 type CxxModuleName = CxxName
 type CxxNamespaceName = CxxName
 
 -- | The equivalent of a Magnolia declaration in C++.
 data CxxDef
+    -- | A C++ empty module. This is used in order to define dummy data
+    -- structures for parameterizing external templated modules with in order
+    -- to extract the types they define.
+  = CxxDummyModule CxxName
     -- | A C++ type definition. 'CxxTypeDef src tgt' corresponds to the C++
     -- code 'typedef src tgt'.
-  = CxxTypeDef CxxName CxxName
+  | CxxTypeDef CxxName CxxName
     -- | A C++ function definition.
   | CxxFunctionDef CxxFunctionDef
     -- | An instance of an external module/struct. Modules will carry such
     --   references in order to appropriately call externally defined callables.
     --   TODO: external references may be templated with required types,
     --         requiring thus a specialization. This is not handled yet.
-  | CxxExternalInstance CxxType CxxName
+  | CxxExternalInstance CxxObject
     deriving (Eq, Show)
+
+data CxxObject = CxxObject CxxType CxxName
+                 deriving (Eq, Ord, Show)
 
 instance Ord CxxDef where
   -- Order is as follows:
-  -- type definitions < function definitions < external instances
+  -- dummy module < type < function < external instance
   compare def1 def2 = case def1 of
+    CxxDummyModule cxxN1 -> case def2 of
+      CxxDummyModule cxxN2 -> cxxN1 `compare` cxxN2
+      _ -> LT
     CxxTypeDef src1 tgt1 -> case def2 of
+      CxxDummyModule {} -> GT
       CxxTypeDef src2 tgt2 ->
         src1 `compare` src2 <> tgt1 `compare` tgt2
-      _ -> LT
+      CxxFunctionDef {} -> LT
+      CxxExternalInstance {} -> LT
     CxxFunctionDef cxxFn1 -> case def2 of
+      CxxDummyModule {} -> GT
       CxxTypeDef {} -> GT
       CxxFunctionDef cxxFn2 -> cxxFn1 `compare` cxxFn2
       CxxExternalInstance {} -> LT
-    CxxExternalInstance cxxTy1 cxxName1 -> case def2 of
-      CxxExternalInstance cxxTy2 cxxName2 ->
-        cxxTy1 `compare` cxxTy2 <> cxxName1 `compare` cxxName2
+    CxxExternalInstance cxxObj1 -> case def2 of
+      CxxExternalInstance cxxObj2 ->
+        cxxObj1 `compare` cxxObj2
       _ -> GT
 
 
@@ -365,7 +379,10 @@ data CxxLambdaCaptureDefault = CxxLambdaCaptureDefaultValue
                              | CxxLambdaCaptureDefaultReference
                              deriving (Eq, Ord, Show)
 
-data CxxType = CxxVoid | CxxBool | CxxCustomType CxxName
+data CxxType = CxxVoid
+             | CxxBool
+             | CxxCustomType CxxName
+             | CxxCustomTemplatedType CxxName [CxxTemplateParameter]
                deriving (Eq, Ord, Show)
 
 type CxxTemplateParameter = CxxName
@@ -422,24 +439,24 @@ prettyCxxModule CxxHeader (CxxModule namespaces name defs) =
   -- 2. Build class / struct header
   "struct" <+> p name <+> "{" <> line <>
   -- 3. Input class / struct definitions
-  structContent <> line <>
+  prettyStructContent CxxPublic sortedDefs <> line <>
   "};" <> line <>
   -- 4. Close namespaces
   align (vsep (map (\ns -> "} //" <+> p ns) namespaces))
   where
     sortedDefs = L.sortOn snd defs
 
-    mkSection cxxAS = vsep $
-      map (prettyCxxDef CxxHeader . snd)
-          (filter (\(as, _) -> cxxAS == as) sortedDefs)
+    prettyDef prevAccessSpec accessSpec def =
+      if accessSpec == prevAccessSpec
+      then indent cxxIndent (prettyCxxDef CxxHeader def)
+      else p accessSpec <> colon <> line <>
+        indent cxxIndent (prettyCxxDef CxxHeader def)
 
-    structContent =
-        "private:" <> line <>
-          indent cxxIndent (mkSection CxxPrivate) <> line <>
-        "protected:" <> line <>
-          indent cxxIndent (mkSection CxxProtected) <> line <>
-        "public:" <> line <>
-          indent cxxIndent (mkSection CxxPublic)
+    prettyStructContent _ [] = ""
+    prettyStructContent prevAccessSpec ((accessSpec, def):ds) =
+      prettyDef prevAccessSpec accessSpec def <> line <>
+      prettyStructContent accessSpec ds
+
 prettyCxxModule CxxImplementation (CxxModule namespaces cxxModuleName defs) =
   -- 1. Open namespaces
   align (vsep (map (\ns -> "namespace" <+> p ns <+> "{") namespaces)) <>
@@ -456,7 +473,8 @@ prettyCxxModule CxxImplementation (CxxModule namespaces cxxModuleName defs) =
         foldl (\acc -> getFnDefs acc . snd) [] defs
 
     mkImplName cxxFn =
-      let newName = mkCxxClassMemberAccess cxxModuleName (_cxxFnName cxxFn)
+      let newName = mkCxxClassMemberAccess (CxxCustomType cxxModuleName)
+                                           (_cxxFnName cxxFn)
       in cxxFn { _cxxFnName = newName}
 
     getFnDefs acc cxxDef = case cxxDef of
@@ -464,11 +482,14 @@ prettyCxxModule CxxImplementation (CxxModule namespaces cxxModuleName defs) =
       _ -> acc
 
 prettyCxxDef :: CxxOutMode -> CxxDef -> Doc ann
-prettyCxxDef _ (CxxTypeDef source target) =
-    "typedef" <+> p source <+> p target <> ";"
+prettyCxxDef _ (CxxTypeDef sourceName targetName) =
+  "typedef" <+> p sourceName <+> p targetName <> ";"
 prettyCxxDef cxxOutMode (CxxFunctionDef fn) =
   prettyCxxFnDef cxxOutMode fn <> ";"
-prettyCxxDef _ (CxxExternalInstance ty name) = p ty <+> p name <> ";"
+prettyCxxDef _ (CxxDummyModule cxxName) =
+  "struct" <+> p cxxName <+> lbrace <> rbrace <> semi
+prettyCxxDef _ (CxxExternalInstance (CxxObject ty name)) =
+  p ty <+> p name <> ";"
 
 prettyCxxFnDef :: CxxOutMode -> CxxFunctionDef -> Doc ann
 prettyCxxFnDef cxxOutMode
@@ -498,12 +519,12 @@ cxxIndent = 4
 
 instance Pretty CxxName where
   pretty (CxxName name) = p name
-  pretty (CxxNestedName accessKind parentName childName) =
-    p parentName <> p accessKind <> p childName
-
-instance Pretty CxxMemberAccessKind where
-  pretty CxxClassOrNamespaceMember = "::"
-  pretty CxxObjectMember = "."
+  pretty (CxxNamespaceMemberName parentName childName) =
+    p parentName <> "::" <> p childName
+  pretty (CxxObjectMemberName objectName elementName) =
+    p objectName <> "." <> p elementName
+  pretty (CxxClassMemberName classTy childName) =
+    p classTy <> "::" <> p childName
 
 instance Pretty CxxVar where
   pretty (CxxVar isConst isRef name ty) =
@@ -573,6 +594,8 @@ instance Pretty CxxType where
     CxxVoid -> "void"
     CxxBool -> "bool"
     CxxCustomType ty -> p ty
+    CxxCustomTemplatedType ty templateParameters ->
+      p ty <> "<" <> hsep (punctuate comma (map p templateParameters)) <> ">"
 
 instance Pretty CxxAccessSpec where
   pretty cxxAS = case cxxAS of

@@ -1,7 +1,8 @@
 #include <string>
 
+template <typename _IntLike>
 struct fizzbuzz_ops {
-    typedef int IntLike;
+    typedef _IntLike IntLike;
     typedef std::string FizzBuzz;
     inline IntLike modulo(const IntLike a, const IntLike modulus) {
         return a % modulus;
@@ -13,4 +14,8 @@ struct fizzbuzz_ops {
     inline FizzBuzz buzz() { return "buzz"; }
     inline FizzBuzz fizzbuzz() { return "fizzbuzz"; }
     inline FizzBuzz nope() { return "nope"; }
+};
+
+struct basic_types {
+    typedef int Int32;
 };
