@@ -15,11 +15,13 @@ implementation MgSomeTypes = external C++ E.ExternalImplementationSomeTypes {
     type B;
 };
 
-implementation MgSomeMoreTypes = external C++ E.ExternalImplementationSomeMoreTypes {
+implementation MgSomeMoreTypesAndFunctions = external C++ E.ExternalImplementationSomeMoreTypes {
     require type A;
     require type B;
     require type C;
     type AConcreteType;
+
+    require function f(): B;
 };
 
 implementation Helper = {
@@ -34,7 +36,7 @@ implementation Helper = {
 program P = {
     use MgImpl[mkY => _mkY];
     use MgSomeTypes[A => Y, B => X];
-    use MgSomeMoreTypes[A => Y, B => X, C => Y];
+    use MgSomeMoreTypesAndFunctions[A => Y, B => X, C => Y, f => mkX];
     use Helper;
 
     procedure all_statements(obs x_obs: X, upd x_upd: X, out x_out: X) {

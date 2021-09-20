@@ -25,6 +25,11 @@ implementation IExtReq3 = external C++ File.ExtReq3 {
             // this whole module expression reduces to "type T;".
 }
 
+implementation IExtReq4 = external C++ File.ExtReq3 {
+    type T;
+    require function f(): T;
+}
+
 implementation MergingImpls = {
     use IExtReq1;
     use IExtReq2; // should fail
@@ -33,6 +38,7 @@ implementation MergingImpls = {
     type T; // should succeed
     function f(): T; // should succeed
     function f(): T; // should succeed
+    require function f(): T; // should succeed
 }
 
 implementation MergingGuards = {
@@ -42,4 +48,16 @@ implementation MergingGuards = {
 
     function f(): T guard g_1(); // should succeed
     function f(): T guard g_2(); // should succeed
+}
+
+// should fail
+program MissingRequiredFunction = {
+    use IExtReq4;
+}
+
+// should fail
+implementation ImplementingARequirement = {
+    type T;
+    function impl(): T;
+    require function f(): T = impl();
 }

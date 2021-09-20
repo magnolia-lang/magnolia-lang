@@ -178,12 +178,14 @@ instance Pretty Backend where
 
 instance Pretty (MDecl PhCheck) where
   pretty decl = case decl of
-    MTypeDecl tdecl -> pretty tdecl
-    MCallableDecl cdecl -> pretty cdecl
+    MTypeDecl modifiers tdecl -> hsep (map p modifiers) <+> pretty tdecl
+    MCallableDecl modifiers cdecl -> hsep (map p modifiers) <+> pretty cdecl
+
+instance Pretty MModifier where
+  pretty Require = "require"
 
 instance Pretty (MTypeDecl' p) where
-  pretty (Type typ isRequired) = (if isRequired then "require" else "") <>
-    "type" <+> p typ
+  pretty (Type typ) = "type" <+> p typ
 
 instance Pretty (MCallableDecl' PhCheck) where
   pretty (Callable callableType name args ret mguard cbody) =

@@ -181,9 +181,10 @@ moduleDef = annot $ do
   where
     declaration :: Bool -> Parser ParsedDecl
     declaration isExplicitlyRequired = label "declaration" $ do
+      let modifiers = [Require | isExplicitlyRequired]
       -- TODO: allow requiring callables in externals as well.
-      (MTypeDecl <$> typeDecl isExplicitlyRequired) <|>
-        (MCallableDecl <$> callable) <* many semi
+      (MTypeDecl modifiers <$> typeDecl) <|>
+        (MCallableDecl modifiers <$> callable) <* many semi
 
     dependency :: Parser ParsedModuleDep
     dependency = label "module dependency" $ annot $ do
@@ -213,11 +214,11 @@ satisfaction = annot $ do
   return $ MSatisfaction name initialModule withModule modeledModule
   where moduleExpr = moduleDef <|> moduleCastedRef <|> moduleRef
 
-typeDecl :: Bool -> Parser ParsedTypeDecl
-typeDecl isRequired = annot $ do
+typeDecl :: Parser ParsedTypeDecl
+typeDecl = annot $ do
   keyword TypeKW
   name <- typeName <* semi -- TODO: make expr
-  return $ Type name isRequired
+  return $ Type name
 
 callable :: Parser ParsedCallableDecl
 callable = annot $ do

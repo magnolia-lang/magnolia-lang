@@ -11,9 +11,10 @@ private:
     struct dummy_struct {};
     struct dummy_struct0 {};
     struct dummy_struct1 {};
+    struct dummy_struct2 {};
 public:
     typedef ExternalImplementation<dummy_struct>::Y Y;
-    typedef ExternalImplementationSomeMoreTypes<dummy_struct, dummy_struct0, dummy_struct1>::AConcreteType AConcreteType;
+    typedef ExternalImplementationSomeMoreTypes<dummy_struct, dummy_struct0, dummy_struct1, dummy_struct2>::AConcreteType AConcreteType;
     typedef ExternalImplementationSomeTypes<dummy_struct>::B X;
     P::Y _mkY();
     void all_statements(const P::X& x_obs, P::X& x_upd, P::X& x_out);
@@ -31,7 +32,7 @@ public:
     };
 private:
     ExternalImplementation<X> __ExternalImplementation;
-    ExternalImplementationSomeMoreTypes<Y, X, Y> __ExternalImplementationSomeMoreTypes;
+    ExternalImplementationSomeMoreTypes<Y, X, Y, mkX> __ExternalImplementationSomeMoreTypes;
     ExternalImplementationSomeTypes<Y> __ExternalImplementationSomeTypes;
 
 };

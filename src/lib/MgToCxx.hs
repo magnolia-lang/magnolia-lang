@@ -96,9 +96,9 @@ mgPackageToCxxSelfContainedProgramPackage tcPkg =
     -- in a WIP change.
     extractExternalReference :: TcDecl -> Maybe CxxInclude
     extractExternalReference tcDecl = case tcDecl of
-      MTypeDecl (Ann (mconDeclO, _) _) ->
+      MTypeDecl _ (Ann (mconDeclO, _) _) ->
         mconDeclO >>= mkCxxIncludeFromConDeclO
-      MCallableDecl (Ann (mconDeclO, _) _) ->
+      MCallableDecl _ (Ann (mconDeclO, _) _) ->
         mconDeclO >>= mkCxxIncludeFromConDeclO
 
     mkCxxIncludeFromConDeclO :: ConcreteDeclOrigin -> Maybe CxxInclude
@@ -176,9 +176,9 @@ mgProgramToCxxProgramModule
 
     declFilter :: TcDecl -> Bool
     declFilter decl = case decl of
-      MTypeDecl _ -> True
+      MTypeDecl _ _ -> True
       -- Only generate callables that are not assumed built-in.
-      MCallableDecl (Ann _ callable) -> not $ isBuiltin callable
+      MCallableDecl _ (Ann _ callable) -> not $ isBuiltin callable
 
     isBuiltin :: MCallableDecl' p -> Bool
     isBuiltin cdecl = case _callableBody cdecl of BuiltinBody -> True
@@ -205,14 +205,14 @@ mgProgramToCxxProgramModule
     -- TODO: extract ExternalDeclDetails module name, requirements, and
     accExtReqs :: S.Set (Name, [Requirement]) -> TcDecl
                -> S.Set (Name, [Requirement])
-    accExtReqs acc (MTypeDecl (Ann (mconDeclO, _) _)) = case mconDeclO of
+    accExtReqs acc (MTypeDecl _ (Ann (mconDeclO, _) _)) = case mconDeclO of
       Just (ConcreteExternalDecl _ extDeclDetails) ->
         S.insert ( externalDeclModuleName extDeclDetails
                  , map (uncurry Requirement) $
                     M.toList $ externalDeclRequirements extDeclDetails
                  ) acc
       _ -> acc
-    accExtReqs acc (MCallableDecl (Ann (mconDeclO, _) _)) = case mconDeclO of
+    accExtReqs acc (MCallableDecl _ (Ann (mconDeclO, _) _)) = case mconDeclO of
       Just (ConcreteExternalDecl _ extDeclDetails) ->
         S.insert ( externalDeclModuleName extDeclDetails
                  , map (uncurry Requirement) $
@@ -256,14 +256,14 @@ mkCxxObject structName requirements@(_:_) targetCxxName = do
 -- declarations are lower than callable declarations, and elements of the
 -- same type are ordered lexicographically on their names.
 orderRequirements :: Requirement -> Requirement -> Ordering
-orderRequirements (Requirement (MTypeDecl tcTy1) _)
+orderRequirements (Requirement (MTypeDecl _ tcTy1) _)
                   (Requirement tcDecl2 _) = case tcDecl2 of
-  MTypeDecl tcTy2 -> nodeName tcTy1 `compare` nodeName tcTy2
-  MCallableDecl _ -> LT
-orderRequirements (Requirement (MCallableDecl tcCallable1) _)
+  MTypeDecl _ tcTy2 -> nodeName tcTy1 `compare` nodeName tcTy2
+  MCallableDecl _ _ -> LT
+orderRequirements (Requirement (MCallableDecl _ tcCallable1) _)
                   (Requirement tcDecl2 _) = case tcDecl2 of
-  MTypeDecl _ -> GT
-  MCallableDecl tcCallable2 ->
+  MTypeDecl _ _ -> GT
+  MCallableDecl _ tcCallable2 ->
     nodeName tcCallable1 `compare` nodeName tcCallable2
 
 -- | Produces a list of ordered requirements from an 'ExternalDeclDetails'.
@@ -296,7 +296,7 @@ mgTyDeclToCxxTypeDef :: [CxxName]  -- ^ the names of the dummy data structures
                      -> TcTypeDecl
                      -> MgMonad CxxDef
 mgTyDeclToCxxTypeDef dummyStructCxxNames
-                     (Ann (conDeclO, absDeclOs) (Type targetTyName _)) = do
+                     (Ann (conDeclO, absDeclOs) (Type targetTyName)) = do
   cxxTargetTyName <- mkCxxName targetTyName
   let ~(Just (ConcreteExternalDecl _ extDeclDetails)) = conDeclO
       backend = externalDeclBackend extDeclDetails

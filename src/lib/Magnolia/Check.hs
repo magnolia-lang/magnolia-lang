@@ -147,7 +147,7 @@ hackyPrelude :: [TcDecl]
 --       Then, these could be safely merged when imported in scope.
 --       At the moment, this can cause problems when merging programs together.
 --       This shall be handled later.
-hackyPrelude = map (MCallableDecl . Ann newAnn)
+hackyPrelude = map (MCallableDecl [] . Ann newAnn)
   (unOps <> binOps <> [falseOp, trueOp])
   where
     lhsVar = Ann Pred $ Var MObs (VarName "#pred1#") Pred
@@ -222,7 +222,7 @@ checkModuleExpr tlDecls moduleType
               (M.lookup moduleName tlDecls)) $
     throwLocatedE MiscErr modSrc $ "duplicate local module name " <>
       pshow moduleName <> " in package."
-  let callables = getCallableDecls decls
+  let callablesAndModifiers = getCallableDeclsAndModifiers decls
   -- Step 1: expand uses
   (depScope, tcDeps) <- do
       -- TODO: check here that we are only importing valid types of modules.
@@ -236,19 +236,28 @@ checkModuleExpr tlDecls moduleType
   -- Step 2: register predicate functions if needed
   hackyScope <- foldM insertAndMergeDecl depScope hackyPrelude
   -- Step 3: register types
-  types <- mapM mkAbstractTypeDecl (getTypeDecls decls)
-  -- TODO: remove name as parameter to "insertAndMergeDecl"
-  baseScope <- foldMAccumErrors registerType hackyScope types
+  let parsedTypesAndModifiers = getTypeDeclsAndModifiers decls
+      registerType' scope (modifiers, typeDecl) =
+        registerType scope modifiers typeDecl
+      registerProto' checkGuards scope (modifiers, callableDecl) =
+        registerProto checkGuards scope modifiers callableDecl
+      checkCallable' scope (modifiers, callableDecl) =
+        checkCallable moduleType scope modifiers callableDecl
+  tcTypesAndModifiers <- mapM (\(m, td) -> (m,) <$> mkAbstractTypeDecl td)
+    parsedTypesAndModifiers
+  baseScope <- foldMAccumErrors registerType' hackyScope tcTypesAndModifiers
   -- Step 4: check and register protos
   protoScope <- do
     -- we first register all the protos without checking the guards
     protoScopeWithoutGuards <-
-      foldMAccumErrors (registerProto False) baseScope callables
+      foldMAccumErrors (registerProto' False) baseScope callablesAndModifiers
     -- now that we have access to all the functions in scope, we can check the
     -- guard
-    foldMAccumErrors (registerProto True) protoScopeWithoutGuards callables
+    foldMAccumErrors (registerProto' True) protoScopeWithoutGuards
+                     callablesAndModifiers
   -- Step 5: check bodies if allowed
-  finalScope <- foldMAccumErrors (checkCallable moduleType) protoScope callables
+  finalScope <- foldMAccumErrors checkCallable' protoScope
+                                 callablesAndModifiers
   -- Step 6: everything declared locally is fine inside the module expression,
   --         check renamings
   tcRenamingBlocks <-
@@ -257,9 +266,9 @@ checkModuleExpr tlDecls moduleType
   pure $ Ann modSrc $ MModuleDef tcRenamedDecls tcDeps tcRenamingBlocks
   where
     mkAbstractTypeDecl :: ParsedTypeDecl -> MgMonad TcTypeDecl
-    mkAbstractTypeDecl (Ann src (Type n isExplicitlyRequired)) =
+    mkAbstractTypeDecl (Ann src (Type n)) =
       let absDecls = AbstractLocalDecl src :| []
-          tcTy = Type n isExplicitlyRequired
+          tcTy = Type n
       in pure $ Ann (Nothing, absDecls) tcTy
 
 -- | Checks that the declaration of a callable is valid depending on the
@@ -267,23 +276,25 @@ checkModuleExpr tlDecls moduleType
 -- and callables concretely or abstractly defined in the surrounding module).
 checkCallable :: MModuleType        -- ^ the type of the surrounding module
               -> ModuleScope        -- ^ the surrounding module scope
+              -> [MModifier]
               -> ParsedCallableDecl
               -> MgMonad ModuleScope
-checkCallable _ env decl@(Ann _ (Callable _ _ _ _ _ BuiltinBody)) =
+checkCallable _ env _ decl@(Ann _ (Callable _ _ _ _ _ BuiltinBody)) =
   checkProto True env decl >> pure env
 
-checkCallable parentModuleType _ (Ann src (Callable Axiom _ _ _ _ _))
+checkCallable parentModuleType _ _ (Ann src (Callable Axiom _ _ _ _ _))
   | parentModuleType /= Concept =
       throwLocatedE DeclContextErr src "axioms can only be declared in concepts"
 
-checkCallable _ _ (Ann src (Callable Axiom name _ _ _ EmptyBody)) =
+checkCallable _ _ _ (Ann src (Callable Axiom name _ _ _ EmptyBody)) =
   throwLocatedE InvalidDeclErr src $
     "axiom " <> pshow name <> " was declared without a body"
 
-checkCallable _ env decl@(Ann _ (Callable _ _ _ _ _ EmptyBody)) =
+checkCallable _ env _ decl@(Ann _ (Callable _ _ _ _ _ EmptyBody)) =
   checkProto True env decl >> pure env
 
-checkCallable parentModuleType _ (Ann src (Callable ctype name _ _ _ body))
+checkCallable parentModuleType _ _
+              (Ann src (Callable ctype name _ _ _ body))
   | parentModuleType `elem` [Signature, Concept] &&
     body `notElem` [BuiltinBody, EmptyBody] &&
     ctype /= Axiom =
@@ -291,11 +302,14 @@ checkCallable parentModuleType _ (Ann src (Callable ctype name _ _ _ body))
         pshow ctype <> " " <> pshow name <> " can not have a body in " <>
         pshow parentModuleType
 
-checkCallable _ _ (Ann _ (Callable _ _ _ _ _ (ExternalBody v))) = absurd v
+checkCallable _ _ _ (Ann _ (Callable _ _ _ _ _ (ExternalBody v))) = absurd v
 
-checkCallable _ env
+checkCallable _ env modifiers
               decl@(Ann src (Callable ctype name args retType _
                                       (MagnoliaBody bodyExpr))) = do
+  when (Require `elem` modifiers) $
+    throwLocatedE MiscErr src $
+      pshow name <> " is 'required' but has been given a body"
   (finalScope, tcBodyExpr) <-
     annotateScopedExprStmt env (initScope args) (Just retType) bodyExpr
   unless (_ann tcBodyExpr == retType) $
@@ -309,7 +323,7 @@ checkCallable _ env
   conDeclO <- mkConcreteLocalDecl Nothing src name
   let tcCallableDecl = Ann (Just conDeclO, absDeclOs) $
         Callable ctype name tcArgs retType tcGuard (MagnoliaBody tcBodyExpr)
-  insertAndMergeDecl env (MCallableDecl tcCallableDecl)
+  insertAndMergeDecl env (MCallableDecl modifiers tcCallableDecl)
   where
     checkArgIsUpdated :: VarScope -> ParsedTypedVar -> MgMonad ()
     checkArgIsUpdated scope (Ann argSrc arg) = case _varMode arg of
@@ -364,10 +378,10 @@ checkModuleExprFitsModuleType targetModuleType tcModuleExpr
       let pLocatedDecl name src = pshow name <> " (declared at " <>
             pshow src <> ")"
       in case tcDecl of
-          MTypeDecl (Ann (_, absDeclOs) (Type tyName _)) ->
+          MTypeDecl _ (Ann (_, absDeclOs) (Type tyName)) ->
             "type " <> pLocatedDecl tyName (srcCtx $ NE.head absDeclOs)
-          MCallableDecl (Ann (_, absDeclOs)
-                            (Callable callableTy callableName _ _ _ _)) ->
+          MCallableDecl _
+            (Ann (_, absDeclOs) (Callable callableTy callableName _ _ _ _)) ->
             pshow callableTy <> " " <>
             pLocatedDecl callableName (srcCtx $ NE.head absDeclOs)
 
@@ -378,25 +392,26 @@ checkModuleExprFitsModuleType targetModuleType tcModuleExpr
     isAbstractDecl :: TcDecl -> Bool
     isAbstractDecl tcDecl =
       let mconDeclO = case tcDecl of
-            MCallableDecl (Ann (x, _) _) -> x
-            MTypeDecl (Ann (x, _) _) -> x
+            MCallableDecl _ (Ann (x, _) _) -> x
+            MTypeDecl _ (Ann (x, _) _) -> x
       in case mconDeclO of Nothing -> True
                            Just GeneratedBuiltin -> True
                            Just _ -> False
 
     isAxiom :: TcDecl -> Bool
-    isAxiom (MCallableDecl (Ann _ (Callable Axiom _ _ _ _ _))) = True
+    isAxiom (MCallableDecl _ (Ann _ (Callable Axiom _ _ _ _ _))) = True
     isAxiom _ = False
 
 -- | Checks whether a declaration is concrete/implemented. The source location
--- provided by the first parameter is used to locate potential errors.
+-- provided by the first parameter is used to locate potential errors. Builtins
+-- are treated as implemented.
 checkConcrete :: SrcCtx
               -> TcDecl
               -> MgMonad ()
 checkConcrete src tcDecl = do
   let isImplemented = case tcDecl of
-        MTypeDecl (Ann (mconDeclO, _) _) -> isJust mconDeclO
-        MCallableDecl (Ann (mconDeclO, _) _) -> isJust mconDeclO
+        MTypeDecl _ (Ann (mconDeclO, _) _) -> isJust mconDeclO
+        MCallableDecl _ (Ann (mconDeclO, _) _) -> isJust mconDeclO
   unless isImplemented $ do
     moduleName <- getParentModuleName
     throwLocatedE InvalidDeclErr src $
@@ -447,15 +462,17 @@ castModuleExpr targetModuleType tcModuleExpr
         pure tcModuleExpr
   where
     isAxiom :: TcDecl -> Bool
-    isAxiom (MCallableDecl (Ann _ (Callable Axiom _ _ _ _ _))) = True
+    isAxiom (MCallableDecl _ (Ann _ (Callable Axiom _ _ _ _ _))) = True
     isAxiom _ = False
 
     makeAbstract :: TcDecl -> TcDecl
     makeAbstract tcDecl = case tcDecl of
-      MTypeDecl (Ann (mconDeclO, absDeclOs) tyDecl) ->
-        MTypeDecl (Ann (makeAbstractConDeclO mconDeclO, absDeclOs) tyDecl)
-      MCallableDecl (Ann (mconDeclO, absDeclOs) callableDecl) ->
-        MCallableDecl $ Ann (makeAbstractConDeclO mconDeclO, absDeclOs)
+      MTypeDecl modifiers (Ann (mconDeclO, absDeclOs) tyDecl) ->
+        MTypeDecl modifiers $
+          Ann (makeAbstractConDeclO mconDeclO, absDeclOs) tyDecl
+      MCallableDecl modifiers (Ann (mconDeclO, absDeclOs) callableDecl) ->
+        MCallableDecl modifiers $
+          Ann (makeAbstractConDeclO mconDeclO, absDeclOs)
             callableDecl { _callableBody =
               makeAbstractBody (_callableBody callableDecl) }
 
@@ -492,8 +509,8 @@ externalizeModuleExpr backend extModuleFqn src tcModuleExpr
     checkAbstractOrImplementedInCurrentExternal :: TcDecl -> MgMonad ()
     checkAbstractOrImplementedInCurrentExternal decl = do
       let conDeclO = case decl of
-            MTypeDecl (Ann (conDeclO', _) _) -> conDeclO'
-            MCallableDecl (Ann (conDeclO', _) _) -> conDeclO'
+            MTypeDecl _ (Ann (conDeclO', _) _) -> conDeclO'
+            MCallableDecl _ (Ann (conDeclO', _) _) -> conDeclO'
           isValid = case conDeclO of
             Nothing -> True
             Just GeneratedBuiltin -> True
@@ -513,32 +530,29 @@ externalizeModuleExpr backend extModuleFqn src tcModuleExpr
 
     isRequirement :: TcDecl -> Bool
     isRequirement tcDecl = case tcDecl of
-      MTypeDecl (Ann _ tyDecl) -> _typeIsExplicitlyRequired tyDecl
-      -- TODO: there is no explicit requirement of callables at the moment.
-      --       This will have to be fixed once this is implemented.
-      MCallableDecl _ -> False
+      MTypeDecl modifiers _ -> Require `elem` modifiers
+      MCallableDecl modifiers _ -> Require `elem` modifiers
 
     makeExternal :: [TcDecl] -> TcDecl -> MgMonad TcDecl
     makeExternal allRequirements tcDecl = case tcDecl of
-        MTypeDecl (Ann (mconDeclO, absDeclOs) tyDecl) ->
-          if _typeIsExplicitlyRequired tyDecl ||
-            mconDeclO == Just GeneratedBuiltin
+        MTypeDecl modifiers (Ann (mconDeclO, absDeclOs) tyDecl) ->
+          if isRequirement tcDecl || mconDeclO == Just GeneratedBuiltin
           then pure tcDecl
           else do
             conDeclO <- mkConcreteLocalDecl
                   (Just (backend, extModuleFqn, allRequirements))
                   (srcCtx $ NE.head absDeclOs)
                   (nodeName tcDecl)
-            pure $ MTypeDecl $ Ann (Just conDeclO, absDeclOs) tyDecl
-        MCallableDecl (Ann (mconDeclO, absDeclOs) callableDecl) ->
-          if mconDeclO == Just GeneratedBuiltin
+            pure $ MTypeDecl modifiers $ Ann (Just conDeclO, absDeclOs) tyDecl
+        MCallableDecl modifiers (Ann (mconDeclO, absDeclOs) callableDecl) ->
+          if isRequirement tcDecl || mconDeclO == Just GeneratedBuiltin
           then pure tcDecl
           else do
             conDeclO <- mkConcreteLocalDecl
                   (Just (backend, extModuleFqn, allRequirements))
                   (srcCtx $ NE.head absDeclOs)
                   (nodeName tcDecl)
-            pure $ MCallableDecl $
+            pure $ MCallableDecl modifiers $
               Ann (Just conDeclO, absDeclOs)
                   callableDecl { _callableBody = ExternalBody () }
 
@@ -861,44 +875,53 @@ insertAndMergeDecl env decl = do
   return $ M.insert name newDeclList env
   where
     (errorLoc, nameAndProto) = case decl of
-      MTypeDecl (Ann (_, absDeclOs1) _) ->
+      MTypeDecl _ (Ann (_, absDeclOs1) _) ->
         (srcCtx $ NE.head absDeclOs1, "type " <> pshow (nodeName decl))
-      MCallableDecl (Ann (_, absDeclOs1) c) ->
+      MCallableDecl _ (Ann (_, absDeclOs1) c) ->
         (srcCtx $ NE.head absDeclOs1, pshow (c { _callableBody = EmptyBody }))
 
     name = nodeName decl
     mkNewDeclList = case decl of
-      MTypeDecl tdecl ->
-        (:[]) . MTypeDecl <$> mergeTypes tdecl (M.lookup name env)
-      MCallableDecl cdecl ->
-        map MCallableDecl <$> mergePrototypes cdecl (M.lookup name env)
+      MTypeDecl modifiers typeDecl -> do
+        (newModifiers, newTypeDecl) <-
+          mergeTypesAndModifiers modifiers typeDecl (M.lookup name env)
+        pure . (:[]) $ MTypeDecl newModifiers newTypeDecl
+      MCallableDecl modifiers callableDecl -> do
+        newPrototypesAndModifiers <-
+          mergePrototypesAndModifiers modifiers callableDecl (M.lookup name env)
+        pure $ map (uncurry MCallableDecl) newPrototypesAndModifiers
 
-    -- TODO: is this motivation for storing types and callables in different
-    -- scopes?
-    mergeTypes :: TcTypeDecl -> Maybe [TcDecl] -> MgMonad TcTypeDecl
-    mergeTypes annT1@(Ann _ t1) mdecls = case mdecls of
-      Nothing -> return annT1
-      Just [MTypeDecl annT2@(Ann _ t2)] -> do
+    mergeTypesAndModifiers :: [MModifier] -> TcTypeDecl -> Maybe [TcDecl]
+                           -> MgMonad ([MModifier], TcTypeDecl)
+    mergeTypesAndModifiers modifiers annT1@(Ann _ t1) mdecls = case mdecls of
+      Nothing -> pure (modifiers, annT1)
+      Just [MTypeDecl modifiers' annT2] -> do
         newAnns <- mergeAnns (_ann annT1) (_ann annT2)
-        -- When merging two types, we consider the resulting type to be
-        -- explicitly required only if both types are explicitly required.
-        let newType = Type (nodeName t1)
-              (_typeIsExplicitlyRequired t1 && _typeIsExplicitlyRequired t2)
-        return $ Ann newAnns newType
+        let newType = Ann newAnns t1
+            -- When merging two types, we consider the resulting type to be
+            -- explicitly required only if both types are explicitly required.
+            newModifiers =
+              [Require | Require `elem` modifiers && Require `elem` modifiers']
+        -- TODO: throw error if something else than Require is found in
+        -- list of modifiers
+        pure (newModifiers, newType)
       Just someList ->
         throwLocatedE CompilerErr errorLoc $
           "type lookup was matched with unexpected list " <> pshow someList
 
-    mergePrototypes
-      :: TcCallableDecl -> Maybe [TcDecl] -> MgMonad [TcCallableDecl]
-    mergePrototypes (Ann anns callableDecl) mdecls
-      | Nothing <- mdecls = return [Ann anns callableDecl]
+    mergePrototypesAndModifiers :: [MModifier]
+                                -> TcCallableDecl
+                                -> Maybe [TcDecl]
+                                -> MgMonad [([MModifier], TcCallableDecl)]
+    mergePrototypesAndModifiers modifiers (Ann anns callableDecl) mdecls
+      | Nothing <- mdecls = pure [(modifiers, Ann anns callableDecl)]
       | Just decls <- mdecls = do
-        let protos = getCallableDecls decls
+        let callableDeclsAndModifiers = getCallableDeclsAndModifiers decls
             (Callable ctype _ args returnType mguard body) = callableDecl
             argTypes = map (_varType . _elem) args
             (matches, nonMatches) = L.partition
-              (protoMatchesTypeConstraints argTypes (Just returnType)) protos
+              (protoMatchesTypeConstraints argTypes (Just returnType) . snd)
+              callableDeclsAndModifiers
         -- If the callable is already in the environment, we do not insert it
         -- a second time.
         if not (null matches) then do
@@ -907,7 +930,7 @@ insertAndMergeDecl env decl = do
               "scope contains several definitions of the same prototype " <>
               " for " <> nameAndProto
           let argModes = map (_varMode . _elem) args
-              (Ann matchAnn matchElem) = head matches
+              (matchModifiers, Ann matchAnn matchElem) = head matches
               matchBody = _callableBody matchElem
               matchModes = map (_varMode . _elem) (_callableArgs matchElem)
           when (matchModes /= argModes) $
@@ -922,17 +945,25 @@ insertAndMergeDecl env decl = do
           newGuard <- mergeGuards mguard (_callableGuard matchElem)
           newAnns <- mergeAnns anns matchAnn
           newBody <- case (body, matchBody) of
-            (EmptyBody, _) -> return matchBody
-            (_, EmptyBody) -> return body
+            (EmptyBody, _) -> pure matchBody
+            (_, EmptyBody) -> pure body
             _ -> do
               unless (body == matchBody) $
                 throwLocatedE CompilerErr errorLoc $
                   "annotation merging succeeded but got two different " <>
                   "implementations for " <> nameAndProto
-              return body
-          let newCallable = Callable ctype name args returnType newGuard newBody
-          return $ Ann newAnns newCallable : nonMatches
-        else return $ Ann anns callableDecl : nonMatches
+              pure body
+          let newModifiers = [Require | Require `elem` modifiers &&
+                                        Require `elem` matchModifiers]
+              newCallable = Callable ctype name args returnType newGuard newBody
+          -- TODO: maybe check annotations as well?
+          when (Require `elem` newModifiers &&
+                newBody `notElem` [BuiltinBody, EmptyBody]) $
+            throwLocatedE CompilerErr errorLoc $
+              nameAndProto <> " carries around a 'require' modifier but has " <>
+              "a concrete body"
+          pure $ (newModifiers, Ann newAnns newCallable) : nonMatches
+        else pure $ (modifiers, Ann anns callableDecl) : nonMatches
 
     mergeGuards :: CGuard PhCheck -> CGuard PhCheck -> MgMonad (CGuard PhCheck)
     mergeGuards mguard1 mguard2 = case (mguard1, mguard2) of
@@ -1014,17 +1045,19 @@ checkTypeExists modul (src, name)
       Just matches -> when (null (getTypeDecls matches)) $
         throwLocatedE UnboundTypeErr src (pshow name)
 
-registerType :: ModuleScope -> TcTypeDecl
+registerType :: ModuleScope
+             -> [MModifier]
+             -> TcTypeDecl
              -> MgMonad ModuleScope
-registerType modul annType =
-  foldM insertAndMergeDecl modul (mkTypeUtils annType)
+registerType modul modifiers annType =
+  foldM insertAndMergeDecl modul (mkTypeUtils modifiers annType)
 
-mkTypeUtils :: TcTypeDecl -> [TcDecl]
-mkTypeUtils annType =
-    [ MTypeDecl annType
-    , MCallableDecl (Ann newAnn eqFnDecl)
-    , MCallableDecl (Ann newAnn neqFnDecl)
-    , MCallableDecl (Ann newAnn assignProcDecl)
+mkTypeUtils :: [MModifier] -> TcTypeDecl -> [TcDecl]
+mkTypeUtils modifiers annType =
+    [ MTypeDecl modifiers annType
+    , MCallableDecl [] (Ann newAnn eqFnDecl)
+    , MCallableDecl [] (Ann newAnn neqFnDecl)
+    , MCallableDecl [] (Ann newAnn assignProcDecl)
     ]
   where
     newAnn = (Just GeneratedBuiltin, snd $ _ann annType)
@@ -1048,14 +1081,14 @@ mkTypeUtils annType =
 
 -- | Register a callable prototype within the current scope.
 -- TODO: make guard of input empty to remove boolean argument.
-registerProto ::
-  Bool -> -- whether to register/check guards or not
-  ModuleScope ->
-  ParsedCallableDecl ->
-  MgMonad ModuleScope
-registerProto checkGuards modul annCallable = do
+registerProto :: Bool -- ^ whether to register/check guards or not
+              -> ModuleScope
+              -> [MModifier]
+              -> ParsedCallableDecl
+              -> MgMonad ModuleScope
+registerProto checkGuards modul modifiers annCallable = do
   tcProto <- checkProto checkGuards modul annCallable
-  insertAndMergeDecl modul $ MCallableDecl tcProto
+  insertAndMergeDecl modul $ MCallableDecl modifiers tcProto
 
 
 -- TODO: check for procedures, predicates, axioms (this is only for func)?
@@ -1117,10 +1150,10 @@ mkEnvFromDep env (Ann src (MModuleDep fqRef tcRenamings castToSig)) = do
   -- We add a new local annotation, where the source information comes from
   -- the dependency declaration.
   let mkLocalDecl d = let localDecl = AbstractLocalDecl src in case d of
-        MTypeDecl (Ann (mconDecl, absDeclOs) td) ->
-          MTypeDecl (Ann (mconDecl, localDecl <| absDeclOs) td)
-        MCallableDecl (Ann (mconDecl, absDeclOs) cd) ->
-          MCallableDecl (Ann (mconDecl, localDecl <| absDeclOs) cd)
+        MTypeDecl modifiers (Ann (mconDecl, absDeclOs) td) ->
+          MTypeDecl modifiers (Ann (mconDecl, localDecl <| absDeclOs) td)
+        MCallableDecl modifiers (Ann (mconDecl, absDeclOs) cd) ->
+          MCallableDecl modifiers (Ann (mconDecl, localDecl <| absDeclOs) cd)
       localDecls = M.map (map mkLocalDecl) decls
       -- TODO: gather here env of known renamings
   foldM applyRenamingBlock localDecls tcRenamings
@@ -1203,21 +1236,23 @@ applyRenaming :: TcDecl -> InlineRenaming -> TcDecl
 applyRenaming tcDecl renaming =
   let renameRequirements = transformRequirements applyRenamingInDecl
   in case tcDecl of
-      MTypeDecl (Ann (mconDeclO, absDeclOs) typeDecl) -> MTypeDecl $
-        Ann (renameRequirements <$> mconDeclO, absDeclOs)
-            (applyRenamingInTypeDecl typeDecl)
-      MCallableDecl (Ann (mconDeclO, absDeclOs) callableDecl) -> MCallableDecl $
-        Ann (renameRequirements <$> mconDeclO, absDeclOs)
-            (applyRenamingInCallableDecl callableDecl)
+      MTypeDecl modifiers (Ann (mconDeclO, absDeclOs) typeDecl) ->
+        MTypeDecl modifiers $
+          Ann (renameRequirements <$> mconDeclO, absDeclOs)
+              (applyRenamingInTypeDecl typeDecl)
+      MCallableDecl modifiers (Ann (mconDeclO, absDeclOs) callableDecl) ->
+        MCallableDecl modifiers $
+          Ann (renameRequirements <$> mconDeclO, absDeclOs)
+              (applyRenamingInCallableDecl callableDecl)
   where
     applyRenamingInDecl decl = case decl of
-      MTypeDecl typeDecl -> MTypeDecl $ applyRenamingInTypeDecl <$$> typeDecl
-      MCallableDecl callableDecl -> MCallableDecl $
+      MTypeDecl modifiers typeDecl -> MTypeDecl modifiers $
+        applyRenamingInTypeDecl <$$> typeDecl
+      MCallableDecl modifiers callableDecl -> MCallableDecl modifiers $
         applyRenamingInCallableDecl <$$> callableDecl
 
     replaceName' = (`replaceName` renaming)
-    applyRenamingInTypeDecl (Type typ isRequired) =
-      Type (replaceName' typ) isRequired
+    applyRenamingInTypeDecl (Type typ) = Type (replaceName' typ)
     applyRenamingInCallableDecl (Callable ctyp name vars retType mguard cbody) =
       Callable ctyp (replaceName' name)
         (map applyRenamingInTypedVar vars) (replaceName' retType)

@@ -31,6 +31,7 @@ module Magnolia.Syntax (
   , MDecl (..)
   , MExpr
   , MExpr' (..)
+  , MModifier (..)
   , MModule
   , MModule' (..)
   , MModuleExpr
@@ -98,9 +99,11 @@ module Magnolia.Syntax (
   , pattern Unit
   -- ** Utils
   , getCallableDecls
+  , getCallableDeclsAndModifiers
   , getModules
   , getNamedRenamings
   , getTypeDecls
+  , getTypeDeclsAndModifiers
   , moduleDecls
   , moduleExprDecls
   -- * Classes
@@ -306,16 +309,14 @@ data MRenaming' p = InlineRenaming InlineRenaming
 
 type InlineRenaming = (Name, Name)
 
--- TODO: change external FullyQualifiedName to something more sensible with
--- better type safety.
 data MModuleType = Signature
                  | Concept
                  | Implementation
                  | Program
                    deriving (Eq, Show)
 
-data MDecl p = MTypeDecl (MTypeDecl p)
-             | MCallableDecl (MCallableDecl p)
+data MDecl p = MTypeDecl [MModifier] (MTypeDecl p)
+             | MCallableDecl [MModifier] (MCallableDecl p)
 
 deriving instance Eq (MDecl PhParse)
 deriving instance Ord (MDecl PhParse)
@@ -325,11 +326,12 @@ deriving instance Eq (MDecl PhCheck)
 deriving instance Ord (MDecl PhCheck)
 deriving instance Show (MDecl PhCheck)
 
+data MModifier = Require -- TODO: add other modifiers, such as 'assume', etc
+                 deriving (Eq, Ord, Show)
+
 type MTypeDecl p = Ann p MTypeDecl'
-data MTypeDecl' p = Type { _typeName :: MType
-                         , _typeIsExplicitlyRequired :: Bool
-                         }
-                   deriving (Eq, Ord, Show)
+newtype MTypeDecl' p = Type { _typeName :: MType }
+                       deriving (Eq, Ord, Show)
 
 type MCallableDecl p = Ann p MCallableDecl'
 data MCallableDecl' p =
@@ -704,11 +706,11 @@ instance HasName (MModuleDep' p) where
 
 instance HasName (MDecl p) where
   nodeName decl = case decl of
-    MTypeDecl tdecl -> nodeName tdecl
-    MCallableDecl cdecl -> nodeName cdecl
+    MTypeDecl _ tdecl -> nodeName tdecl
+    MCallableDecl _ cdecl -> nodeName cdecl
 
 instance HasName (MTypeDecl' p) where
-  nodeName (Type name _) = name
+  nodeName (Type name) = name
 
 instance HasName (MCallableDecl' p) where
   nodeName (Callable _ name _ _ _ _) = name
@@ -854,18 +856,32 @@ moduleExprDecls (Ann _ moduleExpr) = case moduleExpr of
 
 -- === module declarations manipulation ===
 
-getTypeDecls :: Foldable t => t (MDecl p) -> [MTypeDecl p]
-getTypeDecls = foldr extractType []
+getTypeDeclsAndModifiers :: Foldable t
+                         => t (MDecl p)
+                         -> [([MModifier], MTypeDecl p)]
+getTypeDeclsAndModifiers = foldr extractTypeAndModifiers []
   where
-    extractType :: MDecl p -> [MTypeDecl p] -> [MTypeDecl p]
-    extractType decl acc = case decl of
-      MTypeDecl tdecl -> tdecl:acc
+    extractTypeAndModifiers :: MDecl p
+                            -> [([MModifier], MTypeDecl p)]
+                            -> [([MModifier], MTypeDecl p)]
+    extractTypeAndModifiers decl acc = case decl of
+      MTypeDecl modifiers tdecl -> (modifiers, tdecl):acc
+      _ -> acc
+
+getTypeDecls :: Foldable t => t (MDecl p) -> [MTypeDecl p]
+getTypeDecls = map snd . getTypeDeclsAndModifiers
+
+getCallableDeclsAndModifiers :: Foldable t
+                             => t (MDecl p)
+                             -> [([MModifier], MCallableDecl p)]
+getCallableDeclsAndModifiers = foldr extractCallableAndModifiers []
+  where
+    extractCallableAndModifiers :: MDecl p
+                                -> [([MModifier], MCallableDecl p)]
+                                -> [([MModifier], MCallableDecl p)]
+    extractCallableAndModifiers decl acc = case decl of
+      MCallableDecl modifiers cdecl -> (modifiers, cdecl):acc
       _ -> acc
 
 getCallableDecls :: Foldable t => t (MDecl p) -> [MCallableDecl p]
-getCallableDecls = foldr extractCallable []
-  where
-    extractCallable :: MDecl p -> [MCallableDecl p] -> [MCallableDecl p]
-    extractCallable decl acc = case decl of
-      MCallableDecl cdecl -> cdecl:acc
-      _ -> acc
+getCallableDecls = map snd . getCallableDeclsAndModifiers
