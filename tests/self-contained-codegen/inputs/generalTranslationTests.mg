@@ -10,8 +10,7 @@ implementation MgImpl = external C++ E.ExternalImplementation {
     function _+_(lhs: X, rhs: X): X;
 };
 
-implementation MgSomeTypes = external C++ E.ExternalImplementationSomeTypes {
-    require type A;
+implementation MgSomeType = external C++ E.ExternalImplementationSomeType {
     type B;
 };
 
@@ -35,7 +34,7 @@ implementation Helper = {
 
 program P = {
     use MgImpl[mkY => _mkY];
-    use MgSomeTypes[A => Y, B => X];
+    use MgSomeType[B => X];
     use MgSomeMoreTypesAndFunctions[A => Y, B => X, C => Y, f => mkX];
     use Helper;
 

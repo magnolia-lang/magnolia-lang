@@ -26,3 +26,19 @@ program ProgramThatReliesOnWrongBackendCallable = {
     use MgImplType_Cxx;
     use MgImplCallable_JS;
 }
+
+implementation CircularDependency1 = external C++ IncludeFile.circular_dep1 {
+    require type A;
+    type B;
+}
+
+implementation CircularDependency2 = external C++ IncludeFile.circular_dep2 {
+    type A;
+    require type B;
+}
+
+// should fail
+program CircularDependency = {
+    use CircularDependency1;
+    use CircularDependency2;
+}

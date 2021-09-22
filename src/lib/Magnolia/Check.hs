@@ -932,7 +932,8 @@ insertAndMergeDecl env decl = do
           let argModes = map (_varMode . _elem) args
               (matchModifiers, Ann matchAnn matchElem) = head matches
               matchBody = _callableBody matchElem
-              matchModes = map (_varMode . _elem) (_callableArgs matchElem)
+              matchArgs = _callableArgs matchElem
+              matchModes = map (_varMode . _elem) matchArgs
           when (matchModes /= argModes) $
             throwLocatedE ModeMismatchErr errorLoc $
               "attempting to overload modes in definition of " <>
@@ -944,18 +945,23 @@ insertAndMergeDecl env decl = do
           -- We generate a new guard based on the new prototype.
           newGuard <- mergeGuards mguard (_callableGuard matchElem)
           newAnns <- mergeAnns anns matchAnn
-          newBody <- case (body, matchBody) of
-            (EmptyBody, _) -> pure matchBody
-            (_, EmptyBody) -> pure body
+          -- TODO: add check
+          -- If a body is provided, we must take care to pick the right
+          -- prototype so the name of the arguments mathces the names that are
+          -- used in the body of the callable.
+          (newArgs, newBody) <- case (body, matchBody) of
+            (EmptyBody, _) -> pure (matchArgs, matchBody)
+            (_, EmptyBody) -> pure (args, body)
             _ -> do
               unless (body == matchBody) $
                 throwLocatedE CompilerErr errorLoc $
                   "annotation merging succeeded but got two different " <>
                   "implementations for " <> nameAndProto
-              pure body
+              pure (args, body)
           let newModifiers = [Require | Require `elem` modifiers &&
                                         Require `elem` matchModifiers]
-              newCallable = Callable ctype name args returnType newGuard newBody
+              newCallable = Callable ctype name newArgs returnType newGuard
+                                     newBody
           -- TODO: maybe check annotations as well?
           when (Require `elem` newModifiers &&
                 newBody `notElem` [BuiltinBody, EmptyBody]) $
