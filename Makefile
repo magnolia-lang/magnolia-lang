@@ -67,7 +67,8 @@ check-output-%: tests/$(pass)/inputs/%.mg tests/$(pass)/outputs/%.mg.out build
 update-output-%: tests/$(pass)/inputs/%.mg build
 	$(mgn) test --pass $(pass) --output-directory=$(tests-out-dir) $< > tests/$(pass)/outputs/$(notdir $<).out
 
-example-names = containers \
+example-names = bgl \
+                containers \
                 fizzbuzz \
                 while_loop
 
