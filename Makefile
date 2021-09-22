@@ -67,7 +67,8 @@ check-output-%: tests/$(pass)/inputs/%.mg tests/$(pass)/outputs/%.mg.out build
 update-output-%: tests/$(pass)/inputs/%.mg build
 	$(mgn) test --pass $(pass) --output-directory=$(tests-out-dir) $< > tests/$(pass)/outputs/$(notdir $<).out
 
-example-names = containers \
+example-names = bgl \
+                containers \
                 fizzbuzz \
                 while_loop
 
@@ -78,11 +79,11 @@ build-examples-py:  $(example-names:%=build-example-py-%)
 
 build-example-cpp-%: examples/% build
 	$(eval example-name := $(notdir $<))
-	$(mgn) build --output-directory $</cpp-src/gen --backend cpp --base-import-directory gen --allow-overwrite $</mg-src/$(example-name).mg
+	$(mgn) build --output-directory $</cpp-src/gen --backend cpp --base-import-directory gen --allow-overwrite $</mg-src/$(example-name)-cpp.mg
 	make -C $<
 	@# TODO(bchetioui): add hashtree tool to check generation is a noop
 	@# TODO(bchetioui): add to CI
 
 build-example-py-%: examples/% build
 	$(eval example-name := $(notdir $<))
-	$(mgn) build --output-directory $</py-src/gen --backend python --base-import-directory gen --allow-overwrite $</mg-src/$(example-name).mg
+	$(mgn) build --output-directory $</py-src/gen --backend python --base-import-directory gen --allow-overwrite $</mg-src/$(example-name)-py.mg
