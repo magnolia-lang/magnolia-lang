@@ -33,12 +33,16 @@ module Cxx.Syntax (
   , mkCxxRelativeMgIncludeFromName
   , mkCxxSystemInclude
   , mkCxxType
+    -- * requirements utils
+  , extractTemplateParametersFromCxxType
+  , extractTemplateParametersFromCxxName
     -- * pprinting utils
   , pshowCxxPackage
   , pprintCxxPackage
   )
   where
 
+import Control.Monad (join)
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
 import qualified Data.List as L
@@ -255,13 +259,9 @@ type CxxNamespaceName = CxxName
 
 -- | The equivalent of a set of Magnolia declarations in C++.
 data CxxDef
-    -- | A C++ empty module. This is used in order to define dummy data
-    -- structures for parameterizing external templated modules with in order
-    -- to extract the types they define.
-  = CxxDummyModule CxxName
     -- | A C++ type definition. 'CxxTypeDef src tgt' corresponds to the C++
     -- code 'typedef src tgt'.
-  | CxxTypeDef CxxName CxxName
+  = CxxTypeDef CxxName CxxName
     -- | A C++ function definition.
   | CxxFunctionDef CxxFunctionDef
     -- | A nested module definition.
@@ -286,28 +286,24 @@ data CxxModuleMemberType = CxxStaticMember | CxxNonStaticMember
 
 instance Ord CxxDef where
   -- Order is as follows:
-  --  * dummy module definitions
   --  * type definitions
   --  * nested module definitions
   --  * function definitions
   --  * external instances
+  --
+  -- Note that types are all considered equal, and therefore are never
+  -- reordered. This is because the order of type declarations is complex to
+  -- enforce, and therefore, sorting types is left as an exercise to the user.
   compare def1 def2 = case def1 of
-    CxxDummyModule cxxN1 -> case def2 of
-      CxxDummyModule cxxN2 -> cxxN1 `compare` cxxN2
-      _ -> LT
-    CxxTypeDef src1 tgt1 -> case def2 of
-      CxxDummyModule {} -> GT
-      CxxTypeDef src2 tgt2 ->
-        src1 `compare` src2 <> tgt1 `compare` tgt2
+    CxxTypeDef {} -> case def2 of
+      CxxTypeDef {} -> EQ
       _ -> LT
     CxxNestedModule cxxMod1 -> case def2 of
-      CxxDummyModule {} -> GT
       CxxTypeDef {} -> GT
       CxxNestedModule cxxMod2 -> cxxMod1 `compare` cxxMod2 -- TODO
       CxxFunctionDef {} -> LT
       CxxInstance {} -> LT
     CxxFunctionDef cxxFn1 -> case def2 of
-      CxxDummyModule {} -> GT
       CxxTypeDef {} -> GT
       CxxNestedModule {} -> GT
       CxxFunctionDef cxxFn2 -> cxxFn1 `compare` cxxFn2
@@ -419,6 +415,38 @@ type CxxTemplateParameter = CxxType
 data CxxAccessSpec = CxxPublic | CxxPrivate | CxxProtected
                      deriving (Eq, Ord, Show)
 
+-- === requirements utils ===
+
+extractTemplateParametersFromCxxType :: CxxType -> [CxxName]
+extractTemplateParametersFromCxxType cxxType = case cxxType of
+  CxxVoid -> []
+  CxxBool -> []
+  CxxCustomType cxxName -> extractTemplateParametersFromCxxName cxxName
+  CxxCustomTemplatedType _ cxxTemplateParams -> join $
+    map extractTemplateParametersFromTemplateParameter cxxTemplateParams
+  where
+    extractTemplateParametersFromTemplateParameter :: CxxType -> [CxxName]
+    extractTemplateParametersFromTemplateParameter cxxTp = case cxxTp of
+      CxxVoid -> []
+      CxxBool -> []
+      CxxCustomType cxxName ->
+        cxxName : extractTemplateParametersFromCxxName cxxName
+      CxxCustomTemplatedType cxxName cxxTemplateParams -> cxxName :
+        extractTemplateParametersFromCxxName cxxName <>
+        join (map extractTemplateParametersFromTemplateParameter
+                  cxxTemplateParams)
+
+extractTemplateParametersFromCxxName :: CxxName -> [CxxName]
+extractTemplateParametersFromCxxName cxxName = case cxxName of
+  CxxName {} -> []
+  CxxClassMemberName cxxTy cxxMemberName ->
+    extractTemplateParametersFromCxxType cxxTy <>
+    extractTemplateParametersFromCxxName cxxMemberName
+  CxxNamespaceMemberName _ cxxMemberName ->
+    extractTemplateParametersFromCxxName cxxMemberName
+  CxxObjectMemberName _ cxxMemberName ->
+    extractTemplateParametersFromCxxName cxxMemberName
+
 -- === pretty utils ===
 
 -- TODO: PrettyCxx might be a bit wrong if we need to carry around a path.
@@ -470,15 +498,32 @@ prettyCxxModule CxxHeader (CxxModule namespaces name defs) =
      line) <>
   -- 2. Build class / struct header
   "struct" <+> p name <+> "{" <> line <>
-  -- 3. Input class / struct definitions
-  prettyStructContent CxxPublic sortedDefs <>
+  -- 5. Forward declare structs
+  (let (forwardDefs, curAccessSpec) = prettyForwardDefs CxxPublic sortedDefs
+   in forwardDefs <>
+  -- 4. Input class / struct definitions
+      prettyStructContent curAccessSpec sortedDefs) <>
   "};" <> line <>
-  -- 4. Close namespaces
+  -- 5. Close namespaces
   align (vsep (map (\ns -> "} //" <+> p ns) namespaces))
   where
     ifNotNull es doc = if not (null es) then doc else ""
 
     sortedDefs = L.sortOn snd defs
+
+    prettyForwardDef prevAccessSpec accessSpec cxxName =
+      let forwardDef = indent cxxIndent $ "struct" <+> p cxxName <> semi
+      in if accessSpec == prevAccessSpec
+         then forwardDef
+         else p accessSpec <> colon <> line <> forwardDef
+
+    prettyForwardDefs prevAccessSpec [] = ("", prevAccessSpec)
+    prettyForwardDefs prevAccessSpec ((accessSpec, def):ds) = case def of
+      CxxNestedModule cxxMod ->
+        let (rest, lastAccessSpec) = prettyForwardDefs accessSpec ds
+        in (prettyForwardDef prevAccessSpec accessSpec (_cxxModuleName cxxMod)
+            <> line <> rest, lastAccessSpec)
+      _ -> prettyForwardDefs prevAccessSpec ds
 
     prettyDef prevAccessSpec accessSpec def =
       if accessSpec == prevAccessSpec
@@ -555,8 +600,6 @@ prettyCxxDef _ (CxxTypeDef sourceName targetName) =
     "typedef" <+> p sourceName <+> p targetName <> ";"
 prettyCxxDef cxxOutMode (CxxFunctionDef fn) =
   prettyCxxFnDef cxxOutMode fn <> ";"
-prettyCxxDef _ (CxxDummyModule cxxName) =
-  "struct" <+> p cxxName <+> lbrace <> rbrace <> semi
 prettyCxxDef cxxOutMode (CxxNestedModule cxxMod) =
   prettyCxxModule cxxOutMode cxxMod
 prettyCxxDef cxxOutMode (CxxInstance cxxObject) =

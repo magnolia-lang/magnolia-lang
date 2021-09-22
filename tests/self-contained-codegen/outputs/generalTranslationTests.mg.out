@@ -7,15 +7,16 @@ namespace self_contained_codegen {
 namespace inputs {
 namespace generalTranslationTests {
 struct P {
-private:
-    struct dummy_struct {};
-    struct dummy_struct0 {};
-    struct dummy_struct1 {};
-    struct dummy_struct2 {};
-public:
-    typedef ExternalImplementation<dummy_struct>::Y Y;
-    typedef ExternalImplementationSomeMoreTypes<dummy_struct, dummy_struct0, dummy_struct1, dummy_struct2>::AConcreteType AConcreteType;
-    typedef ExternalImplementationSomeTypes<dummy_struct>::B X;
+    struct __+_;
+    struct __mkY;
+    struct _all_statements;
+    struct _call_f_overloaded_on_return_type;
+    struct _helper_assign;
+    struct _mkX;
+    struct _some_f_overloaded_on_return_type;
+    typedef ExternalImplementationSomeType::B X;
+    typedef ExternalImplementation<X>::Y Y;
+    typedef ExternalImplementationSomeMoreTypes<Y, X, Y, _mkX>::AConcreteType AConcreteType;
     struct __+_ {
         P::X operator()(const P::X& lhs, const P::X& rhs);
     };
@@ -52,6 +53,7 @@ public:
 private:
     static void some_f_overloaded_on_return_type0(P::X& o);
     static void some_f_overloaded_on_return_type0(P::Y& o);
+    static ExternalImplementationSomeType __ExternalImplementationSomeType;
 public:
     static P::__+_ binary_add;
     static P::__mkY _mkY;
@@ -63,7 +65,6 @@ public:
 private:
     static ExternalImplementation<P::X> __ExternalImplementation;
     static ExternalImplementationSomeMoreTypes<P::Y, P::X, P::Y, P::_mkX> __ExternalImplementationSomeMoreTypes;
-    static ExternalImplementationSomeTypes<P::Y> __ExternalImplementationSomeTypes;
 };
 } // tests
 } // self_contained_codegen
@@ -87,6 +88,7 @@ namespace tests {
 namespace self_contained_codegen {
 namespace inputs {
 namespace generalTranslationTests {
+    ExternalImplementationSomeType P::__ExternalImplementationSomeType;
     P::__+_ P::binary_add;
     P::__mkY P::_mkY;
     P::_all_statements P::all_statements;
@@ -96,7 +98,6 @@ namespace generalTranslationTests {
     P::_some_f_overloaded_on_return_type P::some_f_overloaded_on_return_type;
     ExternalImplementation<P::X> P::__ExternalImplementation;
     ExternalImplementationSomeMoreTypes<P::Y, P::X, P::Y, P::_mkX> P::__ExternalImplementationSomeMoreTypes;
-    ExternalImplementationSomeTypes<P::Y> P::__ExternalImplementationSomeTypes;
     P::X P::__+_::operator()(const P::X& lhs, const P::X& rhs) {
         return __ExternalImplementation.binary_add(lhs, rhs);
     };

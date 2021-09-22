@@ -9,6 +9,7 @@ module MgToCxx (
 
 import Control.Monad.State
 --import Control.Monad.IO.Class (liftIO)
+import qualified Data.Graph as G
 import qualified Data.List as L
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
@@ -121,7 +122,7 @@ mgPackageToCxxSelfContainedProgramPackage tcPkg =
 
 mgProgramToCxxProgramModule :: Name -> TcModule -> MgMonad CxxModule
 mgProgramToCxxProgramModule
-  pkgName (Ann _ (MModule Program name (Ann _ (MModuleDef decls deps _)))) =
+  pkgName (Ann declO (MModule Program name (Ann _ (MModuleDef decls deps _)))) =
   enter name $ do
     let moduleFqName = FullyQualifiedName (Just pkgName) name
         boundNames = S.fromList . map _name $
@@ -141,30 +142,19 @@ mgProgramToCxxProgramModule
             (boundNames, M.empty) (S.toList returnTypeOverloads)
 
         (( extObjectsNames
-         , dummyStructNames
          , callableNamesAndFreshFnOpStructNames
          ), _) = runState (do -- TODO: change to execState once sure we do
                               --       not need to retrieve the bound names.
-            -- 1. External objects are completely synthetic, and therefore need
+            -- External objects are completely synthetic, and therefore need
             -- to be given fresh names.
             extObjectNames <- mapM (freshObjectName . fst) referencedExternals
 
-            -- We generate a number of empty structs in order to parameterize
-            -- external modules with requirements so as to extract the types
-            -- they define. This should be a valid way to do things in C++
-            -- thanks to SFINAE.
-            let nbDummyStructs = safeMaximum 0 $
-                  map (length . snd) referencedExternals
-            dummyStructNames' <-
-              mapM (\_ -> freshNameM (TypeName "dummy_struct"))
-                  [1..nbDummyStructs]
             callableNamesAndFreshFnOpStructNames' <-
               mapM (\callableName -> (callableName,) <$>
                       freshFunctionClassName callableName)
                     uniqueCallableNames
 
             pure ( extObjectNames
-                 , dummyStructNames'
                  , callableNamesAndFreshFnOpStructNames'
                  )) boundNames'
 
@@ -198,10 +188,9 @@ mgProgramToCxxProgramModule
           CxxInstance <$> mkCxxObject cxxStructName fnOpReqs targetCxxName)
       (M.toList extObjectsCxxNameMap)
 
-    dummyStructCxxNames <- mapM mkCxxName dummyStructNames
-
     cxxTyDefs <-
-      mapMAccumErrors (mgTyDeclToCxxTypeDef dummyStructCxxNames) typeDecls
+      mapMAccumErrors (mgTyDeclToCxxTypeDef callableNamesToFreshFnOpStructNames)
+                      typeDecls
 
     -- These C++ functions are used to create data structures implemention the
     -- function call operator. A static instance of these data structures is
@@ -221,8 +210,7 @@ mgProgramToCxxProgramModule
       (uncurry . uncurry $ mgReturnTypeOverloadToCxxTemplatedDef boundNames')
       (M.toList returnTypeOverloadsNameAliasMap)
 
-    let cxxDummyStructDefs = map CxxDummyModule dummyStructCxxNames
-        mkFunctionCallOperatorStruct (callableName, fnOpStructName) = do
+    let mkFunctionCallOperatorStruct (callableName, fnOpStructName) = do
           cxxCallableName <- mkCxxName callableName
           let cxxFns = filter (\cxxFn -> _cxxFnName cxxFn == cxxCallableName)
                               (cxxFnDefs <> cxxFnTemplatedDefs)
@@ -251,18 +239,16 @@ mgProgramToCxxProgramModule
       pure $ filter (\f -> _cxxFnName f `S.notMember` uniqueCallableCxxNames)
                     cxxFnDefs
 
+    topSortedCxxTyDefs <- topSortCxxTypeDefs (srcCtx declO) cxxTyDefs
+
     let allDefs =
              map (CxxPrivate,) (  extObjectsDef
-                               <> cxxDummyStructDefs
                                <> map CxxFunctionDef cxxGeneratedFunctions)
-          <> map (CxxPublic,) (  cxxTyDefs
+          <> map (CxxPublic,) (  map (uncurry CxxTypeDef) topSortedCxxTyDefs
                               <> map CxxInstance cxxFnCallOperatorObjects
                               <> map CxxNestedModule cxxFnCallOperatorStructs)
     pure $ CxxModule moduleCxxNamespaces moduleCxxName (L.sortOn snd allDefs)
   where
-    safeMaximum :: Ord a => a -> [a] -> a
-    safeMaximum defaultValue l = maximum $ defaultValue : l
-
     declFilter :: TcDecl -> Bool
     declFilter decl = case decl of
       MTypeDecl _ _ -> True
@@ -309,6 +295,34 @@ mgProgramToCxxProgramModule
       _ -> acc
 
 mgProgramToCxxProgramModule _ _ = error "expected program"
+
+-- | Checks that a list of C++ type definitions can be ordered topologically
+-- and returns one such sort.
+-- TODO: check if this is stable
+topSortCxxTypeDefs :: SrcCtx -- ^ the source information of the program being
+                             --   generated for error reporting purposes
+                   -> [(CxxName, CxxName)]
+                   -> MgMonad [(CxxName, CxxName)]
+topSortCxxTypeDefs src typeDefs = do
+  --liftIO $ pprint cs
+  mapM checkAcyclic sccs
+  where
+    sccs = G.stronglyConnComp
+      [ ( tyDef
+        , targetName
+        , extractTemplateParametersFromCxxName sourceName
+        )
+        | tyDef@(sourceName, targetName) <- typeDefs
+      ]
+
+    checkAcyclic :: G.SCC (CxxName, CxxName) -> MgMonad (CxxName, CxxName)
+    checkAcyclic comp = case comp of
+      G.AcyclicSCC tyDef -> pure tyDef
+      G.CyclicSCC circularDepTyDefs ->
+        throwLocatedE MiscErr src $
+          "can not sort types " <>
+          T.intercalate ", " (map (pshow . snd) circularDepTyDefs) <>
+          " topologically"
 
 -- | Produces a C++ object from a data structure to instantiate along with
 -- the required template parameters if necessary. All the generated objects are
@@ -397,31 +411,43 @@ registerFreshName :: S.Set String -> Name -> (S.Set String, Name)
 registerFreshName boundNs name = let newName = freshName name boundNs
                                  in (S.insert (_name newName) boundNs, newName)
 
--- | Produces a C++ typedef from a Magnolia type declaration. A list of dummy
--- structures is provided as a parameter, and can be used to parameterize the
--- structure from which to extract the source type if it has requirements.
-mgTyDeclToCxxTypeDef :: [CxxName]  -- ^ the names of the dummy data structures
+-- | Produces a C++ typedef from a Magnolia type declaration. A map from
+-- callable names to their function operator-implementing struct name is
+-- provided to look up template parameters as needed.
+mgTyDeclToCxxTypeDef :: M.Map Name Name
                      -> TcTypeDecl
-                     -> MgMonad CxxDef
-mgTyDeclToCxxTypeDef dummyStructCxxNames
-                     (Ann (conDeclO, absDeclOs) (Type targetTyName)) = do
+                     -> MgMonad (CxxName, CxxName)
+mgTyDeclToCxxTypeDef callableNamesToFnOpStructNames
+    (Ann (conDeclO, absDeclOs) (Type targetTyName)) = do
   cxxTargetTyName <- mkCxxName targetTyName
   let ~(Just (ConcreteExternalDecl _ extDeclDetails)) = conDeclO
       extStructName = externalDeclModuleName extDeclDetails
       extTyName = externalDeclElementName extDeclDetails
-      extTyNbRequirements = M.size $ externalDeclRequirements extDeclDetails
-  checkCxxBackend (srcCtx $ NE.head absDeclOs) "type" extDeclDetails
+  sortedRequirements <- mapM (makeReqTypeName . _parameterDecl) $
+    orderedRequirements extDeclDetails
+  checkCxxBackend errorLoc "type" extDeclDetails
   cxxExtStructName <- mkCxxName extStructName
   cxxExtTyName <- mkCxxName extTyName
-  let cxxSourceTyName = case extTyNbRequirements of
-        0 ->
-          mkCxxClassMemberAccess (CxxCustomType cxxExtStructName) cxxExtTyName
-        _ -> let paramStructs = map CxxCustomType $
-                  zipWith const dummyStructCxxNames [1..extTyNbRequirements]
-             in mkCxxClassMemberAccess
-              (CxxCustomTemplatedType cxxExtStructName paramStructs)
-              cxxExtTyName
-  return $ CxxTypeDef cxxSourceTyName cxxTargetTyName
+  cxxSourceTyName <-
+    if null sortedRequirements
+    then pure $
+      mkCxxClassMemberAccess (CxxCustomType cxxExtStructName) cxxExtTyName
+    else do
+      cxxReqTypes <- mapM ((CxxCustomType <$>) . mkCxxName) sortedRequirements
+      pure $ mkCxxClassMemberAccess
+        (CxxCustomTemplatedType cxxExtStructName cxxReqTypes) cxxExtTyName
+  pure (cxxSourceTyName, cxxTargetTyName)
+  where
+    errorLoc = srcCtx $ NE.head absDeclOs
+
+    makeReqTypeName decl = case decl of
+      MCallableDecl {} ->
+        case M.lookup (nodeName decl) callableNamesToFnOpStructNames of
+          Nothing -> throwLocatedE CompilerErr errorLoc $
+            "did not find a function operator-implementing struct for " <>
+            "callable " <> pshow (nodeName decl)
+          Just fnOpStructName -> pure fnOpStructName
+      MTypeDecl {} -> pure $ nodeName decl
 
 -- | Checks whether some 'ExternalDeclDetails' correspond to a declaration with
 -- a C++ backend. Throws an error if it is not the case.

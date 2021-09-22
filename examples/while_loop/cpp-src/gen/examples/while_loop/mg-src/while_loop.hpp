@@ -7,33 +7,28 @@ namespace while_loop {
 namespace mg_src {
 namespace while_loop {
 struct IterationProgram {
-private:
-    struct dummy_struct {};
-    struct dummy_struct0 {};
-    struct dummy_struct1 {};
-    struct dummy_struct2 {};
-public:
-    typedef int16_utils::Int16 Int16;
+    struct _add;
+    struct _increment;
+    struct _isLowerThan;
+    struct _one;
+    struct _repeat;
     typedef int32_utils::Int32 Int32;
-    
+    typedef int16_utils::Int16 Int16;
     struct _add {
         IterationProgram::Int16 operator()(const IterationProgram::Int16& a, const IterationProgram::Int16& b);
         IterationProgram::Int32 operator()(const IterationProgram::Int32& a, const IterationProgram::Int32& b);
     };
 
-    
     struct _increment {
         void operator()(IterationProgram::Int16& counter, const IterationProgram::Int16& bound);
         void operator()(IterationProgram::Int32& counter, const IterationProgram::Int32& bound);
     };
 
-    
     struct _isLowerThan {
         bool operator()(const IterationProgram::Int16& a, const IterationProgram::Int16& b);
         bool operator()(const IterationProgram::Int32& a, const IterationProgram::Int32& b);
     };
 
-    
     struct _one {
         template <typename T>
         inline T operator()() {
@@ -43,7 +38,6 @@ public:
         };
     };
 
-    
     struct _repeat {
         void operator()(IterationProgram::Int16& s, const IterationProgram::Int16& c);
         void operator()(IterationProgram::Int32& s, const IterationProgram::Int32& c);
