@@ -229,8 +229,8 @@ checkModuleExpr tlDecls moduleType
       -- For instance, a program can not be imported into a concept, unless
       -- downcasted explicitly to a signature/concept.
       tcDeps <- mapM (checkModuleDep tlDecls) deps
-      depScope <- foldM (\acc dep -> mkEnvFromDep tlDecls dep
-                                  >>= mergeModules acc) M.empty tcDeps
+      depScope <- foldM (\acc dep -> mergeModules acc (mkEnvFromDep dep))
+                        M.empty tcDeps
       pure (depScope, tcDeps)
   -- TODO: hacky step, make prelude.
   -- Step 2: register predicate functions if needed
@@ -1135,24 +1135,48 @@ checkProto checkGuards env
 checkModuleDep :: Env [TcTopLevelDecl]
                -> ParsedModuleDep
                -> MgMonad TcModuleDep
-checkModuleDep env (Ann src (MModuleDep fqRef renamings castToSig)) = do
-  (Ann refDeclO _) <- lookupTopLevelRef src (M.map getModules env) fqRef
-  parentPackageName <- getParentPackageName
-  let resolvedRef = case refDeclO of
-        LocalDecl {} -> FullyQualifiedName (Just parentPackageName)
-                                           (_targetName fqRef)
-        ImportedDecl fqName _ -> fqName
-  tcRenamings <-
-    mapM (checkRenamingBlock (M.map getNamedRenamings env)) renamings
-  return $ Ann src (MModuleDep resolvedRef tcRenamings castToSig)
+checkModuleDep env (Ann src (MModuleDep mmoduleDepType moduleExpr)) = do
+  -- TODO: we do not allow defining axioms within the require keyword directly
+  --       at the moment.
+  -- TODO: carry name? Should we restrict these inline module expressions?
+  tcModuleExpr <- checkModuleExpr env Implementation moduleExpr >>= \tcME ->
+    case mmoduleDepType of
+      -- We consider now that 'requiring' a module is the same as casting it to
+      -- a signature, and then adding a 'Require' modifier to all of its
+      -- declarations.
+      -- TODO: this might not be correct when it comes to axioms; perhaps
+      --       casting to concept is the way to go, and this will have to be
+      --       discussed.
+      MModuleDepRequire -> requireModuleExpr <$> castModuleExpr Signature tcME
+      MModuleDepUse -> pure tcME
+  let allNamedDependencies = dependencies moduleExpr
+  pure $ Ann (src, allNamedDependencies) $
+    MModuleDep mmoduleDepType tcModuleExpr
+  where
+    requireModuleExpr :: TcModuleExpr -> TcModuleExpr
+    requireModuleExpr (Ann ann tcModuleExpr)
+      | MModuleRef v _ <- tcModuleExpr = absurd v
+      | MModuleAsSignature v _ <- tcModuleExpr = absurd v
+      | MModuleExternal _ _ v <- tcModuleExpr = absurd v
+      | MModuleDef decls deps renamings <- tcModuleExpr =
+          let addRequireModifier mods = if Require `elem` mods
+                                        then mods
+                                        else Require : mods
+              addRequireModifierToDecl decl = case decl of
+                MTypeDecl modifiers tyDecl@(Ann (mconDeclO, _) _) ->
+                  case mconDeclO of
+                    Just GeneratedBuiltin -> decl
+                    _ -> MTypeDecl (addRequireModifier modifiers) tyDecl
+                MCallableDecl modifiers callableDecl@(Ann (mconDeclO, _) _) ->
+                  case mconDeclO of
+                    Just GeneratedBuiltin -> decl
+                    _ ->
+                      MCallableDecl (addRequireModifier modifiers) callableDecl
+              newDecls = M.map (map addRequireModifierToDecl) decls
+          in Ann ann (MModuleDef newDecls deps renamings)
 
-mkEnvFromDep :: Env [TcTopLevelDecl] -> TcModuleDep -> MgMonad (Env [TcDecl])
-mkEnvFromDep env (Ann src (MModuleDep fqRef tcRenamings castToSig)) = do
-  (Ann _ (MModule _ _ moduleExpr)) <-
-    lookupTopLevelRef src (M.map getModules env) fqRef
-  decls <- if castToSig
-           then moduleExprDecls <$> castModuleExpr Signature moduleExpr
-           else pure $ moduleExprDecls moduleExpr
+mkEnvFromDep :: TcModuleDep -> Env [TcDecl]
+mkEnvFromDep (Ann (src, _) (MModuleDep _ tcModuleExpr)) =
   -- We add a new local annotation, where the source information comes from
   -- the dependency declaration.
   let mkLocalDecl d = let localDecl = AbstractLocalDecl src in case d of
@@ -1160,9 +1184,8 @@ mkEnvFromDep env (Ann src (MModuleDep fqRef tcRenamings castToSig)) = do
           MTypeDecl modifiers (Ann (mconDecl, localDecl <| absDeclOs) td)
         MCallableDecl modifiers (Ann (mconDecl, absDeclOs) cd) ->
           MCallableDecl modifiers (Ann (mconDecl, localDecl <| absDeclOs) cd)
-      localDecls = M.map (map mkLocalDecl) decls
-      -- TODO: gather here env of known renamings
-  foldM applyRenamingBlock localDecls tcRenamings
+      decls = moduleExprDecls tcModuleExpr
+  in M.map (map mkLocalDecl) decls
 
 -- TODO: add annotations to renamings, work with something better than just
 --       name.

@@ -144,12 +144,13 @@ instance Pretty (MModuleExpr' PhCheck) where
     "external" <+> p backend <+> p fqn <+> p moduleExpr'
 
 instance Pretty (MModuleDep' PhCheck) where
-  pretty (MModuleDep name renamingBlocks castToSig) =
-    let pName = if castToSig then "signature(" <> p name <> ")"
-                             else p name
-    in pName <> (if not $ null renamingBlocks
-                 then " " <> align (vsep (map p renamingBlocks))
-                 else "") <> ";"
+  pretty (MModuleDep mmoduleDepType mmoduleDepModuleExpr) =
+    p mmoduleDepType <+> p mmoduleDepModuleExpr
+
+instance Pretty MModuleDepType where
+  pretty mmoduleDepType = case mmoduleDepType of
+    MModuleDepRequire -> "require"
+    MModuleDepUse -> "use"
 
 instance Pretty (MRenamingBlock' PhCheck) where
   pretty (MRenamingBlock renamingBlockTy renamings) =

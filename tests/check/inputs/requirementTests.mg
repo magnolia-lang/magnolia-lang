@@ -25,7 +25,7 @@ implementation IExtReq3 = external C++ File.ExtReq3 {
             // this whole module expression reduces to "type T;".
 }
 
-implementation IExtReq4 = external C++ File.ExtReq3 {
+implementation IExtReq4 = external C++ File.ExtReq4 {
     type T;
     require function f(): T;
 }
@@ -60,4 +60,14 @@ implementation ImplementingARequirement = {
     type T;
     function impl(): T;
     require function f(): T = impl();
+}
+
+// should fail
+program PExtReq1 = external C++ File.ExtReq5 {
+    require IExtReq3;
+}
+
+// should succeed
+program PExtReq2 = external C++ File.ExtReq6 {
+    use signature(IExtReq3);
 }

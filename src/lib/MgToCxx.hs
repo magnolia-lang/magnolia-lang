@@ -126,7 +126,8 @@ mgProgramToCxxProgramModule
   enter name $ do
     let moduleFqName = FullyQualifiedName (Just pkgName) name
         boundNames = S.fromList . map _name $
-          name : M.keys decls <> map nodeName deps
+          name : M.keys decls <>
+          join (map (map _targetName . snd . _ann) deps)
 
         declsToGen = filter declFilter declsAsList
         typeDecls = getTypeDecls declsToGen

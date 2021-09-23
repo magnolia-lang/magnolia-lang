@@ -172,8 +172,8 @@ moduleDef = annot $ do
     isExplicitlyRequired <- isJust <$> optional (keyword RequireKW)
     (Left <$> declaration isExplicitlyRequired) <|>
       (if isExplicitlyRequired
-       then Right <$> dependency -- TODO: explicitly require things in dep
-       else keyword UseKW >> Right <$> dependency))
+       then Right <$> dependency MModuleDepRequire
+       else keyword UseKW >> Right <$> dependency MModuleDepUse))
   let decls = [decl | (Left decl) <- declsAndDeps]
       deps  = [dep  | (Right dep) <- declsAndDeps]
   renamingBlocks <- many renamingBlock
@@ -186,14 +186,11 @@ moduleDef = annot $ do
       (MTypeDecl modifiers <$> typeDecl) <|>
         (MCallableDecl modifiers <$> callable) <* many semi
 
-    dependency :: Parser ParsedModuleDep
-    dependency = label "module dependency" $ annot $ do
-      castToSignature <- isJust <$> optional (keyword SignatureKW)
-      name <- let nameParser = fullyQualifiedName NSPackage NSModule
-              in if castToSignature then parens nameParser else nameParser
-      renamings <- many renamingBlock
+    dependency :: MModuleDepType -> Parser ParsedModuleDep
+    dependency mmoduleDepType = label "module dependency" $ annot $ do
+      moduleExpr <- moduleDef <|> moduleCastedRef <|> moduleRef
       semi
-      pure $ MModuleDep name renamings castToSignature
+      pure $ MModuleDep mmoduleDepType moduleExpr
 
 renamingDecl :: Parser ParsedNamedRenaming
 renamingDecl = annot $ do

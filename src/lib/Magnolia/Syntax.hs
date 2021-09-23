@@ -38,6 +38,7 @@ module Magnolia.Syntax (
   , MModuleExpr' (..)
   , MModuleDep
   , MModuleDep' (..)
+  , MModuleDepType (..)
   , MModuleType (..)
   , MNamedRenaming
   , MNamedRenaming' (..)
@@ -150,6 +151,7 @@ module Magnolia.Syntax (
   )
   where
 
+import Control.Monad (join)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
 import Data.Void
@@ -287,10 +289,13 @@ data MModuleExpr' p =
 type MModuleDep p = Ann p MModuleDep'
 -- Represents a dependency to a module with an associated list of renaming
 -- blocks, as well as whether to only extract the signature of the dependency.
-data MModuleDep' p = MModuleDep { _depName :: FullyQualifiedName
-                                , _depRenamingBlocks :: [MRenamingBlock p]
-                                , _depCastToSig :: Bool
-                                }
+data MModuleDep' p =
+  MModuleDep { _mmoduleDepType :: MModuleDepType
+             , _mmoduleDepModuleExpr :: MModuleExpr p
+             }
+
+data MModuleDepType = MModuleDepRequire | MModuleDepUse
+                      deriving (Eq, Show)
 
 -- | There are two types of renaming blocks: partial renaming blocks, and
 -- total renaming blocks. A partial renaming block is a renaming block that
@@ -608,7 +613,7 @@ type family XAnn p (e :: * -> *) where
   XAnn PhCheck MModuleExpr' = SrcCtx
 
   XAnn PhParse MModuleDep' = SrcCtx
-  XAnn PhCheck MModuleDep' = SrcCtx
+  XAnn PhCheck MModuleDep' = (SrcCtx, [FullyQualifiedName])
 
   XAnn PhParse MRenamingBlock' = SrcCtx
   XAnn PhCheck MRenamingBlock' = SrcCtx
@@ -701,9 +706,6 @@ instance HasName (MModule' p) where
 instance HasName (MSatisfaction' p) where
   nodeName (MSatisfaction name _ _ _) = name
 
-instance HasName (MModuleDep' p) where
-  nodeName (MModuleDep name _ _) = fromFullyQualifiedName name
-
 instance HasName (MDecl p) where
   nodeName decl = case decl of
     MTypeDecl _ tdecl -> nodeName tdecl
@@ -735,14 +737,15 @@ instance HasDependencies (MModule' PhCheck) where
 
 instance HasDependencies (MModuleExpr' PhParse) where
   dependencies moduleExpr = case moduleExpr of
-    MModuleDef _ deps _ -> map (_depName . _elem) deps
+    MModuleDef _ deps _ -> join $
+      map (dependencies . _elem . _mmoduleDepModuleExpr . _elem) deps
     MModuleRef refName _ -> [refName]
     MModuleAsSignature refName _ -> [refName]
     MModuleExternal _ _ moduleExpr' -> dependencies moduleExpr'
 
 instance HasDependencies (MModuleExpr' PhCheck) where
   dependencies modul = case modul of
-    MModuleDef _ deps _ -> map (_depName . _elem) deps
+    MModuleDef _ deps _ -> join $ map (snd . _ann) deps
     MModuleRef v _ -> absurd v
     MModuleAsSignature v _ -> absurd v
     MModuleExternal _ _ v -> absurd v
