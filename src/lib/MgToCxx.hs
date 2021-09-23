@@ -283,15 +283,13 @@ mgProgramToCxxProgramModule
     accExtReqs acc (MTypeDecl _ (Ann (mconDeclO, _) _)) = case mconDeclO of
       Just (ConcreteExternalDecl _ extDeclDetails) ->
         S.insert ( externalDeclModuleName extDeclDetails
-                 , map (uncurry Requirement) $
-                    M.toList $ externalDeclRequirements extDeclDetails
+                 , orderedRequirements extDeclDetails
                  ) acc
       _ -> acc
     accExtReqs acc (MCallableDecl _ (Ann (mconDeclO, _) _)) = case mconDeclO of
       Just (ConcreteExternalDecl _ extDeclDetails) ->
         S.insert ( externalDeclModuleName extDeclDetails
-                 , map (uncurry Requirement) $
-                    M.toList $ externalDeclRequirements extDeclDetails
+                 , orderedRequirements extDeclDetails
                  ) acc
       _ -> acc
 
@@ -305,7 +303,6 @@ topSortCxxTypeDefs :: SrcCtx -- ^ the source information of the program being
                    -> [(CxxName, CxxName)]
                    -> MgMonad [(CxxName, CxxName)]
 topSortCxxTypeDefs src typeDefs = do
-  --liftIO $ pprint cs
   mapM checkAcyclic sccs
   where
     sccs = G.stronglyConnComp
@@ -484,8 +481,13 @@ mgCallableDeclToCxx returnTypeOverloadsNameAliasMap extObjectsMap
         extOrderedRequirements = orderedRequirements extDeclDetails
         mgFnWithDummyMgBody = Ann (conDeclO, absDeclOs) $
           (_elem mgFn) { _callableBody = MagnoliaBody (Ann retTy MSkip) }
-        ~(Just cxxExtObjectName) =
-          M.lookup (extStructName, extOrderedRequirements) extObjectsMap
+    cxxExtObjectName <-
+      case M.lookup (extStructName, extOrderedRequirements) extObjectsMap of
+        Nothing -> throwLocatedE CompilerErr (srcCtx $ NE.head absDeclOs) $
+          "could not find matching external object definition for " <>
+          pshow extStructName <> " with requirements " <>
+          pshow (map _parameterDecl extOrderedRequirements)
+        Just cxxExtObjName -> pure cxxExtObjName
 
     checkCxxBackend (srcCtx $ NE.head absDeclOs) "function" extDeclDetails
 
