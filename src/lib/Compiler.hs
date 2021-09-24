@@ -112,7 +112,7 @@ runCompileWith filePath config = case _configOutputDirectory config of
     (Cxx, SelfContainedProgramCodegenPass) -> do
       (ecxxPkgs, errs) <- runMgMonad $ compileToCxxPackages filePath
       case ecxxPkgs of
-        Left () -> logErrs errs
+        Left () -> logErrs errs >> fail "compilation failed"
         Right cxxPkgs -> do
           createBasePath outDir
           mapM_ (writeCxxPackage outDir) cxxPkgs
