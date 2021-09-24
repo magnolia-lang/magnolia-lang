@@ -5,33 +5,14 @@ struct while_ops {
     typedef _State State;
     typedef _Context Context;
 
-    struct fop_cond {
-        inline bool operator()(const State &state, const Context &context) {
-            return ext_cond(state, context);
-        }
-
-        private:
-            _cond ext_cond;
-    };
-
-    struct fop_body {
-        inline void operator()(State &state, const Context &context) {
-            ext_body(state, context);
-        }
-
-        private:
-            _body ext_body;
-    };
+    _body body;
+    _cond cond;
 
     inline void repeat(State &state, const Context &context) {
         while (while_ops::cond(state, context)) {
             while_ops::body(state, context);
         }
     }
-
-    private:
-        fop_cond cond;
-        fop_body body;
 };
 
 struct int16_utils {
