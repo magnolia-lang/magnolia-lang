@@ -66,11 +66,18 @@ example-names = containers \
                 fizzbuzz \
                 while_loop
 
-build-examples: $(example-names:%=build-example-%)
+build-examples: build-examples-cpp build-examples-py
 
-build-example-%: examples/% build
+build-examples-cpp: $(example-names:%=build-example-cpp-%)
+build-examples-py:  $(example-names:%=build-example-py-%)
+
+build-example-cpp-%: examples/% build
 	$(eval example-name := $(notdir $<))
-	$(mgn) build --output-directory $</cpp-src/gen --base-import-directory gen --allow-overwrite $</mg-src/$(example-name).mg
+	$(mgn) build --output-directory $</cpp-src/gen --backend cpp --base-import-directory gen --allow-overwrite $</mg-src/$(example-name).mg
 	make -C $<
-	# TODO(bchetioui): add hashtree tool to check generation is a noop
-	# TODO(bchetioui): add to CI
+	@# TODO(bchetioui): add hashtree tool to check generation is a noop
+	@# TODO(bchetioui): add to CI
+
+build-example-py-%: examples/% build
+	$(eval example-name := $(notdir $<))
+	$(mgn) build --output-directory $</py-src/gen --backend python --base-import-directory gen --allow-overwrite $</mg-src/$(example-name).mg
