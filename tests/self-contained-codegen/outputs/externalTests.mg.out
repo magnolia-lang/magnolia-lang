@@ -2,4 +2,4 @@ tests/self-contained-codegen/inputs/externalTests.mg:21:9: Error in tests.self-c
 
 tests/self-contained-codegen/inputs/externalTests.mg:27:9: Error in tests.self-contained-codegen.inputs.externalTests.ProgramThatReliesOnWrongBackendCallable: attempted to generate C++ code relying on external function FnStruct.identity but it is declared as having a JavaScript backend
 
-tests/self-contained-codegen/inputs/externalTests.mg:41:1: Error in tests.self-contained-codegen.inputs.externalTests.CircularDependency: can not sort types A, B topologically
+tests/self-contained-codegen/inputs/externalTests.mg:41:1: Error in tests.self-contained-codegen.inputs.externalTests.CircularDependency: can not sort elements A, B topologically

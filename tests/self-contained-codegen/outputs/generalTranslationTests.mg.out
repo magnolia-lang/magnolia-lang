@@ -7,40 +7,6 @@ namespace self_contained_codegen {
 namespace inputs {
 namespace generalTranslationTests {
 struct P {
-    struct __+_;
-    struct __mkY;
-    struct _all_statements;
-    struct _call_f_overloaded_on_return_type;
-    struct _helper_assign;
-    struct _mkX;
-    struct _some_f_overloaded_on_return_type;
-    typedef ExternalImplementationSomeType::B X;
-    typedef ExternalImplementation<X>::Y Y;
-    typedef ExternalImplementationSomeMoreTypes<Y, X, Y, _mkX>::AConcreteType AConcreteType;
-    struct __+_ {
-        P::X operator()(const P::X& lhs, const P::X& rhs);
-    };
-
-    struct __mkY {
-        P::Y operator()();
-    };
-
-    struct _all_statements {
-        void operator()(const P::X& x_obs, P::X& x_upd, P::X& x_out);
-    };
-
-    struct _call_f_overloaded_on_return_type {
-        P::X operator()();
-    };
-
-    struct _helper_assign {
-        void operator()(P::X& x_out);
-    };
-
-    struct _mkX {
-        P::X operator()();
-    };
-
     struct _some_f_overloaded_on_return_type {
         template <typename T>
         inline T operator()() {
@@ -50,21 +16,55 @@ struct P {
         };
     };
 
-private:
-    static void some_f_overloaded_on_return_type0(P::X& o);
-    static void some_f_overloaded_on_return_type0(P::Y& o);
-    static ExternalImplementationSomeType __ExternalImplementationSomeType;
-public:
-    static P::__+_ binary_add;
-    static P::__mkY _mkY;
-    static P::_all_statements all_statements;
-    static P::_call_f_overloaded_on_return_type call_f_overloaded_on_return_type;
-    static P::_helper_assign helper_assign;
-    static P::_mkX mkX;
     static P::_some_f_overloaded_on_return_type some_f_overloaded_on_return_type;
 private:
+    static ExternalImplementationSomeType __ExternalImplementationSomeType;
+public:
+    typedef ExternalImplementationSomeType::B X;
+    typedef ExternalImplementation<P::X>::Y Y;
+    struct __mkY {
+        P::Y operator()();
+    };
+
+    static P::__mkY _mkY;
+private:
+    static void some_f_overloaded_on_return_type0(P::Y& o);
+public:
+    struct __+_ {
+        P::X operator()(const P::X& lhs, const P::X& rhs);
+    };
+
+    static P::__+_ binary_add;
+private:
     static ExternalImplementation<P::X> __ExternalImplementation;
+public:
+    struct _all_statements {
+        void operator()(const P::X& x_obs, P::X& x_upd, P::X& x_out);
+    };
+
+    static P::_all_statements all_statements;
+    struct _call_f_overloaded_on_return_type {
+        P::X operator()();
+    };
+
+    static P::_call_f_overloaded_on_return_type call_f_overloaded_on_return_type;
+    struct _helper_assign {
+        void operator()(P::X& x_out);
+    };
+
+    static P::_helper_assign helper_assign;
+    struct _mkX {
+        P::X operator()();
+    };
+
+private:
     static ExternalImplementationSomeMoreTypes<P::Y, P::X, P::Y, P::_mkX> __ExternalImplementationSomeMoreTypes;
+public:
+    static P::_mkX mkX;
+private:
+    static void some_f_overloaded_on_return_type0(P::X& o);
+public:
+    typedef ExternalImplementationSomeMoreTypes<P::Y, P::X, P::Y, P::_mkX>::AConcreteType AConcreteType;
 };
 } // tests
 } // self_contained_codegen
@@ -88,22 +88,32 @@ namespace tests {
 namespace self_contained_codegen {
 namespace inputs {
 namespace generalTranslationTests {
-    ExternalImplementationSomeType P::__ExternalImplementationSomeType;
-    P::__+_ P::binary_add;
-    P::__mkY P::_mkY;
-    P::_all_statements P::all_statements;
-    P::_call_f_overloaded_on_return_type P::call_f_overloaded_on_return_type;
-    P::_helper_assign P::helper_assign;
-    P::_mkX P::mkX;
+
+
     P::_some_f_overloaded_on_return_type P::some_f_overloaded_on_return_type;
-    ExternalImplementation<P::X> P::__ExternalImplementation;
-    ExternalImplementationSomeMoreTypes<P::Y, P::X, P::Y, P::_mkX> P::__ExternalImplementationSomeMoreTypes;
-    P::X P::__+_::operator()(const P::X& lhs, const P::X& rhs) {
-        return __ExternalImplementation.binary_add(lhs, rhs);
-    };
+
+    ExternalImplementationSomeType P::__ExternalImplementationSomeType;
+
     P::Y P::__mkY::operator()() {
         return __ExternalImplementation.mkY();
     };
+
+
+    P::__mkY P::_mkY;
+
+    void P::some_f_overloaded_on_return_type0(P::Y& o) {
+        o = P::_mkY();
+    };
+
+    P::X P::__+_::operator()(const P::X& lhs, const P::X& rhs) {
+        return __ExternalImplementation.binary_add(lhs, rhs);
+    };
+
+
+    P::__+_ P::binary_add;
+
+    ExternalImplementation<P::X> P::__ExternalImplementation;
+
     void P::_all_statements::operator()(const P::X& x_obs, P::X& x_upd, P::X& x_out) {
         x_out = x_obs;
         x_out = [=, this]() {
@@ -131,22 +141,37 @@ namespace generalTranslationTests {
             ;
         }
     };
+
+
+    P::_all_statements P::all_statements;
+
     P::X P::_call_f_overloaded_on_return_type::operator()() {
         return P::some_f_overloaded_on_return_type.operator()<X>();
     };
+
+
+    P::_call_f_overloaded_on_return_type P::call_f_overloaded_on_return_type;
+
     void P::_helper_assign::operator()(P::X& x_out) {
         x_out = P::mkX();
     };
+
+
+    P::_helper_assign P::helper_assign;
+
     P::X P::_mkX::operator()() {
         return __ExternalImplementation.mkX();
     };
 
+
+    ExternalImplementationSomeMoreTypes<P::Y, P::X, P::Y, P::_mkX> P::__ExternalImplementationSomeMoreTypes;
+
+    P::_mkX P::mkX;
+
     void P::some_f_overloaded_on_return_type0(P::X& o) {
         o = P::mkX();
     };
-    void P::some_f_overloaded_on_return_type0(P::Y& o) {
-        o = P::_mkY();
-    };
+
 } // tests
 } // self_contained_codegen
 } // inputs

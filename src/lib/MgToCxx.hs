@@ -240,15 +240,14 @@ mgProgramToCxxProgramModule
       pure $ filter (\f -> _cxxFnName f `S.notMember` uniqueCallableCxxNames)
                     cxxFnDefs
 
-    topSortedCxxTyDefs <- topSortCxxTypeDefs (srcCtx declO) cxxTyDefs
-
     let allDefs =
              map (CxxPrivate,) (  extObjectsDef
                                <> map CxxFunctionDef cxxGeneratedFunctions)
-          <> map (CxxPublic,) (  map (uncurry CxxTypeDef) topSortedCxxTyDefs
+          <> map (CxxPublic,) (  map (uncurry CxxTypeDef) cxxTyDefs
                               <> map CxxInstance cxxFnCallOperatorObjects
                               <> map CxxNestedModule cxxFnCallOperatorStructs)
-    pure $ CxxModule moduleCxxNamespaces moduleCxxName (L.sortOn snd allDefs)
+    topSortedDefs <- topSortCxxDefs (srcCtx declO) moduleCxxName allDefs
+    pure $ CxxModule moduleCxxNamespaces moduleCxxName topSortedDefs
   where
     declFilter :: TcDecl -> Bool
     declFilter decl = case decl of
@@ -295,32 +294,88 @@ mgProgramToCxxProgramModule
 
 mgProgramToCxxProgramModule _ _ = error "expected program"
 
--- | Checks that a list of C++ type definitions can be ordered topologically
--- and returns one such sort.
--- TODO: check if this is stable
-topSortCxxTypeDefs :: SrcCtx -- ^ the source information of the program being
-                             --   generated for error reporting purposes
-                   -> [(CxxName, CxxName)]
-                   -> MgMonad [(CxxName, CxxName)]
-topSortCxxTypeDefs src typeDefs = do
+-- | Sorts topologically a list of C++ definitions with access specifiers
+-- based on their dependencies. We assume the definitions to all belong to the
+-- same module, whose name is passed as a parameter. For this to work, it is
+-- crucial that each definition refers to other definitions of the same module
+-- in a fully qualified way, i.e., if the parent module is called \'M\', and
+-- contains a type \'T\', and a function \'f\' that returns an element of
+-- type \'T\', the return type of \'f\' must be given as \'M::T\'.
+topSortCxxDefs :: SrcCtx  -- ^ a source location for error reporting
+               -> CxxName -- ^ the name of the parent module in C++
+               -> [(CxxAccessSpec, CxxDef)]
+               -> MgMonad [(CxxAccessSpec, CxxDef)]
+topSortCxxDefs src parentModuleCxxName defs = do
   mapM checkAcyclic sccs
   where
-    sccs = G.stronglyConnComp
-      [ ( tyDef
-        , targetName
-        , extractTemplateParametersFromCxxName sourceName
-        )
-        | tyDef@(sourceName, targetName) <- typeDefs
-      ]
+    extractInName = extractAllChildrenNamesFromCxxClassTypeInCxxName
+      (CxxCustomType parentModuleCxxName)
+    extractInType = extractAllChildrenNamesFromCxxClassTypeInCxxType
+      (CxxCustomType parentModuleCxxName)
 
-    checkAcyclic :: G.SCC (CxxName, CxxName) -> MgMonad (CxxName, CxxName)
+    sccs =  let snd3 (_, b, _) = b
+                -- TODO(not that important): check if the assessment below
+                --
+                -- I am not 100% sure if a call to sortOn is needed. The reason
+                -- it is here is to ensure that across different runs, the
+                -- output is always the same, even if the definitions are
+                -- processed in a different order (which I think could be the
+                -- case, if the implementation of Maps is different across
+                -- platforms, which I assume it may be – but haven't checked.
+                -- This is important so our tests don't become flakey on
+                -- other platforms, though not for actual runs of the compiler.
+                -- Note that since 'G.stronglyConnComp' makes no promise about
+                -- stability afaik, tests may also become flaky if that
+                -- dependency is updated.
+                incidenceGraphInformation = L.sortOn snd3 $
+                  map extractIncidenceGraphInformation defs
+            in G.stronglyConnComp incidenceGraphInformation
+
+    extractIncidenceGraphInformation
+      :: (CxxAccessSpec, CxxDef)
+      -> ((CxxAccessSpec, CxxDef), CxxName, [CxxName])
+    extractIncidenceGraphInformation defAndAs@(_, def) =
+
+      case def of
+        CxxTypeDef sourceName targetName ->
+          ( defAndAs
+          , targetName
+          , extractInName sourceName
+          )
+        CxxFunctionDef cxxFn ->
+          ( defAndAs
+          , _cxxFnName cxxFn
+          , extractInType (_cxxFnReturnType cxxFn) <>
+            join (map (extractInType . _cxxVarType) (_cxxFnParams cxxFn))
+          )
+        CxxNestedModule cxxMod ->
+          let (_, _, allDependencies) = unzip3 $
+                map extractIncidenceGraphInformation
+                    (_cxxModuleDefinitions cxxMod)
+          in ( defAndAs
+             , _cxxModuleName cxxMod
+             , join allDependencies)
+        CxxInstance cxxObj ->
+          ( defAndAs
+          , _cxxObjectName cxxObj
+          , extractInType (_cxxObjectType cxxObj)
+          )
+
+    checkAcyclic :: G.SCC (CxxAccessSpec, CxxDef)
+                 -> MgMonad (CxxAccessSpec, CxxDef)
     checkAcyclic comp = case comp of
-      G.AcyclicSCC tyDef -> pure tyDef
-      G.CyclicSCC circularDepTyDefs ->
-        throwLocatedE MiscErr src $
-          "can not sort types " <>
-          T.intercalate ", " (map (pshow . snd) circularDepTyDefs) <>
-          " topologically"
+      G.AcyclicSCC defAndAs -> pure defAndAs
+      G.CyclicSCC circularDepDefsAndAs ->
+        let extractName def = case def of
+              CxxTypeDef _ cxxTargetName -> cxxTargetName
+              CxxFunctionDef cxxFn -> _cxxFnName cxxFn
+              CxxNestedModule cxxMod -> _cxxModuleName cxxMod
+              CxxInstance cxxObj -> _cxxObjectName cxxObj
+            circularDepDefs = map snd circularDepDefsAndAs
+        in throwLocatedE MiscErr src $
+              "can not sort elements " <>
+              T.intercalate ", " (map (pshow . extractName) circularDepDefs) <>
+              " topologically"
 
 -- | Produces a C++ object from a data structure to instantiate along with
 -- the required template parameters if necessary. All the generated objects are
@@ -431,7 +486,7 @@ mgTyDeclToCxxTypeDef callableNamesToFnOpStructNames
     then pure $
       mkCxxClassMemberAccess (CxxCustomType cxxExtStructName) cxxExtTyName
     else do
-      cxxReqTypes <- mapM ((CxxCustomType <$>) . mkCxxName) sortedRequirements
+      cxxReqTypes <- mapM mkClassMemberCxxType sortedRequirements
       pure $ mkCxxClassMemberAccess
         (CxxCustomTemplatedType cxxExtStructName cxxReqTypes) cxxExtTyName
   pure (cxxSourceTyName, cxxTargetTyName)
