@@ -1,6 +1,6 @@
 #include <string>
 
-template <typename _Context, typename _State, class _cond, class _body>
+template <typename _Context, typename _State, class _body, class _cond>
 struct while_ops {
     typedef _State State;
     typedef _Context Context;

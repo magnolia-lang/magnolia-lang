@@ -1,4 +1,4 @@
-package examples.while_loop.mg-src.while_loop;
+package examples.while_loop.mg-src.while_loop-cpp;
 
 implementation WhileLoop = external C++ base.while_ops {
     require type Context;
