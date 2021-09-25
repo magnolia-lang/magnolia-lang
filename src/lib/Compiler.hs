@@ -27,6 +27,7 @@ import Env
 import Cxx.Syntax
 import Magnolia.PPrint
 import Magnolia.Syntax
+import Python.Syntax
 import Make
 import Monad
 
@@ -93,6 +94,15 @@ runTestWith filePath config = case _configPass config of
                        _configOutputDirectory config
           mapM_ (pprintCxxPackage outDir CxxHeader) sortedPkgs
           mapM_ (pprintCxxPackage outDir CxxImplementation) sortedPkgs
+    Python -> do
+      (epyPkgs, errs) <- runMgMonad $ compileToPyPackages filePath
+      case epyPkgs of
+        Left () -> logErrs errs
+        Right pyPkgs -> do
+          let sortedPkgs = L.sortOn _pyPackageName pyPkgs
+              outDir = _configImportBaseDirectory config <|>
+                       _configOutputDirectory config
+          mapM_ (pprintPyPackage outDir) sortedPkgs
     _ -> fail "codegen not yet implemented"
   StructurePreservingCodegenPass ->
     fail "structure preserving codegen not yet implemented"
@@ -168,3 +178,7 @@ runCompileWith filePath config = case _configOutputDirectory config of
 compileToCxxPackages :: FilePath -> MgMonad [CxxPackage]
 compileToCxxPackages filePath =
   depAnalPass filePath >>= parsePass >>= checkPass >>= programCodegenCxxPass
+
+compileToPyPackages :: FilePath -> MgMonad [PyPackage]
+compileToPyPackages filePath =
+  depAnalPass filePath >>= parsePass >>= checkPass >>= programCodegenPyPass
