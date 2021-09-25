@@ -7,6 +7,7 @@ module Make (
   , depAnalPass
   , parsePass
   , programCodegenCxxPass
+  , programCodegenPyPass
   )
   where
 
@@ -24,7 +25,9 @@ import Magnolia.PPrint
 import Magnolia.Syntax
 import Magnolia.Util
 import MgToCxx
+import MgToPython
 import Monad
+import Python.Syntax
 
 -- -- === passes ===
 
@@ -50,10 +53,18 @@ checkPass = foldMAccumErrorsAndFail go M.empty
       return $ M.insert (nodeName parsedPkg) tcPkg env
 
 -- | This function takes in a Map of typechecked packages, and produces, for
--- each of them, a C++ package containing all the programs defined in
+-- each of them, a C++ package containing all the programs defined in the
+-- input package.
 programCodegenCxxPass :: Env TcPackage -> MgMonad [CxxPackage]
 programCodegenCxxPass = foldMAccumErrorsAndFail
   (\acc -> ((:acc) <$>) . mgPackageToCxxSelfContainedProgramPackage) []
+
+-- | This function takes in a Map of typechecked packages, and produces, for
+-- each of them, a Python package containing all the programs defined in the
+-- input package.
+programCodegenPyPass :: Env TcPackage -> MgMonad [PyPackage]
+programCodegenPyPass = foldMAccumErrorsAndFail
+  (\acc -> ((:acc) <$>) . mgPackageToPySelfContainedProgramPackage) []
 
 -- | Checks if a list of strongly connected components contains cycles.
 -- Does not fail, but logs an error for each detected cycle. The resulting
