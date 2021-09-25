@@ -330,7 +330,7 @@ data CxxStmt = CxxStmtBlock CxxStmtBlock
 type CxxStmtBlock = [CxxStmt]
 
 -- | Useful inline statements in the C++ world.
-data CxxStmtInline = -- | A variable assignement.
+data CxxStmtInline = -- | A variable assignment.
                      CxxAssign CxxName CxxExpr
                      -- | A variable declaration.
                    | CxxVarDecl CxxVar (Maybe CxxExpr)
