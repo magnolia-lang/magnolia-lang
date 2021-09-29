@@ -1,6 +1,6 @@
 package examples.while_loop.mg-src.while_loop;
 
-implementation WhileLoop = external C++ base.while_ops {
+implementation WhileLoop = external Python base.while_ops {
     require type Context;
     require type State;
     require predicate cond(s: State, c: Context);
@@ -27,9 +27,9 @@ signature IntLikeOps = {
 }
 
 // TODO: write with a signature cast & renamings
-implementation Int16Utils = external C++ base.int16_utils IntLikeOps[IntLike => Int16];
+implementation Int16Utils = external Python base.int16_utils IntLikeOps[IntLike => Int16];
 
-implementation Int32Utils = external C++ base.int32_utils IntLikeOps[IntLike => Int32];
+implementation Int32Utils = external Python base.int32_utils IntLikeOps[IntLike => Int32];
 
 program IterationProgram = {
     use Int16Utils;

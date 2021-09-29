@@ -49,6 +49,11 @@ update-tests:
 		make update-tests-pass pass=$$pass ; \
 	done
 
+tmp-tests-py: $(self-contained-codegen-test-targets:%=tmp-test-py-%)
+
+tmp-test-py-%: tests/self-contained-codegen/inputs/%.mg
+	$(mgn) test --pass self-contained-codegen --backend python $<
+
 tests-pass: $($(pass)-test-targets:%=check-output-%)
 
 update-tests-pass: $($(pass)-test-targets:%=update-output-%)
