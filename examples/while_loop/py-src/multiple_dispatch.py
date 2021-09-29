@@ -5,7 +5,6 @@ from collections import defaultdict, namedtuple
 
 FunctionAndReturnType = namedtuple('FunctionAndReturnType',
                                    ['function', 'return_type'])
-_overloaded_functions = dict()
 
 class OverloadedFunction:
     def __init__(self, name):
@@ -49,14 +48,16 @@ class OverloadedFunction:
 
 # TODO: function name is not enough here to differentiate between various
 #       implementations. We will perhaps need to pass a scope name parameter
-#       as well, to namespace things properly.
-def overload(*types, return_type):
+#       as well, to namespace things properly. I think the better solution
+#       is to define a map for overloading in each module locally. That way,
+#       the different modules do not conflict with each other.
+def overload(_overloaded_functions_dict, *types, return_type):
     def register(function):
         name = function.__name__
-        overloaded_func = _overloaded_functions.get(name)
+        overloaded_func = _overloaded_functions_dict.get(name)
         if overloaded_func is None:
             overloaded_func = OverloadedFunction(name)
-            _overloaded_functions[name] = overloaded_func
+            _overloaded_functions_dict[name] = overloaded_func
         overloaded_func.register(function, types, return_type=return_type)
         return overloaded_func
     return register
