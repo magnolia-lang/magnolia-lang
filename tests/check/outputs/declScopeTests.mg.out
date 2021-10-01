@@ -16,7 +16,7 @@ tests/check/inputs/declScopeTests.mg:55:5: Declaration context error in tests.ch
 
 tests/check/inputs/declScopeTests.mg:62:13: Declaration error in tests.check.inputs.declScopeTests.P: axiom axiomBody() was left unimplemented in module P
 
-tests/check/inputs/declScopeTests.mg:62:13: Declaration error in tests.check.inputs.declScopeTests.P: function funProto() was left unimplemented in module P
+tests/check/inputs/declScopeTests.mg:62:13: Declaration error in tests.check.inputs.declScopeTests.P: function funProto(): T was left unimplemented in module P
 
 tests/check/inputs/declScopeTests.mg:62:13: Declaration error in tests.check.inputs.declScopeTests.P: predicate predProto() was left unimplemented in module P
 

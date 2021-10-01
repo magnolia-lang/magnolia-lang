@@ -419,11 +419,12 @@ checkConcrete src tcDecl = do
         throwLocatedE InvalidDeclErr src $
           "type " <> pshow (nodeName tcDecl) <> " was left unimplemented in " <>
           "module " <> pshow moduleName
-      MCallableDecl _ (Ann _ (Callable cty name args _ _ _)) ->
+      MCallableDecl _ (Ann _ (Callable cty name args rty _ _)) ->
         throwLocatedE InvalidDeclErr src $
           pshow cty <> " " <> pshow name <> "(" <>
-          T.intercalate ", " (map (pshow . _varType . _elem) args) <> ") " <>
-          "was left unimplemented in module " <> pshow moduleName
+          T.intercalate ", " (map (pshow . _varType . _elem) args) <> ")" <>
+          (if cty == Function then ": " <> pshow rty else "") <>
+          " was left unimplemented in module " <> pshow moduleName
 
 -- | Casts a module expression to the module type passed as a parameter.
 -- When casting to 'Signature', axioms are stripped from the module expression,

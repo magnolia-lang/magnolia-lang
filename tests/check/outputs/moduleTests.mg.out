@@ -1,4 +1,4 @@
-tests/check/inputs/moduleTests.mg:20:34: Declaration error in tests.check.inputs.moduleTests.DerivedProgramWithCast: function id(T) was left unimplemented in module DerivedProgramWithCast
+tests/check/inputs/moduleTests.mg:20:34: Declaration error in tests.check.inputs.moduleTests.DerivedProgramWithCast: function id(T): T was left unimplemented in module DerivedProgramWithCast
 
 tests/check/inputs/moduleTests.mg:20:34: Declaration error in tests.check.inputs.moduleTests.DerivedProgramWithCast: type T was left unimplemented in module DerivedProgramWithCast
 
@@ -8,7 +8,7 @@ tests/check/inputs/moduleTests.mg:28:5: Declaration error in tests.check.inputs.
 
 tests/check/inputs/moduleTests.mg:41:5: Declaration error in tests.check.inputs.moduleTests.DerivedExternalWithoutCastFromProgram: id was previously implemented at tests/check/inputs/moduleTests.mg:36:5 and can not be reimplemented in external path.to.file.dot.struct4
 
-tests/check/inputs/moduleTests.mg:49:41: Declaration error in tests.check.inputs.moduleTests.UseASourceExternalAsSignature: function id(T) was left unimplemented in module UseASourceExternalAsSignature
+tests/check/inputs/moduleTests.mg:49:41: Declaration error in tests.check.inputs.moduleTests.UseASourceExternalAsSignature: function id(T): T was left unimplemented in module UseASourceExternalAsSignature
 
 tests/check/inputs/moduleTests.mg:49:41: Declaration error in tests.check.inputs.moduleTests.UseASourceExternalAsSignature: type T was left unimplemented in module UseASourceExternalAsSignature
 
