@@ -14,15 +14,15 @@ tests/check/inputs/declScopeTests.mg:38:5: Declaration error in tests.check.inpu
 
 tests/check/inputs/declScopeTests.mg:55:5: Declaration context error in tests.check.inputs.declScopeTests.I: axioms can only be declared in concepts
 
-tests/check/inputs/declScopeTests.mg:62:13: Declaration error in tests.check.inputs.declScopeTests.P: T was left unimplemented in module P
+tests/check/inputs/declScopeTests.mg:62:13: Declaration error in tests.check.inputs.declScopeTests.P: axiom axiomBody() was left unimplemented in module P
 
-tests/check/inputs/declScopeTests.mg:62:13: Declaration error in tests.check.inputs.declScopeTests.P: axiomBody was left unimplemented in module P
+tests/check/inputs/declScopeTests.mg:62:13: Declaration error in tests.check.inputs.declScopeTests.P: function funProto() was left unimplemented in module P
 
-tests/check/inputs/declScopeTests.mg:62:13: Declaration error in tests.check.inputs.declScopeTests.P: funProto was left unimplemented in module P
+tests/check/inputs/declScopeTests.mg:62:13: Declaration error in tests.check.inputs.declScopeTests.P: predicate predProto() was left unimplemented in module P
 
-tests/check/inputs/declScopeTests.mg:62:13: Declaration error in tests.check.inputs.declScopeTests.P: predProto was left unimplemented in module P
+tests/check/inputs/declScopeTests.mg:62:13: Declaration error in tests.check.inputs.declScopeTests.P: procedure procProto() was left unimplemented in module P
 
-tests/check/inputs/declScopeTests.mg:62:13: Declaration error in tests.check.inputs.declScopeTests.P: procProto was left unimplemented in module P
+tests/check/inputs/declScopeTests.mg:62:13: Declaration error in tests.check.inputs.declScopeTests.P: type T was left unimplemented in module P
 
 tests/check/inputs/declScopeTests.mg:81:5: Declaration context error in tests.check.inputs.declScopeTests.P: axioms can only be declared in concepts
 

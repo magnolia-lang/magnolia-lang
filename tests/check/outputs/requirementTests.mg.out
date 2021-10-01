@@ -2,8 +2,8 @@ tests/check/inputs/requirementTests.mg:35:9: Declaration error in tests.check.in
 
 tests/check/inputs/requirementTests.mg:35:9: Declaration error in tests.check.inputs.requirementTests.MergingImpls: got conflicting implementations for type T at tests/check/inputs/requirementTests.mg:9:5 and tests/check/inputs/requirementTests.mg:14:5
 
-tests/check/inputs/requirementTests.mg:54:35: Declaration error in tests.check.inputs.requirementTests.MissingRequiredFunction: f was left unimplemented in module MissingRequiredFunction
+tests/check/inputs/requirementTests.mg:54:35: Declaration error in tests.check.inputs.requirementTests.MissingRequiredFunction: function f() was left unimplemented in module MissingRequiredFunction
 
 tests/check/inputs/requirementTests.mg:62:13: Error in tests.check.inputs.requirementTests.ImplementingARequirement: f is 'required' but has been given a body
 
-tests/check/inputs/requirementTests.mg:66:46: Declaration error in tests.check.inputs.requirementTests.PExtReq1: T was left unimplemented in module PExtReq1
+tests/check/inputs/requirementTests.mg:66:46: Declaration error in tests.check.inputs.requirementTests.PExtReq1: type T was left unimplemented in module PExtReq1

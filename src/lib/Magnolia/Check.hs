@@ -414,9 +414,16 @@ checkConcrete src tcDecl = do
         MCallableDecl _ (Ann (mconDeclO, _) _) -> isJust mconDeclO
   unless isImplemented $ do
     moduleName <- getParentModuleName
-    throwLocatedE InvalidDeclErr src $
-      pshow (nodeName tcDecl) <> " was left unimplemented in module " <>
-      pshow moduleName
+    case tcDecl of
+      MTypeDecl {} ->
+        throwLocatedE InvalidDeclErr src $
+          "type " <> pshow (nodeName tcDecl) <> " was left unimplemented in " <>
+          "module " <> pshow moduleName
+      MCallableDecl _ (Ann _ (Callable cty name args _ _ _)) ->
+        throwLocatedE InvalidDeclErr src $
+          pshow cty <> " " <> pshow name <> "(" <>
+          T.intercalate ", " (map (pshow . _varType . _elem) args) <> ") " <>
+          "was left unimplemented in module " <> pshow moduleName
 
 -- | Casts a module expression to the module type passed as a parameter.
 -- When casting to 'Signature', axioms are stripped from the module expression,
