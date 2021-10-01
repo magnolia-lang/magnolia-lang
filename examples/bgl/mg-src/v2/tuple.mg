@@ -1,8 +1,8 @@
 package examples.bgl.mg-src.v2.tuple;
 
 concept Pair = {
-    type A;
-    type B;
+    require type A;
+    require type B;
     type Pair;
 
     function first(p: Pair): A;
@@ -18,9 +18,9 @@ concept Pair = {
 }
 
 concept Triplet = {
-    type A;
-    type B;
-    type C;
+    require type A;
+    require type B;
+    require type C;
     type Triplet;
 
     function first(p: Triplet): A;
