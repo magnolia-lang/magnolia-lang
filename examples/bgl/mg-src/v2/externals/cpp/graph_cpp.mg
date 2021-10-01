@@ -1,8 +1,8 @@
 package examples.bgl.mg-src.v2.graph;
 
 concept Edge = {
-    require type Vertex;
     type Edge;
+    type Vertex;
 
     function src(e: Edge): Vertex;
     function tgt(e: Edge): Vertex;
@@ -12,10 +12,9 @@ concept IncidenceGraph = {
     require Edge;
 
     // TODO: define at least a container relation between edge and edge list
-    require type Edge;
-    require type Vertex;
-    
+    type Edge;
     type EdgeList;
+    type Vertex;
     type Graph;
 
     type VertexCount;

@@ -1,13 +1,30 @@
 // https://www.boost.org/doc/libs/1_75_0/libs/graph/doc/graph_theory_review.html#sec:bfs-algorithm
 // https://www.boost.org/doc/libs/1_75_0/libs/graph/doc/breadth_first_search.html
 package examples.bgl.mg-src.v2.bfs
-    imports examples.bgl.mg-src.v2.color_marker
-          , examples.bgl.mg-src.v2.graph
+    imports examples.bgl.mg-src.v2.graph
           , examples.bgl.mg-src.v2.property_map
           , examples.bgl.mg-src.v2.queue
           , examples.bgl.mg-src.v2.tuple
           , examples.bgl.mg-src.v2.while_loop;
 
+
+concept ColorMarker = {
+    type Color;
+
+    function white(): Color;
+    function gray(): Color;
+    function black(): Color;
+
+    axiom threeDistinctColors() {
+        assert white() != gray();
+        assert gray() != black();
+        assert black() != white();
+    }
+
+    axiom exactlyThreeColors(c: Color) {
+        assert c == white() || c == gray() || c == black();
+    }
+}
 
 concept BFSVisitor = {
     type BFSVisitor;
@@ -71,22 +88,6 @@ concept BFSVisitor = {
                            obs g: Graph,
                            upd q: Queue,
                            upd a: A);
-}
-
-// Use BFSVisitorDefaultAction with appropriate renamings to provide default
-// implementations to the procedures declared in BFSVisitor.
-implementation BFSVisitorDefaultAction = {
-    type A;
-    type BFSVisitor;
-    type EdgeOrVertex;
-    type Graph;
-    type Queue;
-
-    procedure defaultAction(obs vis: BFSVisitor,
-                            obs edgeOrVertex: EdgeOrVertex,
-                            obs g: Graph,
-                            upd q: Queue,
-                            upd a: A) = {};
 }
 
 implementation BFS = {

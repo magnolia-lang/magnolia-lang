@@ -1,12 +1,12 @@
 package examples.bgl.mg-src.v2.while_loop;
 
 concept WhileLoop = {
-    type Context;
-    type State;
+    require type Context;
+    require type State;
 
-    procedure step(upd s: State, obs c: Context);
+    require predicate cond(s: State, c: Context);
+    require procedure step(upd s: State, obs c: Context);
     procedure repeat(upd s: State, obs c: Context);
-    predicate cond(s: State, c: Context);
 
     axiom whileLoopBehavior(s: State, c: Context) {
         var mutableState = s;
