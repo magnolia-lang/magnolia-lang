@@ -1,39 +1,36 @@
-package examples.bgl.mg-src.v2.graph;
+package examples.bgl.mg-src.v2.externals.cpp.graph_cpp
+    imports examples.bgl.mg-src.v2.graph
+          , examples.bgl.mg-src.v2.externals.cpp.list_cpp;
 
-concept Edge = {
-    type Edge;
-    type Vertex;
+// TODO: there is a lot of requirements to pass through because we do not have
+// the extend keyword. Perhaps this should be improved.
 
-    function src(e: Edge): Vertex;
-    function tgt(e: Edge): Vertex;
+implementation CppEdge = external C++ base.edge signature(Edge);
+
+implementation CppGraphType = external C++ base.graph {
+    require CppEdge;
+
+    type Graph;
 }
 
-concept IncidenceGraph = {
-    require Edge;
+implementation CppIncidenceGraph = external C++ base.incidence_graph {
+    require CppGraphType;
+    require type VertexCount;
 
-    // TODO: define at least a container relation between edge and edge list
-    type Edge;
-    type EdgeList;
-    type Vertex;
-    type Graph;
-
-    type VertexCount;
+    require CppList[ A => Edge
+                   , List => EdgeList
+                   ];
 
     function outEdges(v: Vertex, g: Graph): EdgeList;
     function outDegree(v: Vertex, g: Graph): VertexCount;
-
-    // TODO: add axioms such that outDegree(v, g) <= count(outEdges(v, g))?
 }
 
-concept VertexListGraph = {
-    // Why do we choose a list? And more importantly, what are the
-    // requirements that interest us and that we make on a list?
-    // Likely:
-    //   - the fact that it's a collection of elements
-    //   - ?
-    type VertexList;
-    type Graph;
-    type VertexCount;
+implementation CppVertexListGraph = external C++ base.vertex_list_graph {
+    require CppGraphType;
+    require CppList[ A => Vertex
+                   , List => VertexList
+                   ];
+    require type VertexCount;
 
     function vertices(g: Graph): VertexList;
     function numVertices(g: Graph): VertexCount;

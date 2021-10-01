@@ -107,7 +107,7 @@ implementation BFS = {
                                 start: Vertex,
                                 vis: BFSVisitor,
                                 init: A): A = {
-        var q = empty();
+        var q = empty(): Queue;
         var c = initMap(vertices(g), white());
         var a = init;
 
@@ -175,7 +175,7 @@ implementation BFS = {
     require type BFSVisitor; // TODO == OuterLoopContext
     require type InnerLoopContext;
 
-    predicate bfsOuterLoopCond(state: OuterLoopState, vis: BFSVisitor) {
+    predicate bfsOuterLoopCond(state: OuterLoopState, ctx: OuterLoopContext) {
         var q = second(state);
         value isEmpty(q);
     }

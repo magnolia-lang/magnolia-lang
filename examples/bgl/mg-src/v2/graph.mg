@@ -1,4 +1,5 @@
-package examples.bgl.mg-src.v2.graph;
+package examples.bgl.mg-src.v2.graph
+    imports examples.bgl.mg-src.v2.list;
 
 concept Edge = {
     require type Vertex;
@@ -32,6 +33,9 @@ concept VertexListGraph = {
     // Likely:
     //   - the fact that it's a collection of elements
     //   - ?
+    require List[ A => Vertex
+                , List => VertexList
+                ];
     type VertexList;
     type Graph;
     type VertexCount;

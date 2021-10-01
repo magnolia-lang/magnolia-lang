@@ -7,7 +7,9 @@ package examples.bgl.mg-src.v2.bfs_test
           , examples.bgl.mg-src.v2.tuple
           , examples.bgl.mg-src.v2.while_loop
           , examples.bgl.mg-src.v2.externals.cpp.color_marker_cpp
+          , examples.bgl.mg-src.v2.externals.cpp.graph_cpp
           , examples.bgl.mg-src.v2.externals.cpp.list_cpp
+          , examples.bgl.mg-src.v2.externals.cpp.property_map_cpp
           , examples.bgl.mg-src.v2.externals.cpp.queue_cpp
           , examples.bgl.mg-src.v2.externals.cpp.tuple_cpp
           , examples.bgl.mg-src.v2.externals.cpp.while_loop_cpp;
@@ -21,7 +23,7 @@ program BFSTestVisitor = {
                              obs g: Graph,
                              upd q: Queue,
                              upd a: IntList) = { // A should be list, perhaps?
-        
+        // TODO 
     }
 
     use BFSVisitorDefaultAction[ EdgeOrVertex => Vertex
@@ -57,11 +59,40 @@ program BFSTestVisitor = {
     use CppList[ A => Edge
                , List => EdgeList
                ];
+    use CppList[ A => Vertex
+               , List => VertexList
+               ];
     use CppList[ A => Int
                , List => IntList
                ];
-    use CppPair;
-    use CppQueue[ A => Vertex];
+
+    use CppTriplet[ A => IntList
+                  , B => Queue
+                  , C => ColorPropertyMap
+                  , Triplet => OuterLoopState
+                  , makeTriplet => makeOuterLoopState
+                  ];
+
+    use CppPair[ A => Graph
+               , B => BFSVisitor
+               , Pair => OuterLoopContext
+               , makePair => makeOuterLoopContext
+               ];
+
+    use CppPair[ A => OuterLoopState
+               , B => EdgeList
+               , Pair => InnerLoopState
+               , makePair => makeInnerLoopState
+               ];
+
+    use CppTriplet[ A => Graph
+                  , B => BFSVisitor
+                  , C => Vertex
+                  , Triplet => InnerLoopContext
+                  , makeTriplet => makeInnerLoopContext
+                  ];
+
+    use CppQueue[ A => Vertex ];
     use CppWhileLoop[ Context => OuterLoopContext
                     , State => OuterLoopState
                     , cond => bfsOuterLoopCond
@@ -75,4 +106,13 @@ program BFSTestVisitor = {
                     , step => bfsInnerLoopStep
                     , repeat => bfsInnerLoopRepeat
                     ];
+
+    use CppReadWritePropertyMap[ Key => Vertex
+                               , Value => Color
+                               , PropertyMap => ColorPropertyMap
+                               ];
+
+    use CppEdge;
+    use CppIncidenceGraph;
+    use CppVertexListGraph;
 };

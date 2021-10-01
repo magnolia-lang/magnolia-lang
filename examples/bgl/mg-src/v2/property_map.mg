@@ -1,9 +1,10 @@
 package examples.bgl.mg-src.v2.property_map;
 
 concept ReadPropertyMap = {
+    require type Key;
+    require type Value;
+
     type PropertyMap;
-    type Key;
-    type Value;
 
     function get(pm: PropertyMap, k: Key): Value;
 
