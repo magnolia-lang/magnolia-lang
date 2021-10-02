@@ -19,8 +19,7 @@ package examples.bgl.mg-src.v2.bfs_test
 program BFSTestVisitor = {
     use BFS[ A => IntList ];
 
-    procedure discoverVertex(obs vis: BFSVisitor,
-                             obs v: Vertex,
+    procedure discoverVertex(obs v: Vertex,
                              obs g: Graph,
                              upd q: Queue,
                              upd a: IntList) = { // A should be list, perhaps?
@@ -74,27 +73,20 @@ program BFSTestVisitor = {
                   , makeTriplet => makeOuterLoopState
                   ];
 
-    use CppPair[ A => Graph
-               , B => BFSVisitor
-               , Pair => OuterLoopContext
-               , makePair => makeOuterLoopContext
-               ];
-
     use CppPair[ A => OuterLoopState
                , B => EdgeList
                , Pair => InnerLoopState
                , makePair => makeInnerLoopState
                ];
 
-    use CppTriplet[ A => Graph
-                  , B => BFSVisitor
-                  , C => Vertex
-                  , Triplet => InnerLoopContext
-                  , makeTriplet => makeInnerLoopContext
-                  ];
+    use CppPair[ A => Graph
+               , B => Vertex
+               , Pair => InnerLoopContext
+               , makePair => makeInnerLoopContext
+               ];
 
     use CppQueue[ A => Vertex ];
-    use CppWhileLoop[ Context => OuterLoopContext
+    use CppWhileLoop[ Context => Graph
                     , State => OuterLoopState
                     , cond => bfsOuterLoopCond
                     , step => bfsOuterLoopStep

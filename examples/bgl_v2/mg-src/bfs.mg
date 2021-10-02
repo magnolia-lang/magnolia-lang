@@ -10,7 +10,6 @@ package examples.bgl.mg-src.v2.bfs
 
 
 concept BFSVisitor = {
-    type BFSVisitor;
     
     // Graph components
     type Graph;
@@ -24,50 +23,42 @@ concept BFSVisitor = {
 
     // BFS BGL API
     // TODO: add guards for Vertex having to be in Graph?
-    procedure discoverVertex(obs vis: BFSVisitor,
-                             obs v: Vertex,
+    procedure discoverVertex(obs v: Vertex,
                              obs g: Graph,
                              upd q: Queue,
                              upd a: A);
 
-    procedure examineVertex(obs vis: BFSVisitor,
-                            obs v: Vertex,
+    procedure examineVertex(obs v: Vertex,
                             obs g: Graph,
                             upd q: Queue,
                             upd a: A);
 
-    procedure examineEdge(obs vis: BFSVisitor,
-                          obs e: Edge,
+    procedure examineEdge(obs e: Edge,
                           obs g: Graph,
                           upd q: Queue,
                           upd a: A);
 
-    procedure treeEdge(obs vis: BFSVisitor,
-                       obs e: Edge,
+    procedure treeEdge(obs e: Edge,
                        obs g: Graph,
                        upd q: Queue,
                        upd a: A);
     
-    procedure nonTreeEdge(obs vis: BFSVisitor,
-                          obs e: Edge,
+    procedure nonTreeEdge(obs e: Edge,
                           obs g: Graph,
                           upd q: Queue,
                           upd a: A);
 
-    procedure grayTarget(obs vis: BFSVisitor,
-                         obs e: Edge,
+    procedure grayTarget(obs e: Edge,
                          obs g: Graph,
                          upd q: Queue,
                          upd a: A);
     
-    procedure blackTarget(obs vis: BFSVisitor,
-                          obs e: Edge,
+    procedure blackTarget(obs e: Edge,
                           obs g: Graph,
                           upd q: Queue,
                           upd a: A);
 
-    procedure finishVertex(obs vis: BFSVisitor,
-                           obs v: Vertex,
+    procedure finishVertex(obs v: Vertex,
                            obs g: Graph,
                            upd q: Queue,
                            upd a: A);
@@ -77,13 +68,11 @@ concept BFSVisitor = {
 // implementations to the procedures declared in BFSVisitor.
 implementation BFSVisitorDefaultAction = {
     type A;
-    type BFSVisitor;
     type EdgeOrVertex;
     type Graph;
     type Queue;
 
-    procedure defaultAction(obs vis: BFSVisitor,
-                            obs edgeOrVertex: EdgeOrVertex,
+    procedure defaultAction(obs edgeOrVertex: EdgeOrVertex,
                             obs g: Graph,
                             upd q: Queue,
                             upd a: A) = {};
@@ -105,23 +94,21 @@ implementation BFS = {
 
     function breadthFirstSearch(g: Graph,
                                 start: Vertex,
-                                vis: BFSVisitor,
                                 init: A): A = {
         var q = empty(): Queue;
         var c = initMap(vertices(g), white());
         var a = init;
 
-        call breadthFirstVisit(g, start, vis, a, q, c);
+        call breadthFirstVisit(g, start, a, q, c);
         value a;
     }
 
     procedure breadthFirstVisit(obs g: Graph,
                                 obs v: Vertex,
-                                obs vis: BFSVisitor,
                                 upd a: A,
                                 upd q: Queue,
                                 upd c: ColorPropertyMap) {
-        call discoverVertex(vis, v, g, q, a);
+        call discoverVertex(v, g, q, a);
 
         var q1 = push(v, q);
         var c1 = put(c, v, gray());
@@ -134,7 +121,7 @@ implementation BFS = {
                  , step => bfsOuterLoopStep
                  , cond => bfsOuterLoopCond
                  , State => OuterLoopState
-                 , Context => OuterLoopContext
+                 , Context => Graph
                  ];
 
     use Triplet[ A => A
@@ -144,12 +131,6 @@ implementation BFS = {
                , makeTriplet => makeOuterLoopState
                ];
 
-    use Pair[ A => Graph
-            , B => BFSVisitor
-            , Pair => OuterLoopContext
-            , makePair => makeOuterLoopContext
-            ];
-
     use WhileLoop[ repeat => bfsInnerLoopRepeat
                  , step => bfsInnerLoopStep
                  , cond => bfsInnerLoopCond
@@ -157,11 +138,10 @@ implementation BFS = {
                  , Context => InnerLoopContext
                  ];
 
-    use Triplet[ A => Graph
-               , B => BFSVisitor
-               , C => Vertex
-               , Triplet => InnerLoopContext
-               , makeTriplet => makeInnerLoopContext
+    use Pair[ A => Graph
+            , B => Vertex
+            , Pair => InnerLoopContext
+            , makePair => makeInnerLoopContext
                // Renaming axiom avoids merging errors tagged as compiler bug.
                // Problem should be related to https://github.com/magnolia-lang/magnolia-lang/issues/43
                ];
@@ -172,16 +152,15 @@ implementation BFS = {
             , makePair => makeInnerLoopState
             ];
 
-    require type BFSVisitor; // TODO == OuterLoopContext
     require type InnerLoopContext;
 
-    predicate bfsOuterLoopCond(state: OuterLoopState, ctx: OuterLoopContext) {
+    predicate bfsOuterLoopCond(state: OuterLoopState, g: Graph) {
         var q = second(state);
         value isEmpty(q);
     }
 
     procedure bfsOuterLoopStep(upd state: OuterLoopState,
-                               obs ctx: OuterLoopContext) {
+                               obs g: Graph) {
         var x = first(state);
         var q1 = second(state);
         var c = third(state);
@@ -189,14 +168,11 @@ implementation BFS = {
         var u = front(q1);
         var q2 = pop(q1);
 
-        var g = first(ctx);
-        var vis = second(ctx);
-
-        call examineVertex(vis, u, g, q2, x);
+        call examineVertex(u, g, q2, x);
 
         var innerState = makeInnerLoopState(makeOuterLoopState(x, q2, c),
                                             outEdges(u, g));
-        var innerContext = makeInnerLoopContext(g, vis, u);
+        var innerContext = makeInnerLoopContext(g, u);
 
         call bfsInnerLoopRepeat(innerState, innerContext);
 
@@ -205,7 +181,7 @@ implementation BFS = {
         var q_end = second(outerLoopStateAfterInnerLoop);
         var c_end = third(outerLoopStateAfterInnerLoop);
 
-        call finishVertex(vis, u, g, q_end, x_end);
+        call finishVertex(u, g, q_end, x_end);
 
         state = makeOuterLoopState(x_end, q_end, c_end);
     }
@@ -223,8 +199,7 @@ implementation BFS = {
     procedure bfsInnerLoopStep(upd state: InnerLoopState,
                                obs ctx: InnerLoopContext) {
         var g = first(ctx);
-        var vis = second(ctx);
-        var u = third(ctx);
+        var u = second(ctx);
 
         var outerState = first(state);
         var x1 = first(outerState);
@@ -237,23 +212,23 @@ implementation BFS = {
 
         var v = tgt(e);
 
-        call examineEdge(vis, e, g, q1, x1);
+        call examineEdge(e, g, q1, x1);
 
         var vc = get(c1, v);
 
         if vc == white() then {
-            call treeEdge(vis, e, g, q1, x1);
+            call treeEdge(e, g, q1, x1);
             var c2 = put(c1, v, gray());
-            call discoverVertex(vis, v, g, q1, x1);
+            call discoverVertex(v, g, q1, x1);
 
             state = makeInnerLoopState(makeOuterLoopState(x1, push(v, q1), c2),
                                        es);
         } else if vc == gray() then {
-            call grayTarget(vis, e, g, q1, x1);
+            call grayTarget(e, g, q1, x1);
             state = makeInnerLoopState(makeOuterLoopState(x1, q1, c1), es);
                                       
         } else { // vc == black();
-            call blackTarget(vis, e, g, q1, x1);
+            call blackTarget(e, g, q1, x1);
             var c2 = put(c1, u, black());
             state = makeInnerLoopState(makeOuterLoopState(x1, q1, c1), es);
         };
