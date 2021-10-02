@@ -1,19 +1,19 @@
-package examples.bgl.mg-src.v2.bfs_test
-    imports examples.bgl.mg-src.v2.bfs
-          , examples.bgl.mg-src.v2.graph
-          , examples.bgl.mg-src.v2.list
-          , examples.bgl.mg-src.v2.property_map
-          , examples.bgl.mg-src.v2.queue
-          , examples.bgl.mg-src.v2.tuple
-          , examples.bgl.mg-src.v2.while_loop
-          , examples.bgl.mg-src.v2.externals.cpp.base_types_cpp
-          , examples.bgl.mg-src.v2.externals.cpp.color_marker_cpp
-          , examples.bgl.mg-src.v2.externals.cpp.graph_cpp
-          , examples.bgl.mg-src.v2.externals.cpp.list_cpp
-          , examples.bgl.mg-src.v2.externals.cpp.property_map_cpp
-          , examples.bgl.mg-src.v2.externals.cpp.queue_cpp
-          , examples.bgl.mg-src.v2.externals.cpp.tuple_cpp
-          , examples.bgl.mg-src.v2.externals.cpp.while_loop_cpp;
+package examples.bgl_v2.mg-src.bfs_test
+    imports examples.bgl_v2.mg-src.bfs
+          , examples.bgl_v2.mg-src.graph
+          , examples.bgl_v2.mg-src.list
+          , examples.bgl_v2.mg-src.property_map
+          , examples.bgl_v2.mg-src.queue
+          , examples.bgl_v2.mg-src.tuple
+          , examples.bgl_v2.mg-src.while_loop
+          , examples.bgl_v2.mg-src.externals.cpp.base_types_cpp
+          , examples.bgl_v2.mg-src.externals.cpp.color_marker_cpp
+          , examples.bgl_v2.mg-src.externals.cpp.graph_cpp
+          , examples.bgl_v2.mg-src.externals.cpp.list_cpp
+          , examples.bgl_v2.mg-src.externals.cpp.property_map_cpp
+          , examples.bgl_v2.mg-src.externals.cpp.queue_cpp
+          , examples.bgl_v2.mg-src.externals.cpp.tuple_cpp
+          , examples.bgl_v2.mg-src.externals.cpp.while_loop_cpp;
 
 // See Haskell example TestVisitor1 from the comparing generics paper
 program BFSTestVisitor = {

@@ -1,4 +1,4 @@
-package examples.bgl.mg-src.v2.color_marker;
+package examples.bgl_v2.mg-src.color_marker;
 
 concept ColorMarker = {
     type Color;

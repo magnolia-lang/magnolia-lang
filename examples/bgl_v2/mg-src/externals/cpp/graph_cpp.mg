@@ -1,6 +1,6 @@
-package examples.bgl.mg-src.v2.externals.cpp.graph_cpp
-    imports examples.bgl.mg-src.v2.graph
-          , examples.bgl.mg-src.v2.externals.cpp.list_cpp;
+package examples.bgl_v2.mg-src.externals.cpp.graph_cpp
+    imports examples.bgl_v2.mg-src.graph
+          , examples.bgl_v2.mg-src.externals.cpp.list_cpp;
 
 // TODO: there is a lot of requirements to pass through because we do not have
 // the extend keyword. Perhaps this should be improved.

@@ -1,4 +1,4 @@
-package examples.bgl.mg-src.v2.queue;
+package examples.bgl_v2.mg-src.queue;
 
 concept Queue = {
     require type A;

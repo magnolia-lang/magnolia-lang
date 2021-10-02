@@ -1,5 +1,5 @@
-package examples.bgl.mg-src.v2.graph
-    imports examples.bgl.mg-src.v2.list;
+package examples.bgl_v2.mg-src.graph
+    imports examples.bgl_v2.mg-src.list;
 
 concept Edge = {
     require type Vertex;

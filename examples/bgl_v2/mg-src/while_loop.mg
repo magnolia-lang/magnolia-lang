@@ -1,4 +1,4 @@
-package examples.bgl.mg-src.v2.while_loop;
+package examples.bgl_v2.mg-src.while_loop;
 
 concept WhileLoop = {
     require type Context;

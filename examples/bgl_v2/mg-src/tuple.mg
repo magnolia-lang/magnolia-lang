@@ -1,4 +1,4 @@
-package examples.bgl.mg-src.v2.tuple;
+package examples.bgl_v2.mg-src.tuple;
 
 concept Pair = {
     require type A;

@@ -1,4 +1,4 @@
-package examples.bgl.mg-src.v2.property_map;
+package examples.bgl_v2.mg-src.property_map;
 
 concept ReadPropertyMap = {
     require type Key;

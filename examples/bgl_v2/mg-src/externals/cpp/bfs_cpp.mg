@@ -1,11 +1,11 @@
 // https://www.boost.org/doc/libs/1_75_0/libs/graph/doc/graph_theory_review.html#sec:bfs-algorithm
 // https://www.boost.org/doc/libs/1_75_0/libs/graph/doc/breadth_first_search.html
-package examples.bgl.mg-src.v2.bfs
-    imports examples.bgl.mg-src.v2.graph
-          , examples.bgl.mg-src.v2.property_map
-          , examples.bgl.mg-src.v2.queue
-          , examples.bgl.mg-src.v2.tuple
-          , examples.bgl.mg-src.v2.while_loop;
+package examples.bgl_v2.mg-src.bfs
+    imports examples.bgl_v2.mg-src.graph
+          , examples.bgl_v2.mg-src.property_map
+          , examples.bgl_v2.mg-src.queue
+          , examples.bgl_v2.mg-src.tuple
+          , examples.bgl_v2.mg-src.while_loop;
 
 
 concept ColorMarker = {

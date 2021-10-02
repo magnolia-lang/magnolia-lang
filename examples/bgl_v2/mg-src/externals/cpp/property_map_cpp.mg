@@ -1,5 +1,5 @@
-package examples.bgl.mg-src.v2.externals.cpp.property_map_cpp
-    imports examples.bgl.mg-src.v2.property_map;
+package examples.bgl_v2.mg-src.externals.cpp.property_map_cpp
+    imports examples.bgl_v2.mg-src.property_map;
 
 implementation CppReadWritePropertyMapWithInitList =
     external C++ base.read_write_property_map {
