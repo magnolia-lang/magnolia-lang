@@ -6,6 +6,7 @@ package examples.bgl.mg-src.v2.bfs_test
           , examples.bgl.mg-src.v2.queue
           , examples.bgl.mg-src.v2.tuple
           , examples.bgl.mg-src.v2.while_loop
+          , examples.bgl.mg-src.v2.externals.cpp.base_types_cpp
           , examples.bgl.mg-src.v2.externals.cpp.color_marker_cpp
           , examples.bgl.mg-src.v2.externals.cpp.graph_cpp
           , examples.bgl.mg-src.v2.externals.cpp.list_cpp
@@ -14,7 +15,7 @@ package examples.bgl.mg-src.v2.bfs_test
           , examples.bgl.mg-src.v2.externals.cpp.tuple_cpp
           , examples.bgl.mg-src.v2.externals.cpp.while_loop_cpp;
 
-// See Haskell example test from the comparing generics paper
+// See Haskell example TestVisitor1 from the comparing generics paper
 program BFSTestVisitor = {
     use BFS[ A => IntList ];
 
@@ -107,12 +108,15 @@ program BFSTestVisitor = {
                     , repeat => bfsInnerLoopRepeat
                     ];
 
-    use CppReadWritePropertyMap[ Key => Vertex
-                               , Value => Color
-                               , PropertyMap => ColorPropertyMap
-                               ];
+    use CppReadWritePropertyMapWithInitList[ Key => Vertex
+                                           , KeyList => VertexList
+                                           , Value => Color
+                                           , PropertyMap => ColorPropertyMap
+                                           ];
 
+    use CppBaseTypes;
     use CppEdge;
+    use CppGraphType;
     use CppIncidenceGraph;
     use CppVertexListGraph;
 };
