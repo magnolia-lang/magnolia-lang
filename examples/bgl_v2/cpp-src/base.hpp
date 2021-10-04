@@ -2,13 +2,13 @@
 #include <map>
 #include <queue>
 #include <tuple>
+#include <unordered_set>
 #include <utility>
 
 // base_types_cpp
 struct base_types {
     typedef int Int;
     typedef int Vertex;
-    typedef int VertexCount;
 };
 
 // color_marker_cpp
@@ -30,10 +30,58 @@ struct edge {
     inline Vertex tgt(const Edge &e) { return e.second; }
 };
 
-template <typename _Edge, typename _Vertex, class src, class tgt>
-struct graph {};
+template <typename _Edge, typename _EdgeList, typename _Vertex,
+          typename _VertexList, class _cons, class _emptyEdgeList,
+          class _emptyVertexList, class _head, class _isEmpty, class _src,
+          class _tail, class _tgt>
+struct incidence_and_vertex_list_graph {
+    typedef _Edge Edge;
+    typedef _EdgeList EdgeList;
+    typedef _Vertex Vertex;
+    typedef _VertexList VertexList;
 
-template <typename _Edge, typename _EdgeList, typename _Graph, typename _Vertex,
+    typedef int VertexCount;
+    struct Graph {
+        std::unordered_set<Vertex> vertices;
+        std::list<Edge> edges;
+
+        Graph(const std::list<Edge> &edges) {
+            for (auto edge_it = edges.begin(); edge_it != edges.end(); ++edge_it) {
+                this->edges.push_back(*edge_it);
+                this->vertices.insert(src(*edge_it));
+                this->vertices.insert(tgt(*edge_it));
+            }
+        }
+        // TODO
+    };
+
+    static _cons cons;
+    static _emptyEdgeList emptyEdgeList;
+    static _emptyVertexList emptyVertexList;
+    static _head head;
+    static _isEmpty isEmpty;
+    static _src src;
+    static _tail tail;
+    static _tgt tgt;
+
+    inline EdgeList outEdges(const Vertex &v, const Graph &g) {
+
+    }
+
+    inline VertexCount outDegree(const Vertex &v, const Graph &g) {
+
+    }
+
+    inline VertexList vertices(const Graph &g) {
+
+    }
+
+    inline VertexCount numVertices(const Graph &g) {
+
+    }
+};
+
+/*template <typename _Edge, typename _EdgeList, typename _Graph, typename _Vertex,
           typename _VertexCount, class _allEdges, class _cons,
           class _emptyEdgeList, class _head, class _isEmpty, class _src,
           class _tail, class _tgt>
@@ -98,6 +146,7 @@ struct vertex_list_graph {
     _tgt tgt;
     _vertices vertices;
 };
+*/
 
 // list_cpp
 template <typename _A>
@@ -133,11 +182,11 @@ struct property_map {
     typedef _Value Value;
     typedef std::map<Key, Value> PropertyMap;
 
-    _cons cons;
-    _emptyKeyList emptyKeyList;
-    _head head;
-    _isEmpty isEmpty;
-    _tail tail;
+    static _cons cons;
+    static _emptyKeyList emptyKeyList;
+    static _head head;
+    static _isEmpty isEmpty;
+    static _tail tail;
 
     inline Value get(const PropertyMap &pm, const Key &k) {
         return pm[k];
@@ -223,8 +272,8 @@ struct while_loop {
     typedef _State State;
     typedef _Context Context;
 
-    _cond cond;
-    _step step;
+    static _cond cond;
+    static _step step;
 
     inline void repeat(State &state, const Context &context) {
         while (while_loop::cond(state, context)) {
