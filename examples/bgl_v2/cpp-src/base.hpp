@@ -1,3 +1,5 @@
+#pragma once
+
 #include <list>
 #include <map>
 #include <queue>
@@ -7,7 +9,7 @@
 
 // base_types_cpp
 struct base_types {
-    typedef int Int;
+    typedef unsigned int Int;
     typedef int Vertex;
 };
 
@@ -28,12 +30,17 @@ struct edge {
 
     inline Vertex src(const Edge &e) { return e.first; }
     inline Vertex tgt(const Edge &e) { return e.second; }
+    inline Edge makeEdge(const Vertex &s, const Vertex &t) {
+        return Edge(s, t);
+    }
 };
 
 template <typename _Edge, typename _EdgeList, typename _Vertex,
-          typename _VertexList, class _cons, class _emptyEdgeList,
-          class _emptyVertexList, class _head, class _isEmpty, class _src,
-          class _tail, class _tgt>
+          typename _VertexList, class _consEdgeList, class _consVertexList,
+          class _emptyEdgeList, class _emptyVertexList, class _headEdgeList,
+          class _headVertexList, class _isEmptyEdgeList,
+          class _isEmptyVertexList, class _makeEdge, class _src,
+          class _tailEdgeList, class _tailVertexList, class _tgt>
 struct incidence_and_vertex_list_graph {
     typedef _Edge Edge;
     typedef _EdgeList EdgeList;
@@ -52,32 +59,58 @@ struct incidence_and_vertex_list_graph {
                 this->vertices.insert(tgt(*edge_it));
             }
         }
+
+        bool operator==(const Graph &other) {
+            return this->edges == other.edges;
+        }
+
         // TODO
     };
 
-    static _cons cons;
-    static _emptyEdgeList emptyEdgeList;
-    static _emptyVertexList emptyVertexList;
-    static _head head;
-    static _isEmpty isEmpty;
-    static _src src;
-    static _tail tail;
-    static _tgt tgt;
+    static inline _consEdgeList consEdgeList;
+    static inline _consVertexList consVertexList;
+    static inline _emptyEdgeList emptyEdgeList;
+    static inline _emptyVertexList emptyVertexList;
+    static inline _headEdgeList headEdgeList;
+    static inline _headVertexList headVertexList;
+    static inline _isEmptyEdgeList isEmptyEdgeList;
+    static inline _isEmptyVertexList isEmptyVertexList;
+    static inline _makeEdge makeEdge;
+    static inline _src src;
+    static inline _tailEdgeList tailEdgeList;
+    static inline _tailVertexList tailVertexList;
+    static inline _tgt tgt;
 
     inline EdgeList outEdges(const Vertex &v, const Graph &g) {
-
+        EdgeList result = emptyEdgeList();
+        for (auto edge_it = g.edges.begin(); edge_it != g.edges.end(); ++edge_it) {
+            if (src(*edge_it) == v) {
+                result = consEdgeList(*edge_it, result);
+            }
+        }
+        return result;
     }
 
     inline VertexCount outDegree(const Vertex &v, const Graph &g) {
-
+        auto outEdgesList = outEdges(v, g);
+        VertexCount result = 0;
+        while (!isEmptyEdgeList(outEdgesList)) {
+            outEdgesList = tailEdgeList(outEdgesList);
+            result += 1;
+        }
+        return result;
     }
 
     inline VertexList vertices(const Graph &g) {
-
+        VertexList result = emptyVertexList();
+        for (auto vertex_it = g.vertices.begin(); vertex_it != g.vertices.end(); ++vertex_it) {
+            result = consVertexList(*vertex_it, result);
+        }
+        return result;
     }
 
     inline VertexCount numVertices(const Graph &g) {
-
+        return g.vertices.size();
     }
 };
 
@@ -176,25 +209,25 @@ struct list {
 // property_map_cpp
 template <typename _Key, typename _KeyList, typename _Value, class _cons,
           class _emptyKeyList, class _head, class _isEmpty, class _tail>
-struct property_map {
+struct read_write_property_map {
     typedef _Key Key;
     typedef _KeyList KeyList;
     typedef _Value Value;
     typedef std::map<Key, Value> PropertyMap;
 
-    static _cons cons;
-    static _emptyKeyList emptyKeyList;
-    static _head head;
-    static _isEmpty isEmpty;
-    static _tail tail;
+    static inline _cons cons;
+    static inline _emptyKeyList emptyKeyList;
+    static inline _head head;
+    static inline _isEmpty isEmpty;
+    static inline _tail tail;
 
     inline Value get(const PropertyMap &pm, const Key &k) {
-        return pm[k];
+        return pm.find(k)->second;
     }
 
     inline PropertyMap put(const PropertyMap &pm, const Key &k, const Value &v) {
         auto _pm = pm;
-        _pm.insert({k, v});
+        _pm[k] = v;
         return _pm;
     }
 
@@ -203,7 +236,7 @@ struct property_map {
         KeyList _kl = kl;
 
         while (!isEmpty(_kl)) {
-            Key &current_key = head(_kl);
+            const Key &current_key = head(_kl);
             result = put(result, current_key, v);
             _kl = tail(_kl);
         }
@@ -220,7 +253,11 @@ struct queue {
 
     inline bool isEmpty(const Queue &q) { return q.empty(); }
 
-    inline Queue push(const Queue &q, const A &a) {
+    inline Queue empty() {
+        return Queue();
+    }
+
+    inline Queue push(const A &a, const Queue &q) {
         auto _q = q;
         _q.push(a);
         return _q;
@@ -272,8 +309,8 @@ struct while_loop {
     typedef _State State;
     typedef _Context Context;
 
-    static _cond cond;
-    static _step step;
+    _cond cond;
+    _step step;
 
     inline void repeat(State &state, const Context &context) {
         while (while_loop::cond(state, context)) {

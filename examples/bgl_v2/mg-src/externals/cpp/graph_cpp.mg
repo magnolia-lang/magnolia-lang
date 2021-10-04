@@ -10,8 +10,16 @@ implementation CppEdge = external C++ base.edge signature(Edge);
 implementation CppIncidenceAndVertexListGraph =
     external C++ base.incidence_and_vertex_list_graph {
     require signature(Edge);
-    use IncidenceGraph;
-    use VertexListGraph;
+    use IncidenceGraph[ cons => consEdgeList
+                      , head => headEdgeList
+                      , isEmpty => isEmptyEdgeList
+                      , tail => tailEdgeList
+                      ];
+    use VertexListGraph[ cons => consVertexList
+                       , head => headVertexList
+                       , isEmpty => isEmptyVertexList
+                       , tail => tailVertexList
+                       ];
 
     type Graph;
 }

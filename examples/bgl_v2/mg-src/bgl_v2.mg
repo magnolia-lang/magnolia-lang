@@ -1,4 +1,5 @@
-package examples.bgl_v2.mg-src.bfs_test
+// TODO: call it bfs_test again, maybe
+package examples.bgl_v2.mg-src.bgl_v2
     imports examples.bgl_v2.mg-src.bfs
           , examples.bgl_v2.mg-src.graph
           , examples.bgl_v2.mg-src.list
@@ -17,42 +18,42 @@ package examples.bgl_v2.mg-src.bfs_test
 
 // See Haskell example TestVisitor1 from the comparing generics paper
 program BFSTestVisitor = {
-    use BFS[ A => IntList ];
+    use BFS[ A => VertexList ];
 
     procedure discoverVertex(obs v: Vertex,
                              obs g: Graph,
                              upd q: Queue,
-                             upd a: IntList) = { // A should be list, perhaps?
-        // TODO 
+                             upd a: VertexList) = { // A should be list, perhaps?
+        a = cons(v, a);
     }
 
     use BFSVisitorDefaultAction[ EdgeOrVertex => Vertex
                                , defaultAction => examineVertex
-                               , A => IntList
+                               , A => VertexList
                                ];
     use BFSVisitorDefaultAction[ EdgeOrVertex => Edge
                                , defaultAction => examineEdge
-                               , A => IntList
+                               , A => VertexList
                                ];
     use BFSVisitorDefaultAction[ EdgeOrVertex => Edge
                                , defaultAction => treeEdge
-                               , A => IntList
+                               , A => VertexList
                                ];
     use BFSVisitorDefaultAction[ EdgeOrVertex => Edge
                                , defaultAction => nonTreeEdge
-                               , A => IntList
+                               , A => VertexList
                                ];
     use BFSVisitorDefaultAction[ EdgeOrVertex => Edge
                                , defaultAction => grayTarget
-                               , A => IntList
+                               , A => VertexList
                                ];
     use BFSVisitorDefaultAction[ EdgeOrVertex => Edge
                                , defaultAction => blackTarget
-                               , A => IntList
+                               , A => VertexList
                                ];
     use BFSVisitorDefaultAction[ EdgeOrVertex => Vertex
                                , defaultAction => finishVertex
-                               , A => IntList
+                               , A => VertexList
                                ];
 
     use CppColorMarker;
@@ -64,11 +65,13 @@ program BFSTestVisitor = {
                , List => VertexList
                , empty => emptyVertexList
                ];
-    use CppList[ A => Int
+    /*use CppList[ A => Int
                , List => IntList
+               , empty => emptyIntList
                ];
+     */
 
-    use CppTriplet[ A => IntList
+    use CppTriplet[ A => VertexList
                   , B => Queue
                   , C => ColorPropertyMap
                   , Triplet => OuterLoopState
@@ -113,7 +116,15 @@ program BFSTestVisitor = {
     use CppEdge;
     // CppIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
     // and VertexListGraph.
-    use CppIncidenceAndVertexListGraph;
+    use CppIncidenceAndVertexListGraph[ consEdgeList => cons
+                                      , consVertexList => cons
+                                      , headEdgeList => head
+                                      , headVertexList => head
+                                      , isEmptyEdgeList => isEmpty
+                                      , isEmptyVertexList => isEmpty
+                                      , tailEdgeList => tail
+                                      , tailVertexList => tail
+                                      ];
     //use CppGraphType;
     //use CppIncidenceGraph;
     //use CppVertexListGraph;

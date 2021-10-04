@@ -104,14 +104,14 @@ implementation BFS = {
     }
 
     procedure breadthFirstVisit(obs g: Graph,
-                                obs v: Vertex,
+                                obs s: Vertex,
                                 upd a: A,
                                 upd q: Queue,
                                 upd c: ColorPropertyMap) {
-        call discoverVertex(v, g, q, a);
+        call discoverVertex(s, g, q, a);
 
-        var q1 = push(v, q);
-        var c1 = put(c, v, gray());
+        var q1 = push(s, q);
+        var c1 = put(c, s, gray());
 
         var outerState = makeOuterLoopState(a, q1, c1);
         call bfsOuterLoopRepeat(outerState, g);
@@ -157,7 +157,7 @@ implementation BFS = {
 
     predicate bfsOuterLoopCond(state: OuterLoopState, g: Graph) {
         var q = second(state);
-        value isEmpty(q);
+        value !isEmpty(q);
     }
 
     procedure bfsOuterLoopStep(upd state: OuterLoopState,
@@ -194,7 +194,7 @@ implementation BFS = {
     predicate bfsInnerLoopCond(state: InnerLoopState,
                                ctx: InnerLoopContext) {
         var edgeList = second(state);
-        value isEmpty(edgeList);
+        value !isEmpty(edgeList);
     }
     
     procedure bfsInnerLoopStep(upd state: InnerLoopState,
@@ -231,7 +231,7 @@ implementation BFS = {
         } else { // vc == black();
             call blackTarget(e, g, q1, x1);
             var c2 = put(c1, u, black());
-            state = makeInnerLoopState(makeOuterLoopState(x1, q1, c1), es);
+            state = makeInnerLoopState(makeOuterLoopState(x1, q1, c2), es);
         };
     }
 }

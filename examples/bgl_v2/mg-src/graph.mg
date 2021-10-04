@@ -7,6 +7,8 @@ concept Edge = {
 
     function src(e: Edge): Vertex;
     function tgt(e: Edge): Vertex;
+
+    function makeEdge(s: Vertex, t: Vertex): Edge;
 }
 
 concept IncidenceGraph = {
