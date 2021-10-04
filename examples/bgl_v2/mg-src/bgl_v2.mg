@@ -7,17 +7,10 @@ package examples.bgl_v2.mg-src.bgl_v2
           , examples.bgl_v2.mg-src.queue
           , examples.bgl_v2.mg-src.tuple
           , examples.bgl_v2.mg-src.while_loop
-          , examples.bgl_v2.mg-src.externals.cpp.base_types_cpp
-          , examples.bgl_v2.mg-src.externals.cpp.color_marker_cpp
-          , examples.bgl_v2.mg-src.externals.cpp.graph_cpp
-          , examples.bgl_v2.mg-src.externals.cpp.list_cpp
-          , examples.bgl_v2.mg-src.externals.cpp.property_map_cpp
-          , examples.bgl_v2.mg-src.externals.cpp.queue_cpp
-          , examples.bgl_v2.mg-src.externals.cpp.tuple_cpp
-          , examples.bgl_v2.mg-src.externals.cpp.while_loop_cpp;
+          , examples.bgl_v2.mg-src.externals.cpp_apis;
 
 // See Haskell example TestVisitor1 from the comparing generics paper
-program BFSTestVisitor = {
+implementation GenericBFSTestVisitor = {
     use BFS[ A => VertexList ];
 
     procedure discoverVertex(obs v: Vertex,
@@ -55,6 +48,10 @@ program BFSTestVisitor = {
                                , defaultAction => finishVertex
                                , A => VertexList
                                ];
+}
+
+program CppBFSTestVisitor = {
+    use GenericBFSTestVisitor;
 
     use CppColorMarker;
     use CppList[ A => Edge
@@ -65,11 +62,6 @@ program BFSTestVisitor = {
                , List => VertexList
                , empty => emptyVertexList
                ];
-    /*use CppList[ A => Int
-               , List => IntList
-               , empty => emptyIntList
-               ];
-     */
 
     use CppTriplet[ A => VertexList
                   , B => Queue
@@ -125,7 +117,4 @@ program BFSTestVisitor = {
                                       , tailEdgeList => tail
                                       , tailVertexList => tail
                                       ];
-    //use CppGraphType;
-    //use CppIncidenceGraph;
-    //use CppVertexListGraph;
 };
