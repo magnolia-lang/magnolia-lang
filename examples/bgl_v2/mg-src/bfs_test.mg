@@ -58,9 +58,11 @@ program BFSTestVisitor = {
     use CppColorMarker;
     use CppList[ A => Edge
                , List => EdgeList
+               , empty => emptyEdgeList
                ];
     use CppList[ A => Vertex
                , List => VertexList
+               , empty => emptyVertexList
                ];
     use CppList[ A => Int
                , List => IntList
@@ -104,11 +106,15 @@ program BFSTestVisitor = {
                                            , KeyList => VertexList
                                            , Value => Color
                                            , PropertyMap => ColorPropertyMap
+                                           , emptyKeyList => emptyVertexList
                                            ];
 
     use CppBaseTypes;
     use CppEdge;
-    use CppGraphType;
-    use CppIncidenceGraph;
-    use CppVertexListGraph;
+    // CppIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
+    // and VertexListGraph.
+    use CppIncidenceAndVertexListGraph;
+    //use CppGraphType;
+    //use CppIncidenceGraph;
+    //use CppVertexListGraph;
 };

@@ -113,8 +113,9 @@ implementation BFS = {
         var q1 = push(v, q);
         var c1 = put(c, v, gray());
 
-        // TODO: as proc
-        //a = bfsWhileLoop(q1, c1);
+        var outerState = makeOuterLoopState(a, q1, c1);
+        call bfsOuterLoopRepeat(outerState, g);
+        a = first(outerState);
     }
 
     use WhileLoop[ repeat => bfsOuterLoopRepeat

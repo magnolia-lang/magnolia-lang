@@ -16,7 +16,10 @@ concept IncidenceGraph = {
     require type Edge;
     require type Vertex;
     
-    type EdgeList;
+    require List[ A => Edge
+                , List => EdgeList
+                , empty => emptyEdgeList
+                ];
     type Graph;
 
     type VertexCount;
@@ -35,8 +38,8 @@ concept VertexListGraph = {
     //   - ?
     require List[ A => Vertex
                 , List => VertexList
+                , empty => emptyVertexList
                 ];
-    type VertexList;
     type Graph;
     type VertexCount;
 
