@@ -78,11 +78,11 @@ implementation BFSVisitorDefaultAction = {
                             upd a: A) = {};
 }
 
-implementation BFS = {
+implementation BFSVisit = {
     require BFSVisitor;
+    require Queue[ A => Vertex ];
     require VertexListGraph;
     require IncidenceGraph;
-    require Queue[ A => Vertex ];
     require ColorMarker;
     require ReadWritePropertyMap[ PropertyMap => ColorPropertyMap
                                 , Key => Vertex
@@ -90,18 +90,6 @@ implementation BFS = {
                                 ];
 
     require function initMap(vl: VertexList, c: Color): ColorPropertyMap;
-    require function empty(): Queue;
-
-    function breadthFirstSearch(g: Graph,
-                                start: Vertex,
-                                init: A): A = {
-        var q = empty(): Queue;
-        var c = initMap(vertices(g), white());
-        var a = init;
-
-        call breadthFirstVisit(g, start, a, q, c);
-        value a;
-    }
 
     procedure breadthFirstVisit(obs g: Graph,
                                 obs s: Vertex,
@@ -233,5 +221,20 @@ implementation BFS = {
             var c2 = put(c1, u, black());
             state = makeInnerLoopState(makeOuterLoopState(x1, q1, c2), es);
         };
+    }
+}
+
+implementation BFS = {
+    use BFSVisit[ Queue => FIFOQueue ];
+    use FIFOQueue[ A => Vertex ];
+    function breadthFirstSearch(g: Graph,
+                                start: Vertex,
+                                init: A): A = {
+        var q = empty(): FIFOQueue;
+        var c = initMap(vertices(g), white());
+        var a = init;
+
+        call breadthFirstVisit(g, start, a, q, c);
+        value a;
     }
 }

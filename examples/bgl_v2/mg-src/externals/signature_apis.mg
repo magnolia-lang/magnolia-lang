@@ -12,6 +12,12 @@ implementation ExtBaseTypes = {
     type Vertex;
 }
 
+implementation ExtBaseIntOps = {
+    type Int;
+    function plus(i1: Int, i2: Int): Int;
+    predicate less(i1: Int, i2: Int);
+}
+
 implementation ExtColorMarker = signature(ColorMarker);
 
 // TODO: there is a lot of requirements to pass through because we do not have
@@ -44,10 +50,12 @@ implementation ExtReadWritePropertyMapWithInitList = {
                 , empty => emptyKeyList
                 ];
 
+    function emptyMap(): PropertyMap;
     function initMap(kl: KeyList, v: Value): PropertyMap;
 }
 
 implementation ExtQueue = signature(Queue);
+implementation ExtUpdateablePriorityQueue = signature(UpdateablePriorityQueue);
 
 implementation ExtPair = signature(Pair);
 implementation ExtTriplet = signature(Triplet);

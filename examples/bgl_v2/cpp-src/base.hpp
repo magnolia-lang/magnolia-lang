@@ -221,6 +221,8 @@ struct read_write_property_map {
     static inline _isEmpty isEmpty;
     static inline _tail tail;
 
+    inline PropertyMap emptyMap() { return PropertyMap(); }
+
     inline Value get(const PropertyMap &pm, const Key &k) {
         return pm.find(k)->second;
     }

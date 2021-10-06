@@ -11,41 +11,31 @@ package examples.bgl_v2.mg-src.bgl_v2
 
 // See Haskell example TestVisitor1 from the comparing generics paper
 implementation GenericBFSTestVisitor = {
-    use BFS[ A => VertexList ];
+    use BFS[ A => VertexList
+           , examineEdge => defaultAction
+           , examineVertex => defaultAction
+           , treeEdge => defaultAction
+           , nonTreeEdge => defaultAction
+           , grayTarget => defaultAction
+           , blackTarget => defaultAction
+           , finishVertex => defaultAction
+           ];
 
     procedure discoverVertex(obs v: Vertex,
                              obs g: Graph,
-                             upd q: Queue,
+                             upd q: FIFOQueue,
                              upd a: VertexList) = { // A should be list, perhaps?
         a = cons(v, a);
     }
 
     use BFSVisitorDefaultAction[ EdgeOrVertex => Vertex
-                               , defaultAction => examineVertex
+                               , Queue => FIFOQueue
+                               , defaultAction => defaultAction
                                , A => VertexList
                                ];
     use BFSVisitorDefaultAction[ EdgeOrVertex => Edge
-                               , defaultAction => examineEdge
-                               , A => VertexList
-                               ];
-    use BFSVisitorDefaultAction[ EdgeOrVertex => Edge
-                               , defaultAction => treeEdge
-                               , A => VertexList
-                               ];
-    use BFSVisitorDefaultAction[ EdgeOrVertex => Edge
-                               , defaultAction => nonTreeEdge
-                               , A => VertexList
-                               ];
-    use BFSVisitorDefaultAction[ EdgeOrVertex => Edge
-                               , defaultAction => grayTarget
-                               , A => VertexList
-                               ];
-    use BFSVisitorDefaultAction[ EdgeOrVertex => Edge
-                               , defaultAction => blackTarget
-                               , A => VertexList
-                               ];
-    use BFSVisitorDefaultAction[ EdgeOrVertex => Vertex
-                               , defaultAction => finishVertex
+                               , Queue => FIFOQueue
+                               , defaultAction => defaultAction
                                , A => VertexList
                                ];
 }
@@ -64,7 +54,7 @@ program CppBFSTestVisitor = {
                ];
 
     use CppTriplet[ A => VertexList
-                  , B => Queue
+                  , B => FIFOQueue
                   , C => ColorPropertyMap
                   , Triplet => OuterLoopState
                   , makeTriplet => makeOuterLoopState
@@ -82,7 +72,9 @@ program CppBFSTestVisitor = {
                , makePair => makeInnerLoopContext
                ];
 
-    use CppQueue[ A => Vertex ];
+    use CppQueue[ A => Vertex
+                , Queue => FIFOQueue
+                ];
     use CppWhileLoop[ Context => Graph
                     , State => OuterLoopState
                     , cond => bfsOuterLoopCond
