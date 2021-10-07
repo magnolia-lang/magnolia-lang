@@ -482,7 +482,8 @@ pshowCxxPackage mbasePath cxxOutMode =
 prettyCxxPackage :: Maybe FilePath -> CxxOutMode -> CxxPackage -> Doc ann
 prettyCxxPackage mbasePath cxxOutMode (CxxPackage pkgName includes modules) =
     (case cxxOutMode of
-      CxxHeader -> vsep (map (prettyCxxInclude mbasePath) $ L.sort includes)
+      CxxHeader -> "#pragma once" <> line <> line <>
+        vsep (map (prettyCxxInclude mbasePath) $ L.sort includes)
       CxxImplementation -> prettyCxxInclude mbasePath
         (mkCxxRelativeMgIncludeFromName pkgName)) <> line <> line <>
     vsep (map ((line <>) . prettyCxxModule cxxOutMode) $
