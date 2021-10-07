@@ -37,6 +37,9 @@ inline void bfsTest() {
     auto bfsResult =
         CppBFSTestVisitor::breadthFirstSearch(g, 0, emptyVertexList());
 
+    // Nodes are returned in the wrong order
+    bfsResult.reverse();
+
     for (auto vit = bfsResult.begin(); vit != bfsResult.end(); ++vit) {
         std::cout << *vit << " ";
     }
