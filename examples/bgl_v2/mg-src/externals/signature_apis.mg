@@ -12,10 +12,10 @@ implementation ExtBaseTypes = {
     type Vertex;
 }
 
-implementation ExtBaseIntOps = {
-    type Int;
-    function plus(i1: Int, i2: Int): Int;
-    predicate less(i1: Int, i2: Int);
+implementation ExtBaseFloatOps = {
+    type Float;
+    function plus(i1: Float, i2: Float): Float;
+    predicate less(i1: Float, i2: Float);
 }
 
 implementation ExtColorMarker = signature(ColorMarker);
@@ -54,7 +54,7 @@ implementation ExtReadWritePropertyMapWithInitList = {
     function initMap(kl: KeyList, v: Value): PropertyMap;
 }
 
-implementation ExtQueue = signature(Queue);
+implementation ExtFIFOQueue = signature(FIFOQueue);
 implementation ExtUpdateablePriorityQueue = signature(UpdateablePriorityQueue);
 
 implementation ExtPair = signature(Pair);

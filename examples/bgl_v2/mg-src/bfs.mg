@@ -80,7 +80,9 @@ implementation BFSVisitorDefaultAction = {
 
 implementation BFSVisit = {
     require BFSVisitor;
-    require Queue[ A => Vertex ];
+    require Queue[ A => Vertex
+                 , isEmpty => isEmptyQueue
+                 ];
     require VertexListGraph;
     require IncidenceGraph;
     require ColorMarker;
@@ -145,7 +147,7 @@ implementation BFSVisit = {
 
     predicate bfsOuterLoopCond(state: OuterLoopState, g: Graph) {
         var q = second(state);
-        value !isEmpty(q);
+        value !isEmptyQueue(q);
     }
 
     procedure bfsOuterLoopStep(upd state: OuterLoopState,
@@ -226,7 +228,9 @@ implementation BFSVisit = {
 
 implementation BFS = {
     use BFSVisit[ Queue => FIFOQueue ];
-    use FIFOQueue[ A => Vertex ];
+    use FIFOQueue[ A => Vertex
+                 , isEmpty => isEmptyQueue
+                 ];
     function breadthFirstSearch(g: Graph,
                                 start: Vertex,
                                 init: A): A = {

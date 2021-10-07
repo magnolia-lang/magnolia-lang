@@ -1,4 +1,4 @@
-package examples.bgl_v2.mg-src.dijkstra
+package examples.bgl_v2.mg-src.dijkstra_utils
     imports examples.bgl_v2.mg-src.bfs
           // TODO: the following line triggers a compiler bug if removed and
           //       we write 'require VertexListGraph', for instance.
@@ -15,6 +15,8 @@ implementation DijkstraVisitorBase = {
                                , Priority => Cost
                                , PriorityQueue => PriorityQueue
                                , PriorityMap => VertexCostMap
+                               , empty => emptyPriorityQueue
+                               , isEmpty => isEmptyQueue
                                ];
     use BFSVisit[ Queue => PriorityQueue
                 , A => StateWithMaps
@@ -123,7 +125,7 @@ implementation DijkstraVisitorBase = {
 
         vpm = first(populateVPMapState);
 
-        var pq = empty(): PriorityQueue;
+        var pq = emptyPriorityQueue(vcm);
         var swm = makeStateWithMaps(vcm, vpm, ecm);
         var c = initMap(vertices(g), white());
 
@@ -171,7 +173,8 @@ implementation GenericDijkstraVisitor = {
                                ];
 }
 
-program CppDijkstraVisitor = {
+// TODO: just cast as program to generate
+implementation CppDijkstraVisitorImpl = {
     use GenericDijkstraVisitor;
 
     use CppColorMarker;
@@ -242,6 +245,8 @@ program CppDijkstraVisitor = {
     use CppUpdateablePriorityQueue[ A => Vertex
                                   , Priority => Cost
                                   , PriorityMap => VertexCostMap
+                                  , empty => emptyPriorityQueue
+                                  , isEmpty => isEmptyQueue
                                   ];
     //use CppUpdateablePriorityQueue[ A => CostAndVertex ];
     use CppWhileLoop[ Context => Graph
@@ -277,6 +282,7 @@ program CppDijkstraVisitor = {
                                            , Value => Cost
                                            , PropertyMap => EdgeCostMap
                                            , emptyKeyList => emptyEdgeList
+                                           , emptyMap => emptyECMap
                                            ];
     
     use CppReadWritePropertyMapWithInitList[ Key => Vertex
@@ -296,7 +302,7 @@ program CppDijkstraVisitor = {
                                            ];
 
     use CppBaseTypes;
-    use CppBaseIntOps[ Int => Cost ];
+    use CppBaseFloatOps[ Float => Cost ];
     use CppEdge;
     // CppIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
     // and VertexListGraph.

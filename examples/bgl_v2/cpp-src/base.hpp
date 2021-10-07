@@ -13,6 +13,12 @@ struct base_types {
     typedef int Vertex;
 };
 
+struct base_float_ops {
+    typedef float Float;
+    inline Float plus(const Float &i1, const Float &i2) { return i1 + i2; }
+    inline bool less(const Float &i1, const Float &i2) const { return i1 < i2; }
+};
+
 // color_marker_cpp
 struct color_marker {
     enum class Color { White, Gray, Black };
@@ -26,10 +32,26 @@ struct color_marker {
 template <typename _Vertex>
 struct edge {
     typedef _Vertex Vertex;
-    typedef std::pair<Vertex, Vertex> Edge;
+    struct Edge {
+        Vertex source;
+        Vertex target;
 
-    inline Vertex src(const Edge &e) { return e.first; }
-    inline Vertex tgt(const Edge &e) { return e.second; }
+        Edge(const Vertex &source, const Vertex &target)
+            : source(source), target(target) {};
+
+        bool operator<(const Edge &other) const {
+            if (this->source == other.source) {
+                return this->target < other.target;
+            }
+            else {
+                return this->source < other.source ;
+            }
+        };
+        bool operator==(const Edge &other) const = default;
+    };
+
+    inline Vertex src(const Edge &e) { return e.source; }
+    inline Vertex tgt(const Edge &e) { return e.target; }
     inline Edge makeEdge(const Vertex &s, const Vertex &t) {
         return Edge(s, t);
     }
@@ -60,9 +82,7 @@ struct incidence_and_vertex_list_graph {
             }
         }
 
-        bool operator==(const Graph &other) {
-            return this->edges == other.edges;
-        }
+        bool operator==(const Graph &other) const = default;
 
         // TODO
     };
@@ -113,73 +133,6 @@ struct incidence_and_vertex_list_graph {
         return g.vertices.size();
     }
 };
-
-/*template <typename _Edge, typename _EdgeList, typename _Graph, typename _Vertex,
-          typename _VertexCount, class _allEdges, class _cons,
-          class _emptyEdgeList, class _head, class _isEmpty, class _src,
-          class _tail, class _tgt>
-struct incidence_graph {
-    typedef _Edge Edge;
-    typedef _EdgeList EdgeList;
-    typedef _Graph Graph;
-    typedef _Vertex Vertex;
-    typedef _VertexCount VertexCount;
-
-    _allEdges allEdges;
-    _cons cons;
-    _emptyEdgeList emptyEdgeList;
-    _head head;
-    _isEmpty isEmpty;
-    _src src;
-    _tail tail;
-    _tgt tgt;
-
-    inline EdgeList outEdges(const Vertex &v, const Graph &g) {
-        EdgeList edges = allEdges(g);
-        EdgeList result = emptyEdgeList();
-        while (!isEmpty(edges)) {
-            Edge &current_edge = head(edges);
-            if (src(current_edge) == v) {
-                result = cons(current_edge, result);
-            }
-            edges = tail(edges);
-        }
-        return result;
-    }
-
-    inline VertexCount outDegree(const Vertex &v, const Graph &g) {
-        // TODO
-        return 0;
-    }
-};
-
-// TODO: vertex_list_graph should really be fully parameterized? It's like
-// a Haskell typeclass…
-template <typename _Edge, typename _EdgeList, typename _Graph,
-          typename _Vertex, typename _VertexCount, typename _VertexList,
-          class _allEdges, class _cons, class _emptyEdgeList,
-          class _emptyVertexList, class _head, class _isEmpty,
-          class _numVertices, class _src, class _tgt, class _vertices>
-struct vertex_list_graph {
-    typedef _Edge Edge;
-    typedef _EdgeList EdgeList;
-    typedef _Graph Graph;
-    typedef _Vertex Vertex;
-    typedef _VertexCount VertexCount;
-    typedef _VertexList VertexList;
-
-    _allEdges allEdges;
-    _cons cons;
-    _emptyEdgeList emptyEdgeList;
-    _emptyVertexList emptyVertexList;
-    _head head;
-    _isEmpty isempty;
-    _numVertices numVertices;
-    _src src;
-    _tgt tgt;
-    _vertices vertices;
-};
-*/
 
 // list_cpp
 template <typename _A>
@@ -244,34 +197,201 @@ struct read_write_property_map {
         }
         return result;
     }
+
+    bool operator==(const read_write_property_map &other) const = default;
 };
 
 
 // queue_cpp
 template <typename _A>
-struct queue {
+struct fifo_queue {
     typedef _A A;
-    typedef std::queue<A> Queue;
+    typedef std::queue<A> FIFOQueue;
 
-    inline bool isEmpty(const Queue &q) { return q.empty(); }
+    inline bool isEmpty(const FIFOQueue &q) { return q.empty(); }
 
-    inline Queue empty() {
-        return Queue();
+    inline FIFOQueue empty() {
+        return FIFOQueue();
     }
 
-    inline Queue push(const A &a, const Queue &q) {
+    inline FIFOQueue push(const A &a, const FIFOQueue &q) {
         auto _q = q;
         _q.push(a);
         return _q;
     }
 
-    inline Queue pop(const Queue &q) {
+    inline FIFOQueue pop(const FIFOQueue &q) {
         auto _q = q;
         _q.pop();
         return _q;
     }
 
-    inline A front(const Queue &q) { return q.front(); }
+    inline A front(const FIFOQueue &q) { return q.front(); }
+};
+
+// TODO: make actual implementation
+template <typename _A, typename _Priority, typename _PriorityMap, class _get>
+struct priority_queue {
+    typedef _A A;
+    typedef _Priority Priority;
+    typedef _PriorityMap PriorityMap;
+
+    // A heap
+    struct HeapNode {
+        Priority prio;
+        A element;
+        bool operator==(const HeapNode &other) const = default;
+    };
+
+    struct Heap {
+        PriorityMap priority_map;
+        std::vector<HeapNode> heap_nodes;
+        Heap(const PriorityMap &priority_map)
+                : priority_map(priority_map) {};
+        bool operator==(const Heap &other) const = default;
+
+        bool isEmpty() const {
+            return this->heap_nodes.empty();
+        }
+
+        inline size_t leftChildIndex(const size_t i) { return 2 * i + 1; }
+        inline size_t rightChildIndex(const size_t i) { return 2 * i + 2; }
+        inline size_t parentIndex(const size_t i) { return (i - 1) / 2; }
+        void filterDown(size_t k) {
+            while (leftChildIndex(k) < heap_nodes.size()) {
+                auto left_idx = leftChildIndex(k),
+                                right_idx = rightChildIndex(k);
+
+                auto left_prio = heap_nodes[left_idx].prio,
+                     k_prio = heap_nodes[k].prio;
+                if (right_idx < heap_nodes.size()) { // two children
+                    auto right_prio = heap_nodes[right_idx].prio;
+
+                    if (k_prio <= left_prio && k_prio <= right_prio) {
+                        break;
+                    }
+                    else {
+                        auto to_swap_with_k = right_idx;
+                        if (left_prio < right_prio) {
+                            to_swap_with_k = left_idx;
+                        }
+                        std::iter_swap(heap_nodes.begin() + to_swap_with_k,
+                                       heap_nodes.begin() + k);
+                        k = to_swap_with_k;
+                    }
+                }
+                else { // only one (left) child
+                    if (k_prio <= left_prio) {
+                        break;
+                    }
+                    else {
+                        std::iter_swap(heap_nodes.begin() + left_idx,
+                                       heap_nodes.begin() + k);
+                        k = left_idx;
+                    }
+                }
+            }
+        }
+
+        void filterUp(size_t k) {
+            while (k != 0) {
+                auto parent_idx = parentIndex(k);
+                auto k_prio = heap_nodes[k].prio,
+                     parent_prio = heap_nodes[parent_idx].prio;
+
+                if (k_prio < parent_prio) {
+                    std::iter_swap(heap_nodes.begin() + parent_idx,
+                                   heap_nodes.begin() + k);
+                    k = parent_idx;
+                }
+                else {
+                    break;
+                }
+            }
+        }
+
+        void remove(const A &toRemove) {
+            if (this->isEmpty()) return;
+
+            for (auto k = 0; k < this->heap_nodes.size(); ++k) {
+                if (heap_nodes[k].element == toRemove) {
+                    removeAt(k);
+                    break;
+                }
+            }
+        }
+        void removeAt(size_t k) {
+            heap_nodes[k] = heap_nodes.back();
+            heap_nodes.pop_back();
+
+            // TODO: Can't we just sequentially filterDown and up?
+            if (k == 0 || heap_nodes[parentIndex(k)].prio < heap_nodes[k].prio) {
+                filterDown(k);
+            }
+            else {
+                filterUp(k);
+            }
+        }
+
+        void push(const A &a) {
+            _get get;
+            // TODO: handle exceptions
+            auto a_prio = get(priority_map, a);
+
+            HeapNode a_node;
+            a_node.element = a;
+            a_node.prio = a_prio;
+
+            heap_nodes.push_back(a_node);
+            filterUp(heap_nodes.size() - 1);
+        }
+
+        void pop() {
+            removeAt(0);
+        }
+
+        A front() const {
+            // TODO: assert not empty, or default element?
+            return heap_nodes[0].element;
+        }
+
+        void update(const PriorityMap &pm, const A &a) {
+            remove(a);
+            this->priority_map = pm;
+            push(a);
+        }
+    };
+
+    typedef Heap PriorityQueue;
+
+    _get get;
+
+    bool isEmpty(const PriorityQueue &pq) const {
+        return pq.isEmpty();
+    };
+
+    inline PriorityQueue empty(const PriorityMap &pm) { return PriorityQueue(pm); }
+    inline PriorityQueue update(const PriorityMap &pm, const A &a, const PriorityQueue &pq) {
+        auto _pq = pq;
+        _pq.update(pm, a);
+        return _pq;
+    }
+
+    PriorityQueue push(const A &a, const PriorityQueue &pq) {
+        auto _pq = pq;
+        _pq.push(a);
+        return _pq;
+    }
+
+    PriorityQueue pop(const PriorityQueue &pq) {
+        auto _pq = pq;
+        _pq.pop();
+        return _pq;
+    }
+
+    A front(const PriorityQueue &pq) {
+        return pq.front();
+    }
 };
 
 // tuple_cpp
