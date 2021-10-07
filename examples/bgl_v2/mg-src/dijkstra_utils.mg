@@ -136,6 +136,17 @@ implementation DijkstraVisitorBase = {
 
         // TODO
     }
+
+    function putVertexCostMap(vcm: VertexCostMap, swm: StateWithMaps)
+        : StateWithMaps = makeStateWithMaps(vcm,
+                                            getVertexPredecessorMap(swm),
+                                            getEdgeCostMap(swm));
+
+    function putVertexPredecessorMap(vpm: VertexPredecessorMap,
+                                     swm: StateWithMaps): StateWithMaps =
+        makeStateWithMaps(getVertexCostMap(swm),
+                          vpm,
+                          getEdgeCostMap(swm));
 };
 
 implementation GenericDijkstraVisitor = {
@@ -207,17 +218,6 @@ implementation CppDijkstraVisitorImpl = {
                   , second => getVertexPredecessorMap
                   , third => getEdgeCostMap
                   ];
-
-    function putVertexCostMap(vcm: VertexCostMap, swm: StateWithMaps)
-        : StateWithMaps = makeStateWithMaps(vcm,
-                                            getVertexPredecessorMap(swm),
-                                            getEdgeCostMap(swm));
-
-    function putVertexPredecessorMap(vpm: VertexPredecessorMap,
-                                     swm: StateWithMaps): StateWithMaps =
-        makeStateWithMaps(getVertexCostMap(swm),
-                          vpm,
-                          getEdgeCostMap(swm));
 
     use CppPair[ A => OuterLoopState
                , B => EdgeList
