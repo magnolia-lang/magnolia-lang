@@ -3,8 +3,6 @@
 #include <iostream>
 
 #include "base.hpp"
-#include "gen/examples/bgl_v2/mg-src/bgl_v2.hpp"
-
 namespace bfs {
 // BFS test
 using examples::bgl_v2::mg_src::bgl_v2::CppBFSTestVisitor;
@@ -35,7 +33,7 @@ inline void bfsTest() {
     Vertex start = 0;
 
     auto bfsResult =
-        CppBFSTestVisitor::breadthFirstSearch(g, 0, emptyVertexList());
+        CppBFSTestVisitor::breadthFirstSearch(g, start, emptyVertexList());
 
     // Nodes are returned in the wrong order
     bfsResult.reverse();

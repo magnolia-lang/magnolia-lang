@@ -4,7 +4,7 @@ package examples.bgl_v2.mg-src.externals.python_apis
 implementation PyBaseTypes = external Python base.base_types ExtBaseTypes;
 implementation PyBaseFloatOps = external Python base.base_float_ops ExtBaseFloatOps;
 implementation PyColorMarker = external Python base.color_marker ExtColorMarker;
-implementation PyList = external Python base.list ExtList;
+implementation PyList = external Python base.list_py ExtList;
 implementation PyReadWritePropertyMapWithInitList = external Python base.read_write_property_map ExtReadWritePropertyMapWithInitList;
 implementation PyPair = external Python base.pair ExtPair;
 implementation PyTriplet = external Python base.triplet ExtTriplet;
