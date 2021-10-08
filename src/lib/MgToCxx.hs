@@ -383,8 +383,8 @@ mgTyDeclToCxxTypeDef callableNamesToFnOpStructNames
   let ~(Just (ConcreteExternalDecl _ extDeclDetails)) = conDeclO
       extStructName = externalDeclModuleName extDeclDetails
       extTyName = externalDeclElementName extDeclDetails
-  sortedRequirements <- mapM (makeReqTypeName . _parameterDecl) $
-    orderedRequirements extDeclDetails
+  sortedRequirements <- mapM (makeReqTypeName . _parameterDecl)
+    (orderedRequirements extDeclDetails)
   checkCxxBackend errorLoc "type" extDeclDetails
   cxxExtStructName <- mkCxxName extStructName
   cxxExtTyName <- mkCxxName extTyName
