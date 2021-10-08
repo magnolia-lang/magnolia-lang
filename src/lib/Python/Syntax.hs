@@ -279,7 +279,7 @@ prettyPyImport mbasePath pyImport = case pyImport of
           Just basePath -> importify basePath <> "." <> filePath
     in "import" <+> case pyImportTy of
       RelativeMgImport -> p realFilePath
-      RelativePyImport -> p realFilePath
+      RelativePyImport -> p filePath
       AbsolutePyImport -> p filePath
   PyImportFrom pyImportTy filePath elements ->
     let realFilePath = case mbasePath of
@@ -287,7 +287,7 @@ prettyPyImport mbasePath pyImport = case pyImport of
           Just basePath -> importify basePath <> "." <> filePath
     in "from" <+> (case pyImportTy of
       RelativeMgImport -> p realFilePath
-      RelativePyImport -> p realFilePath
+      RelativePyImport -> p filePath
       AbsolutePyImport -> p filePath) <+>
       "import" <+> hsep (punctuate comma (map p elements))
   where

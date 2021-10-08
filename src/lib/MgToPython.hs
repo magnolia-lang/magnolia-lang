@@ -12,6 +12,7 @@ import qualified Data.List as L
 import Data.List.NonEmpty (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
+import Data.Maybe (fromMaybe)
 import qualified Data.Set as S
 import qualified Data.Text.Lazy as T
 import Data.Void (absurd)
@@ -74,11 +75,12 @@ mgPackageToPySelfContainedProgramPackage tcPkg =
         mconDeclO >>= mkPyImportFromConDeclO
 
     mkPyImportFromConDeclO :: ConcreteDeclOrigin -> Maybe PyImport
-    mkPyImportFromConDeclO (ConcreteExternalDecl _ extDeclDetails) =
+    mkPyImportFromConDeclO (ConcreteExternalDecl _ extDeclDetails)
+        | externalDeclBackend extDeclDetails == Python =
       let extFilePath = externalDeclFilePath extDeclDetails
           extStructString = _name $ externalDeclModuleName extDeclDetails
       in Just $
-        PyImportFrom RelativeMgImport extFilePath [extStructString]
+        PyImportFrom RelativePyImport extFilePath [extStructString]
     mkPyImportFromConDeclO _ = Nothing
 
     gatherPrograms :: [TcModule] -> MgMonad [PyModule]
@@ -207,7 +209,8 @@ topSortPyDefs src defs = do
         in S.singleton pyFnName `S.union`
            varNamesFromArgs     `S.union`
            varNamesFromKwargs
-      PyVarRef pyName -> S.singleton pyName
+      PyVarRef pyName ->
+        S.singleton $ fromMaybe pyName (extractParentObjectName pyName)
       PyIfExpr cond trueExpr falseExpr ->
         extractVarNamesFromExpr cond `S.union`
         extractVarNamesFromExpr trueExpr `S.union`
