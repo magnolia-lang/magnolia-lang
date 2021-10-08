@@ -126,8 +126,13 @@ runCompileWith filePath config = case _configOutputDirectory config of
         Right cxxPkgs -> do
           createBasePath outDir
           mapM_ (writeCxxPackage outDir) cxxPkgs
-    (_, SelfContainedProgramCodegenPass) ->
-      fail "codegen not yet implemented for this backend"
+    (Python, SelfContainedProgramCodegenPass) -> do
+      (epyPkgs, errs) <- runMgMonad $ compileToPyPackages filePath
+      case epyPkgs of
+        Left () -> logErrs errs >> fail "compilation failed"
+        Right pyPkgs -> do
+          createBasePath outDir
+          mapM_ (writePyPackage outDir) pyPkgs
     (_, StructurePreservingCodegenPass) ->
       fail $ show StructurePreservingCodegenPass <> " not yet implemented"
     (_, pass) -> fail $ "unexpected pass \"" <> show pass <> "\" in build mode"
@@ -165,6 +170,25 @@ runCompileWith filePath config = case _configOutputDirectory config of
             OverwriteTargetFiles -> writeFile
       writeFn pathToHeaderFile headerFileContent
       writeFn pathToImplementationFile implementationFileContent
+
+    -- TODO: carefully test this frontend as well.
+    writePyPackage :: FilePath -> PyPackage -> IO ()
+    writePyPackage baseOutPath pyPkg = do
+      let pathToTarget = baseOutPath <> "/" <>
+            map (\c -> if c == '.' then '/' else c)
+                (_name $ _pyPackageName pyPkg) <> ".py"
+      -- Here, we do not need to check for configuration any way. We only allow
+      -- overwriting leave files, so this operation will fail if a file exists
+      -- where we want to create a directory.
+      createDirectoryIfMissing True (takeDirectory pathToTarget)
+      let baseIncludePath =
+            fromMaybe baseOutPath (_configImportBaseDirectory config)
+          fileContent = T.unpack $
+            pshowPyPackage (Just baseIncludePath) pyPkg
+          writeFn = case _configWriteToFsBehavior config of
+            WriteIfDoesNotExist -> writeIfNotExists
+            OverwriteTargetFiles -> writeFile
+      writeFn pathToTarget fileContent
 
     writeIfNotExists :: FilePath -> String -> IO ()
     writeIfNotExists path content = do
