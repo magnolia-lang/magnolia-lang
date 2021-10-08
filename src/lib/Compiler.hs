@@ -89,7 +89,9 @@ runTestWith filePath config = case _configPass config of
       case ecxxPkgs of
         Left () -> logErrs errs
         Right cxxPkgs -> do
-          let sortedPkgs = L.sortOn _cxxPackageName cxxPkgs
+          let cxxPkgsWithModules =
+                filter (not . null . _cxxPackageModules) cxxPkgs
+              sortedPkgs = L.sortOn _cxxPackageName cxxPkgsWithModules
               outDir = _configImportBaseDirectory config <|>
                        _configOutputDirectory config
           mapM_ (pprintCxxPackage outDir CxxHeader) sortedPkgs
@@ -99,7 +101,9 @@ runTestWith filePath config = case _configPass config of
       case epyPkgs of
         Left () -> logErrs errs
         Right pyPkgs -> do
-          let sortedPkgs = L.sortOn _pyPackageName pyPkgs
+          let pyPkgsWithModules =
+                filter (not . null . _pyPackageModules) pyPkgs
+              sortedPkgs = L.sortOn _pyPackageName pyPkgsWithModules
               outDir = _configImportBaseDirectory config <|>
                        _configOutputDirectory config
           mapM_ (pprintPyPackage outDir) sortedPkgs
@@ -124,15 +128,19 @@ runCompileWith filePath config = case _configOutputDirectory config of
       case ecxxPkgs of
         Left () -> logErrs errs >> fail "compilation failed"
         Right cxxPkgs -> do
+          let cxxPkgsWithModules =
+                filter (not . null . _cxxPackageModules) cxxPkgs
           createBasePath outDir
-          mapM_ (writeCxxPackage outDir) cxxPkgs
+          mapM_ (writeCxxPackage outDir) cxxPkgsWithModules
     (Python, SelfContainedProgramCodegenPass) -> do
       (epyPkgs, errs) <- runMgMonad $ compileToPyPackages filePath
       case epyPkgs of
         Left () -> logErrs errs >> fail "compilation failed"
         Right pyPkgs -> do
+          let pyPkgsWithModules =
+                filter (not . null . _pyPackageModules) pyPkgs
           createBasePath outDir
-          mapM_ (writePyPackage outDir) pyPkgs
+          mapM_ (writePyPackage outDir) pyPkgsWithModules
     (_, StructurePreservingCodegenPass) ->
       fail $ show StructurePreservingCodegenPass <> " not yet implemented"
     (_, pass) -> fail $ "unexpected pass \"" <> show pass <> "\" in build mode"
