@@ -3,9 +3,11 @@
 #include <iostream>
 
 #include "base.hpp"
+#include "gen/examples/bgl_v2/mg-src/bgl_v2-cpp.hpp"
+
 namespace bfs {
 // BFS test
-using examples::bgl_v2::mg_src::bgl_v2::CppBFSTestVisitor;
+using examples::bgl_v2::mg_src::bgl_v2_cpp::CppBFSTestVisitor;
 typedef CppBFSTestVisitor::Graph Graph;
 typedef CppBFSTestVisitor::Vertex Vertex;
 
