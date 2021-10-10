@@ -100,10 +100,10 @@ implementation BFSVisit = {
                                 upd c: ColorPropertyMap) {
         call discoverVertex(s, g, q, a);
 
-        var q1 = push(s, q);
-        var c1 = put(c, s, gray());
+        call push(s, q);
+        call put(c, s, gray());
 
-        var outerState = makeOuterLoopState(a, q1, c1);
+        var outerState = makeOuterLoopState(a, q, c);
         call bfsOuterLoopRepeat(outerState, g);
         a = first(outerState);
     }
@@ -153,15 +153,15 @@ implementation BFSVisit = {
     procedure bfsOuterLoopStep(upd state: OuterLoopState,
                                obs g: Graph) {
         var x = first(state);
-        var q1 = second(state);
+        var q = second(state);
         var c = third(state);
 
-        var u = front(q1);
-        var q2 = pop(q1);
+        var u = front(q);
+        call pop(q);
 
-        call examineVertex(u, g, q2, x);
+        call examineVertex(u, g, q, x);
 
-        var innerState = makeInnerLoopState(makeOuterLoopState(x, q2, c),
+        var innerState = makeInnerLoopState(makeOuterLoopState(x, q, c),
                                             outEdges(u, g));
         var innerContext = makeInnerLoopContext(g, u);
 
@@ -179,7 +179,7 @@ implementation BFSVisit = {
 
     require predicate isEmpty(el: EdgeList);
     require function head(el: EdgeList): Edge guard !isEmpty(el);
-    require function tail(el: EdgeList): EdgeList guard !isEmpty(el);
+    require procedure tail(upd el: EdgeList) guard !isEmpty(el);
 
     predicate bfsInnerLoopCond(state: InnerLoopState,
                                ctx: InnerLoopContext) {
@@ -195,33 +195,38 @@ implementation BFSVisit = {
         var outerState = first(state);
         var x1 = first(outerState);
         var q1 = second(outerState);
-        var c1 = third(outerState);
+        var c = third(outerState);
 
         var edgeList = second(state);
         var e = head(edgeList);
-        var es = tail(edgeList);
+
+        call tail(edgeList);
 
         var v = tgt(e);
 
         call examineEdge(e, g, q1, x1);
 
-        var vc = get(c1, v);
+        var vc = get(c, v);
 
         if vc == white() then {
             call treeEdge(e, g, q1, x1);
-            var c2 = put(c1, v, gray());
+            call put(c, v, gray());
             call discoverVertex(v, g, q1, x1);
 
-            state = makeInnerLoopState(makeOuterLoopState(x1, push(v, q1), c2),
-                                       es);
+            call push(v, q1);
+
+            state = makeInnerLoopState(makeOuterLoopState(x1, q1, c),
+                                       edgeList);
         } else if vc == gray() then {
             call grayTarget(e, g, q1, x1);
-            state = makeInnerLoopState(makeOuterLoopState(x1, q1, c1), es);
+            state = makeInnerLoopState(makeOuterLoopState(x1, q1, c),
+                                       edgeList);
                                       
         } else { // vc == black();
             call blackTarget(e, g, q1, x1);
-            var c2 = put(c1, u, black());
-            state = makeInnerLoopState(makeOuterLoopState(x1, q1, c2), es);
+            call put(c, u, black());
+            state = makeInnerLoopState(makeOuterLoopState(x1, q1, c),
+                                       edgeList);
         };
     }
 }

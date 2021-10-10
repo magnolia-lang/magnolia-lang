@@ -43,8 +43,8 @@ implementation Relax = {
 
         if less(plus(uCost, edgeCost), vCost)
         then {
-            vcm = put(vcm, v, plus(uCost, edgeCost));
-            vpm = put(vpm, v, u);
+            put(vcm, v, plus(uCost, edgeCost));
+            put(vpm, v, u);
         }
         else skip;
     }

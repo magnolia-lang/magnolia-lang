@@ -5,20 +5,25 @@ concept List = {
     type List;
 
     function empty(): List;
-    function cons(a: A, l: List): List;
+    procedure cons(obs a: A, upd l: List);
 
     function head(l: List): A guard !isEmpty(l);
-    function tail(l: List): List guard !isEmpty(l);
+    procedure tail(upd l: List) guard !isEmpty(l);
 
     predicate isEmpty(l: List);
 
     axiom isEmptyBehavior(a: A, l: List) {
+        var mutableList = l;
         assert isEmpty(empty());
-        assert !isEmpty(cons(a, l));
+        call cons(a, mutableList);
+        assert !isEmpty(mutableList);
     }
 
     axiom headTailBehavior(a: A, l: List) {
-        assert head(cons(a, l)) == a;
-        assert tail(cons(a, l)) == l;
+        var mutableList = l;
+        call cons(a, mutableList);
+        assert head(mutableList) == a;
+        call tail(mutableList);
+        assert l == mutableList;
     }
 }

@@ -107,7 +107,10 @@ implementation DijkstraVisitorBase = {
         var vertexList = second(state);
         var v = head(vertexList);
 
-        state = makePair(put(vpm, v, v), tail(vertexList));
+        call tail(vertexList);
+        call put(vpm, v, v);
+
+        state = makePair(vpm, vertexList);
     }
 
     require function emptyVPMap(): VertexPredecessorMap;
@@ -118,7 +121,7 @@ implementation DijkstraVisitorBase = {
                                     obs ecm: EdgeCostMap,
                                     obs initialCost: Cost,
                                     out vpm: VertexPredecessorMap) {
-        vcm = put(vcm, start, initialCost);
+        call put(vcm, start, initialCost);
 
         var populateVPMapState = makePair(emptyVPMap(), vertices(g));
         call populateVPMapLoopRepeat(populateVPMapState, start);

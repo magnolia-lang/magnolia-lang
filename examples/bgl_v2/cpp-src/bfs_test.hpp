@@ -32,7 +32,7 @@ inline std::list<CppBFSTestVisitor::Edge> testEdges() {
 }
 
 inline std::list<CppBFSTestVisitor::Edge> lotsOfEdges() {
-    int nb_vertices = 8000, nb_edges = 80000;
+    int nb_vertices = 2000, nb_edges = 20000;
     std::random_device dev;
     std::mt19937 rng(dev());
     std::uniform_int_distribution<std::mt19937::result_type>

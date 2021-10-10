@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 #include <list>
 #include <map>
 #include <queue>
@@ -105,7 +107,7 @@ struct incidence_and_vertex_list_graph {
         EdgeList result = emptyEdgeList();
         for (auto edge_it = g.edges.begin(); edge_it != g.edges.end(); ++edge_it) {
             if (src(*edge_it) == v) {
-                result = consEdgeList(*edge_it, result);
+                consEdgeList(*edge_it, result);
             }
         }
         return result;
@@ -115,7 +117,7 @@ struct incidence_and_vertex_list_graph {
         auto outEdgesList = outEdges(v, g);
         VertexCount result = 0;
         while (!isEmptyEdgeList(outEdgesList)) {
-            outEdgesList = tailEdgeList(outEdgesList);
+            tailEdgeList(outEdgesList);
             result += 1;
         }
         return result;
@@ -124,7 +126,7 @@ struct incidence_and_vertex_list_graph {
     inline VertexList vertices(const Graph &g) {
         VertexList result = emptyVertexList();
         for (auto vertex_it = g.vertices.begin(); vertex_it != g.vertices.end(); ++vertex_it) {
-            result = consVertexList(*vertex_it, result);
+            consVertexList(*vertex_it, result);
         }
         return result;
     }
@@ -141,19 +143,13 @@ struct list {
     typedef std::list<A> List;
 
     inline List empty() { return List(); }
-    inline List cons(const A &a, const List &l) {
-        auto _l = l;
-        _l.push_front(a);
-        return _l;
-    }
+    inline void cons(const A &a, List &l) { l.push_front(a); }
+    
     inline A head(const List &l) {
         return l.front();
     }
-    inline List tail(const List &l) {
-        auto _l = l;
-        _l.pop_front();
-        return _l;
-    }
+    inline void tail(List &l) { l.pop_front(); }
+    
     inline bool isEmpty(const List &l) {
         return l.empty();
     }
@@ -180,10 +176,8 @@ struct read_write_property_map {
         return pm.find(k)->second;
     }
 
-    inline PropertyMap put(const PropertyMap &pm, const Key &k, const Value &v) {
-        auto _pm = pm;
-        _pm[k] = v;
-        return _pm;
+    inline void put(PropertyMap &pm, const Key &k, const Value &v) {
+        pm[k] = v;
     }
 
     inline PropertyMap initMap(const KeyList &kl, const Value &v) {
@@ -192,9 +186,10 @@ struct read_write_property_map {
 
         while (!isEmpty(_kl)) {
             const Key &current_key = head(_kl);
-            result = put(result, current_key, v);
-            _kl = tail(_kl);
+            put(result, current_key, v);
+            tail(_kl); //_kl = tail(_kl);
         }
+
         return result;
     }
 
@@ -214,17 +209,9 @@ struct fifo_queue {
         return FIFOQueue();
     }
 
-    inline FIFOQueue push(const A &a, const FIFOQueue &q) {
-        auto _q = q;
-        _q.push(a);
-        return _q;
-    }
+    inline void push(const A &a, FIFOQueue &q) { q.push(a); }
 
-    inline FIFOQueue pop(const FIFOQueue &q) {
-        auto _q = q;
-        _q.pop();
-        return _q;
-    }
+    inline void pop(FIFOQueue &q) { q.pop(); }
 
     inline A front(const FIFOQueue &q) { return q.front(); }
 };
@@ -377,17 +364,9 @@ struct priority_queue {
         return _pq;
     }
 
-    PriorityQueue push(const A &a, const PriorityQueue &pq) {
-        auto _pq = pq;
-        _pq.push(a);
-        return _pq;
-    }
+    inline void push(const A &a, PriorityQueue &pq) { pq.push(a); }
 
-    PriorityQueue pop(const PriorityQueue &pq) {
-        auto _pq = pq;
-        _pq.pop();
-        return _pq;
-    }
+    inline void pop(PriorityQueue &pq) { pq.pop(); }
 
     A front(const PriorityQueue &pq) {
         return pq.front();
@@ -435,8 +414,11 @@ struct while_loop {
     _step step;
 
     inline void repeat(State &state, const Context &context) {
+        int counter = 0;
         while (while_loop::cond(state, context)) {
+            //std::cout << "counter: " << counter << std::endl;
             while_loop::step(state, context);
+            counter += 1;
         }
     }
 };

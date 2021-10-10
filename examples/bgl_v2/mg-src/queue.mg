@@ -8,8 +8,8 @@ concept Queue = {
 
     predicate isEmpty(q: Queue);
 
-    function push(a: A, q: Queue): Queue;
-    function pop(q: Queue): Queue guard !isEmpty(q);
+    procedure push(obs a: A, upd q: Queue);
+    procedure pop(upd q: Queue) guard !isEmpty(q);
     function front(q: Queue): A;
 }
 

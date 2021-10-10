@@ -30,26 +30,26 @@ inline std::pair<std::list<CppDijkstraVisitor::Edge>, EdgeCostMap>
     EdgeCostMap edgeCostMap = CppDijkstraVisitor::emptyECMap();
 
     edges.push_back(makeEdge(0, 1));
-    edgeCostMap = put(edgeCostMap, makeEdge(0, 1), 0.5);
+    put(edgeCostMap, makeEdge(0, 1), 0.5);
 
     edges.push_back(makeEdge(1, 2));
-    edgeCostMap = put(edgeCostMap, makeEdge(1, 2), 5.6);
+    put(edgeCostMap, makeEdge(1, 2), 5.6);
 
     edges.push_back(makeEdge(1, 3));
-    edgeCostMap = put(edgeCostMap, makeEdge(1, 3), 0.2);
+    put(edgeCostMap, makeEdge(1, 3), 0.2);
     
     edges.push_back(makeEdge(3, 4));
-    edgeCostMap = put(edgeCostMap, makeEdge(3, 4), 0.1);
+    put(edgeCostMap, makeEdge(3, 4), 0.1);
     
     edges.push_back(makeEdge(0, 4));
-    edgeCostMap = put(edgeCostMap, makeEdge(0, 4), 3.2);
+    put(edgeCostMap, makeEdge(0, 4), 3.2);
 
     // Some more tests
     //edges.push_back(makeEdge(0, 4));
-    //edgeCostMap = put(edgeCostMap, makeEdge(0, 4), 0.6);
+    //put(edgeCostMap, makeEdge(0, 4), 0.6);
 
     //edges.push_back(makeEdge(4, 2));
-    //edgeCostMap = put(edgeCostMap, makeEdge(4, 2), 1.5);
+    //put(edgeCostMap, makeEdge(4, 2), 1.5);
 
     return std::make_pair(edges, edgeCostMap);
 }

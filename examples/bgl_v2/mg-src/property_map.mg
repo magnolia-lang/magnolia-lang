@@ -14,5 +14,5 @@ concept ReadPropertyMap = {
 concept ReadWritePropertyMap = {
     use ReadPropertyMap;
 
-    function put(pm: PropertyMap, k: Key, v: Value): PropertyMap;
+    procedure put(upd pm: PropertyMap, obs k: Key, obs v: Value);
 }

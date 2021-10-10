@@ -25,7 +25,7 @@ implementation GenericBFSTestVisitor = {
                              obs g: Graph,
                              upd q: FIFOQueue,
                              upd a: VertexList) = { // A should be list, perhaps?
-        a = cons(v, a);
+        call cons(v, a);
     }
 
     use BFSVisitorDefaultAction[ EdgeOrVertex => Vertex
