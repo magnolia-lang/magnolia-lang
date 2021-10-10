@@ -17,6 +17,8 @@ data Name = Name { _namespace :: NameSpace
                  }
             deriving (Eq, Show)
 
+-- TODO: improve this to order namespaces adequately.
+-- Document somewhere the order for generated code.
 instance Ord Name where
   n1 `compare` n2 = _name n1 `compare` _name n2
 
@@ -43,7 +45,7 @@ data NameSpace = NSDirectory
                | NSType
                | NSUnspecified
                | NSVariable
-                 deriving (Eq, Show)
+                 deriving (Eq, Ord, Show)
 
 pattern FuncName :: String -> Name
 pattern FuncName s = Name NSFunction s
