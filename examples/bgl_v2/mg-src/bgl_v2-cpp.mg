@@ -46,12 +46,15 @@ program CppBFSTestVisitor = {
                     , repeat => bfsOuterLoopRepeat
                     ];
 
-    use CppWhileLoop[ Context => InnerLoopContext
-                    , State => InnerLoopState
-                    , cond => bfsInnerLoopCond
-                    , step => bfsInnerLoopStep
-                    , repeat => bfsInnerLoopRepeat
-                    ];
+    use CppWhileLoop4[ Context => InnerLoopContext
+                     , State1 => VertexList
+                     , State2 => FIFOQueue
+                     , State3 => ColorPropertyMap
+                     , State4 => EdgeList
+                     , cond => bfsInnerLoopCond
+                     , step => bfsInnerLoopStep
+                     , repeat => bfsInnerLoopRepeat
+                     ];
 
     use CppReadWritePropertyMapWithInitList[ Key => Vertex
                                            , KeyList => VertexList
@@ -145,13 +148,16 @@ program CppDijkstraVisitor = {
                     , step => bfsOuterLoopStep
                     , repeat => bfsOuterLoopRepeat
                     ];
-
-    use CppWhileLoop[ Context => InnerLoopContext
-                    , State => InnerLoopState
-                    , cond => bfsInnerLoopCond
-                    , step => bfsInnerLoopStep
-                    , repeat => bfsInnerLoopRepeat
-                    ];
+    
+    use CppWhileLoop4[ Context => InnerLoopContext
+                     , State1 => StateWithMaps
+                     , State2 => PriorityQueue
+                     , State3 => ColorPropertyMap
+                     , State4 => EdgeList
+                     , cond => bfsInnerLoopCond
+                     , step => bfsInnerLoopStep
+                     , repeat => bfsInnerLoopRepeat
+                     ];
 
     use CppWhileLoop[ Context => Vertex
                     , State => PopulateVPMapState

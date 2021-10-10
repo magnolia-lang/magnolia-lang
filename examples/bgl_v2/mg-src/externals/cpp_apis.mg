@@ -14,3 +14,4 @@ implementation CppFIFOQueue = external C++ base.fifo_queue ExtFIFOQueue;
 implementation CppUpdateablePriorityQueue =
     external C++ base.priority_queue ExtUpdateablePriorityQueue;
 implementation CppWhileLoop = external C++ base.while_loop ExtWhileLoop;
+implementation CppWhileLoop4 = external C++ base.while_loop4 ExtWhileLoop4;

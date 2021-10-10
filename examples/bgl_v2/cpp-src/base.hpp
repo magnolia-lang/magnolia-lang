@@ -422,3 +422,26 @@ struct while_loop {
         }
     }
 };
+
+template <typename _Context, typename _State1, typename _State2,
+          typename _State3, typename _State4, class _cond, class _step>
+struct while_loop4 {
+    typedef _State1 State1;
+    typedef _State2 State2;
+    typedef _State3 State3;
+    typedef _State4 State4;
+    typedef _Context Context;
+
+    _cond cond;
+    _step step;
+
+    inline void repeat(State1 &state1, State2 &state2, State3 &state3,
+                       State4 &state4, const Context &context) {
+        int counter = 0;
+        while (while_loop4::cond(state1, state2, state3, state4, context)) {
+            //std::cout << "counter: " << counter << std::endl;
+            while_loop4::step(state1, state2, state3, state4, context);
+            counter += 1;
+        }
+    }
+};

@@ -122,11 +122,14 @@ implementation BFSVisit = {
                , makeTriplet => makeOuterLoopState
                ];
 
-    use WhileLoop[ repeat => bfsInnerLoopRepeat
-                 , step => bfsInnerLoopStep
-                 , cond => bfsInnerLoopCond
-                 , State => InnerLoopState
-                 , Context => InnerLoopContext
+    use WhileLoop4[ repeat => bfsInnerLoopRepeat
+                  , step => bfsInnerLoopStep
+                  , cond => bfsInnerLoopCond
+                  , State1 => A
+                  , State2 => Queue
+                  , State3 => ColorPropertyMap
+                  , State4 => EdgeList
+                  , Context => InnerLoopContext
                  ];
 
     use Pair[ A => Graph
@@ -136,12 +139,6 @@ implementation BFSVisit = {
                // Renaming axiom avoids merging errors tagged as compiler bug.
                // Problem should be related to https://github.com/magnolia-lang/magnolia-lang/issues/43
                ];
-
-    use Pair[ A => OuterLoopState
-            , B => EdgeList
-            , Pair => InnerLoopState
-            , makePair => makeInnerLoopState
-            ];
 
     require type InnerLoopContext;
 
@@ -161,43 +158,33 @@ implementation BFSVisit = {
 
         call examineVertex(u, g, q, x);
 
-        var innerState = makeInnerLoopState(makeOuterLoopState(x, q, c),
-                                            outEdges(u, g));
+        var edges = outEdges(u, g);
         var innerContext = makeInnerLoopContext(g, u);
 
-        call bfsInnerLoopRepeat(innerState, innerContext);
+        call bfsInnerLoopRepeat(x, q, c, edges, innerContext);
 
-        var outerLoopStateAfterInnerLoop = first(innerState);
-        var x_end = first(outerLoopStateAfterInnerLoop);
-        var q_end = second(outerLoopStateAfterInnerLoop);
-        var c_end = third(outerLoopStateAfterInnerLoop);
+        call finishVertex(u, g, q, x);
 
-        call finishVertex(u, g, q_end, x_end);
-
-        state = makeOuterLoopState(x_end, q_end, c_end);
+        state = makeOuterLoopState(x, q, c);
     }
 
     require predicate isEmpty(el: EdgeList);
     require function head(el: EdgeList): Edge guard !isEmpty(el);
     require procedure tail(upd el: EdgeList) guard !isEmpty(el);
 
-    predicate bfsInnerLoopCond(state: InnerLoopState,
+    predicate bfsInnerLoopCond(x: A, q: Queue, c: ColorPropertyMap,
+                               edgeList: EdgeList,
                                ctx: InnerLoopContext) {
-        var edgeList = second(state);
         value !isEmpty(edgeList);
     }
     
-    procedure bfsInnerLoopStep(upd state: InnerLoopState,
+    procedure bfsInnerLoopStep(upd x1: A, upd q1: Queue,
+                               upd c: ColorPropertyMap,
+                               upd edgeList: EdgeList,
                                obs ctx: InnerLoopContext) {
         var g = first(ctx);
         var u = second(ctx);
 
-        var outerState = first(state);
-        var x1 = first(outerState);
-        var q1 = second(outerState);
-        var c = third(outerState);
-
-        var edgeList = second(state);
         var e = head(edgeList);
 
         call tail(edgeList);
@@ -212,21 +199,14 @@ implementation BFSVisit = {
             call treeEdge(e, g, q1, x1);
             call put(c, v, gray());
             call discoverVertex(v, g, q1, x1);
-
             call push(v, q1);
 
-            state = makeInnerLoopState(makeOuterLoopState(x1, q1, c),
-                                       edgeList);
         } else if vc == gray() then {
             call grayTarget(e, g, q1, x1);
-            state = makeInnerLoopState(makeOuterLoopState(x1, q1, c),
-                                       edgeList);
                                       
         } else { // vc == black();
             call blackTarget(e, g, q1, x1);
             call put(c, u, black());
-            state = makeInnerLoopState(makeOuterLoopState(x1, q1, c),
-                                       edgeList);
         };
     }
 }

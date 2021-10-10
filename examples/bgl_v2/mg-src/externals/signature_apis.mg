@@ -61,3 +61,4 @@ implementation ExtPair = signature(Pair);
 implementation ExtTriplet = signature(Triplet);
 
 implementation ExtWhileLoop = signature(WhileLoop);
+implementation ExtWhileLoop4 = signature(WhileLoop4);
