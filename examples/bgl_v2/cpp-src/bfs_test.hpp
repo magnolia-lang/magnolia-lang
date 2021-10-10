@@ -1,6 +1,8 @@
 #pragma once
 
+#include <chrono>
 #include <iostream>
+#include <random>
 
 #include "base.hpp"
 #include "gen/examples/bgl_v2/mg-src/bgl_v2-cpp.hpp"
@@ -29,6 +31,22 @@ inline std::list<CppBFSTestVisitor::Edge> testEdges() {
     return edges;
 }
 
+inline std::list<CppBFSTestVisitor::Edge> lotsOfEdges() {
+    int nb_vertices = 8000, nb_edges = 80000;
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_int_distribution<std::mt19937::result_type>
+        range_obj(0, nb_vertices);
+
+    std::list<CppBFSTestVisitor::Edge> edges;
+
+    for (auto i = 0; i < nb_edges; ++i) {
+        edges.push_back(makeEdge(range_obj(rng), range_obj(rng)));
+    }
+
+    return edges;
+}
+
 inline void bfsTest() {
     std::cout << "BFS test:" << std::endl;
     Graph g(testEdges());
@@ -46,4 +64,28 @@ inline void bfsTest() {
 
     std::cout << std::endl;
 }
+
+inline void bfsPerfTest() {
+    std::cout << "BFS perf test:" << std::endl;
+    Graph g(lotsOfEdges());
+    Vertex start = 0;
+
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    auto bfsResult =
+        CppBFSTestVisitor::breadthFirstSearch(g, start, emptyVertexList());
+
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    // Nodes are returned in the wrong order
+    bfsResult.reverse();
+
+    for (auto vit = bfsResult.begin(); vit != bfsResult.end(); ++vit) {
+        std::cout << *vit << " ";
+    }
+
+    std::cout << std::endl;
+
+    std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "[s]" << std::endl;
+}
+
+
 }
