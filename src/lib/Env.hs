@@ -15,7 +15,10 @@ type Env a = M.Map Name a
 data Name = Name { _namespace :: NameSpace
                  , _name :: String
                  }
-            deriving (Eq, Ord, Show)
+            deriving (Eq, Show)
+
+instance Ord Name where
+  n1 `compare` n2 = _name n1 `compare` _name n2
 
 data FullyQualifiedName = FullyQualifiedName { _scopeName :: Maybe Name
                                              , _targetName :: Name
@@ -40,7 +43,7 @@ data NameSpace = NSDirectory
                | NSType
                | NSUnspecified
                | NSVariable
-                 deriving (Eq, Ord, Show)
+                 deriving (Eq, Show)
 
 pattern FuncName :: String -> Name
 pattern FuncName s = Name NSFunction s
