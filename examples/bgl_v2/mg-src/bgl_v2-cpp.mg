@@ -6,16 +6,24 @@ package examples.bgl_v2.mg-src.bgl_v2-cpp
 program CppBFSTestVisitor = {
     use GenericBFSTestVisitor;
 
-    use CppColorMarker;
+    //use CppColorMarker;
     use CppIterableList[ A => Edge
                        , List => EdgeList
                        , ListIterator => EdgeIterator
                        , empty => emptyEdgeList
+                       , iterBegin => edgeIterBegin
+                       , iterEnd => edgeIterEnd
+                       , iterNext => edgeIterNext
+                       , iterUnpack => edgeIterUnpack
                        ];
     use CppIterableList[ A => Vertex
                        , List => VertexList
                        , ListIterator => VertexIterator
                        , empty => emptyVertexList
+                       , iterBegin => vertexIterBegin
+                       , iterEnd => vertexIterEnd
+                       , iterNext => vertexIterNext
+                       , iterUnpack => vertexIterUnpack
                        ];
 
     use CppFIFOQueue[ A => Vertex
@@ -23,7 +31,7 @@ program CppBFSTestVisitor = {
                     ];
     
     use CppWhileLoop3[ Context => Graph
-                     , State1 => VertexList
+                     , State1 => VertexVector
                      , State2 => FIFOQueue
                      , State3 => ColorPropertyMap
                      , cond => bfsOuterLoopCond
@@ -34,7 +42,7 @@ program CppBFSTestVisitor = {
     use CppWhileLoop4_3[ Context1 => Graph 
                        , Context2 => Vertex
                        , Context3 => EdgeIterator
-                       , State1 => VertexList
+                       , State1 => VertexVector
                        , State2 => FIFOQueue
                        , State3 => ColorPropertyMap
                        , State4 => EdgeIterator
@@ -43,6 +51,18 @@ program CppBFSTestVisitor = {
                        , repeat => bfsInnerLoopRepeat
                        ];
 
+    
+    use CppReadWriteColorMapWithInitList[ Key => Vertex
+                                        , KeyList => VertexList
+                                        , KeyListIterator => VertexIterator
+                                        , emptyKeyList => emptyVertexList
+                                        , iterBegin => vertexIterBegin
+                                        , iterEnd => vertexIterEnd
+                                        , iterNext => vertexIterNext
+                                        , iterUnpack => vertexIterUnpack
+                                        ];
+    
+    /*use CppColorMarker;
     use CppReadWritePropertyMapWithInitList[ Key => Vertex
                                            , KeyList => VertexList
                                            , KeyListIterator => VertexIterator
@@ -50,7 +70,7 @@ program CppBFSTestVisitor = {
                                            , PropertyMap => ColorPropertyMap
                                            , emptyKeyList => emptyVertexList
                                            ];
-
+    */
     use CppBaseTypes;
     use CppEdge;
     // CppIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
@@ -71,22 +91,35 @@ program CppBFSTestVisitor = {
                , second => iterRangeEnd
                , makePair => makeEdgeIteratorRange
                ];
+
+    use CppVector[ A => Vertex
+                 , Vector => VertexVector
+                 , empty => emptyVertexVector
+                 ];
 };
 
 program CppDijkstraVisitor = {
     use GenericDijkstraVisitor;
 
-    use CppColorMarker;
     use CppIterableList[ A => Edge
                        , List => EdgeList
                        , ListIterator => EdgeIterator
                        , empty => emptyEdgeList
+                       , iterBegin => edgeIterBegin
+                       , iterEnd => edgeIterEnd
+                       , iterNext => edgeIterNext
+                       , iterUnpack => edgeIterUnpack
                        ];
     use CppIterableList[ A => Vertex
                        , List => VertexList
                        , ListIterator => VertexIterator
                        , empty => emptyVertexList
+                       , iterBegin => vertexIterBegin
+                       , iterEnd => vertexIterEnd
+                       , iterNext => vertexIterNext
+                       , iterUnpack => vertexIterUnpack
                        ];
+
     use CppList[ A => VertexPair
                , List => VertexPairList
                , empty => emptyVertexPairList
@@ -167,6 +200,18 @@ program CppDijkstraVisitor = {
                     , repeat => populateVPMapLoopRepeat
                     ];
 
+    use CppReadWriteColorMapWithInitList[ Key => Vertex
+                                        , KeyList => VertexList
+                                        , KeyListIterator => VertexIterator
+                                        , emptyKeyList => emptyVertexList
+                                        , iterBegin => vertexIterBegin
+                                        , iterEnd => vertexIterEnd
+                                        , iterNext => vertexIterNext
+                                        , iterUnpack => vertexIterUnpack
+                                        ];
+
+
+    /*use CppColorMarker;
     use CppReadWritePropertyMapWithInitList[ Key => Vertex
                                            , KeyList => VertexList
                                            , KeyListIterator => VertexIterator
@@ -175,6 +220,8 @@ program CppDijkstraVisitor = {
                                            , emptyKeyList => emptyVertexList
                                            ];
 
+    */
+
     use CppReadWritePropertyMapWithInitList[ Key => Edge
                                            , KeyList => EdgeList
                                            , KeyListIterator => EdgeIterator
@@ -182,6 +229,10 @@ program CppDijkstraVisitor = {
                                            , PropertyMap => EdgeCostMap
                                            , emptyKeyList => emptyEdgeList
                                            , emptyMap => emptyECMap
+                                           , iterBegin => edgeIterBegin
+                                           , iterEnd => edgeIterEnd
+                                           , iterNext => edgeIterNext
+                                           , iterUnpack => edgeIterUnpack
                                            ];
 
     use CppReadWritePropertyMapWithInitList[ Key => Vertex
@@ -191,6 +242,10 @@ program CppDijkstraVisitor = {
                                            , PropertyMap => VertexPredecessorMap
                                            , emptyKeyList => emptyVertexList
                                            , emptyMap => emptyVPMap
+                                           , iterBegin => vertexIterBegin
+                                           , iterEnd => vertexIterEnd
+                                           , iterNext => vertexIterNext
+                                           , iterUnpack => vertexIterUnpack
                                            ];
 
     use CppReadWritePropertyMapWithInitList[ Key => Vertex
@@ -200,6 +255,10 @@ program CppDijkstraVisitor = {
                                            , PropertyMap => VertexCostMap
                                            , emptyKeyList => emptyVertexList
                                            , emptyMap => emptyVCMap
+                                           , iterBegin => vertexIterBegin
+                                           , iterEnd => vertexIterEnd
+                                           , iterNext => vertexIterNext
+                                           , iterUnpack => vertexIterUnpack
                                            ];
 
     use CppBaseTypes;

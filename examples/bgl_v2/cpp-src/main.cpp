@@ -5,9 +5,9 @@
 #include "dijkstra_test.hpp"
 
 int main() {
-    bfs::bfsTest();
+    //bfs::bfsTest();
     //dfs::dfsTest();
-    dijkstra::dijkstraTest();
+    //dijkstra::dijkstraTest();
     bfs::bfsPerfTest();
     bgl::testBgl();
     return 0;

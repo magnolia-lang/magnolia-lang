@@ -123,6 +123,10 @@ implementation DijkstraVisitorBase = {
                                     out vpm: VertexPredecessorMap) {
         call put(vcm, start, initialCost);
 
+        var vertexBeg: VertexIterator;
+        var vertexEnd: VertexIterator;
+        call vertices(g, vertexBeg, vertexEnd);
+
         var populateVPMapState = makePair(emptyVPMap(), vertices(g));
         call populateVPMapLoopRepeat(populateVPMapState, start);
 
@@ -130,7 +134,7 @@ implementation DijkstraVisitorBase = {
 
         var pq = emptyPriorityQueue(vcm);
         var swm = makeStateWithMaps(vcm, vpm, ecm);
-        var c = initMap(vertices(g), white());
+        var c = initMap(vertexBeg, vertexEnd, white());
 
         call breadthFirstVisit(g, start, swm, pq, c);
 

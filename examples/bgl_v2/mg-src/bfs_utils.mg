@@ -6,12 +6,13 @@ package examples.bgl_v2.mg-src.bfs_utils
           , examples.bgl_v2.mg-src.property_map
           , examples.bgl_v2.mg-src.queue
           , examples.bgl_v2.mg-src.tuple
+          , examples.bgl_v2.mg-src.vector
           , examples.bgl_v2.mg-src.while_loop
           , examples.bgl_v2.mg-src.externals.cpp_apis;
 
 // See Haskell example TestVisitor1 from the comparing generics paper
 implementation GenericBFSTestVisitor = {
-    use BFS[ A => VertexList
+    use BFS[ A => VertexVector
            , examineEdge => defaultAction
            , examineVertex => defaultAction
            , treeEdge => defaultAction
@@ -21,21 +22,26 @@ implementation GenericBFSTestVisitor = {
            , finishVertex => defaultAction
            ];
 
+    use Vector[ A => Vertex
+              , Vector => VertexVector
+              , empty => emptyVertexVector
+              ];
+
     procedure discoverVertex(obs v: Vertex,
                              obs g: Graph,
                              upd q: FIFOQueue,
-                             upd a: VertexList) = { // A should be list, perhaps?
-        call cons(v, a);
+                             upd a: VertexVector) = {
+        call pushBack(v, a);
     }
 
     use BFSVisitorDefaultAction[ EdgeOrVertex => Vertex
                                , Queue => FIFOQueue
                                , defaultAction => defaultAction
-                               , A => VertexList
+                               , A => VertexVector
                                ];
     use BFSVisitorDefaultAction[ EdgeOrVertex => Edge
                                , Queue => FIFOQueue
                                , defaultAction => defaultAction
-                               , A => VertexList
+                               , A => VertexVector
                                ];
 }

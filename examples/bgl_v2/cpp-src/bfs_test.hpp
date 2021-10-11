@@ -15,6 +15,7 @@ typedef CppBFSTestVisitor::Vertex Vertex;
 
 auto makeEdge = CppBFSTestVisitor::makeEdge;
 auto emptyVertexList = CppBFSTestVisitor::emptyVertexList;
+auto emptyVertexVector = CppBFSTestVisitor::emptyVertexVector;
 auto head = CppBFSTestVisitor::head;
 auto tail = CppBFSTestVisitor::tail;
 
@@ -46,14 +47,11 @@ inline std::list<CppBFSTestVisitor::Edge> lotsOfEdges() {
 
 inline void bfsTest() {
     std::cout << "BFS test:" << std::endl;
-    Graph g(testEdges());
+    Graph g(testEdges(), 7);
     Vertex start = 0;
 
     auto bfsResult =
-        CppBFSTestVisitor::breadthFirstSearch(g, start, emptyVertexList());
-
-    // Nodes are returned in the wrong order
-    bfsResult.reverse();
+        CppBFSTestVisitor::breadthFirstSearch(g, start, emptyVertexVector());
 
     for (auto vit = bfsResult.begin(); vit != bfsResult.end(); ++vit) {
         std::cout << *vit << " ";
@@ -64,16 +62,15 @@ inline void bfsTest() {
 
 inline void bfsPerfTest() {
     std::cout << "BFS perf test:" << std::endl;
-    Graph g(lotsOfEdges());
+    Graph g(lotsOfEdges(), 1000000);
+    std::cout << head(g.vertices) << std::endl;
     Vertex start = 0;
 
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     auto bfsResult =
-        CppBFSTestVisitor::breadthFirstSearch(g, start, emptyVertexList());
+        CppBFSTestVisitor::breadthFirstSearch(g, start, emptyVertexVector());
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    // Nodes are returned in the wrong order
-    bfsResult.reverse();
 
     for (auto vit = bfsResult.begin(); vit != bfsResult.end(); ++vit) {
         std::cout << *vit << " ";

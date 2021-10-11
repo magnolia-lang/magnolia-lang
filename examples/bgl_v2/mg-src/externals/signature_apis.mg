@@ -5,6 +5,7 @@ package examples.bgl_v2.mg-src.externals.signature_apis
           , examples.bgl_v2.mg-src.property_map
           , examples.bgl_v2.mg-src.queue
           , examples.bgl_v2.mg-src.tuple
+          , examples.bgl_v2.mg-src.vector
           , examples.bgl_v2.mg-src.while_loop;
 
 implementation ExtBaseTypes = {
@@ -44,6 +45,26 @@ implementation ExtList = signature(List);
 
 implementation ExtIterableList = signature(IterableList);
 
+implementation ExtReadWriteColorMapWithInitList = {
+    use signature(ReadWritePropertyMap)[ PropertyMap => ColorPropertyMap
+                                       , Value => Color
+                                       ];
+    type Color;
+    function white(): Color;
+    function black(): Color;
+    function gray(): Color;
+
+    require IterableList[ A => Key
+                        , List => KeyList
+                        , ListIterator => KeyListIterator
+                        , empty => emptyKeyList
+                        ];
+
+    function initMap(klBeg: KeyListIterator,
+                     klEnd: KeyListIterator,
+                     v: Color): ColorPropertyMap;
+}
+
 implementation ExtReadWritePropertyMapWithInitList = {
     use signature(ReadWritePropertyMap);
 
@@ -62,6 +83,8 @@ implementation ExtUpdateablePriorityQueue = signature(UpdateablePriorityQueue);
 
 implementation ExtPair = signature(Pair);
 implementation ExtTriplet = signature(Triplet);
+
+implementation ExtVector = signature(Vector);
 
 implementation ExtWhileLoop = signature(WhileLoop);
 implementation ExtWhileLoop3 = signature(WhileLoop3);

@@ -91,7 +91,8 @@ implementation BFSVisit = {
                                 , Value => Color
                                 ];
 
-    require function initMap(vl: VertexList, c: Color): ColorPropertyMap;
+    require function initMap(vs: VertexIterator, ve: VertexIterator,
+                             c: Color): ColorPropertyMap;
 
     procedure breadthFirstVisit(obs g: Graph,
                                 obs s: Vertex,
@@ -149,8 +150,8 @@ implementation BFSVisit = {
     }
 
     type EdgeIterator;
-    require procedure iterNext(upd ei: EdgeIterator);
-    require function iterUnpack(ei: EdgeIterator): Edge;
+    require procedure edgeIterNext(upd ei: EdgeIterator);
+    require function edgeIterUnpack(ei: EdgeIterator): Edge;
 
     predicate bfsInnerLoopCond(x: A,
                                q: Queue,
@@ -168,8 +169,8 @@ implementation BFSVisit = {
                                obs g: Graph,
                                obs u: Vertex,
                                obs edgeItrEnd: EdgeIterator) {
-        var e = iterUnpack(edgeItr);
-        call iterNext(edgeItr);
+        var e = edgeIterUnpack(edgeItr);
+        call edgeIterNext(edgeItr);
 
         var v = tgt(e);
 
@@ -202,7 +203,10 @@ implementation BFS = {
                                 start: Vertex,
                                 init: A): A = {
         var q = empty(): FIFOQueue;
-        var c = initMap(vertices(g), white());
+        var vertexBeg: VertexIterator;
+        var vertexEnd: VertexIterator;
+        call vertices(g, vertexBeg, vertexEnd);
+        var c = initMap(vertexBeg, vertexEnd, white());
         var a = init;
 
         call breadthFirstVisit(g, start, a, q, c);

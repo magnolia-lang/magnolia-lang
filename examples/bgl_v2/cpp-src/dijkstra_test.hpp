@@ -61,7 +61,7 @@ inline void dijkstraTest() {
     std::list<Edge> edges = edges_and_edge_cost_map.first;
     EdgeCostMap ecm = edges_and_edge_cost_map.second;
 
-    Graph g(edges);
+    Graph g(edges, 10);
     Vertex start = 0;
     Cost start_cost = 0;
     Cost other_vertex_base_cost = 100.0;

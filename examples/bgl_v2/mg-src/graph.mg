@@ -22,6 +22,10 @@ concept IncidenceGraph = {
                         , List => EdgeList
                         , ListIterator => EdgeIterator
                         , empty => emptyEdgeList
+                        , iterBegin => edgeIterBegin
+                        , iterEnd => edgeIterEnd
+                        , iterNext => edgeIterNext
+                        , iterUnpack => edgeIterUnpack
                         ];
 
     type Graph;
@@ -42,13 +46,23 @@ concept VertexListGraph = {
     // Likely:
     //   - the fact that it's a collection of elements
     //   - ?
-    require List[ A => Vertex
-                , List => VertexList
-                , empty => emptyVertexList
-                ];
+    require IterableList[ A => Vertex
+                        , List => VertexList
+                        , ListIterator => VertexIterator
+                        , empty => emptyVertexList
+                        , iterBegin => vertexIterBegin
+                        , iterEnd => vertexIterEnd
+                        , iterNext => vertexIterNext
+                        , iterUnpack => vertexIterUnpack
+                        ];
     type Graph;
     type VertexCount;
 
+    // Legacy, TODO remove
     function vertices(g: Graph): VertexList;
+
+    procedure vertices(obs g: Graph,
+                       out itBeg: VertexIterator,
+                       out itEnd: VertexIterator);
     function numVertices(g: Graph): VertexCount;
 }
