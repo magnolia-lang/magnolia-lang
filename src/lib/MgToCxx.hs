@@ -477,7 +477,7 @@ mgCallableDeclToCxx returnTypeOverloadsNameAliasMap extObjectsMap
       -- TODO: what do we do with guard? Carry it in and use it as a
       -- precondition test?
       -- TODO: for now, all functions are generated as static.
-      pure $ CxxFunction CxxStaticMember False cxxFnName [] cxxParams cxxRetTy
+      pure $ CxxFunction CxxStaticMember True cxxFnName [] cxxParams cxxRetTy
                          cxxBody
   where
     mgTypedVarToCxx :: TypedVar PhCheck -> MgMonad CxxVar
@@ -709,8 +709,11 @@ tryMgCallToCxxSpecialOpExpr returnTypeOverloadsNameAliasMap name args retTy = do
     ([cxxLhsExpr, cxxRhsExpr], [Pred, Pred, Pred]) ->
       pure $ binPredCombinator cxxLhsExpr cxxRhsExpr
     ([cxxLhsExpr, cxxRhsExpr], [Pred, a, b]) -> return $
-      if a == b && name == FuncName "_==_"
-      then pure $ CxxBinOp CxxEqual cxxLhsExpr cxxRhsExpr
+      if a == b
+      then case name of
+        FuncName "_==_" -> pure $ CxxBinOp CxxEqual cxxLhsExpr cxxRhsExpr
+        FuncName "_!=_" -> pure $ CxxBinOp CxxNotEqual cxxLhsExpr cxxRhsExpr
+        _ -> Nothing
       else Nothing
     ([], [Pred]) -> pure constPred
     _ -> return Nothing

@@ -371,7 +371,7 @@ data CxxExpr = -- | A call to a function.
 data CxxUnOp = CxxLogicalNot
                deriving (Eq, Ord, Show)
 
-data CxxBinOp = CxxLogicalAnd | CxxLogicalOr | CxxEqual
+data CxxBinOp = CxxLogicalAnd | CxxLogicalOr | CxxEqual | CxxNotEqual
                 deriving (Eq, Ord, Show)
 
 data CxxLambdaCaptureDefault = CxxLambdaCaptureDefaultValue
@@ -689,6 +689,7 @@ instance Pretty CxxBinOp where
     CxxLogicalOr -> "||"
     CxxLogicalAnd -> "&&"
     CxxEqual -> "=="
+    CxxNotEqual -> "!="
 
 instance Pretty CxxLambdaCaptureDefault where
   -- When capturing by value, we explicitly capture "this", to avoid the
