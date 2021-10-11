@@ -103,91 +103,73 @@ implementation BFSVisit = {
         call push(s, q);
         call put(c, s, gray());
 
-        var outerState = makeOuterLoopState(a, q, c);
-        call bfsOuterLoopRepeat(outerState, g);
-        a = first(outerState);
+        call bfsOuterLoopRepeat(a, q, c, g);
     }
 
-    use WhileLoop[ repeat => bfsOuterLoopRepeat
+    use WhileLoop3[ repeat => bfsOuterLoopRepeat
                  , step => bfsOuterLoopStep
                  , cond => bfsOuterLoopCond
-                 , State => OuterLoopState
+                 , State1 => A
+                 , State2 => Queue
+                 , State3 => ColorPropertyMap
                  , Context => Graph
                  ];
 
-    use Triplet[ A => A
-               , B => Queue
-               , C => ColorPropertyMap
-               , Triplet => OuterLoopState
-               , makeTriplet => makeOuterLoopState
-               ];
+    use WhileLoop4_3[ repeat => bfsInnerLoopRepeat
+                    , step => bfsInnerLoopStep
+                    , cond => bfsInnerLoopCond
+                    , State1 => A
+                    , State2 => Queue
+                    , State3 => ColorPropertyMap
+                    , State4 => EdgeIterator
+                    , Context1 => Graph
+                    , Context2 => Vertex
+                    , Context3 => EdgeIterator
+                    ];
 
-    use WhileLoop4[ repeat => bfsInnerLoopRepeat
-                  , step => bfsInnerLoopStep
-                  , cond => bfsInnerLoopCond
-                  , State1 => A
-                  , State2 => Queue
-                  , State3 => ColorPropertyMap
-                  , State4 => EdgeList
-                  , Context => InnerLoopContext
-                 ];
-
-    use Pair[ A => Graph
-            , B => Vertex
-            , Pair => InnerLoopContext
-            , makePair => makeInnerLoopContext
-               // Renaming axiom avoids merging errors tagged as compiler bug.
-               // Problem should be related to https://github.com/magnolia-lang/magnolia-lang/issues/43
-               ];
-
-    require type InnerLoopContext;
-
-    predicate bfsOuterLoopCond(state: OuterLoopState, g: Graph) {
-        var q = second(state);
+    predicate bfsOuterLoopCond(a: A, q: Queue, c: ColorPropertyMap, g: Graph) {
         value !isEmptyQueue(q);
     }
 
-    procedure bfsOuterLoopStep(upd state: OuterLoopState,
+    procedure bfsOuterLoopStep(upd x: A, upd q: Queue, upd c: ColorPropertyMap,
                                obs g: Graph) {
-        var x = first(state);
-        var q = second(state);
-        var c = third(state);
-
         var u = front(q);
         call pop(q);
 
         call examineVertex(u, g, q, x);
 
-        var edges = outEdges(u, g);
-        var innerContext = makeInnerLoopContext(g, u);
+        var edgeItrBegin: EdgeIterator;
+        var edgeItrEnd: EdgeIterator;
+        
+        call outEdges(u, g, edgeItrBegin, edgeItrEnd);
 
-        call bfsInnerLoopRepeat(x, q, c, edges, innerContext);
+        call bfsInnerLoopRepeat(x, q, c, edgeItrBegin, g, u, edgeItrEnd);
 
         call finishVertex(u, g, q, x);
-
-        state = makeOuterLoopState(x, q, c);
     }
 
-    require predicate isEmpty(el: EdgeList);
-    require function head(el: EdgeList): Edge guard !isEmpty(el);
-    require procedure tail(upd el: EdgeList) guard !isEmpty(el);
+    type EdgeIterator;
+    require procedure iterNext(upd ei: EdgeIterator);
+    require function iterUnpack(ei: EdgeIterator): Edge;
 
-    predicate bfsInnerLoopCond(x: A, q: Queue, c: ColorPropertyMap,
-                               edgeList: EdgeList,
-                               ctx: InnerLoopContext) {
-        value !isEmpty(edgeList);
+    predicate bfsInnerLoopCond(x: A,
+                               q: Queue,
+                               c: ColorPropertyMap,
+                               edgeItr: EdgeIterator,
+                               g: Graph,
+                               u: Vertex,
+                               edgeItrEnd: EdgeIterator) {
+        value edgeItr != edgeItrEnd;
     }
     
     procedure bfsInnerLoopStep(upd x1: A, upd q1: Queue,
                                upd c: ColorPropertyMap,
-                               upd edgeList: EdgeList,
-                               obs ctx: InnerLoopContext) {
-        var g = first(ctx);
-        var u = second(ctx);
-
-        var e = head(edgeList);
-
-        call tail(edgeList);
+                               upd edgeItr: EdgeIterator,
+                               obs g: Graph,
+                               obs u: Vertex,
+                               obs edgeItrEnd: EdgeIterator) {
+        var e = iterUnpack(edgeItr);
+        call iterNext(edgeItr);
 
         var v = tgt(e);
 

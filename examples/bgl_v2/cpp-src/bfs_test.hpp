@@ -2,10 +2,10 @@
 
 #include <chrono>
 #include <iostream>
-#include <random>
 
 #include "base.hpp"
 #include "gen/examples/bgl_v2/mg-src/bgl_v2-cpp.hpp"
+#include "testcase.hpp"
 
 namespace bfs {
 // BFS test
@@ -32,16 +32,13 @@ inline std::list<CppBFSTestVisitor::Edge> testEdges() {
 }
 
 inline std::list<CppBFSTestVisitor::Edge> lotsOfEdges() {
-    int nb_vertices = 2000, nb_edges = 20000;
-    std::random_device dev;
-    std::mt19937 rng(dev());
-    std::uniform_int_distribution<std::mt19937::result_type>
-        range_obj(0, nb_vertices);
-
+    auto test_case = gen_test_case();
     std::list<CppBFSTestVisitor::Edge> edges;
 
-    for (auto i = 0; i < nb_edges; ++i) {
-        edges.push_back(makeEdge(range_obj(rng), range_obj(rng)));
+    for (auto pair_it = test_case.second.begin();
+         pair_it != test_case.second.end();
+         ++pair_it) {
+        edges.push_back(makeEdge(pair_it->first, pair_it->second));
     }
 
     return edges;
@@ -84,7 +81,7 @@ inline void bfsPerfTest() {
 
     std::cout << std::endl;
 
-    std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "[s]" << std::endl;
+    std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[ms]" << std::endl;
 }
 
 

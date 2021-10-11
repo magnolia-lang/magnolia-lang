@@ -42,13 +42,16 @@ implementation ExtIncidenceAndVertexListGraph = {
 
 implementation ExtList = signature(List);
 
+implementation ExtIterableList = signature(IterableList);
+
 implementation ExtReadWritePropertyMapWithInitList = {
     use signature(ReadWritePropertyMap);
 
-    require List[ A => Key
-                , List => KeyList
-                , empty => emptyKeyList
-                ];
+    require IterableList[ A => Key
+                        , List => KeyList
+                        , ListIterator => KeyListIterator
+                        , empty => emptyKeyList
+                        ];
 
     function emptyMap(): PropertyMap;
     function initMap(kl: KeyList, v: Value): PropertyMap;
@@ -61,4 +64,5 @@ implementation ExtPair = signature(Pair);
 implementation ExtTriplet = signature(Triplet);
 
 implementation ExtWhileLoop = signature(WhileLoop);
-implementation ExtWhileLoop4 = signature(WhileLoop4);
+implementation ExtWhileLoop3 = signature(WhileLoop3);
+implementation ExtWhileLoop4_3 = signature(WhileLoop4_3);

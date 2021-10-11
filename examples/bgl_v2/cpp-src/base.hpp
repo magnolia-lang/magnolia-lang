@@ -1,5 +1,8 @@
 #pragma once
 
+#include <boost/graph/adjacency_list.hpp>
+
+#include <chrono>
 #include <iostream>
 
 #include <list>
@@ -8,6 +11,9 @@
 #include <tuple>
 #include <unordered_set>
 #include <utility>
+
+#define BENCHD(name, op) std::chrono::steady_clock::time_point time_begin = std::chrono::steady_clock::now(); op; std::chrono::steady_clock::time_point time_end = std::chrono::steady_clock::now(); std::cout << "Time difference (" << name << ") = " << std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_begin).count() << "[µs]" << std::endl;
+#define BENCH(name, op) time_begin = std::chrono::steady_clock::now(); op; time_end = std::chrono::steady_clock::now(); std::cout << "Time difference (" << name << ") = " << std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_begin).count() << "[µs]" << std::endl;
 
 // base_types_cpp
 struct base_types {
@@ -52,21 +58,25 @@ struct edge {
         bool operator==(const Edge &other) const = default;
     };
 
-    inline Vertex src(const Edge &e) { return e.source; }
-    inline Vertex tgt(const Edge &e) { return e.target; }
+    inline const Vertex &src(const Edge &e) { return e.source; }
+    inline const Vertex &tgt(const Edge &e) { return e.target; }
     inline Edge makeEdge(const Vertex &s, const Vertex &t) {
         return Edge(s, t);
     }
 };
 
-template <typename _Edge, typename _EdgeList, typename _Vertex,
+template <typename _Edge, typename _EdgeIterator, typename _EdgeList,
+          typename _Vertex,
           typename _VertexList, class _consEdgeList, class _consVertexList,
           class _emptyEdgeList, class _emptyVertexList, class _headEdgeList,
           class _headVertexList, class _isEmptyEdgeList,
-          class _isEmptyVertexList, class _makeEdge, class _src,
+          class _isEmptyVertexList, class _iterBegin, class _iterEnd,
+          class _iterNext,
+          class _iterUnpack, class _makeEdge, class _src,
           class _tailEdgeList, class _tailVertexList, class _tgt>
 struct incidence_and_vertex_list_graph {
     typedef _Edge Edge;
+    typedef _EdgeIterator EdgeIterator;
     typedef _EdgeList EdgeList;
     typedef _Vertex Vertex;
     typedef _VertexList VertexList;
@@ -74,11 +84,11 @@ struct incidence_and_vertex_list_graph {
     typedef int VertexCount;
     struct Graph {
         std::unordered_set<Vertex> vertices;
-        std::list<Edge> edges;
+        std::map<Vertex, EdgeList> edges;
 
         Graph(const std::list<Edge> &edges) {
             for (auto edge_it = edges.begin(); edge_it != edges.end(); ++edge_it) {
-                this->edges.push_back(*edge_it);
+                consEdgeList(*edge_it, this->edges[src(*edge_it)]);
                 this->vertices.insert(src(*edge_it));
                 this->vertices.insert(tgt(*edge_it));
             }
@@ -89,6 +99,8 @@ struct incidence_and_vertex_list_graph {
         // TODO
     };
 
+    //typedef boost::adjacency_list<EdgeList, VertexList> Graph;
+
     static inline _consEdgeList consEdgeList;
     static inline _consVertexList consVertexList;
     static inline _emptyEdgeList emptyEdgeList;
@@ -97,30 +109,36 @@ struct incidence_and_vertex_list_graph {
     static inline _headVertexList headVertexList;
     static inline _isEmptyEdgeList isEmptyEdgeList;
     static inline _isEmptyVertexList isEmptyVertexList;
+    static inline _iterBegin iterBegin;
+    static inline _iterEnd iterEnd;
+    static inline _iterNext iterNext;
+    static inline _iterUnpack iterUnpack;
     static inline _makeEdge makeEdge;
     static inline _src src;
     static inline _tailEdgeList tailEdgeList;
     static inline _tailVertexList tailVertexList;
     static inline _tgt tgt;
 
-    inline EdgeList outEdges(const Vertex &v, const Graph &g) {
-        EdgeList result = emptyEdgeList();
-        for (auto edge_it = g.edges.begin(); edge_it != g.edges.end(); ++edge_it) {
-            if (src(*edge_it) == v) {
-                consEdgeList(*edge_it, result);
-            }
+    inline void outEdges(const Vertex &v, const Graph &g, EdgeIterator &it_begin, EdgeIterator &it_end) {
+        auto map_it = g.edges.find(v);
+        if (map_it != g.edges.end()) {
+            it_begin = iterBegin(map_it->second);
+            it_end = iterEnd(map_it->second);
+        } else {
+            it_begin = iterBegin(map_it->second);
+            it_end = iterBegin(map_it->second);
         }
-        return result;
     }
 
     inline VertexCount outDegree(const Vertex &v, const Graph &g) {
-        auto outEdgesList = outEdges(v, g);
+        /*auto outEdgesList = outEdges(v, g);
         VertexCount result = 0;
         while (!isEmptyEdgeList(outEdgesList)) {
             tailEdgeList(outEdgesList);
             result += 1;
         }
-        return result;
+        return result;*/
+        return 0;
     }
 
     inline VertexList vertices(const Graph &g) {
@@ -145,7 +163,7 @@ struct list {
     inline List empty() { return List(); }
     inline void cons(const A &a, List &l) { l.push_front(a); }
     
-    inline A head(const List &l) {
+    inline const A& head(const List &l) {
         return l.front();
     }
     inline void tail(List &l) { l.pop_front(); }
@@ -155,12 +173,39 @@ struct list {
     }
 };
 
+template <typename _A>
+struct iterable_list {
+    typedef _A A;
+    typedef std::list<A> List;
+    typedef typename std::list<A>::const_iterator ListIterator;
+
+    inline List empty() { return List(); }
+    inline void cons(const A &a, List &l) { l.push_front(a); }
+
+    inline const A& head(const List &l) {
+        return l.front();
+    }
+    inline void tail(List &l) { l.pop_front(); }
+
+    inline bool isEmpty(const List &l) {
+        return l.empty();
+    }
+
+    inline ListIterator iterBegin(const List &l) { return l.begin(); }
+    inline void iterNext(ListIterator &it) { ++it; }
+    inline ListIterator iterEnd(const List &l) { return l.end(); }
+    inline A iterUnpack(const ListIterator &it) { return *it; }
+};
+
 // property_map_cpp
-template <typename _Key, typename _KeyList, typename _Value, class _cons,
-          class _emptyKeyList, class _head, class _isEmpty, class _tail>
+template <typename _Key, typename _KeyList, typename _KeyListIterator,
+          typename _Value, class _cons, class _emptyKeyList, class _head,
+          class _isEmpty, class _iterBegin, class _iterEnd, class _iterNext,
+          class _iterUnpack, class _tail>
 struct read_write_property_map {
     typedef _Key Key;
     typedef _KeyList KeyList;
+    typedef _KeyListIterator KeyListIterator;
     typedef _Value Value;
     typedef std::map<Key, Value> PropertyMap;
 
@@ -168,11 +213,15 @@ struct read_write_property_map {
     static inline _emptyKeyList emptyKeyList;
     static inline _head head;
     static inline _isEmpty isEmpty;
+    static inline _iterBegin iterBegin;
+    static inline _iterEnd iterEnd;
+    static inline _iterNext iterNext;
+    static inline _iterUnpack iterUnpack;
     static inline _tail tail;
 
     inline PropertyMap emptyMap() { return PropertyMap(); }
 
-    inline Value get(const PropertyMap &pm, const Key &k) {
+    inline const Value &get(const PropertyMap &pm, const Key &k) {
         return pm.find(k)->second;
     }
 
@@ -182,12 +231,9 @@ struct read_write_property_map {
 
     inline PropertyMap initMap(const KeyList &kl, const Value &v) {
         auto result = PropertyMap();
-        KeyList _kl = kl;
 
-        while (!isEmpty(_kl)) {
-            const Key &current_key = head(_kl);
-            put(result, current_key, v);
-            tail(_kl); //_kl = tail(_kl);
+        for (auto k_it = iterBegin(kl); k_it != iterEnd(kl); ++k_it) {
+            put(result, iterUnpack(k_it), v);
         }
 
         return result;
@@ -213,8 +259,45 @@ struct fifo_queue {
 
     inline void pop(FIFOQueue &q) { q.pop(); }
 
-    inline A front(const FIFOQueue &q) { return q.front(); }
+    inline const A& front(const FIFOQueue &q) { return q.front(); }
 };
+
+
+/*template <typename _A>
+struct fifo_queue {
+    typedef _A A;
+    struct FIFOQueue {
+        std::queue<A> queue;
+        std::unordered_set<A> seen;
+
+        FIFOQueue() {}
+
+        bool empty() const { return this->queue.empty(); }
+        void push(const A &a) {
+            if (this->seen.find(a) != this->seen.end()) return;
+            this->seen.insert(a);
+            this->queue.push(a);
+        }
+
+        void pop() {
+            this->queue.pop();
+        }
+
+        const A& front() const { return this->queue.front(); }
+    };
+
+    inline bool isEmpty(const FIFOQueue &q) { return q.empty(); }
+
+    inline FIFOQueue empty() {
+        return FIFOQueue();
+    }
+
+    inline void push(const A &a, FIFOQueue &q) { q.push(a); }
+
+    inline void pop(FIFOQueue &q) { q.pop(); }
+
+    inline const A& front(const FIFOQueue &q) { return q.front(); }
+};*/
 
 // TODO: make actual implementation
 template <typename _A, typename _Priority, typename _PriorityMap, class _get>
@@ -384,8 +467,8 @@ struct pair {
         return std::make_pair(a, b);
     }
 
-    inline A first(const Pair &pair) { return pair.first; }
-    inline B second(const Pair &pair) { return pair.second; }
+    inline const A &first(const Pair &pair) { return pair.first; }
+    inline const B &second(const Pair &pair) { return pair.second; }
 };
 
 template <typename _A, typename _B, typename _C>
@@ -413,35 +496,55 @@ struct while_loop {
     _cond cond;
     _step step;
 
-    inline void repeat(State &state, const Context &context) {
-        int counter = 0;
+    inline __attribute__((always_inline)) void repeat(State &state, const Context &context) {
         while (while_loop::cond(state, context)) {
-            //std::cout << "counter: " << counter << std::endl;
             while_loop::step(state, context);
-            counter += 1;
         }
     }
 };
 
-template <typename _Context, typename _State1, typename _State2,
-          typename _State3, typename _State4, class _cond, class _step>
-struct while_loop4 {
+
+template <typename _Context, typename _State1, typename _State2, 
+          typename _State3, class _cond, class _step>
+struct while_loop3 {
     typedef _State1 State1;
     typedef _State2 State2;
     typedef _State3 State3;
-    typedef _State4 State4;
     typedef _Context Context;
 
     _cond cond;
     _step step;
 
-    inline void repeat(State1 &state1, State2 &state2, State3 &state3,
-                       State4 &state4, const Context &context) {
-        int counter = 0;
-        while (while_loop4::cond(state1, state2, state3, state4, context)) {
-            //std::cout << "counter: " << counter << std::endl;
-            while_loop4::step(state1, state2, state3, state4, context);
-            counter += 1;
+    inline __attribute__((always_inline)) void repeat(State1 &state1, State2 &state2, State3 &state3,
+                       const Context &context) {
+        BENCHD("outer loop repeat",
+        while (while_loop3::cond(state1, state2, state3, context)) {
+            while_loop3::step(state1, state2, state3, context);
+        })
+    }
+};
+
+
+template <typename _Context1, typename _Context2, typename _Context3, typename _State1,
+          typename _State2, typename _State3, typename _State4,
+          class _cond, class _step>
+struct while_loop4_3 {
+    typedef _State1 State1;
+    typedef _State2 State2;
+    typedef _State3 State3;
+    typedef _State4 State4;
+    typedef _Context1 Context1;
+    typedef _Context2 Context2;
+    typedef _Context3 Context3;
+
+    _cond cond;
+    _step step;
+
+    inline __attribute__((always_inline)) void repeat(State1 &state1, State2 &state2, State3 &state3,
+                       State4 &state4, const Context1 &context1,
+                       const Context2 &context2, const Context3 &context3) {
+        while (cond(state1, state2, state3, state4, context1, context2, context3)) {
+            step(state1, state2, state3, state4, context1, context2, context3);
         }
     }
 };

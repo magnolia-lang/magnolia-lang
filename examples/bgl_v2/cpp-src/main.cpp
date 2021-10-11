@@ -8,7 +8,7 @@ int main() {
     bfs::bfsTest();
     //dfs::dfsTest();
     dijkstra::dijkstraTest();
-    //bgl::testBgl();
     bfs::bfsPerfTest();
+    bgl::testBgl();
     return 0;
 }

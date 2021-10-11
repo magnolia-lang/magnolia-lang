@@ -6,14 +6,14 @@ BIN_DIR := bin
 CPP_SOURCE_DIR := cpp-src
 CPP_SOURCES := $(shell find $(CPP_SOURCE_DIR) -name "*.cpp")
 
-CC := clang++
-CCFLAGS := -g -std=c++20 -I$(CPP_SOURCE_DIR)
+CC := g++
+CCFLAGS := -g -O3 -std=c++20 -I$(CPP_SOURCE_DIR)
 
 MKDIR := @mkdir
 RM := @rm
 
 all: setup
-	clang++ -O3 $(CCFLAGS) $(CPP_SOURCES) -o $(BIN_DIR)/$(TARGET)
+	clang++ -mllvm -inline-threshold=1000 $(CCFLAGS) $(CPP_SOURCES) -o $(BIN_DIR)/$(TARGET)
 	@echo $(TARGET)
 	@echo $(CPP_SOURCES)
 

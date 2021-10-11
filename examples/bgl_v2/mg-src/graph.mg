@@ -18,15 +18,19 @@ concept IncidenceGraph = {
     require type Edge;
     require type Vertex;
     
-    require List[ A => Edge
-                , List => EdgeList
-                , empty => emptyEdgeList
-                ];
-    type Graph;
+    require IterableList[ A => Edge
+                        , List => EdgeList
+                        , ListIterator => EdgeIterator
+                        , empty => emptyEdgeList
+                        ];
 
+    type Graph;
     type VertexCount;
 
-    function outEdges(v: Vertex, g: Graph): EdgeList;
+    procedure outEdges(obs v: Vertex,
+                       obs g: Graph,
+                       out itBeg: EdgeIterator,
+                       out itEnd: EdgeIterator);
     function outDegree(v: Vertex, g: Graph): VertexCount;
 
     // TODO: add axioms such that outDegree(v, g) <= count(outEdges(v, g))?

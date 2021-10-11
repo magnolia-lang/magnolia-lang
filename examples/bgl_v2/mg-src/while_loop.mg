@@ -27,14 +27,37 @@ concept WhileLoop = {
     }
 };
 
-concept WhileLoop4 = {
-    require type Context;
+concept WhileLoop4_3 = {
+    require type Context1;
+    require type Context2;
+    require type Context3;
     require type State1;
     require type State2;
     require type State3;
     require type State4;
 
-    require predicate cond(s1: State1, s2: State2, s3: State3, s4: State4, ctx: Context);
-    require procedure step(upd s1: State1, upd s2: State2, upd s3: State3, upd s4: State4, obs ctx: Context);
-    procedure repeat(upd s1: State1, upd s2: State2, upd s3: State3, upd s4: State4, obs ctx: Context);
+    require predicate cond(s1: State1, s2: State2, s3: State3, s4: State4, ctx1: Context1, ctx2: Context2, ctx3: Context3);
+    require procedure step(upd s1: State1, upd s2: State2, upd s3: State3, upd s4: State4, obs ctx1: Context1, obs ctx2: Context2, obs ctx3: Context3);
+    procedure repeat(upd s1: State1, upd s2: State2, upd s3: State3, upd s4: State4, obs ctx1: Context1, obs ctx2: Context2, obs ctx3: Context3);
+};
+
+concept WhileLoop3 = {
+    require type Context;
+    require type State1;
+    require type State2;
+    require type State3;
+
+    require predicate cond(s1: State1, s2: State2, s3: State3, ctx: Context);
+    require procedure step(upd s1: State1, upd s2: State2, upd s3: State3, obs ctx: Context);
+    procedure repeat(upd s1: State1, upd s2: State2, upd s3: State3, obs ctx: Context);
+};
+
+concept Mergeable = {
+    type T;
+
+    function merge(t1: T, t2: T): T;
+};
+
+concept DistributedWhileLoop4_2 = {
+
 };

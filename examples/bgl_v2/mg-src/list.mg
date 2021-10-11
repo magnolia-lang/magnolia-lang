@@ -27,3 +27,23 @@ concept List = {
         assert l == mutableList;
     }
 }
+
+concept Iterator = {
+    type Iterable;
+    type Iterator;
+    require type A;
+
+    function iterBegin(itb: Iterable): Iterator;
+    procedure iterNext(upd itr: Iterator);
+    function iterEnd(itb: Iterable): Iterator;
+
+    function iterUnpack(itr: Iterator): A;
+}
+
+concept IterableList = {
+    use Iterator[ Iterable => List
+                , Iterator => ListIterator
+                , A => A
+                ];
+    use List;
+}

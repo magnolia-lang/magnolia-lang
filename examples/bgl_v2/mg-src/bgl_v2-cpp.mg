@@ -7,57 +7,45 @@ program CppBFSTestVisitor = {
     use GenericBFSTestVisitor;
 
     use CppColorMarker;
-    use CppList[ A => Edge
-               , List => EdgeList
-               , empty => emptyEdgeList
-               ];
-    use CppList[ A => Vertex
-               , List => VertexList
-               , empty => emptyVertexList
-               ];
-
-    use CppTriplet[ A => VertexList
-                  , B => FIFOQueue
-                  , C => ColorPropertyMap
-                  , Triplet => OuterLoopState
-                  , makeTriplet => makeOuterLoopState
-                  ];
-
-    use CppPair[ A => OuterLoopState
-               , B => EdgeList
-               , Pair => InnerLoopState
-               , makePair => makeInnerLoopState
-               ];
-
-    use CppPair[ A => Graph
-               , B => Vertex
-               , Pair => InnerLoopContext
-               , makePair => makeInnerLoopContext
-               ];
+    use CppIterableList[ A => Edge
+                       , List => EdgeList
+                       , ListIterator => EdgeIterator
+                       , empty => emptyEdgeList
+                       ];
+    use CppIterableList[ A => Vertex
+                       , List => VertexList
+                       , ListIterator => VertexIterator
+                       , empty => emptyVertexList
+                       ];
 
     use CppFIFOQueue[ A => Vertex
                     , isEmpty => isEmptyQueue
                     ];
     
-    use CppWhileLoop[ Context => Graph
-                    , State => OuterLoopState
-                    , cond => bfsOuterLoopCond
-                    , step => bfsOuterLoopStep
-                    , repeat => bfsOuterLoopRepeat
-                    ];
-
-    use CppWhileLoop4[ Context => InnerLoopContext
+    use CppWhileLoop3[ Context => Graph
                      , State1 => VertexList
                      , State2 => FIFOQueue
                      , State3 => ColorPropertyMap
-                     , State4 => EdgeList
-                     , cond => bfsInnerLoopCond
-                     , step => bfsInnerLoopStep
-                     , repeat => bfsInnerLoopRepeat
+                     , cond => bfsOuterLoopCond
+                     , step => bfsOuterLoopStep
+                     , repeat => bfsOuterLoopRepeat
                      ];
+
+    use CppWhileLoop4_3[ Context1 => Graph 
+                       , Context2 => Vertex
+                       , Context3 => EdgeIterator
+                       , State1 => VertexList
+                       , State2 => FIFOQueue
+                       , State3 => ColorPropertyMap
+                       , State4 => EdgeIterator
+                       , cond => bfsInnerLoopCond
+                       , step => bfsInnerLoopStep
+                       , repeat => bfsInnerLoopRepeat
+                       ];
 
     use CppReadWritePropertyMapWithInitList[ Key => Vertex
                                            , KeyList => VertexList
+                                           , KeyListIterator => VertexIterator
                                            , Value => Color
                                            , PropertyMap => ColorPropertyMap
                                            , emptyKeyList => emptyVertexList
@@ -76,20 +64,29 @@ program CppBFSTestVisitor = {
                                       , tailEdgeList => tail
                                       , tailVertexList => tail
                                       ];
+    use CppPair[ A => EdgeIterator
+               , B => EdgeIterator
+               , Pair => EdgeIteratorRange
+               , first => iterRangeBegin
+               , second => iterRangeEnd
+               , makePair => makeEdgeIteratorRange
+               ];
 };
 
 program CppDijkstraVisitor = {
     use GenericDijkstraVisitor;
 
     use CppColorMarker;
-    use CppList[ A => Edge
-               , List => EdgeList
-               , empty => emptyEdgeList
-               ];
-    use CppList[ A => Vertex
-               , List => VertexList
-               , empty => emptyVertexList
-               ];
+    use CppIterableList[ A => Edge
+                       , List => EdgeList
+                       , ListIterator => EdgeIterator
+                       , empty => emptyEdgeList
+                       ];
+    use CppIterableList[ A => Vertex
+                       , List => VertexList
+                       , ListIterator => VertexIterator
+                       , empty => emptyVertexList
+                       ];
     use CppList[ A => VertexPair
                , List => VertexPairList
                , empty => emptyVertexPairList
@@ -142,22 +139,26 @@ program CppDijkstraVisitor = {
                                   , isEmpty => isEmptyQueue
                                   ];
     //use CppUpdateablePriorityQueue[ A => CostAndVertex ];
-    use CppWhileLoop[ Context => Graph
-                    , State => OuterLoopState
-                    , cond => bfsOuterLoopCond
-                    , step => bfsOuterLoopStep
-                    , repeat => bfsOuterLoopRepeat
-                    ];
-    
-    use CppWhileLoop4[ Context => InnerLoopContext
+    use CppWhileLoop3[ Context => Graph
                      , State1 => StateWithMaps
                      , State2 => PriorityQueue
                      , State3 => ColorPropertyMap
-                     , State4 => EdgeList
-                     , cond => bfsInnerLoopCond
-                     , step => bfsInnerLoopStep
-                     , repeat => bfsInnerLoopRepeat
-                     ];
+                     , cond => bfsOuterLoopCond
+                     , step => bfsOuterLoopStep
+                     , repeat => bfsOuterLoopRepeat
+                    ];
+    
+    use CppWhileLoop4_3[ Context1 => Graph
+                       , Context2 => Vertex
+                       , Context3 => EdgeIterator
+                       , State1 => StateWithMaps
+                       , State2 => PriorityQueue
+                       , State3 => ColorPropertyMap
+                       , State4 => EdgeIterator
+                       , cond => bfsInnerLoopCond
+                       , step => bfsInnerLoopStep
+                       , repeat => bfsInnerLoopRepeat
+                       ];
 
     use CppWhileLoop[ Context => Vertex
                     , State => PopulateVPMapState
@@ -168,6 +169,7 @@ program CppDijkstraVisitor = {
 
     use CppReadWritePropertyMapWithInitList[ Key => Vertex
                                            , KeyList => VertexList
+                                           , KeyListIterator => VertexIterator
                                            , Value => Color
                                            , PropertyMap => ColorPropertyMap
                                            , emptyKeyList => emptyVertexList
@@ -175,6 +177,7 @@ program CppDijkstraVisitor = {
 
     use CppReadWritePropertyMapWithInitList[ Key => Edge
                                            , KeyList => EdgeList
+                                           , KeyListIterator => EdgeIterator
                                            , Value => Cost
                                            , PropertyMap => EdgeCostMap
                                            , emptyKeyList => emptyEdgeList
@@ -183,6 +186,7 @@ program CppDijkstraVisitor = {
 
     use CppReadWritePropertyMapWithInitList[ Key => Vertex
                                            , KeyList => VertexList
+                                           , KeyListIterator => VertexIterator
                                            , Value => Vertex
                                            , PropertyMap => VertexPredecessorMap
                                            , emptyKeyList => emptyVertexList
@@ -191,6 +195,7 @@ program CppDijkstraVisitor = {
 
     use CppReadWritePropertyMapWithInitList[ Key => Vertex
                                            , KeyList => VertexList
+                                           , KeyListIterator => VertexIterator
                                            , Value => Cost
                                            , PropertyMap => VertexCostMap
                                            , emptyKeyList => emptyVertexList
@@ -211,4 +216,11 @@ program CppDijkstraVisitor = {
                                       , tailEdgeList => tail
                                       , tailVertexList => tail
                                       ];
+    use CppPair[ A => EdgeIterator
+               , B => EdgeIterator
+               , Pair => EdgeIteratorRange
+               , first => iterRangeBegin
+               , second => iterRangeEnd
+               , makePair => makeEdgeIteratorRange
+               ];
 }
