@@ -62,7 +62,7 @@ inline void bfsTest() {
 
 inline void bfsPerfTest() {
     std::cout << "BFS perf test:" << std::endl;
-    Graph g(lotsOfEdges(), 1000000);
+    Graph g(lotsOfEdges(), NB_TEST_VERTICES);
     std::cout << head(g.vertices) << std::endl;
     Vertex start = 0;
 
@@ -72,11 +72,11 @@ inline void bfsPerfTest() {
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-    for (auto vit = bfsResult.begin(); vit != bfsResult.end(); ++vit) {
+    /*for (auto vit = bfsResult.begin(); vit != bfsResult.end(); ++vit) {
         std::cout << *vit << " ";
     }
 
-    std::cout << std::endl;
+    std::cout << std::endl;*/
 
     std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[ms]" << std::endl;
 }

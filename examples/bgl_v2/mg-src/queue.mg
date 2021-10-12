@@ -16,6 +16,14 @@ concept Queue = {
 concept FIFOQueue = {
     use Queue[ Queue => FIFOQueue ];
     function empty(): FIFOQueue;
+
+    axiom pushPopBehavior(a: A, inq: FIFOQueue) {
+        var mut_inq = inq;
+        call push(a, mut_inq);
+        assert front(mut_inq) == a;
+        call pop(mut_inq);
+        assert inq == mut_inq;
+    }
 }
 
 concept UpdateablePriorityQueue = {

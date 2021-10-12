@@ -78,12 +78,12 @@ testBgl()
   std::sort(discover_order.begin(), discover_order.end(),
             indirect_cmp < Iiter, std::less < Size > >(&dtime[0]));
 
-  std::cout << "order of discovery: ";
+  /*std::cout << "order of discovery: ";
   for (int i = 0; i < N; ++i) {
     //if (dtime[discover_order[i]] == -1) std::cout << "lol OK";
     if (dtime[discover_order[i]] != -1) std::cout << discover_order[i] << " ";
   }
-  std::cout << std::endl;
+  std::cout << std::endl;*/
 
   std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[ms]" << std::endl;
 }

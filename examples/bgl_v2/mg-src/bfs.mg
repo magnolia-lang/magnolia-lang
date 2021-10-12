@@ -132,7 +132,9 @@ implementation BFSVisit = {
         value !isEmptyQueue(q);
     }
 
-    procedure bfsOuterLoopStep(upd x: A, upd q: Queue, upd c: ColorPropertyMap,
+    procedure bfsOuterLoopStep(upd x: A,
+                               upd q: Queue,
+                               upd c: ColorPropertyMap,
                                obs g: Graph) {
         var u = front(q);
         call pop(q);
@@ -146,6 +148,7 @@ implementation BFSVisit = {
 
         call bfsInnerLoopRepeat(x, q, c, edgeItrBegin, g, u, edgeItrEnd);
 
+        call put(c, u, black());
         call finishVertex(u, g, q, x);
     }
 
@@ -163,7 +166,8 @@ implementation BFSVisit = {
         value edgeItr != edgeItrEnd;
     }
     
-    procedure bfsInnerLoopStep(upd x1: A, upd q1: Queue,
+    procedure bfsInnerLoopStep(upd x: A,
+                               upd q: Queue,
                                upd c: ColorPropertyMap,
                                upd edgeItr: EdgeIterator,
                                obs g: Graph,
@@ -174,22 +178,21 @@ implementation BFSVisit = {
 
         var v = tgt(e);
 
-        call examineEdge(e, g, q1, x1);
+        call examineEdge(e, g, q, x);
 
         var vc = get(c, v);
 
         if vc == white() then {
-            call treeEdge(e, g, q1, x1);
+            call treeEdge(e, g, q, x);
             call put(c, v, gray());
-            call discoverVertex(v, g, q1, x1);
-            call push(v, q1);
+            call discoverVertex(v, g, q, x);
+            call push(v, q);
 
         } else if vc == gray() then {
-            call grayTarget(e, g, q1, x1);
+            call grayTarget(e, g, q, x);
                                       
         } else { // vc == black();
-            call blackTarget(e, g, q1, x1);
-            call put(c, u, black());
+            call blackTarget(e, g, q, x);
         };
     }
 }
