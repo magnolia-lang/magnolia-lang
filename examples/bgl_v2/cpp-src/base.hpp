@@ -1,18 +1,24 @@
 #pragma once
 
 #include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/two_bit_color_map.hpp>
 
+#include <condition_variable>
 #include <chrono>
 #include <iostream>
 
 #include <deque>
 #include <list>
 #include <map>
+#include <mutex>
 #include <queue>
 #include <tuple>
 #include <unordered_set>
 #include <utility>
 #include <vector>
+
+#include <omp.h>
+#include <stdlib.h>
 
 #define DEBUG 1
 #ifdef DEBUG
@@ -30,7 +36,8 @@
 // base_types_cpp
 struct base_types {
     typedef unsigned int Int;
-    typedef int Vertex;
+    typedef int TmpVertex;
+    typedef boost::adjacency_list< boost::listS, boost::listS, boost::directedS >::vertex_descriptor Vertex; //typedef int Vertex;
 };
 
 struct base_float_ops {
@@ -97,6 +104,7 @@ struct incidence_and_vertex_list_graph {
 
     typedef int VertexCount;
 
+    /*
     struct DirectedGraph {
         VertexList vertices;
         EdgeList *edges;
@@ -127,9 +135,10 @@ struct incidence_and_vertex_list_graph {
         bool operator==(const DirectedGraph &other) const = default;
 
         // TODO
-    };
+    };*/
+    typedef boost::adjacency_list< boost::listS, boost::listS, boost::directedS > Graph;
 
-    typedef DirectedGraph Graph;
+    //typedef DirectedGraph Graph;
 
     static inline _consEdgeList consEdgeList;
     static inline _consVertexList consVertexList;
@@ -154,8 +163,7 @@ struct incidence_and_vertex_list_graph {
     static inline _vertexIterUnpack vertexIterUnpack;
 
     inline void outEdges(const Vertex &v, const Graph &g, EdgeIterator &it_begin, EdgeIterator &it_end) {
-        it_begin = edgeIterBegin(g.edges[v]);
-        it_end = edgeIterEnd(g.edges[v]);
+        boost::tie(it_begin, it_end) = boost::out_edges(v, g);
     }
 
     inline VertexCount outDegree(const Vertex &v, const Graph &g) {
@@ -171,19 +179,22 @@ struct incidence_and_vertex_list_graph {
 
     inline VertexList vertices(const Graph &g) {
         VertexList result = emptyVertexList();
-        for (auto vertex_it = g.vertices.begin(); vertex_it != g.vertices.end(); ++vertex_it) {
-            consVertexList(*vertex_it, result);
+        //auto v^s = boost::vertices(g);
+        Graph::vertex_iterator vi, vi_end;
+        for (boost::tie(vi, vi_end) = boost::vertices(g); vi != vi_end; ++vi) { //auto vertex_it = vs.begin(); vertex_it != vs.end(); ++vertex_it) {
+            consVertexList(*vi, result);
         }
         return result;
     }
 
     inline void vertices(const Graph &g, VertexIterator &it_begin, VertexIterator &it_end) {
-        it_begin = g.vertices.begin();
-        it_end = g.vertices.end();
+        boost::tie(it_begin, it_end) = boost::vertices(g);
     }
 
     inline VertexCount numVertices(const Graph &g) {
-        return g.vertices.size();
+        auto vs = boost::vertices(g);
+        return std::distance(vs.first, vs.second);
+        //.size();
     }
 };
 
@@ -217,12 +228,110 @@ struct vector {
 };
 
 
+template <typename _A>
+struct thread_safe_vector {
+    typedef _A A;
+    struct Vector {
+        std::vector<A> m_vec;
+        private:
+        mutable std::mutex m_mutex;
+
+        public:
+        Vector() : m_vec(), m_mutex() {};
+        Vector(const Vector &source) : m_vec(source.m_vec), m_mutex() {};
+
+        void push_back(const A &a) {
+            std::unique_lock<std::mutex> lock(m_mutex);
+            m_vec.push_back(a);
+        }
+
+        // TODO: add iterators to vector
+    };
+
+    inline Vector empty() { return Vector(); }
+    inline void pushBack(const A &a, Vector &v) { v.push_back(a); }
+};
+
 // list_cpp
 template <typename _A>
 struct iterable_list {
     typedef _A A;
     typedef std::list<A> List;
     typedef typename std::list<A>::const_iterator ListIterator;
+
+    inline List empty() { return List(); }
+    inline void cons(const A &a, List &l) { l.push_front(a); }
+
+    inline const A& head(const List &l) {
+        return l.front();
+    }
+    inline void tail(List &l) { l.pop_front(); }
+
+    inline bool isEmpty(const List &l) {
+        return l.empty();
+    }
+
+    inline ListIterator iterBegin(const List &l) { return l.begin(); }
+    constexpr inline void iterNext(ListIterator &it) { ++it; }
+    inline ListIterator iterEnd(const List &l) { return l.end(); }
+    inline const A &iterUnpack(const ListIterator &it) { return *it; }
+};
+
+namespace utils {
+template <typename Iterator, class iterNext>
+size_t distance(Iterator first, Iterator last) {
+    size_t difference = 0;
+    while (first != last) {
+        ++difference;
+        iterNext(first);
+    }
+    return difference;
+}
+}
+
+template <typename _A>
+struct thread_safe_iterable_list {
+    typedef _A A;
+    typedef typename std::list<A>::const_iterator ListIterator;
+
+    struct List {
+        private:
+            std::list<A> m_list;
+            mutable std::mutex m_mutex;
+            std::condition_variable cond;
+
+        public:
+            List() : m_list(), m_mutex() {};
+
+            inline bool empty() const { return m_list.empty(); }
+
+            inline const A& front() const {
+                std::unique_lock<std::mutex> lock(m_mutex);
+                cond.wait(lock, [&]{ return !m_list.empty(); });
+
+                return this->m_list.front(); // not safe
+            }
+
+            inline void push_front(const A &a) {
+                std::unique_lock<std::mutex> lock(m_mutex);
+                this->m_list.push_front(a);
+            }
+
+            inline void pop_front() {
+                std::unique_lock<std::mutex> lock(m_mutex);
+                cond.wait(lock, [&]{ return !m_list.empty(); });
+
+                this->m_list.pop_front();
+            }
+
+            inline ListIterator begin() const {
+                return this->m_list.begin();
+            }
+
+            inline ListIterator end() const {
+                return this->m_list.end();
+            }
+    };
 
     inline List empty() { return List(); }
     inline void cons(const A &a, List &l) { l.push_front(a); }
@@ -299,44 +408,81 @@ struct two_bit_color_map {
     typedef _KeyList KeyList;
     typedef _KeyListIterator KeyListIterator;
 
-    enum class Color { White, Gray, Black };
+    typedef typename boost::two_bit_color_type Color;
 
-    inline Color white() { return Color::White; }
-    inline Color gray() { return Color::Gray; }
-    inline Color black() { return Color::Black; }
+    inline Color white() { return boost::two_bit_white; }
+    inline Color gray() { return boost::two_bit_gray; }
+    inline Color black() { return boost::two_bit_black; }
 
-    struct ColorPropertyMap {
-        Color *data;
-        ColorPropertyMap(size_t n) : data(new Color[n]) {}
-        const Color &get(const Key &k) const {
-            return data[k];
-        }
-        void put(const Key &k, const Color &v) {
-            data[k] = v;
-        }
-    };
+    typedef typename boost::two_bit_color_map<boost::identity_property_map>
+            ColorPropertyMap;
+    /*struct ColorPropertyMap {
+        unsigned char *data;
+        size_t n;
+
+        explicit ColorPropertyMap(size_t n)
+            : n(n)
+            , data(new unsigned char[(n + 3) / 4]) {}
+    };*/
 
     _iterBegin iterBegin;
     _iterEnd iterEnd;
+    _iterNext iterNext;
     _iterUnpack iterUnpack;
 
-    inline void put(ColorPropertyMap &cm, const Key &k, const Color &v) {
-        cm.put(k, v);
+    /*
+    const Color get(const Key &k) const {
+            size_t byte_num = k / 4;
+            size_t bit_position = ((k % 4) * 2);
+            return Color((data[byte_num] >> bit_position) & 3);
+        }
+        void put(const Key &k, const Color &v) {
+            size_t byte_num = k / 4;
+            size_t bit_position = ((k % 4) * 2);
+            data[byte_num] = (unsigned char)(data[byte_num] & ~(3 << bit_position)
+                | (v << bit_position));
+            //data[k] = (unsigned char)v;
+        }*/
+
+    // TODO: fix
+    inline void put(const ColorPropertyMap &cm, const Key &k, const Color &v) {
+        /*size_t byte_num = k / 4;
+        size_t bit_position = ((k % 4) * 2);
+        cm.data[byte_num] = (unsigned char)(cm.data[byte_num] & ~(3 << bit_position)
+                | (v << bit_position));*/
+        //cm.put(k, v);
     }
 
-    inline const Color &get(const ColorPropertyMap &cm, const Key &k) {
-        return cm.get(k);
+    inline const Color get(const ColorPropertyMap &cm, const Key &k) {
+        return white();
+        /*
+        size_t byte_num = k / 4;
+        size_t bit_position = ((k % 4) * 2);
+        return Color((cm.data[byte_num] >> bit_position) & 3);
+//return cm.get(k);*/
     }
 
-    inline ColorPropertyMap initMap(const KeyListIterator &kl_beg,
-                                    const KeyListIterator &kl_end,
+    inline ColorPropertyMap initMap(KeyListIterator kl_it,
+                                    KeyListIterator kl_end,
                                     const Color &v) {
         // TODO: cleanup hack
-        auto result = ColorPropertyMap(10000000); //(kl_end - kl_beg) * 100);
-        //BENCHD("initColorMap",
-        for (auto k_it = kl_beg; k_it != kl_end; ++k_it) {
-            put(result, iterUnpack(k_it), v);
-        }//)
+        BENCHD("initColorMap",
+        size_t distance = ([this](KeyListIterator first, KeyListIterator last) {
+                size_t difference = 0;
+                while (first != last) {
+                    ++difference;
+                    iterNext(first);
+                }
+                return difference;
+            })(kl_it, kl_end);
+        auto result =
+            boost::make_two_bit_color_map<boost::identity_property_map>(
+                distance, //(kl_it, kl_end),
+                boost::identity_property_map()); // = ColorPropertyMap(10000000); //(kl_end - kl_beg) * 100);
+        )
+        for (; kl_it != kl_end; iterNext(kl_it)) {
+            put(result, iterUnpack(kl_it), v);
+        }
 
         return result;
     }
@@ -347,6 +493,62 @@ template <typename _A>
 struct fifo_queue {
     typedef _A A;
     typedef std::queue<A> FIFOQueue;
+
+    inline bool isEmpty(const FIFOQueue &q) { return q.empty(); }
+
+    inline FIFOQueue empty() {
+        return FIFOQueue();
+    }
+
+    inline void push(const A &a, FIFOQueue &q) { q.push(a); }
+
+    inline void pop(FIFOQueue &q) { q.pop(); }
+
+    inline const A& front(const FIFOQueue &q) { return q.front(); }
+};
+
+
+template <typename _A>
+struct thread_safe_fifo_queue {
+    typedef _A A;
+     struct FIFOQueue {
+        std::queue<A> m_queue;
+        private:
+        mutable std::mutex m_mutex;
+        std::condition_variable cond;
+
+        public:
+        FIFOQueue() : m_queue(), m_mutex(), cond() {}
+        FIFOQueue(const FIFOQueue &source) : m_mutex(), cond() {
+            this->m_queue = source.m_queue;
+        }
+
+        bool operator==(const FIFOQueue &other) const {
+            return this->m_queue == other.m_queue;
+        }
+
+        bool empty() const {
+            return this->m_queue.empty();
+        }
+
+        void push(const A &a) {
+            std::unique_lock<std::mutex> lock(m_mutex);
+            this->m_queue.push(a);
+        }
+
+        void pop() {
+            std::unique_lock<std::mutex> lock(m_mutex);
+            cond.wait(lock, [&]{ return !m_queue.empty(); });
+            this->m_queue.pop();
+        }
+
+        const A &front() const {
+            std::unique_lock<std::mutex> lock(m_mutex);
+            //cond.wait(lock, [&]{ return !m_queue.empty(); });
+            return this->m_queue.front();
+        }
+
+    };
 
     inline bool isEmpty(const FIFOQueue &q) { return q.empty(); }
 
@@ -548,6 +750,62 @@ struct triplet {
     inline A first(const Triplet &triplet) { return std::get<0>(triplet); }
     inline B second(const Triplet &triplet) { return std::get<1>(triplet); }
     inline C third(const Triplet &triplet) { return std::get<2>(triplet); }
+};
+
+
+template <typename _Context1, typename _Context2, typename _Iterator,
+          typename _State1, typename _State2, typename _State3,
+          class _iterNext, class _step>
+struct for_iterator_loop3_2 {
+    typedef _Context1 Context1;
+    typedef _Context2 Context2;
+    typedef _Iterator Iterator;
+    typedef _State1 State1;
+    typedef _State2 State2;
+    typedef _State3 State3;
+
+    _iterNext iterNext;
+    _step step;
+
+    inline __attribute__((always_inline)) void forLoopRepeat(Iterator &itr,
+                                                             const Iterator &end_itr,
+                                                             State1 &s1,
+                                                             State2 &s2,
+                                                             State3 &s3,
+                                                             const Context1 &c1,
+                                                             const Context2 &c2) {
+        for (; itr != end_itr; iterNext(itr)) {
+            step(itr, end_itr, s1, s2, s3, c1, c2);
+        }
+    }
+};
+
+template <typename _Context1, typename _Context2, typename _Iterator,
+          typename _State1, typename _State2, typename _State3,
+          class _iterNext, class _step>
+struct for_parallel_iterator_loop3_2 {
+    typedef _Context1 Context1;
+    typedef _Context2 Context2;
+    typedef _Iterator Iterator;
+    typedef _State1 State1;
+    typedef _State2 State2;
+    typedef _State3 State3;
+
+    _iterNext iterNext;
+    _step step;
+
+    inline __attribute__((always_inline)) void forLoopRepeat(Iterator &itr,
+                                                             const Iterator &end_itr,
+                                                             State1 &s1,
+                                                             State2 &s2,
+                                                             State3 &s3,
+                                                             const Context1 &c1,
+                                                             const Context2 &c2) {
+        #pragma omp parallel for
+        for (; itr != end_itr; iterNext(itr)) {
+            step(itr, end_itr, s1, s2, s3, c1, c2);
+        }
+    }
 };
 
 // while_loop cpp
