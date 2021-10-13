@@ -11,7 +11,7 @@ package examples.bgl_v2.mg-src.dijkstra_utils
           , examples.bgl_v2.mg-src.externals.cpp_apis;
 
 implementation DijkstraVisitorBase = {
-    use UpdateablePriorityQueue[ A => Vertex
+    use UpdateablePriorityQueue[ A => VertexDescriptor
                                , Priority => Cost
                                , PriorityQueue => PriorityQueue
                                , PriorityMap => VertexCostMap
@@ -22,7 +22,9 @@ implementation DijkstraVisitorBase = {
                 , A => StateWithMaps
                 ]; // TODO: the rest
 
-    use Relax;
+    use Relax[ Edge => EdgeDescriptor
+             , Vertex => VertexDescriptor
+             ];
 
     require function getVertexCostMap(s: StateWithMaps): VertexCostMap;
     require function putVertexCostMap(vcm: VertexCostMap,
@@ -38,7 +40,7 @@ implementation DijkstraVisitorBase = {
     require function makeStateWithMaps(vcm: VertexCostMap,
                                        vpm: VertexPredecessorMap,
                                        ecm: EdgeCostMap): StateWithMaps;
-    procedure treeEdge(obs e: Edge,
+    procedure treeEdge(obs e: EdgeDescriptor,
                        obs g: Graph,
                        upd pq: PriorityQueue,
                        upd swm: StateWithMaps) {
@@ -52,7 +54,7 @@ implementation DijkstraVisitorBase = {
         swm = putVertexPredecessorMap(vpm, putVertexCostMap(vcm, swm));
     }
 
-    procedure grayTarget(obs e: Edge,
+    procedure grayTarget(obs e: EdgeDescriptor,
                          obs g: Graph,
                          upd pq: PriorityQueue,
                          upd swm: StateWithMaps) {
@@ -76,8 +78,8 @@ implementation DijkstraVisitorBase = {
     require IncidenceGraph;
 
     require Pair[ Pair => VertexPair
-                , A => Vertex
-                , B => Vertex
+                , A => VertexDescriptor
+                , B => VertexDescriptor
                 , makePair => makeVertexPair
                 ];
     require List[ A => VertexPair
@@ -85,7 +87,7 @@ implementation DijkstraVisitorBase = {
                 , empty => emptyVertexPairList
                 ];
 
-    use WhileLoop[ Context => Vertex
+    use WhileLoop[ Context => VertexDescriptor
                  , State => PopulateVPMapState
                  , cond => populateVPMapLoopCond
                  , step => populateVPMapLoopStep
@@ -102,7 +104,7 @@ implementation DijkstraVisitorBase = {
         !isEmpty(second(state));
 
     procedure populateVPMapLoopStep(upd state: PopulateVPMapState,
-                                    obs s: Vertex) {
+                                    obs s: VertexDescriptor) {
         var vpm = first(state);
         var vertexList = second(state);
         var v = head(vertexList);
@@ -116,7 +118,7 @@ implementation DijkstraVisitorBase = {
     require function emptyVPMap(): VertexPredecessorMap;
 
     procedure dijkstraShortestPaths(obs g: Graph,
-                                    obs start: Vertex,
+                                    obs start: VertexDescriptor,
                                     upd vcm: VertexCostMap,
                                     obs ecm: EdgeCostMap,
                                     obs initialCost: Cost,

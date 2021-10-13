@@ -5,6 +5,7 @@
 #include "base.hpp"
 #include "gen/examples/bgl_v2/mg-src/bgl_v2-cpp.hpp"
 
+/*
 namespace dijkstra {
 // Dijkstra test
 using examples::bgl_v2::mg_src::bgl_v2_cpp::CppDijkstraVisitor;
@@ -78,4 +79,4 @@ inline void dijkstraTest() {
         std::cout << "Distance to " << i << ": " << get(vcm, i) << std::endl; 
     }
 }
-}
+}*/

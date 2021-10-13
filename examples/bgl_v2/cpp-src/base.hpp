@@ -36,8 +36,7 @@
 // base_types_cpp
 struct base_types {
     typedef unsigned int Int;
-    typedef int TmpVertex;
-    typedef boost::adjacency_list< boost::listS, boost::listS, boost::directedS >::vertex_descriptor Vertex; //typedef int Vertex;
+    typedef int Vertex;
 };
 
 struct base_float_ops {
@@ -56,9 +55,14 @@ struct color_marker {
 };
 
 // graph_cpp
-template <typename _Vertex>
+/*
+template <typename _Vertex, typename _VertexDescriptor>
 struct edge {
     typedef _Vertex Vertex;
+    typedef _VertexDescriptor VertexDescriptor;
+
+    typedef boost::adjacency_list< boost::listS, boost::listS, boost::directedS >::edge_descriptor EdgeDescriptor;
+
     struct Edge {
         Vertex source;
         Vertex target;
@@ -77,189 +81,166 @@ struct edge {
         bool operator==(const Edge &other) const = default;
     };
 
+    inline const VertexDescriptor &src(const EdgeDescriptor &e) { return boost::source(e); }
+    inline const VertexDescriptor &tgt(const EdgeDescriptor &e) { return boost::target(e); }
     inline const Vertex &src(const Edge &e) { return e.source; }
     inline const Vertex &tgt(const Edge &e) { return e.target; }
     inline Edge makeEdge(const Vertex &s, const Vertex &t) {
         return Edge(s, t);
     }
-};
+};*/
 
-template <typename _Edge, typename _EdgeIterator, typename _EdgeList,
-          typename _Vertex, typename _VertexIterator, typename _VertexList,
-          class _consEdgeList, class _consVertexList, class _edgeIterBegin,
-          class _edgeIterEnd, class _edgeIterNext, class _edgeIterUnpack,
-          class _emptyEdgeList, class _emptyVertexList, class _headEdgeList,
-          class _headVertexList, class _isEmptyEdgeList,
-          class _isEmptyVertexList, class _makeEdge, class _src,
-          class _tailEdgeList, class _tailVertexList, class _tgt,
-          class _vertexIterBegin, class _vertexIterEnd, class _vertexIterNext,
-          class _vertexIterUnpack>
-struct incidence_and_vertex_list_graph {
-    typedef _Edge Edge;
-    typedef _EdgeIterator EdgeIterator;
-    typedef _EdgeList EdgeList;
-    typedef _Vertex Vertex;
-    typedef _VertexIterator VertexIterator;
-    typedef _VertexList VertexList;
+template <typename _Vertex>
+    struct incidence_and_vertex_list_graph {
+        typedef _Vertex Vertex;
+        typedef std::pair<Vertex, Vertex> Edge;
 
-    typedef int VertexCount;
+        typedef boost::adjacency_list< boost::vecS, boost::vecS, boost::directedS > Graph;
+        typedef Graph::vertex_descriptor VertexDescriptor;
+        typedef Graph::edge_descriptor EdgeDescriptor;
 
-    /*
-    struct DirectedGraph {
-        VertexList vertices;
-        EdgeList *edges;
-        // TODO: spec somewhere we can always use vertices as unsigned int kinda
+        typedef Graph::out_edge_iterator EdgeIterator;
+        typedef Graph::vertex_iterator VertexIterator;
 
-        DirectedGraph(const std::list<Edge> &edges, size_t num_vertices) : edges(new EdgeList[num_vertices]) {
-            std::unordered_set<Vertex> _vertices;
-            std::unordered_set<Vertex> *unique_out_edges = new std::unordered_set<Vertex>[num_vertices];
-            for (auto edge_it = edges.begin(); edge_it != edges.end(); ++edge_it) {
-                //std::cout << src(*edge_it) << std::endl;
-                unique_out_edges[src(*edge_it)].insert(tgt(*edge_it));
-                _vertices.insert(src(*edge_it));
-                _vertices.insert(tgt(*edge_it));
+        typedef std::list<EdgeDescriptor> EdgeList;
+        typedef std::list<VertexDescriptor> VertexList;
+
+        typedef int VertexCount;
+
+        /*
+        static inline _consEdgeList consEdgeList;
+        static inline _consVertexList consVertexList;
+        static inline _edgeIterBegin edgeIterBegin;
+        static inline _edgeIterEnd edgeIterEnd;
+        static inline _edgeIterNext edgeIterNext;
+        static inline _edgeIterUnpack edgeIterUnpack;
+        static inline _emptyEdgeList emptyEdgeList;
+        static inline _emptyVertexList emptyVertexList;
+        static inline _headEdgeList headEdgeList;
+        static inline _headVertexList headVertexList;
+        static inline _isEmptyEdgeList isEmptyEdgeList;
+        static inline _isEmptyVertexList isEmptyVertexList;
+        static inline _makeEdge makeEdge;
+        static inline _src src;
+        static inline _tailEdgeList tailEdgeList;
+        static inline _tailVertexList tailVertexList;
+        static inline _tgt tgt;
+        static inline _vertexIterBegin vertexIterBegin;
+        static inline _vertexIterEnd vertexIterEnd;
+        static inline _vertexIterNext vertexIterNext;
+        static inline _vertexIterUnpack vertexIterUnpack;
+        */
+
+        inline VertexDescriptor toVertexDescriptor(const Vertex &v, const Graph &g) {
+            return boost::vertex(v, g);
+        }
+
+        inline VertexDescriptor src(const EdgeDescriptor &ed, const Graph &g) {
+            return boost::source(ed, g);
+        }
+
+        inline VertexDescriptor tgt(const EdgeDescriptor &ed, const Graph &g) {
+            return boost::target(ed, g);
+        }
+
+        inline Edge makeEdge(const Vertex &v1, const Vertex& v2) {
+            return std::make_pair(v1, v2);
+        }
+
+        inline void edgeIterNext(EdgeIterator &it) { ++it; }
+        inline EdgeDescriptor edgeIterUnpack(const EdgeIterator &it) { return *it; }
+
+        inline void vertexIterNext(VertexIterator &it) { ++it; }
+        inline VertexDescriptor vertexIterUnpack(const VertexIterator &it) { return *it; }
+
+        inline void outEdges(const VertexDescriptor &v, const Graph &g, EdgeIterator &it_begin, EdgeIterator &it_end) {
+            boost::tie(it_begin, it_end) = boost::out_edges(v, g);
+        }
+
+        inline VertexCount outDegree(const VertexDescriptor &v, const Graph &g) {
+            /*auto outEdgesList = outEdges(v, g);
+            VertexCount result = 0;
+            while (!isEmptyEdgeList(outEdgesList)) {
+                tailEdgeList(outEdgesList);
+                result += 1;
             }
-
-            for (auto vertex_it = _vertices.begin(); vertex_it != _vertices.end(); ++vertex_it) {
-                consVertexList(*vertex_it, this->vertices);
-            }
-            for (auto i = 0; i < num_vertices; ++i) {
-                for (auto vertex_it = unique_out_edges[i].begin(); vertex_it != unique_out_edges[i].end(); ++vertex_it) {
-                    consEdgeList(makeEdge(i, *vertex_it), this->edges[i]);
-                }
-            }
-
-            delete[] unique_out_edges;
+            return result;*/
+            return 0;
         }
 
-        bool operator==(const DirectedGraph &other) const = default;
-
-        // TODO
-    };*/
-    typedef boost::adjacency_list< boost::listS, boost::listS, boost::directedS > Graph;
-
-    //typedef DirectedGraph Graph;
-
-    static inline _consEdgeList consEdgeList;
-    static inline _consVertexList consVertexList;
-    static inline _edgeIterBegin edgeIterBegin;
-    static inline _edgeIterEnd edgeIterEnd;
-    static inline _edgeIterNext edgeIterNext;
-    static inline _edgeIterUnpack edgeIterUnpack;
-    static inline _emptyEdgeList emptyEdgeList;
-    static inline _emptyVertexList emptyVertexList;
-    static inline _headEdgeList headEdgeList;
-    static inline _headVertexList headVertexList;
-    static inline _isEmptyEdgeList isEmptyEdgeList;
-    static inline _isEmptyVertexList isEmptyVertexList;
-    static inline _makeEdge makeEdge;
-    static inline _src src;
-    static inline _tailEdgeList tailEdgeList;
-    static inline _tailVertexList tailVertexList;
-    static inline _tgt tgt;
-    static inline _vertexIterBegin vertexIterBegin;
-    static inline _vertexIterEnd vertexIterEnd;
-    static inline _vertexIterNext vertexIterNext;
-    static inline _vertexIterUnpack vertexIterUnpack;
-
-    inline void outEdges(const Vertex &v, const Graph &g, EdgeIterator &it_begin, EdgeIterator &it_end) {
-        boost::tie(it_begin, it_end) = boost::out_edges(v, g);
-    }
-
-    inline VertexCount outDegree(const Vertex &v, const Graph &g) {
-        /*auto outEdgesList = outEdges(v, g);
-        VertexCount result = 0;
-        while (!isEmptyEdgeList(outEdgesList)) {
-            tailEdgeList(outEdgesList);
-            result += 1;
-        }
-        return result;*/
-        return 0;
-    }
-
-    inline VertexList vertices(const Graph &g) {
-        VertexList result = emptyVertexList();
-        //auto v^s = boost::vertices(g);
-        Graph::vertex_iterator vi, vi_end;
-        for (boost::tie(vi, vi_end) = boost::vertices(g); vi != vi_end; ++vi) { //auto vertex_it = vs.begin(); vertex_it != vs.end(); ++vertex_it) {
-            consVertexList(*vi, result);
-        }
-        return result;
-    }
-
-    inline void vertices(const Graph &g, VertexIterator &it_begin, VertexIterator &it_end) {
-        boost::tie(it_begin, it_end) = boost::vertices(g);
-    }
-
-    inline VertexCount numVertices(const Graph &g) {
-        auto vs = boost::vertices(g);
-        return std::distance(vs.first, vs.second);
-        //.size();
-    }
-};
-
-// list_cpp
-template <typename _A>
-struct list {
-    typedef _A A;
-    typedef std::list<A> List;
-
-    inline List empty() { return List(); }
-    inline void cons(const A &a, List &l) { l.push_front(a); }
-    
-    inline const A& head(const List &l) {
-        return l.front();
-    }
-    inline void tail(List &l) { l.pop_front(); }
-    
-    inline bool isEmpty(const List &l) {
-        return l.empty();
-    }
-};
-
-// vector_cpp
-template <typename _A>
-struct vector {
-    typedef _A A;
-    typedef std::vector<A> Vector;
-
-    inline Vector empty() { return Vector(); }
-    inline void pushBack(const A &a, Vector &v) { v.push_back(a); }
-};
-
-
-template <typename _A>
-struct thread_safe_vector {
-    typedef _A A;
-    struct Vector {
-        std::vector<A> m_vec;
-        private:
-        mutable std::mutex m_mutex;
-
-        public:
-        Vector() : m_vec(), m_mutex() {};
-        Vector(const Vector &source) : m_vec(source.m_vec), m_mutex() {};
-
-        void push_back(const A &a) {
-            std::unique_lock<std::mutex> lock(m_mutex);
-            m_vec.push_back(a);
+        inline void vertices(const Graph &g, VertexIterator &it_begin, VertexIterator &it_end) {
+            boost::tie(it_begin, it_end) = boost::vertices(g);
         }
 
-        // TODO: add iterators to vector
+        inline VertexCount numVertices(const Graph &g) {
+            auto vs = boost::vertices(g);
+            return std::distance(vs.first, vs.second);
+            //.size();
+        }
     };
 
-    inline Vector empty() { return Vector(); }
-    inline void pushBack(const A &a, Vector &v) { v.push_back(a); }
-};
+    // list_cpp
+    template <typename _A>
+    struct list {
+        typedef _A A;
+        typedef std::list<A> List;
 
-// list_cpp
-template <typename _A>
-struct iterable_list {
-    typedef _A A;
-    typedef std::list<A> List;
-    typedef typename std::list<A>::const_iterator ListIterator;
+        inline List empty() { return List(); }
+        inline void cons(const A &a, List &l) { l.push_front(a); }
+        
+        inline const A& head(const List &l) {
+            return l.front();
+        }
+        inline void tail(List &l) { l.pop_front(); }
+        
+        inline bool isEmpty(const List &l) {
+            return l.empty();
+        }
+    };
 
-    inline List empty() { return List(); }
+    // vector_cpp
+    template <typename _A>
+    struct vector {
+        typedef _A A;
+        typedef std::vector<A> Vector;
+
+        inline Vector empty() { return Vector(); }
+        inline void pushBack(const A &a, Vector &v) { v.push_back(a); }
+    };
+
+
+    template <typename _A>
+    struct thread_safe_vector {
+        typedef _A A;
+        struct Vector {
+            std::vector<A> m_vec;
+            private:
+            mutable std::mutex m_mutex;
+
+            public:
+            Vector() : m_vec(), m_mutex() {};
+            Vector(const Vector &source) : m_vec(source.m_vec), m_mutex() {};
+
+            void push_back(const A &a) {
+                std::unique_lock<std::mutex> lock(m_mutex);
+                m_vec.push_back(a);
+            }
+
+            // TODO: add iterators to vector
+        };
+
+        inline Vector empty() { return Vector(); }
+        inline void pushBack(const A &a, Vector &v) { v.push_back(a); }
+    };
+
+    // list_cpp
+    template <typename _A>
+    struct iterable_list {
+        typedef _A A;
+        typedef std::list<A> List;
+        typedef typename std::list<A>::const_iterator ListIterator;
+
+        inline List empty() { return List(); }
     inline void cons(const A &a, List &l) { l.push_front(a); }
 
     inline const A& head(const List &l) {
@@ -399,13 +380,10 @@ struct read_write_property_map {
 
 
 
-template <typename _Key, typename _KeyList, typename _KeyListIterator,
-          class _cons, class _emptyKeyList, class _head,
-          class _isEmpty, class _iterBegin, class _iterEnd, class _iterNext,
-          class _iterUnpack, class _tail>
+template <typename _Key, typename _KeyListIterator,
+          class _iterNext, class _iterUnpack>
 struct two_bit_color_map {
     typedef _Key Key;
-    typedef _KeyList KeyList;
     typedef _KeyListIterator KeyListIterator;
 
     typedef typename boost::two_bit_color_type Color;
@@ -414,59 +392,37 @@ struct two_bit_color_map {
     inline Color gray() { return boost::two_bit_gray; }
     inline Color black() { return boost::two_bit_black; }
 
-    typedef typename boost::two_bit_color_map<boost::identity_property_map>
+    // TODO: pass graph
+    private:
+    typedef typename boost::vec_adj_list_vertex_id_map<boost::no_property, unsigned long> IndexMap;
+    typedef typename boost::property_traits<IndexMap> Traits;
+    
+    public:
+    typedef typename boost::two_bit_color_map<IndexMap>
             ColorPropertyMap;
-    /*struct ColorPropertyMap {
-        unsigned char *data;
-        size_t n;
 
-        explicit ColorPropertyMap(size_t n)
-            : n(n)
-            , data(new unsigned char[(n + 3) / 4]) {}
-    };*/
-
-    _iterBegin iterBegin;
-    _iterEnd iterEnd;
     _iterNext iterNext;
     _iterUnpack iterUnpack;
 
-    /*
-    const Color get(const Key &k) const {
-            size_t byte_num = k / 4;
-            size_t bit_position = ((k % 4) * 2);
-            return Color((data[byte_num] >> bit_position) & 3);
-        }
-        void put(const Key &k, const Color &v) {
-            size_t byte_num = k / 4;
-            size_t bit_position = ((k % 4) * 2);
-            data[byte_num] = (unsigned char)(data[byte_num] & ~(3 << bit_position)
-                | (v << bit_position));
-            //data[k] = (unsigned char)v;
-        }*/
-
     // TODO: fix
-    inline void put(const ColorPropertyMap &cm, const Key &k, const Color &v) {
-        /*size_t byte_num = k / 4;
+    inline void put(const ColorPropertyMap &cm, const typename Traits::key_type &key, const Color v) {
+        typename Traits::value_type k = boost::get(cm.index, key);
+        size_t byte_num = k / 4;
         size_t bit_position = ((k % 4) * 2);
-        cm.data[byte_num] = (unsigned char)(cm.data[byte_num] & ~(3 << bit_position)
-                | (v << bit_position));*/
-        //cm.put(k, v);
+        cm.data.get()[byte_num] = (unsigned char)((cm.data.get()[byte_num] & ~(3 << bit_position))
+                | (v << bit_position));
     }
 
-    inline const Color get(const ColorPropertyMap &cm, const Key &k) {
-        return white();
-        /*
+    inline const Color get(const ColorPropertyMap &cm, const Key &key) {
+        typename Traits::value_type k = boost::get(cm.index, key);
         size_t byte_num = k / 4;
         size_t bit_position = ((k % 4) * 2);
         return Color((cm.data[byte_num] >> bit_position) & 3);
-//return cm.get(k);*/
     }
 
     inline ColorPropertyMap initMap(KeyListIterator kl_it,
                                     KeyListIterator kl_end,
                                     const Color &v) {
-        // TODO: cleanup hack
-        BENCHD("initColorMap",
         size_t distance = ([this](KeyListIterator first, KeyListIterator last) {
                 size_t difference = 0;
                 while (first != last) {
@@ -476,10 +432,9 @@ struct two_bit_color_map {
                 return difference;
             })(kl_it, kl_end);
         auto result =
-            boost::make_two_bit_color_map<boost::identity_property_map>(
-                distance, //(kl_it, kl_end),
-                boost::identity_property_map()); // = ColorPropertyMap(10000000); //(kl_end - kl_beg) * 100);
-        )
+            boost::make_two_bit_color_map<IndexMap>(
+                distance,
+                IndexMap());
         for (; kl_it != kl_end; iterNext(kl_it)) {
             put(result, iterUnpack(kl_it), v);
         }

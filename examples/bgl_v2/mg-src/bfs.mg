@@ -2,6 +2,7 @@
 // https://www.boost.org/doc/libs/1_75_0/libs/graph/doc/breadth_first_search.html
 package examples.bgl_v2.mg-src.bfs
     imports examples.bgl_v2.mg-src.color_marker
+          , examples.bgl_v2.mg-src.for_loop
           , examples.bgl_v2.mg-src.graph
           , examples.bgl_v2.mg-src.property_map
           , examples.bgl_v2.mg-src.queue
@@ -79,15 +80,17 @@ implementation BFSVisitorDefaultAction = {
 }
 
 implementation BFSVisit = {
-    require BFSVisitor;
-    require Queue[ A => Vertex
+    require BFSVisitor[ Vertex => VertexDescriptor
+                      , Edge => EdgeDescriptor
+                      ];
+    require Queue[ A => VertexDescriptor
                  , isEmpty => isEmptyQueue
                  ];
     require VertexListGraph;
     require IncidenceGraph;
     require ColorMarker;
     require ReadWritePropertyMap[ PropertyMap => ColorPropertyMap
-                                , Key => Vertex
+                                , Key => VertexDescriptor
                                 , Value => Color
                                 ];
 
@@ -95,7 +98,7 @@ implementation BFSVisit = {
                              c: Color): ColorPropertyMap;
 
     procedure breadthFirstVisit(obs g: Graph,
-                                obs s: Vertex,
+                                obs s: VertexDescriptor,
                                 upd a: A,
                                 upd q: Queue,
                                 upd c: ColorPropertyMap) {
@@ -108,25 +111,24 @@ implementation BFSVisit = {
     }
 
     use WhileLoop3[ repeat => bfsOuterLoopRepeat
-                 , step => bfsOuterLoopStep
-                 , cond => bfsOuterLoopCond
-                 , State1 => A
-                 , State2 => Queue
-                 , State3 => ColorPropertyMap
-                 , Context => Graph
-                 ];
+                  , step => bfsOuterLoopStep
+                  , cond => bfsOuterLoopCond
+                  , State1 => A
+                  , State2 => Queue
+                  , State3 => ColorPropertyMap
+                  , Context => Graph
+                  ];
 
-    use WhileLoop4_3[ repeat => bfsInnerLoopRepeat
-                    , step => bfsInnerLoopStep
-                    , cond => bfsInnerLoopCond
-                    , State1 => A
-                    , State2 => Queue
-                    , State3 => ColorPropertyMap
-                    , State4 => EdgeIterator
-                    , Context1 => Graph
-                    , Context2 => Vertex
-                    , Context3 => EdgeIterator
-                    ];
+    use ForIteratorLoop3_2[ iterNext => edgeIterNext
+                          , forLoopRepeat => bfsInnerLoopRepeat
+                          , step => bfsInnerLoopStep
+                          , Iterator => EdgeIterator
+                          , State1 => A
+                          , State2 => Queue
+                          , State3 => ColorPropertyMap
+                          , Context1 => Graph
+                          , Context2 => VertexDescriptor
+                          ];
 
     predicate bfsOuterLoopCond(a: A, q: Queue, c: ColorPropertyMap, g: Graph) {
         value !isEmptyQueue(q);
@@ -146,7 +148,7 @@ implementation BFSVisit = {
         
         call outEdges(u, g, edgeItrBegin, edgeItrEnd);
 
-        call bfsInnerLoopRepeat(x, q, c, edgeItrBegin, g, u, edgeItrEnd);
+        call bfsInnerLoopRepeat(edgeItrBegin, edgeItrEnd, x, q, c, g, u);
 
         call put(c, u, black());
         call finishVertex(u, g, q, x);
@@ -154,29 +156,19 @@ implementation BFSVisit = {
 
     type EdgeIterator;
     require procedure edgeIterNext(upd ei: EdgeIterator);
-    require function edgeIterUnpack(ei: EdgeIterator): Edge;
+    require function edgeIterUnpack(ei: EdgeIterator): EdgeDescriptor;
+    require function tgt(ed: EdgeDescriptor, g: Graph): VertexDescriptor;
 
-    predicate bfsInnerLoopCond(x: A,
-                               q: Queue,
-                               c: ColorPropertyMap,
-                               edgeItr: EdgeIterator,
-                               g: Graph,
-                               u: Vertex,
-                               edgeItrEnd: EdgeIterator) {
-        value edgeItr != edgeItrEnd;
-    }
-    
-    procedure bfsInnerLoopStep(upd x: A,
+    procedure bfsInnerLoopStep(obs edgeItr: EdgeIterator,
+                               obs edgeItrEnd: EdgeIterator,
+                               upd x: A,
                                upd q: Queue,
                                upd c: ColorPropertyMap,
-                               upd edgeItr: EdgeIterator,
                                obs g: Graph,
-                               obs u: Vertex,
-                               obs edgeItrEnd: EdgeIterator) {
+                               obs u: VertexDescriptor) {
         var e = edgeIterUnpack(edgeItr);
-        call edgeIterNext(edgeItr);
 
-        var v = tgt(e);
+        var v = tgt(e, g);
 
         call examineEdge(e, g, q, x);
 
@@ -199,11 +191,11 @@ implementation BFSVisit = {
 
 implementation BFS = {
     use BFSVisit[ Queue => FIFOQueue ];
-    use FIFOQueue[ A => Vertex
+    use FIFOQueue[ A => VertexDescriptor
                  , isEmpty => isEmptyQueue
                  ];
     function breadthFirstSearch(g: Graph,
-                                start: Vertex,
+                                start: VertexDescriptor,
                                 init: A): A = {
         var q = empty(): FIFOQueue;
         var vertexBeg: VertexIterator;

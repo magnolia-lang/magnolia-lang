@@ -22,24 +22,24 @@ implementation GenericBFSTestVisitor = {
            , finishVertex => defaultAction
            ];
 
-    use Vector[ A => Vertex
+    use Vector[ A => VertexDescriptor
               , Vector => VertexVector
               , empty => emptyVertexVector
               ];
 
-    procedure discoverVertex(obs v: Vertex,
+    procedure discoverVertex(obs v: VertexDescriptor,
                              obs g: Graph,
                              upd q: FIFOQueue,
                              upd a: VertexVector) = {
         call pushBack(v, a);
     }
 
-    use BFSVisitorDefaultAction[ EdgeOrVertex => Vertex
+    use BFSVisitorDefaultAction[ EdgeOrVertex => VertexDescriptor
                                , Queue => FIFOQueue
                                , defaultAction => defaultAction
                                , A => VertexVector
                                ];
-    use BFSVisitorDefaultAction[ EdgeOrVertex => Edge
+    use BFSVisitorDefaultAction[ EdgeOrVertex => EdgeDescriptor
                                , Queue => FIFOQueue
                                , defaultAction => defaultAction
                                , A => VertexVector

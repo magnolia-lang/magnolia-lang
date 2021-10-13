@@ -12,12 +12,11 @@ namespace bfs {
 using examples::bgl_v2::mg_src::bgl_v2_cpp::CppBFSTestVisitor;
 typedef CppBFSTestVisitor::Graph Graph;
 typedef CppBFSTestVisitor::Vertex Vertex;
+typedef CppBFSTestVisitor::VertexDescriptor VertexDescriptor;
 
 auto makeEdge = CppBFSTestVisitor::makeEdge;
-auto emptyVertexList = CppBFSTestVisitor::emptyVertexList;
 auto emptyVertexVector = CppBFSTestVisitor::emptyVertexVector;
-auto head = CppBFSTestVisitor::head;
-auto tail = CppBFSTestVisitor::tail;
+auto toVertexDescriptor = CppBFSTestVisitor::toVertexDescriptor;
 
 inline std::list<CppBFSTestVisitor::Edge> testEdges() {
     std::list<CppBFSTestVisitor::Edge> edges;
@@ -47,8 +46,11 @@ inline std::list<CppBFSTestVisitor::Edge> lotsOfEdges() {
 
 inline void bfsTest() {
     std::cout << "BFS test:" << std::endl;
-    Graph g(testEdges(), 7);
-    Vertex start = 0;
+
+    auto edges = testEdges();
+
+    Graph g(edges.begin(), edges.end(), 7);
+    VertexDescriptor start = toVertexDescriptor(0, g);
 
     auto bfsResult =
         CppBFSTestVisitor::breadthFirstSearch(g, start, emptyVertexVector());
@@ -62,9 +64,9 @@ inline void bfsTest() {
 
 inline void bfsPerfTest() {
     std::cout << "BFS perf test:" << std::endl;
-    Graph g(lotsOfEdges(), NB_TEST_VERTICES);
-    std::cout << head(g.vertices) << std::endl;
-    Vertex start = 0;
+    auto edges = lotsOfEdges();
+    Graph g(edges.begin(), edges.end(), NB_TEST_VERTICES);
+    VertexDescriptor start = toVertexDescriptor(0, g);
 
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     auto bfsResult =

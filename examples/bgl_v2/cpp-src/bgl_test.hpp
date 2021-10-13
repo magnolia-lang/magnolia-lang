@@ -29,6 +29,7 @@ public:
 inline void
 testBgl()
 {
+  std::cout << "BGL perf test: " << std::endl;
   using namespace boost;
   // Select the graph type we wish to use
   typedef adjacency_list < vecS, vecS, directedS > graph_t;
@@ -64,8 +65,8 @@ testBgl()
   }
 
   Size time = 0;
-  bfs_time_visitor < Size * >vis(&dtime[0], time);
   std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+  bfs_time_visitor < Size * >vis(&dtime[0], time);
 
   breadth_first_search(g, vertex(0, g), visitor(vis));
 

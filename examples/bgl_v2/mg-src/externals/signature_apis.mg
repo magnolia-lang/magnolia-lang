@@ -1,5 +1,6 @@
 package examples.bgl_v2.mg-src.externals.signature_apis
     imports examples.bgl_v2.mg-src.color_marker
+          , examples.bgl_v2.mg-src.for_loop
           , examples.bgl_v2.mg-src.graph
           , examples.bgl_v2.mg-src.list
           , examples.bgl_v2.mg-src.property_map
@@ -23,22 +24,16 @@ implementation ExtColorMarker = signature(ColorMarker);
 
 // TODO: there is a lot of requirements to pass through because we do not have
 // the extend keyword. Perhaps this should be improved.
-implementation ExtEdge = signature(Edge);
+//implementation ExtEdge = signature(Edge);
 
 implementation ExtIncidenceAndVertexListGraph = {
-    require signature(Edge);
-    use IncidenceGraph[ cons => consEdgeList
-                      , head => headEdgeList
-                      , isEmpty => isEmptyEdgeList
-                      , tail => tailEdgeList
-                      ];
-    use VertexListGraph[ cons => consVertexList
-                       , head => headVertexList
-                       , isEmpty => isEmptyVertexList
-                       , tail => tailVertexList
-                       ];
+    require type Vertex;
 
-    type Graph;
+    use Edge;
+    use IncidenceGraph;
+    use VertexListGraph;
+
+    function toVertexDescriptor(v: Vertex, g: Graph): VertexDescriptor;
 }
 
 implementation ExtList = signature(List);
@@ -54,11 +49,9 @@ implementation ExtReadWriteColorMapWithInitList = {
     function black(): Color;
     function gray(): Color;
 
-    require IterableList[ A => Key
-                        , List => KeyList
-                        , ListIterator => KeyListIterator
-                        , empty => emptyKeyList
-                        ];
+    require type KeyListIterator;
+    require procedure iterNext(upd kli: KeyListIterator);
+    require function iterUnpack(kli: KeyListIterator): Key;
 
     function initMap(klBeg: KeyListIterator,
                      klEnd: KeyListIterator,
@@ -68,14 +61,12 @@ implementation ExtReadWriteColorMapWithInitList = {
 implementation ExtReadWritePropertyMapWithInitList = {
     use signature(ReadWritePropertyMap);
 
-    require IterableList[ A => Key
-                        , List => KeyList
-                        , ListIterator => KeyListIterator
-                        , empty => emptyKeyList
-                        ];
+    require type KeyListIterator;
+    require procedure iterNext(upd kli: KeyListIterator);
+    require function iterUnpack(kli: KeyListIterator): Key;
 
     function emptyMap(): PropertyMap;
-    function initMap(kl: KeyList, v: Value): PropertyMap;
+    // TODO: function initMap(kl: KeyList, v: Value): PropertyMap;
 }
 
 implementation ExtFIFOQueue = signature(FIFOQueue);
@@ -85,6 +76,8 @@ implementation ExtPair = signature(Pair);
 implementation ExtTriplet = signature(Triplet);
 
 implementation ExtVector = signature(Vector);
+
+implementation ExtForIteratorLoop3_2 = signature(ForIteratorLoop3_2);
 
 implementation ExtWhileLoop = signature(WhileLoop);
 implementation ExtWhileLoop3 = signature(WhileLoop3);

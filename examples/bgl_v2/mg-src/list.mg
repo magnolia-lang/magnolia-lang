@@ -12,6 +12,7 @@ concept List = {
 
     predicate isEmpty(l: List);
 
+    /*
     axiom isEmptyBehavior(a: A, l: List) {
         var mutableList = l;
         assert isEmpty(empty());
@@ -25,7 +26,7 @@ concept List = {
         assert head(mutableList) == a;
         call tail(mutableList);
         assert l == mutableList;
-    }
+    }*/
 }
 
 concept Iterator = {
