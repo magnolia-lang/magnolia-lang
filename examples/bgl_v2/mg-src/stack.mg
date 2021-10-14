@@ -7,13 +7,17 @@ concept Stack = {
     function empty(): Stack;
     predicate isEmpty(s: Stack);
 
-    function pop(s: Stack): Stack guard !isEmpty(s);
-    function push(a: A, s: Stack): Stack;
+    procedure pop(upd s: Stack) guard !isEmpty(s);
+    procedure push(obs a: A, upd s: Stack);
     function top(s: Stack): A guard !isEmpty(s);
 
     axiom pushPopTopBehavior(s: Stack, a: A) {
-        assert pop(push(a, s)) == s;
-        assert top(push(a, s)) == a;
+        var mut_s = s;
+        call push(a, mut_s);
+        assert top(mut_s) == a;
+
+        call pop(mut_s);
+        assert mut_s == s;
     }
 
     axiom emptyStackIsEmpty() {

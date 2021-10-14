@@ -13,8 +13,8 @@ package examples.bgl_v2.mg-src.bfs_utils
 // See Haskell example TestVisitor1 from the comparing generics paper
 implementation GenericBFSTestVisitor = {
     use BFS[ A => VertexVector
+           , discoverVertex => defaultAction
            , examineEdge => defaultAction
-           , examineVertex => defaultAction
            , treeEdge => defaultAction
            , nonTreeEdge => defaultAction
            , grayTarget => defaultAction
@@ -27,10 +27,10 @@ implementation GenericBFSTestVisitor = {
               , empty => emptyVertexVector
               ];
 
-    procedure discoverVertex(obs v: VertexDescriptor,
-                             obs g: Graph,
-                             upd q: FIFOQueue,
-                             upd a: VertexVector) = {
+    procedure examineVertex(obs v: VertexDescriptor,
+                            obs g: Graph,
+                            upd q: FIFOQueue,
+                            upd a: VertexVector) = {
         call pushBack(v, a);
     }
 

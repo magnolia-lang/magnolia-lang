@@ -6,6 +6,7 @@ package examples.bgl_v2.mg-src.bfs
           , examples.bgl_v2.mg-src.graph
           , examples.bgl_v2.mg-src.property_map
           , examples.bgl_v2.mg-src.queue
+          , examples.bgl_v2.mg-src.stack
           , examples.bgl_v2.mg-src.tuple
           , examples.bgl_v2.mg-src.while_loop;
 
@@ -189,15 +190,14 @@ implementation BFSVisit = {
     }
 }
 
-implementation BFS = {
-    use BFSVisit[ Queue => FIFOQueue ];
-    use FIFOQueue[ A => VertexDescriptor
-                 , isEmpty => isEmptyQueue
-                 ];
-    function breadthFirstSearch(g: Graph,
-                                start: VertexDescriptor,
-                                init: A): A = {
-        var q = empty(): FIFOQueue;
+implementation BFSOrDFS = {
+    use BFSVisit;
+    require function empty(): Queue;
+    
+    function search(g: Graph,
+                    start: VertexDescriptor,
+                    init: A): A = {
+        var q = empty(): Queue;
         var vertexBeg: VertexIterator;
         var vertexEnd: VertexIterator;
         call vertices(g, vertexBeg, vertexEnd);
@@ -207,4 +207,24 @@ implementation BFS = {
         call breadthFirstVisit(g, start, a, q, c);
         value a;
     }
+}
+
+implementation BFS = {
+    use BFSOrDFS[ search => breadthFirstSearch
+                , Queue => FIFOQueue
+                ];
+    use FIFOQueue[ A => VertexDescriptor
+                 , isEmpty => isEmptyQueue
+                 ];
+}
+
+implementation DFS = {
+    use BFSOrDFS[ search => depthFirstSearch
+                , Queue => Stack // LIFOQueue
+                , front => top
+                , isEmptyQueue => isEmptyStack
+                ];
+    use Stack[ A => VertexDescriptor
+             , isEmpty => isEmptyStack
+             ];
 }

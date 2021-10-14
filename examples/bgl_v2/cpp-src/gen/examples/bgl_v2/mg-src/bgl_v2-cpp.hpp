@@ -100,13 +100,6 @@ public:
 
     static CppBFSTestVisitor::_vertices vertices;
     typedef fifo_queue<CppBFSTestVisitor::VertexDescriptor>::FIFOQueue FIFOQueue;
-    struct _discoverVertex {
-        inline void operator()(const CppBFSTestVisitor::VertexDescriptor& v, const CppBFSTestVisitor::Graph& g, CppBFSTestVisitor::FIFOQueue& q, CppBFSTestVisitor::VertexVector& a) {
-            CppBFSTestVisitor::pushBack(v, a);
-        };
-    };
-
-    static CppBFSTestVisitor::_discoverVertex discoverVertex;
     struct _empty {
         inline CppBFSTestVisitor::FIFOQueue operator()() {
             return __fifo_queue.empty();
@@ -114,6 +107,13 @@ public:
     };
 
     static CppBFSTestVisitor::_empty empty;
+    struct _examineVertex {
+        inline void operator()(const CppBFSTestVisitor::VertexDescriptor& v, const CppBFSTestVisitor::Graph& g, CppBFSTestVisitor::FIFOQueue& q, CppBFSTestVisitor::VertexVector& a) {
+            CppBFSTestVisitor::pushBack(v, a);
+        };
+    };
+
+    static CppBFSTestVisitor::_examineVertex examineVertex;
     struct _front {
         inline CppBFSTestVisitor::VertexDescriptor operator()(const CppBFSTestVisitor::FIFOQueue& q) {
             return __fifo_queue.front(q);
@@ -258,7 +258,7 @@ public:
             {
                 CppBFSTestVisitor::defaultAction(e, g, q, x);
                 CppBFSTestVisitor::put(c, v, CppBFSTestVisitor::gray());
-                CppBFSTestVisitor::discoverVertex(v, g, q, x);
+                CppBFSTestVisitor::defaultAction(v, g, q, x);
                 CppBFSTestVisitor::push(v, q);
             }
             else
@@ -295,7 +295,7 @@ public:
         inline void operator()(CppBFSTestVisitor::VertexVector& x, CppBFSTestVisitor::FIFOQueue& q, CppBFSTestVisitor::ColorPropertyMap& c, const CppBFSTestVisitor::Graph& g) {
             CppBFSTestVisitor::VertexDescriptor u = CppBFSTestVisitor::front(q);
             CppBFSTestVisitor::pop(q);
-            CppBFSTestVisitor::defaultAction(u, g, q, x);
+            CppBFSTestVisitor::examineVertex(u, g, q, x);
             CppBFSTestVisitor::EdgeIterator edgeItrBegin;
             CppBFSTestVisitor::EdgeIterator edgeItrEnd;
             CppBFSTestVisitor::outEdges(u, g, edgeItrBegin, edgeItrEnd);
@@ -311,7 +311,7 @@ public:
     static CppBFSTestVisitor::_bfsOuterLoopStep bfsOuterLoopStep;
     struct _breadthFirstVisit {
         inline void operator()(const CppBFSTestVisitor::Graph& g, const CppBFSTestVisitor::VertexDescriptor& s, CppBFSTestVisitor::VertexVector& a, CppBFSTestVisitor::FIFOQueue& q, CppBFSTestVisitor::ColorPropertyMap& c) {
-            CppBFSTestVisitor::discoverVertex(s, g, q, a);
+            CppBFSTestVisitor::defaultAction(s, g, q, a);
             CppBFSTestVisitor::push(s, q);
             CppBFSTestVisitor::put(c, s, CppBFSTestVisitor::gray());
             CppBFSTestVisitor::bfsOuterLoopRepeat(a, q, c, g);
@@ -362,6 +362,377 @@ public:
     };
 
     static CppBFSTestVisitor::_white white;
+};
+} // examples
+} // bgl_v2
+} // mg_src
+} // bgl_v2_cpp
+
+namespace examples {
+namespace bgl_v2 {
+namespace mg_src {
+namespace bgl_v2_cpp {
+struct CppDFSTestVisitor {
+    struct _emptyStackIsEmpty {
+        inline void operator()() {
+            assert(CppDFSTestVisitor::isEmptyStack(CppDFSTestVisitor::empty()));
+        };
+    };
+
+    static CppDFSTestVisitor::_emptyStackIsEmpty emptyStackIsEmpty;
+private:
+    static base_types __base_types;
+public:
+    typedef base_types::Vertex Vertex;
+    typedef incidence_and_vertex_list_graph<CppDFSTestVisitor::Vertex>::VertexCount VertexCount;
+    typedef incidence_and_vertex_list_graph<CppDFSTestVisitor::Vertex>::VertexDescriptor VertexDescriptor;
+    typedef vector<CppDFSTestVisitor::VertexDescriptor>::Vector VertexVector;
+    struct _emptyVertexVector {
+        inline CppDFSTestVisitor::VertexVector operator()() {
+            return __vector.empty();
+        };
+    };
+
+    static CppDFSTestVisitor::_emptyVertexVector emptyVertexVector;
+private:
+    static stack<CppDFSTestVisitor::VertexDescriptor> __stack;
+    static vector<CppDFSTestVisitor::VertexDescriptor> __vector;
+public:
+    struct _pushBack {
+        inline void operator()(const CppDFSTestVisitor::VertexDescriptor& a, CppDFSTestVisitor::VertexVector& v) {
+            return __vector.pushBack(a, v);
+        };
+    };
+
+    static CppDFSTestVisitor::_pushBack pushBack;
+    typedef incidence_and_vertex_list_graph<CppDFSTestVisitor::Vertex>::VertexIterator VertexIterator;
+    struct _vertexIterNext {
+        inline void operator()(CppDFSTestVisitor::VertexIterator& ei) {
+            return __incidence_and_vertex_list_graph.vertexIterNext(ei);
+        };
+    };
+
+    static CppDFSTestVisitor::_vertexIterNext vertexIterNext;
+    struct _vertexIterUnpack {
+        inline CppDFSTestVisitor::VertexDescriptor operator()(const CppDFSTestVisitor::VertexIterator& ei) {
+            return __incidence_and_vertex_list_graph.vertexIterUnpack(ei);
+        };
+    };
+
+private:
+    static two_bit_color_map<CppDFSTestVisitor::VertexDescriptor, CppDFSTestVisitor::VertexIterator, CppDFSTestVisitor::_vertexIterNext, CppDFSTestVisitor::_vertexIterUnpack> __two_bit_color_map;
+public:
+    static CppDFSTestVisitor::_vertexIterUnpack vertexIterUnpack;
+private:
+    static incidence_and_vertex_list_graph<CppDFSTestVisitor::Vertex> __incidence_and_vertex_list_graph;
+public:
+    typedef stack<CppDFSTestVisitor::VertexDescriptor>::Stack Stack;
+    struct _empty {
+        inline CppDFSTestVisitor::Stack operator()() {
+            return __stack.empty();
+        };
+    };
+
+    static CppDFSTestVisitor::_empty empty;
+    struct _isEmptyStack {
+        inline bool operator()(const CppDFSTestVisitor::Stack& s) {
+            return __stack.isEmpty(s);
+        };
+    };
+
+    static CppDFSTestVisitor::_isEmptyStack isEmptyStack;
+    struct _pop {
+        inline void operator()(CppDFSTestVisitor::Stack& s) {
+            return __stack.pop(s);
+        };
+    };
+
+    static CppDFSTestVisitor::_pop pop;
+    struct _push {
+        inline void operator()(const CppDFSTestVisitor::VertexDescriptor& a, CppDFSTestVisitor::Stack& s) {
+            return __stack.push(a, s);
+        };
+    };
+
+    static CppDFSTestVisitor::_push push;
+    struct _pushPopTopBehavior {
+        inline void operator()(const CppDFSTestVisitor::Stack& s, const CppDFSTestVisitor::VertexDescriptor& a) {
+            CppDFSTestVisitor::Stack mut_s = s;
+            CppDFSTestVisitor::push(a, mut_s);
+            assert((CppDFSTestVisitor::top(mut_s)) == (a));
+            CppDFSTestVisitor::pop(mut_s);
+            assert((mut_s) == (s));
+        };
+    };
+
+    static CppDFSTestVisitor::_pushPopTopBehavior pushPopTopBehavior;
+    struct _top {
+        inline CppDFSTestVisitor::VertexDescriptor operator()(const CppDFSTestVisitor::Stack& s) {
+            return __stack.top(s);
+        };
+    };
+
+    static CppDFSTestVisitor::_top top;
+    typedef base_types::Int Int;
+    typedef incidence_and_vertex_list_graph<CppDFSTestVisitor::Vertex>::Graph Graph;
+    struct _depthFirstSearch {
+        inline CppDFSTestVisitor::VertexVector operator()(const CppDFSTestVisitor::Graph& g, const CppDFSTestVisitor::VertexDescriptor& start, const CppDFSTestVisitor::VertexVector& init) {
+            CppDFSTestVisitor::Stack q = CppDFSTestVisitor::empty();
+            CppDFSTestVisitor::VertexIterator vertexBeg;
+            CppDFSTestVisitor::VertexIterator vertexEnd;
+            CppDFSTestVisitor::vertices(g, vertexBeg, vertexEnd);
+            CppDFSTestVisitor::ColorPropertyMap c = CppDFSTestVisitor::initMap(vertexBeg, vertexEnd, CppDFSTestVisitor::white());
+            CppDFSTestVisitor::VertexVector a = init;
+            CppDFSTestVisitor::breadthFirstVisit(g, start, a, q, c);
+            return a;
+        };
+    };
+
+    static CppDFSTestVisitor::_depthFirstSearch depthFirstSearch;
+    struct _examineVertex {
+        inline void operator()(const CppDFSTestVisitor::VertexDescriptor& v, const CppDFSTestVisitor::Graph& g, CppDFSTestVisitor::Stack& q, CppDFSTestVisitor::VertexVector& a) {
+            CppDFSTestVisitor::pushBack(v, a);
+        };
+    };
+
+    static CppDFSTestVisitor::_examineVertex examineVertex;
+    struct _numVertices {
+        inline CppDFSTestVisitor::VertexCount operator()(const CppDFSTestVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.numVertices(g);
+        };
+    };
+
+    static CppDFSTestVisitor::_numVertices numVertices;
+    struct _outDegree {
+        inline CppDFSTestVisitor::VertexCount operator()(const CppDFSTestVisitor::VertexDescriptor& v, const CppDFSTestVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.outDegree(v, g);
+        };
+    };
+
+    static CppDFSTestVisitor::_outDegree outDegree;
+    struct _toVertexDescriptor {
+        inline CppDFSTestVisitor::VertexDescriptor operator()(const CppDFSTestVisitor::Vertex& v, const CppDFSTestVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.toVertexDescriptor(v, g);
+        };
+    };
+
+    static CppDFSTestVisitor::_toVertexDescriptor toVertexDescriptor;
+    struct _vertices {
+        inline void operator()(const CppDFSTestVisitor::Graph& g, CppDFSTestVisitor::VertexIterator& itBeg, CppDFSTestVisitor::VertexIterator& itEnd) {
+            return __incidence_and_vertex_list_graph.vertices(g, itBeg, itEnd);
+        };
+    };
+
+    static CppDFSTestVisitor::_vertices vertices;
+    typedef incidence_and_vertex_list_graph<CppDFSTestVisitor::Vertex>::EdgeIterator EdgeIterator;
+    typedef pair<CppDFSTestVisitor::EdgeIterator, CppDFSTestVisitor::EdgeIterator>::Pair EdgeIteratorRange;
+private:
+    static pair<CppDFSTestVisitor::EdgeIterator, CppDFSTestVisitor::EdgeIterator> __pair;
+public:
+    struct _edgeIterNext {
+        inline void operator()(CppDFSTestVisitor::EdgeIterator& ei) {
+            return __incidence_and_vertex_list_graph.edgeIterNext(ei);
+        };
+    };
+
+    static CppDFSTestVisitor::_edgeIterNext edgeIterNext;
+    struct _iterRangeBegin {
+        inline CppDFSTestVisitor::EdgeIterator operator()(const CppDFSTestVisitor::EdgeIteratorRange& p) {
+            return __pair.first(p);
+        };
+    };
+
+    static CppDFSTestVisitor::_iterRangeBegin iterRangeBegin;
+    struct _iterRangeEnd {
+        inline CppDFSTestVisitor::EdgeIterator operator()(const CppDFSTestVisitor::EdgeIteratorRange& p) {
+            return __pair.second(p);
+        };
+    };
+
+    static CppDFSTestVisitor::_iterRangeEnd iterRangeEnd;
+    struct _makeEdgeIteratorRange {
+        inline CppDFSTestVisitor::EdgeIteratorRange operator()(const CppDFSTestVisitor::EdgeIterator& a, const CppDFSTestVisitor::EdgeIterator& b) {
+            return __pair.makePair(a, b);
+        };
+    };
+
+    static CppDFSTestVisitor::_makeEdgeIteratorRange makeEdgeIteratorRange;
+    struct _outEdges {
+        inline void operator()(const CppDFSTestVisitor::VertexDescriptor& v, const CppDFSTestVisitor::Graph& g, CppDFSTestVisitor::EdgeIterator& itBeg, CppDFSTestVisitor::EdgeIterator& itEnd) {
+            return __incidence_and_vertex_list_graph.outEdges(v, g, itBeg, itEnd);
+        };
+    };
+
+    static CppDFSTestVisitor::_outEdges outEdges;
+    typedef incidence_and_vertex_list_graph<CppDFSTestVisitor::Vertex>::EdgeDescriptor EdgeDescriptor;
+    struct _defaultAction {
+        inline void operator()(const CppDFSTestVisitor::VertexDescriptor& edgeOrVertex, const CppDFSTestVisitor::Graph& g, CppDFSTestVisitor::Stack& q, CppDFSTestVisitor::VertexVector& a) {
+            ;
+        };
+        inline void operator()(const CppDFSTestVisitor::EdgeDescriptor& edgeOrVertex, const CppDFSTestVisitor::Graph& g, CppDFSTestVisitor::Stack& q, CppDFSTestVisitor::VertexVector& a) {
+            ;
+        };
+    };
+
+    static CppDFSTestVisitor::_defaultAction defaultAction;
+    struct _edgeIterUnpack {
+        inline CppDFSTestVisitor::EdgeDescriptor operator()(const CppDFSTestVisitor::EdgeIterator& ei) {
+            return __incidence_and_vertex_list_graph.edgeIterUnpack(ei);
+        };
+    };
+
+    static CppDFSTestVisitor::_edgeIterUnpack edgeIterUnpack;
+    struct _src {
+        inline CppDFSTestVisitor::VertexDescriptor operator()(const CppDFSTestVisitor::EdgeDescriptor& e, const CppDFSTestVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.src(e, g);
+        };
+    };
+
+    static CppDFSTestVisitor::_src src;
+    struct _tgt {
+        inline CppDFSTestVisitor::VertexDescriptor operator()(const CppDFSTestVisitor::EdgeDescriptor& e, const CppDFSTestVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.tgt(e, g);
+        };
+    };
+
+    static CppDFSTestVisitor::_tgt tgt;
+    struct _toEdgeDescriptor {
+        inline CppDFSTestVisitor::EdgeDescriptor operator()(const CppDFSTestVisitor::VertexDescriptor& v1, const CppDFSTestVisitor::VertexDescriptor& v2, const CppDFSTestVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.toEdgeDescriptor(v1, v2, g);
+        };
+    };
+
+    static CppDFSTestVisitor::_toEdgeDescriptor toEdgeDescriptor;
+    typedef incidence_and_vertex_list_graph<CppDFSTestVisitor::Vertex>::Edge Edge;
+    struct _makeEdge {
+        inline CppDFSTestVisitor::Edge operator()(const CppDFSTestVisitor::Vertex& s, const CppDFSTestVisitor::Vertex& t) {
+            return __incidence_and_vertex_list_graph.makeEdge(s, t);
+        };
+    };
+
+    static CppDFSTestVisitor::_makeEdge makeEdge;
+    typedef two_bit_color_map<CppDFSTestVisitor::VertexDescriptor, CppDFSTestVisitor::VertexIterator, CppDFSTestVisitor::_vertexIterNext, CppDFSTestVisitor::_vertexIterUnpack>::ColorPropertyMap ColorPropertyMap;
+    struct _bfsInnerLoopRepeat {
+        inline void operator()(const CppDFSTestVisitor::EdgeIterator& itr, const CppDFSTestVisitor::EdgeIterator& endItr, CppDFSTestVisitor::VertexVector& s1, CppDFSTestVisitor::Stack& s2, CppDFSTestVisitor::ColorPropertyMap& s3, const CppDFSTestVisitor::Graph& ctx1, const CppDFSTestVisitor::VertexDescriptor& ctx2) {
+            return __for_iterator_loop3_2.forLoopRepeat(itr, endItr, s1, s2, s3, ctx1, ctx2);
+        };
+    };
+
+    static CppDFSTestVisitor::_bfsInnerLoopRepeat bfsInnerLoopRepeat;
+    struct _bfsInnerLoopStep {
+        inline void operator()(const CppDFSTestVisitor::EdgeIterator& edgeItr, const CppDFSTestVisitor::EdgeIterator& edgeItrEnd, CppDFSTestVisitor::VertexVector& x, CppDFSTestVisitor::Stack& q, CppDFSTestVisitor::ColorPropertyMap& c, const CppDFSTestVisitor::Graph& g, const CppDFSTestVisitor::VertexDescriptor& u) {
+            CppDFSTestVisitor::EdgeDescriptor e = CppDFSTestVisitor::edgeIterUnpack(edgeItr);
+            CppDFSTestVisitor::VertexDescriptor v = CppDFSTestVisitor::tgt(e, g);
+            CppDFSTestVisitor::defaultAction(e, g, q, x);
+            CppDFSTestVisitor::Color vc = CppDFSTestVisitor::get(c, v);
+            if ((vc) == (CppDFSTestVisitor::white()))
+            {
+                CppDFSTestVisitor::defaultAction(e, g, q, x);
+                CppDFSTestVisitor::put(c, v, CppDFSTestVisitor::gray());
+                CppDFSTestVisitor::defaultAction(v, g, q, x);
+                CppDFSTestVisitor::push(v, q);
+            }
+            else
+                if ((vc) == (CppDFSTestVisitor::gray()))
+                {
+                    CppDFSTestVisitor::defaultAction(e, g, q, x);
+                }
+                else
+                {
+                    CppDFSTestVisitor::defaultAction(e, g, q, x);
+                }
+        };
+    };
+
+private:
+    static for_iterator_loop3_2<CppDFSTestVisitor::Graph, CppDFSTestVisitor::VertexDescriptor, CppDFSTestVisitor::EdgeIterator, CppDFSTestVisitor::VertexVector, CppDFSTestVisitor::Stack, CppDFSTestVisitor::ColorPropertyMap, CppDFSTestVisitor::_edgeIterNext, CppDFSTestVisitor::_bfsInnerLoopStep> __for_iterator_loop3_2;
+public:
+    static CppDFSTestVisitor::_bfsInnerLoopStep bfsInnerLoopStep;
+    struct _bfsOuterLoopCond {
+        inline bool operator()(const CppDFSTestVisitor::VertexVector& a, const CppDFSTestVisitor::Stack& q, const CppDFSTestVisitor::ColorPropertyMap& c, const CppDFSTestVisitor::Graph& g) {
+            return !CppDFSTestVisitor::isEmptyStack(q);
+        };
+    };
+
+    static CppDFSTestVisitor::_bfsOuterLoopCond bfsOuterLoopCond;
+    struct _bfsOuterLoopRepeat {
+        inline void operator()(CppDFSTestVisitor::VertexVector& s1, CppDFSTestVisitor::Stack& s2, CppDFSTestVisitor::ColorPropertyMap& s3, const CppDFSTestVisitor::Graph& ctx) {
+            return __while_loop3.repeat(s1, s2, s3, ctx);
+        };
+    };
+
+    static CppDFSTestVisitor::_bfsOuterLoopRepeat bfsOuterLoopRepeat;
+    struct _bfsOuterLoopStep {
+        inline void operator()(CppDFSTestVisitor::VertexVector& x, CppDFSTestVisitor::Stack& q, CppDFSTestVisitor::ColorPropertyMap& c, const CppDFSTestVisitor::Graph& g) {
+            CppDFSTestVisitor::VertexDescriptor u = CppDFSTestVisitor::top(q);
+            CppDFSTestVisitor::pop(q);
+            CppDFSTestVisitor::examineVertex(u, g, q, x);
+            CppDFSTestVisitor::EdgeIterator edgeItrBegin;
+            CppDFSTestVisitor::EdgeIterator edgeItrEnd;
+            CppDFSTestVisitor::outEdges(u, g, edgeItrBegin, edgeItrEnd);
+            CppDFSTestVisitor::bfsInnerLoopRepeat(edgeItrBegin, edgeItrEnd, x, q, c, g, u);
+            CppDFSTestVisitor::put(c, u, CppDFSTestVisitor::black());
+            CppDFSTestVisitor::defaultAction(u, g, q, x);
+        };
+    };
+
+private:
+    static while_loop3<CppDFSTestVisitor::Graph, CppDFSTestVisitor::VertexVector, CppDFSTestVisitor::Stack, CppDFSTestVisitor::ColorPropertyMap, CppDFSTestVisitor::_bfsOuterLoopCond, CppDFSTestVisitor::_bfsOuterLoopStep> __while_loop3;
+public:
+    static CppDFSTestVisitor::_bfsOuterLoopStep bfsOuterLoopStep;
+    struct _breadthFirstVisit {
+        inline void operator()(const CppDFSTestVisitor::Graph& g, const CppDFSTestVisitor::VertexDescriptor& s, CppDFSTestVisitor::VertexVector& a, CppDFSTestVisitor::Stack& q, CppDFSTestVisitor::ColorPropertyMap& c) {
+            CppDFSTestVisitor::defaultAction(s, g, q, a);
+            CppDFSTestVisitor::push(s, q);
+            CppDFSTestVisitor::put(c, s, CppDFSTestVisitor::gray());
+            CppDFSTestVisitor::bfsOuterLoopRepeat(a, q, c, g);
+        };
+    };
+
+    static CppDFSTestVisitor::_breadthFirstVisit breadthFirstVisit;
+    typedef two_bit_color_map<CppDFSTestVisitor::VertexDescriptor, CppDFSTestVisitor::VertexIterator, CppDFSTestVisitor::_vertexIterNext, CppDFSTestVisitor::_vertexIterUnpack>::Color Color;
+    struct _black {
+        inline CppDFSTestVisitor::Color operator()() {
+            return __two_bit_color_map.black();
+        };
+    };
+
+    static CppDFSTestVisitor::_black black;
+    struct _get {
+        inline CppDFSTestVisitor::Color operator()(const CppDFSTestVisitor::ColorPropertyMap& pm, const CppDFSTestVisitor::VertexDescriptor& k) {
+            return __two_bit_color_map.get(pm, k);
+        };
+    };
+
+    static CppDFSTestVisitor::_get get;
+    struct _gray {
+        inline CppDFSTestVisitor::Color operator()() {
+            return __two_bit_color_map.gray();
+        };
+    };
+
+    static CppDFSTestVisitor::_gray gray;
+    struct _initMap {
+        inline CppDFSTestVisitor::ColorPropertyMap operator()(const CppDFSTestVisitor::VertexIterator& klBeg, const CppDFSTestVisitor::VertexIterator& klEnd, const CppDFSTestVisitor::Color& v) {
+            return __two_bit_color_map.initMap(klBeg, klEnd, v);
+        };
+    };
+
+    static CppDFSTestVisitor::_initMap initMap;
+    struct _put {
+        inline void operator()(CppDFSTestVisitor::ColorPropertyMap& pm, const CppDFSTestVisitor::VertexDescriptor& k, const CppDFSTestVisitor::Color& v) {
+            return __two_bit_color_map.put(pm, k, v);
+        };
+    };
+
+    static CppDFSTestVisitor::_put put;
+    struct _white {
+        inline CppDFSTestVisitor::Color operator()() {
+            return __two_bit_color_map.white();
+        };
+    };
+
+    static CppDFSTestVisitor::_white white;
 };
 } // examples
 } // bgl_v2
@@ -950,6 +1321,370 @@ public:
     };
 
     static CppDijkstraVisitor::_white white;
+};
+} // examples
+} // bgl_v2
+} // mg_src
+} // bgl_v2_cpp
+
+namespace examples {
+namespace bgl_v2 {
+namespace mg_src {
+namespace bgl_v2_cpp {
+struct CppParallelBFSTestVisitor {
+private:
+    static base_types __base_types;
+public:
+    typedef base_types::Vertex Vertex;
+    typedef incidence_and_vertex_list_graph<CppParallelBFSTestVisitor::Vertex>::VertexCount VertexCount;
+    typedef incidence_and_vertex_list_graph<CppParallelBFSTestVisitor::Vertex>::VertexDescriptor VertexDescriptor;
+    typedef thread_safe_vector<CppParallelBFSTestVisitor::VertexDescriptor>::Vector VertexVector;
+    struct _emptyVertexVector {
+        inline CppParallelBFSTestVisitor::VertexVector operator()() {
+            return __thread_safe_vector.empty();
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_emptyVertexVector emptyVertexVector;
+private:
+    static thread_safe_fifo_queue<CppParallelBFSTestVisitor::VertexDescriptor> __thread_safe_fifo_queue;
+    static thread_safe_vector<CppParallelBFSTestVisitor::VertexDescriptor> __thread_safe_vector;
+public:
+    struct _pushBack {
+        inline void operator()(const CppParallelBFSTestVisitor::VertexDescriptor& a, CppParallelBFSTestVisitor::VertexVector& v) {
+            return __thread_safe_vector.pushBack(a, v);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_pushBack pushBack;
+    typedef incidence_and_vertex_list_graph<CppParallelBFSTestVisitor::Vertex>::VertexIterator VertexIterator;
+    struct _vertexIterNext {
+        inline void operator()(CppParallelBFSTestVisitor::VertexIterator& ei) {
+            return __incidence_and_vertex_list_graph.vertexIterNext(ei);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_vertexIterNext vertexIterNext;
+    struct _vertexIterUnpack {
+        inline CppParallelBFSTestVisitor::VertexDescriptor operator()(const CppParallelBFSTestVisitor::VertexIterator& ei) {
+            return __incidence_and_vertex_list_graph.vertexIterUnpack(ei);
+        };
+    };
+
+private:
+    static two_bit_color_map<CppParallelBFSTestVisitor::VertexDescriptor, CppParallelBFSTestVisitor::VertexIterator, CppParallelBFSTestVisitor::_vertexIterNext, CppParallelBFSTestVisitor::_vertexIterUnpack> __two_bit_color_map;
+public:
+    static CppParallelBFSTestVisitor::_vertexIterUnpack vertexIterUnpack;
+private:
+    static incidence_and_vertex_list_graph<CppParallelBFSTestVisitor::Vertex> __incidence_and_vertex_list_graph;
+public:
+    typedef base_types::Int Int;
+    typedef incidence_and_vertex_list_graph<CppParallelBFSTestVisitor::Vertex>::Graph Graph;
+    struct _breadthFirstSearch {
+        inline CppParallelBFSTestVisitor::VertexVector operator()(const CppParallelBFSTestVisitor::Graph& g, const CppParallelBFSTestVisitor::VertexDescriptor& start, const CppParallelBFSTestVisitor::VertexVector& init) {
+            CppParallelBFSTestVisitor::FIFOQueue q = CppParallelBFSTestVisitor::empty();
+            CppParallelBFSTestVisitor::VertexIterator vertexBeg;
+            CppParallelBFSTestVisitor::VertexIterator vertexEnd;
+            CppParallelBFSTestVisitor::vertices(g, vertexBeg, vertexEnd);
+            CppParallelBFSTestVisitor::ColorPropertyMap c = CppParallelBFSTestVisitor::initMap(vertexBeg, vertexEnd, CppParallelBFSTestVisitor::white());
+            CppParallelBFSTestVisitor::VertexVector a = init;
+            CppParallelBFSTestVisitor::breadthFirstVisit(g, start, a, q, c);
+            return a;
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_breadthFirstSearch breadthFirstSearch;
+    struct _numVertices {
+        inline CppParallelBFSTestVisitor::VertexCount operator()(const CppParallelBFSTestVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.numVertices(g);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_numVertices numVertices;
+    struct _outDegree {
+        inline CppParallelBFSTestVisitor::VertexCount operator()(const CppParallelBFSTestVisitor::VertexDescriptor& v, const CppParallelBFSTestVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.outDegree(v, g);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_outDegree outDegree;
+    struct _toVertexDescriptor {
+        inline CppParallelBFSTestVisitor::VertexDescriptor operator()(const CppParallelBFSTestVisitor::Vertex& v, const CppParallelBFSTestVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.toVertexDescriptor(v, g);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_toVertexDescriptor toVertexDescriptor;
+    struct _vertices {
+        inline void operator()(const CppParallelBFSTestVisitor::Graph& g, CppParallelBFSTestVisitor::VertexIterator& itBeg, CppParallelBFSTestVisitor::VertexIterator& itEnd) {
+            return __incidence_and_vertex_list_graph.vertices(g, itBeg, itEnd);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_vertices vertices;
+    typedef thread_safe_fifo_queue<CppParallelBFSTestVisitor::VertexDescriptor>::FIFOQueue FIFOQueue;
+    struct _empty {
+        inline CppParallelBFSTestVisitor::FIFOQueue operator()() {
+            return __thread_safe_fifo_queue.empty();
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_empty empty;
+    struct _examineVertex {
+        inline void operator()(const CppParallelBFSTestVisitor::VertexDescriptor& v, const CppParallelBFSTestVisitor::Graph& g, CppParallelBFSTestVisitor::FIFOQueue& q, CppParallelBFSTestVisitor::VertexVector& a) {
+            CppParallelBFSTestVisitor::pushBack(v, a);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_examineVertex examineVertex;
+    struct _front {
+        inline CppParallelBFSTestVisitor::VertexDescriptor operator()(const CppParallelBFSTestVisitor::FIFOQueue& q) {
+            return __thread_safe_fifo_queue.front(q);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_front front;
+    struct _isEmptyQueue {
+        inline bool operator()(const CppParallelBFSTestVisitor::FIFOQueue& q) {
+            return __thread_safe_fifo_queue.isEmpty(q);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_isEmptyQueue isEmptyQueue;
+    struct _pop {
+        inline void operator()(CppParallelBFSTestVisitor::FIFOQueue& q) {
+            return __thread_safe_fifo_queue.pop(q);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_pop pop;
+    struct _push {
+        inline void operator()(const CppParallelBFSTestVisitor::VertexDescriptor& a, CppParallelBFSTestVisitor::FIFOQueue& q) {
+            return __thread_safe_fifo_queue.push(a, q);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_push push;
+    struct _pushPopBehavior {
+        inline void operator()(const CppParallelBFSTestVisitor::VertexDescriptor& a, const CppParallelBFSTestVisitor::FIFOQueue& inq) {
+            CppParallelBFSTestVisitor::FIFOQueue mut_inq = inq;
+            CppParallelBFSTestVisitor::push(a, mut_inq);
+            assert((CppParallelBFSTestVisitor::front(mut_inq)) == (a));
+            CppParallelBFSTestVisitor::pop(mut_inq);
+            assert((inq) == (mut_inq));
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_pushPopBehavior pushPopBehavior;
+    typedef incidence_and_vertex_list_graph<CppParallelBFSTestVisitor::Vertex>::EdgeIterator EdgeIterator;
+    typedef pair<CppParallelBFSTestVisitor::EdgeIterator, CppParallelBFSTestVisitor::EdgeIterator>::Pair EdgeIteratorRange;
+private:
+    static pair<CppParallelBFSTestVisitor::EdgeIterator, CppParallelBFSTestVisitor::EdgeIterator> __pair;
+public:
+    struct _edgeIterNext {
+        inline void operator()(CppParallelBFSTestVisitor::EdgeIterator& ei) {
+            return __incidence_and_vertex_list_graph.edgeIterNext(ei);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_edgeIterNext edgeIterNext;
+    struct _iterRangeBegin {
+        inline CppParallelBFSTestVisitor::EdgeIterator operator()(const CppParallelBFSTestVisitor::EdgeIteratorRange& p) {
+            return __pair.first(p);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_iterRangeBegin iterRangeBegin;
+    struct _iterRangeEnd {
+        inline CppParallelBFSTestVisitor::EdgeIterator operator()(const CppParallelBFSTestVisitor::EdgeIteratorRange& p) {
+            return __pair.second(p);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_iterRangeEnd iterRangeEnd;
+    struct _makeEdgeIteratorRange {
+        inline CppParallelBFSTestVisitor::EdgeIteratorRange operator()(const CppParallelBFSTestVisitor::EdgeIterator& a, const CppParallelBFSTestVisitor::EdgeIterator& b) {
+            return __pair.makePair(a, b);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_makeEdgeIteratorRange makeEdgeIteratorRange;
+    struct _outEdges {
+        inline void operator()(const CppParallelBFSTestVisitor::VertexDescriptor& v, const CppParallelBFSTestVisitor::Graph& g, CppParallelBFSTestVisitor::EdgeIterator& itBeg, CppParallelBFSTestVisitor::EdgeIterator& itEnd) {
+            return __incidence_and_vertex_list_graph.outEdges(v, g, itBeg, itEnd);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_outEdges outEdges;
+    typedef incidence_and_vertex_list_graph<CppParallelBFSTestVisitor::Vertex>::EdgeDescriptor EdgeDescriptor;
+    struct _defaultAction {
+        inline void operator()(const CppParallelBFSTestVisitor::VertexDescriptor& edgeOrVertex, const CppParallelBFSTestVisitor::Graph& g, CppParallelBFSTestVisitor::FIFOQueue& q, CppParallelBFSTestVisitor::VertexVector& a) {
+            ;
+        };
+        inline void operator()(const CppParallelBFSTestVisitor::EdgeDescriptor& edgeOrVertex, const CppParallelBFSTestVisitor::Graph& g, CppParallelBFSTestVisitor::FIFOQueue& q, CppParallelBFSTestVisitor::VertexVector& a) {
+            ;
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_defaultAction defaultAction;
+    struct _edgeIterUnpack {
+        inline CppParallelBFSTestVisitor::EdgeDescriptor operator()(const CppParallelBFSTestVisitor::EdgeIterator& ei) {
+            return __incidence_and_vertex_list_graph.edgeIterUnpack(ei);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_edgeIterUnpack edgeIterUnpack;
+    struct _src {
+        inline CppParallelBFSTestVisitor::VertexDescriptor operator()(const CppParallelBFSTestVisitor::EdgeDescriptor& e, const CppParallelBFSTestVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.src(e, g);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_src src;
+    struct _tgt {
+        inline CppParallelBFSTestVisitor::VertexDescriptor operator()(const CppParallelBFSTestVisitor::EdgeDescriptor& e, const CppParallelBFSTestVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.tgt(e, g);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_tgt tgt;
+    struct _toEdgeDescriptor {
+        inline CppParallelBFSTestVisitor::EdgeDescriptor operator()(const CppParallelBFSTestVisitor::VertexDescriptor& v1, const CppParallelBFSTestVisitor::VertexDescriptor& v2, const CppParallelBFSTestVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.toEdgeDescriptor(v1, v2, g);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_toEdgeDescriptor toEdgeDescriptor;
+    typedef incidence_and_vertex_list_graph<CppParallelBFSTestVisitor::Vertex>::Edge Edge;
+    struct _makeEdge {
+        inline CppParallelBFSTestVisitor::Edge operator()(const CppParallelBFSTestVisitor::Vertex& s, const CppParallelBFSTestVisitor::Vertex& t) {
+            return __incidence_and_vertex_list_graph.makeEdge(s, t);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_makeEdge makeEdge;
+    typedef two_bit_color_map<CppParallelBFSTestVisitor::VertexDescriptor, CppParallelBFSTestVisitor::VertexIterator, CppParallelBFSTestVisitor::_vertexIterNext, CppParallelBFSTestVisitor::_vertexIterUnpack>::ColorPropertyMap ColorPropertyMap;
+    struct _bfsInnerLoopRepeat {
+        inline void operator()(const CppParallelBFSTestVisitor::EdgeIterator& itr, const CppParallelBFSTestVisitor::EdgeIterator& endItr, CppParallelBFSTestVisitor::VertexVector& s1, CppParallelBFSTestVisitor::FIFOQueue& s2, CppParallelBFSTestVisitor::ColorPropertyMap& s3, const CppParallelBFSTestVisitor::Graph& ctx1, const CppParallelBFSTestVisitor::VertexDescriptor& ctx2) {
+            return __for_parallel_iterator_loop3_2.forLoopRepeat(itr, endItr, s1, s2, s3, ctx1, ctx2);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_bfsInnerLoopRepeat bfsInnerLoopRepeat;
+    struct _bfsInnerLoopStep {
+        inline void operator()(const CppParallelBFSTestVisitor::EdgeIterator& edgeItr, const CppParallelBFSTestVisitor::EdgeIterator& edgeItrEnd, CppParallelBFSTestVisitor::VertexVector& x, CppParallelBFSTestVisitor::FIFOQueue& q, CppParallelBFSTestVisitor::ColorPropertyMap& c, const CppParallelBFSTestVisitor::Graph& g, const CppParallelBFSTestVisitor::VertexDescriptor& u) {
+            CppParallelBFSTestVisitor::EdgeDescriptor e = CppParallelBFSTestVisitor::edgeIterUnpack(edgeItr);
+            CppParallelBFSTestVisitor::VertexDescriptor v = CppParallelBFSTestVisitor::tgt(e, g);
+            CppParallelBFSTestVisitor::defaultAction(e, g, q, x);
+            CppParallelBFSTestVisitor::Color vc = CppParallelBFSTestVisitor::get(c, v);
+            if ((vc) == (CppParallelBFSTestVisitor::white()))
+            {
+                CppParallelBFSTestVisitor::defaultAction(e, g, q, x);
+                CppParallelBFSTestVisitor::put(c, v, CppParallelBFSTestVisitor::gray());
+                CppParallelBFSTestVisitor::defaultAction(v, g, q, x);
+                CppParallelBFSTestVisitor::push(v, q);
+            }
+            else
+                if ((vc) == (CppParallelBFSTestVisitor::gray()))
+                {
+                    CppParallelBFSTestVisitor::defaultAction(e, g, q, x);
+                }
+                else
+                {
+                    CppParallelBFSTestVisitor::defaultAction(e, g, q, x);
+                }
+        };
+    };
+
+private:
+    static for_parallel_iterator_loop3_2<CppParallelBFSTestVisitor::Graph, CppParallelBFSTestVisitor::VertexDescriptor, CppParallelBFSTestVisitor::EdgeIterator, CppParallelBFSTestVisitor::VertexVector, CppParallelBFSTestVisitor::FIFOQueue, CppParallelBFSTestVisitor::ColorPropertyMap, CppParallelBFSTestVisitor::_edgeIterNext, CppParallelBFSTestVisitor::_bfsInnerLoopStep> __for_parallel_iterator_loop3_2;
+public:
+    static CppParallelBFSTestVisitor::_bfsInnerLoopStep bfsInnerLoopStep;
+    struct _bfsOuterLoopCond {
+        inline bool operator()(const CppParallelBFSTestVisitor::VertexVector& a, const CppParallelBFSTestVisitor::FIFOQueue& q, const CppParallelBFSTestVisitor::ColorPropertyMap& c, const CppParallelBFSTestVisitor::Graph& g) {
+            return !CppParallelBFSTestVisitor::isEmptyQueue(q);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_bfsOuterLoopCond bfsOuterLoopCond;
+    struct _bfsOuterLoopRepeat {
+        inline void operator()(CppParallelBFSTestVisitor::VertexVector& s1, CppParallelBFSTestVisitor::FIFOQueue& s2, CppParallelBFSTestVisitor::ColorPropertyMap& s3, const CppParallelBFSTestVisitor::Graph& ctx) {
+            return __while_loop3.repeat(s1, s2, s3, ctx);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_bfsOuterLoopRepeat bfsOuterLoopRepeat;
+    struct _bfsOuterLoopStep {
+        inline void operator()(CppParallelBFSTestVisitor::VertexVector& x, CppParallelBFSTestVisitor::FIFOQueue& q, CppParallelBFSTestVisitor::ColorPropertyMap& c, const CppParallelBFSTestVisitor::Graph& g) {
+            CppParallelBFSTestVisitor::VertexDescriptor u = CppParallelBFSTestVisitor::front(q);
+            CppParallelBFSTestVisitor::pop(q);
+            CppParallelBFSTestVisitor::examineVertex(u, g, q, x);
+            CppParallelBFSTestVisitor::EdgeIterator edgeItrBegin;
+            CppParallelBFSTestVisitor::EdgeIterator edgeItrEnd;
+            CppParallelBFSTestVisitor::outEdges(u, g, edgeItrBegin, edgeItrEnd);
+            CppParallelBFSTestVisitor::bfsInnerLoopRepeat(edgeItrBegin, edgeItrEnd, x, q, c, g, u);
+            CppParallelBFSTestVisitor::put(c, u, CppParallelBFSTestVisitor::black());
+            CppParallelBFSTestVisitor::defaultAction(u, g, q, x);
+        };
+    };
+
+private:
+    static while_loop3<CppParallelBFSTestVisitor::Graph, CppParallelBFSTestVisitor::VertexVector, CppParallelBFSTestVisitor::FIFOQueue, CppParallelBFSTestVisitor::ColorPropertyMap, CppParallelBFSTestVisitor::_bfsOuterLoopCond, CppParallelBFSTestVisitor::_bfsOuterLoopStep> __while_loop3;
+public:
+    static CppParallelBFSTestVisitor::_bfsOuterLoopStep bfsOuterLoopStep;
+    struct _breadthFirstVisit {
+        inline void operator()(const CppParallelBFSTestVisitor::Graph& g, const CppParallelBFSTestVisitor::VertexDescriptor& s, CppParallelBFSTestVisitor::VertexVector& a, CppParallelBFSTestVisitor::FIFOQueue& q, CppParallelBFSTestVisitor::ColorPropertyMap& c) {
+            CppParallelBFSTestVisitor::defaultAction(s, g, q, a);
+            CppParallelBFSTestVisitor::push(s, q);
+            CppParallelBFSTestVisitor::put(c, s, CppParallelBFSTestVisitor::gray());
+            CppParallelBFSTestVisitor::bfsOuterLoopRepeat(a, q, c, g);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_breadthFirstVisit breadthFirstVisit;
+    typedef two_bit_color_map<CppParallelBFSTestVisitor::VertexDescriptor, CppParallelBFSTestVisitor::VertexIterator, CppParallelBFSTestVisitor::_vertexIterNext, CppParallelBFSTestVisitor::_vertexIterUnpack>::Color Color;
+    struct _black {
+        inline CppParallelBFSTestVisitor::Color operator()() {
+            return __two_bit_color_map.black();
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_black black;
+    struct _get {
+        inline CppParallelBFSTestVisitor::Color operator()(const CppParallelBFSTestVisitor::ColorPropertyMap& pm, const CppParallelBFSTestVisitor::VertexDescriptor& k) {
+            return __two_bit_color_map.get(pm, k);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_get get;
+    struct _gray {
+        inline CppParallelBFSTestVisitor::Color operator()() {
+            return __two_bit_color_map.gray();
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_gray gray;
+    struct _initMap {
+        inline CppParallelBFSTestVisitor::ColorPropertyMap operator()(const CppParallelBFSTestVisitor::VertexIterator& klBeg, const CppParallelBFSTestVisitor::VertexIterator& klEnd, const CppParallelBFSTestVisitor::Color& v) {
+            return __two_bit_color_map.initMap(klBeg, klEnd, v);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_initMap initMap;
+    struct _put {
+        inline void operator()(CppParallelBFSTestVisitor::ColorPropertyMap& pm, const CppParallelBFSTestVisitor::VertexDescriptor& k, const CppParallelBFSTestVisitor::Color& v) {
+            return __two_bit_color_map.put(pm, k, v);
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_put put;
+    struct _white {
+        inline CppParallelBFSTestVisitor::Color operator()() {
+            return __two_bit_color_map.white();
+        };
+    };
+
+    static CppParallelBFSTestVisitor::_white white;
 };
 } // examples
 } // bgl_v2

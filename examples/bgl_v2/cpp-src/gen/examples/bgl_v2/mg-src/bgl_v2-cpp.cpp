@@ -53,11 +53,11 @@ namespace bgl_v2_cpp {
 
 
 
-    CppBFSTestVisitor::_discoverVertex CppBFSTestVisitor::discoverVertex;
-
-
-
     CppBFSTestVisitor::_empty CppBFSTestVisitor::empty;
+
+
+
+    CppBFSTestVisitor::_examineVertex CppBFSTestVisitor::examineVertex;
 
 
 
@@ -176,6 +176,191 @@ namespace bgl_v2_cpp {
 
 
     CppBFSTestVisitor::_white CppBFSTestVisitor::white;
+
+} // examples
+} // bgl_v2
+} // mg_src
+} // bgl_v2_cpp
+
+namespace examples {
+namespace bgl_v2 {
+namespace mg_src {
+namespace bgl_v2_cpp {
+
+
+    CppDFSTestVisitor::_emptyStackIsEmpty CppDFSTestVisitor::emptyStackIsEmpty;
+
+    base_types CppDFSTestVisitor::__base_types;
+
+
+
+    CppDFSTestVisitor::_emptyVertexVector CppDFSTestVisitor::emptyVertexVector;
+
+    stack<CppDFSTestVisitor::VertexDescriptor> CppDFSTestVisitor::__stack;
+
+    vector<CppDFSTestVisitor::VertexDescriptor> CppDFSTestVisitor::__vector;
+
+
+
+    CppDFSTestVisitor::_pushBack CppDFSTestVisitor::pushBack;
+
+
+
+    CppDFSTestVisitor::_vertexIterNext CppDFSTestVisitor::vertexIterNext;
+
+
+
+    two_bit_color_map<CppDFSTestVisitor::VertexDescriptor, CppDFSTestVisitor::VertexIterator, CppDFSTestVisitor::_vertexIterNext, CppDFSTestVisitor::_vertexIterUnpack> CppDFSTestVisitor::__two_bit_color_map;
+
+    CppDFSTestVisitor::_vertexIterUnpack CppDFSTestVisitor::vertexIterUnpack;
+
+    incidence_and_vertex_list_graph<CppDFSTestVisitor::Vertex> CppDFSTestVisitor::__incidence_and_vertex_list_graph;
+
+
+
+    CppDFSTestVisitor::_empty CppDFSTestVisitor::empty;
+
+
+
+    CppDFSTestVisitor::_isEmptyStack CppDFSTestVisitor::isEmptyStack;
+
+
+
+    CppDFSTestVisitor::_pop CppDFSTestVisitor::pop;
+
+
+
+    CppDFSTestVisitor::_push CppDFSTestVisitor::push;
+
+
+
+    CppDFSTestVisitor::_pushPopTopBehavior CppDFSTestVisitor::pushPopTopBehavior;
+
+
+
+    CppDFSTestVisitor::_top CppDFSTestVisitor::top;
+
+
+
+    CppDFSTestVisitor::_depthFirstSearch CppDFSTestVisitor::depthFirstSearch;
+
+
+
+    CppDFSTestVisitor::_examineVertex CppDFSTestVisitor::examineVertex;
+
+
+
+    CppDFSTestVisitor::_numVertices CppDFSTestVisitor::numVertices;
+
+
+
+    CppDFSTestVisitor::_outDegree CppDFSTestVisitor::outDegree;
+
+
+
+    CppDFSTestVisitor::_toVertexDescriptor CppDFSTestVisitor::toVertexDescriptor;
+
+
+
+    CppDFSTestVisitor::_vertices CppDFSTestVisitor::vertices;
+
+    pair<CppDFSTestVisitor::EdgeIterator, CppDFSTestVisitor::EdgeIterator> CppDFSTestVisitor::__pair;
+
+
+
+    CppDFSTestVisitor::_edgeIterNext CppDFSTestVisitor::edgeIterNext;
+
+
+
+    CppDFSTestVisitor::_iterRangeBegin CppDFSTestVisitor::iterRangeBegin;
+
+
+
+    CppDFSTestVisitor::_iterRangeEnd CppDFSTestVisitor::iterRangeEnd;
+
+
+
+    CppDFSTestVisitor::_makeEdgeIteratorRange CppDFSTestVisitor::makeEdgeIteratorRange;
+
+
+
+    CppDFSTestVisitor::_outEdges CppDFSTestVisitor::outEdges;
+
+
+
+    CppDFSTestVisitor::_defaultAction CppDFSTestVisitor::defaultAction;
+
+
+
+    CppDFSTestVisitor::_edgeIterUnpack CppDFSTestVisitor::edgeIterUnpack;
+
+
+
+    CppDFSTestVisitor::_src CppDFSTestVisitor::src;
+
+
+
+    CppDFSTestVisitor::_tgt CppDFSTestVisitor::tgt;
+
+
+
+    CppDFSTestVisitor::_toEdgeDescriptor CppDFSTestVisitor::toEdgeDescriptor;
+
+
+
+    CppDFSTestVisitor::_makeEdge CppDFSTestVisitor::makeEdge;
+
+
+
+    CppDFSTestVisitor::_bfsInnerLoopRepeat CppDFSTestVisitor::bfsInnerLoopRepeat;
+
+
+
+    for_iterator_loop3_2<CppDFSTestVisitor::Graph, CppDFSTestVisitor::VertexDescriptor, CppDFSTestVisitor::EdgeIterator, CppDFSTestVisitor::VertexVector, CppDFSTestVisitor::Stack, CppDFSTestVisitor::ColorPropertyMap, CppDFSTestVisitor::_edgeIterNext, CppDFSTestVisitor::_bfsInnerLoopStep> CppDFSTestVisitor::__for_iterator_loop3_2;
+
+    CppDFSTestVisitor::_bfsInnerLoopStep CppDFSTestVisitor::bfsInnerLoopStep;
+
+
+
+    CppDFSTestVisitor::_bfsOuterLoopCond CppDFSTestVisitor::bfsOuterLoopCond;
+
+
+
+    CppDFSTestVisitor::_bfsOuterLoopRepeat CppDFSTestVisitor::bfsOuterLoopRepeat;
+
+
+
+    while_loop3<CppDFSTestVisitor::Graph, CppDFSTestVisitor::VertexVector, CppDFSTestVisitor::Stack, CppDFSTestVisitor::ColorPropertyMap, CppDFSTestVisitor::_bfsOuterLoopCond, CppDFSTestVisitor::_bfsOuterLoopStep> CppDFSTestVisitor::__while_loop3;
+
+    CppDFSTestVisitor::_bfsOuterLoopStep CppDFSTestVisitor::bfsOuterLoopStep;
+
+
+
+    CppDFSTestVisitor::_breadthFirstVisit CppDFSTestVisitor::breadthFirstVisit;
+
+
+
+    CppDFSTestVisitor::_black CppDFSTestVisitor::black;
+
+
+
+    CppDFSTestVisitor::_get CppDFSTestVisitor::get;
+
+
+
+    CppDFSTestVisitor::_gray CppDFSTestVisitor::gray;
+
+
+
+    CppDFSTestVisitor::_initMap CppDFSTestVisitor::initMap;
+
+
+
+    CppDFSTestVisitor::_put CppDFSTestVisitor::put;
+
+
+
+    CppDFSTestVisitor::_white CppDFSTestVisitor::white;
 
 } // examples
 } // bgl_v2
@@ -453,6 +638,187 @@ namespace bgl_v2_cpp {
 
 
     CppDijkstraVisitor::_white CppDijkstraVisitor::white;
+
+} // examples
+} // bgl_v2
+} // mg_src
+} // bgl_v2_cpp
+
+namespace examples {
+namespace bgl_v2 {
+namespace mg_src {
+namespace bgl_v2_cpp {
+    base_types CppParallelBFSTestVisitor::__base_types;
+
+
+
+    CppParallelBFSTestVisitor::_emptyVertexVector CppParallelBFSTestVisitor::emptyVertexVector;
+
+    thread_safe_fifo_queue<CppParallelBFSTestVisitor::VertexDescriptor> CppParallelBFSTestVisitor::__thread_safe_fifo_queue;
+
+    thread_safe_vector<CppParallelBFSTestVisitor::VertexDescriptor> CppParallelBFSTestVisitor::__thread_safe_vector;
+
+
+
+    CppParallelBFSTestVisitor::_pushBack CppParallelBFSTestVisitor::pushBack;
+
+
+
+    CppParallelBFSTestVisitor::_vertexIterNext CppParallelBFSTestVisitor::vertexIterNext;
+
+
+
+    two_bit_color_map<CppParallelBFSTestVisitor::VertexDescriptor, CppParallelBFSTestVisitor::VertexIterator, CppParallelBFSTestVisitor::_vertexIterNext, CppParallelBFSTestVisitor::_vertexIterUnpack> CppParallelBFSTestVisitor::__two_bit_color_map;
+
+    CppParallelBFSTestVisitor::_vertexIterUnpack CppParallelBFSTestVisitor::vertexIterUnpack;
+
+    incidence_and_vertex_list_graph<CppParallelBFSTestVisitor::Vertex> CppParallelBFSTestVisitor::__incidence_and_vertex_list_graph;
+
+
+
+    CppParallelBFSTestVisitor::_breadthFirstSearch CppParallelBFSTestVisitor::breadthFirstSearch;
+
+
+
+    CppParallelBFSTestVisitor::_numVertices CppParallelBFSTestVisitor::numVertices;
+
+
+
+    CppParallelBFSTestVisitor::_outDegree CppParallelBFSTestVisitor::outDegree;
+
+
+
+    CppParallelBFSTestVisitor::_toVertexDescriptor CppParallelBFSTestVisitor::toVertexDescriptor;
+
+
+
+    CppParallelBFSTestVisitor::_vertices CppParallelBFSTestVisitor::vertices;
+
+
+
+    CppParallelBFSTestVisitor::_empty CppParallelBFSTestVisitor::empty;
+
+
+
+    CppParallelBFSTestVisitor::_examineVertex CppParallelBFSTestVisitor::examineVertex;
+
+
+
+    CppParallelBFSTestVisitor::_front CppParallelBFSTestVisitor::front;
+
+
+
+    CppParallelBFSTestVisitor::_isEmptyQueue CppParallelBFSTestVisitor::isEmptyQueue;
+
+
+
+    CppParallelBFSTestVisitor::_pop CppParallelBFSTestVisitor::pop;
+
+
+
+    CppParallelBFSTestVisitor::_push CppParallelBFSTestVisitor::push;
+
+
+
+    CppParallelBFSTestVisitor::_pushPopBehavior CppParallelBFSTestVisitor::pushPopBehavior;
+
+    pair<CppParallelBFSTestVisitor::EdgeIterator, CppParallelBFSTestVisitor::EdgeIterator> CppParallelBFSTestVisitor::__pair;
+
+
+
+    CppParallelBFSTestVisitor::_edgeIterNext CppParallelBFSTestVisitor::edgeIterNext;
+
+
+
+    CppParallelBFSTestVisitor::_iterRangeBegin CppParallelBFSTestVisitor::iterRangeBegin;
+
+
+
+    CppParallelBFSTestVisitor::_iterRangeEnd CppParallelBFSTestVisitor::iterRangeEnd;
+
+
+
+    CppParallelBFSTestVisitor::_makeEdgeIteratorRange CppParallelBFSTestVisitor::makeEdgeIteratorRange;
+
+
+
+    CppParallelBFSTestVisitor::_outEdges CppParallelBFSTestVisitor::outEdges;
+
+
+
+    CppParallelBFSTestVisitor::_defaultAction CppParallelBFSTestVisitor::defaultAction;
+
+
+
+    CppParallelBFSTestVisitor::_edgeIterUnpack CppParallelBFSTestVisitor::edgeIterUnpack;
+
+
+
+    CppParallelBFSTestVisitor::_src CppParallelBFSTestVisitor::src;
+
+
+
+    CppParallelBFSTestVisitor::_tgt CppParallelBFSTestVisitor::tgt;
+
+
+
+    CppParallelBFSTestVisitor::_toEdgeDescriptor CppParallelBFSTestVisitor::toEdgeDescriptor;
+
+
+
+    CppParallelBFSTestVisitor::_makeEdge CppParallelBFSTestVisitor::makeEdge;
+
+
+
+    CppParallelBFSTestVisitor::_bfsInnerLoopRepeat CppParallelBFSTestVisitor::bfsInnerLoopRepeat;
+
+
+
+    for_parallel_iterator_loop3_2<CppParallelBFSTestVisitor::Graph, CppParallelBFSTestVisitor::VertexDescriptor, CppParallelBFSTestVisitor::EdgeIterator, CppParallelBFSTestVisitor::VertexVector, CppParallelBFSTestVisitor::FIFOQueue, CppParallelBFSTestVisitor::ColorPropertyMap, CppParallelBFSTestVisitor::_edgeIterNext, CppParallelBFSTestVisitor::_bfsInnerLoopStep> CppParallelBFSTestVisitor::__for_parallel_iterator_loop3_2;
+
+    CppParallelBFSTestVisitor::_bfsInnerLoopStep CppParallelBFSTestVisitor::bfsInnerLoopStep;
+
+
+
+    CppParallelBFSTestVisitor::_bfsOuterLoopCond CppParallelBFSTestVisitor::bfsOuterLoopCond;
+
+
+
+    CppParallelBFSTestVisitor::_bfsOuterLoopRepeat CppParallelBFSTestVisitor::bfsOuterLoopRepeat;
+
+
+
+    while_loop3<CppParallelBFSTestVisitor::Graph, CppParallelBFSTestVisitor::VertexVector, CppParallelBFSTestVisitor::FIFOQueue, CppParallelBFSTestVisitor::ColorPropertyMap, CppParallelBFSTestVisitor::_bfsOuterLoopCond, CppParallelBFSTestVisitor::_bfsOuterLoopStep> CppParallelBFSTestVisitor::__while_loop3;
+
+    CppParallelBFSTestVisitor::_bfsOuterLoopStep CppParallelBFSTestVisitor::bfsOuterLoopStep;
+
+
+
+    CppParallelBFSTestVisitor::_breadthFirstVisit CppParallelBFSTestVisitor::breadthFirstVisit;
+
+
+
+    CppParallelBFSTestVisitor::_black CppParallelBFSTestVisitor::black;
+
+
+
+    CppParallelBFSTestVisitor::_get CppParallelBFSTestVisitor::get;
+
+
+
+    CppParallelBFSTestVisitor::_gray CppParallelBFSTestVisitor::gray;
+
+
+
+    CppParallelBFSTestVisitor::_initMap CppParallelBFSTestVisitor::initMap;
+
+
+
+    CppParallelBFSTestVisitor::_put CppParallelBFSTestVisitor::put;
+
+
+
+    CppParallelBFSTestVisitor::_white CppParallelBFSTestVisitor::white;
 
 } // examples
 } // bgl_v2

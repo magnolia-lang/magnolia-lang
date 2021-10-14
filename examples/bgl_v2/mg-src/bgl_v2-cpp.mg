@@ -1,5 +1,6 @@
 package examples.bgl_v2.mg-src.bgl_v2-cpp
     imports examples.bgl_v2.mg-src.bfs_utils
+          , examples.bgl_v2.mg-src.dfs_utils
           , examples.bgl_v2.mg-src.dijkstra_utils
           , examples.bgl_v2.mg-src.externals.cpp_apis;
 
@@ -43,6 +44,61 @@ program CppBFSTestVisitor = {
     // and VertexListGraph.
     use CppIncidenceAndVertexListGraph;
     
+    use CppPair[ A => EdgeIterator
+               , B => EdgeIterator
+               , Pair => EdgeIteratorRange
+               , first => iterRangeBegin
+               , second => iterRangeEnd
+               , makePair => makeEdgeIteratorRange
+               ];
+
+    use CppVector[ A => VertexDescriptor
+                 , Vector => VertexVector
+                 , empty => emptyVertexVector
+                 ];
+};
+
+
+program CppDFSTestVisitor = {
+    use GenericDFSTestVisitor;
+
+    use CppStack[ A => VertexDescriptor
+                , isEmpty => isEmptyStack
+                ];
+
+    use CppWhileLoop3[ Context => Graph
+                     , State1 => VertexVector
+                     , State2 => Stack
+                     , State3 => ColorPropertyMap
+                     , cond => bfsOuterLoopCond
+                     , step => bfsOuterLoopStep
+                     , repeat => bfsOuterLoopRepeat
+                     ];
+
+    use CppForIteratorLoop3_2[ Iterator => EdgeIterator
+                             , Context1 => Graph
+                             , Context2 => VertexDescriptor
+                             , State1 => VertexVector
+                             , State2 => Stack
+                             , State3 => ColorPropertyMap
+                             , iterNext => edgeIterNext
+                             , step => bfsInnerLoopStep
+                             , forLoopRepeat => bfsInnerLoopRepeat
+                             ];
+
+
+    use CppReadWriteColorMapWithInitList[ Key => VertexDescriptor
+                                        , KeyListIterator => VertexIterator
+                                        , iterNext => vertexIterNext
+                                        , iterUnpack => vertexIterUnpack
+                                        ];
+
+    use CppBaseTypes;
+
+    // CppIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
+    // and VertexListGraph.
+    use CppIncidenceAndVertexListGraph;
+
     use CppPair[ A => EdgeIterator
                , B => EdgeIterator
                , Pair => EdgeIteratorRange

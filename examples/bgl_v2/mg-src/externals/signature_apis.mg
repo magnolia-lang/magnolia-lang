@@ -5,6 +5,7 @@ package examples.bgl_v2.mg-src.externals.signature_apis
           , examples.bgl_v2.mg-src.list
           , examples.bgl_v2.mg-src.property_map
           , examples.bgl_v2.mg-src.queue
+          , examples.bgl_v2.mg-src.stack
           , examples.bgl_v2.mg-src.tuple
           , examples.bgl_v2.mg-src.vector
           , examples.bgl_v2.mg-src.while_loop;
@@ -87,6 +88,8 @@ implementation ExtReadWritePropertyMapWithInitList = {
 
 implementation ExtFIFOQueue = signature(FIFOQueue);
 implementation ExtUpdateablePriorityQueue = signature(UpdateablePriorityQueue);
+
+implementation ExtStack = signature(Stack);
 
 implementation ExtPair = signature(Pair);
 implementation ExtTriplet = signature(Triplet);

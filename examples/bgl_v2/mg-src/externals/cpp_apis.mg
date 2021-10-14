@@ -18,6 +18,8 @@ implementation CppThreadSafeFIFOQueue =
     external C++ base.thread_safe_fifo_queue ExtFIFOQueue;
 implementation CppUpdateablePriorityQueue =
     external C++ base.priority_queue ExtUpdateablePriorityQueue;
+implementation CppStack =
+    external C++ base.stack ExtStack;
 implementation CppVector = external C++ base.vector ExtVector;
 implementation CppThreadSafeVector =
     external C++ base.thread_safe_vector ExtVector;

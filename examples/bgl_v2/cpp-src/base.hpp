@@ -12,6 +12,7 @@
 #include <map>
 #include <mutex>
 #include <queue>
+#include <stack>
 #include <tuple>
 #include <unordered_set>
 #include <utility>
@@ -584,6 +585,17 @@ struct thread_safe_fifo_queue {
     inline const A& front(const FIFOQueue &q) { return q.front(); }
 };
 
+template <typename _A>
+struct stack {
+    typedef _A A;
+    typedef std::stack<A> Stack;
+
+    inline Stack empty() { return Stack(); }
+    inline bool isEmpty(const Stack &s) { return s.empty(); }
+    inline void push(const A &a, Stack &s) { s.push(a); }
+    inline void pop(Stack &s) { s.pop(); }
+    inline const A &top(const Stack &s) { return s.top(); }
+};
 
 // TODO: make actual implementation
 template <typename _A, typename _Priority, typename _PriorityMap, class _get>
