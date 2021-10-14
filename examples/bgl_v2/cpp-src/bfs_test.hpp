@@ -74,11 +74,11 @@ inline void bfsPerfTest() {
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-    /*for (auto vit = bfsResult.begin(); vit != bfsResult.end(); ++vit) {
+    for (auto vit = bfsResult.begin(); vit != bfsResult.end(); ++vit) {
         std::cout << *vit << " ";
     }
 
-    std::cout << std::endl;*/
+    std::cout << std::endl;
 
     std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[ms]" << std::endl;
 }

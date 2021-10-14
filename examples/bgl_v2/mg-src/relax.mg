@@ -15,26 +15,28 @@ implementation Relax = {
                                , compare => less
                                ];
     use Edge[ Edge => Edge
+            , EdgeDescriptor => EdgeDescriptor
             , Vertex => Vertex
+            , VertexDescriptor => VertexDescriptor
             ];
-    use ReadWritePropertyMap[ Key => Vertex
+
+    use ReadWritePropertyMap[ Key => VertexDescriptor
                             , Value => Cost
                             , PropertyMap => VertexCostMap
                             ];
-    use ReadWritePropertyMap[ Key => Vertex
-                            , Value => Vertex
+    use ReadWritePropertyMap[ Key => VertexDescriptor
+                            , Value => VertexDescriptor
                             , PropertyMap => VertexPredecessorMap
                             ];
-    use ReadPropertyMap[ Key => Edge
+    use ReadPropertyMap[ Key => EdgeDescriptor
                        , Value => Cost
                        , PropertyMap => EdgeCostMap
                        ];
-    use Edge;
 
-    procedure relax(obs e: Edge, obs ecm: EdgeCostMap, upd vcm: VertexCostMap,
-                    upd vpm: VertexPredecessorMap) {
-        var u = src(e);
-        var v = tgt(e);
+    procedure relax(obs e: EdgeDescriptor, obs g: Graph, obs ecm: EdgeCostMap,
+                    upd vcm: VertexCostMap, upd vpm: VertexPredecessorMap) {
+        var u = src(e, g);
+        var v = tgt(e, g);
 
         var uCost = get(vcm, u);
         var vCost = get(vcm, v);

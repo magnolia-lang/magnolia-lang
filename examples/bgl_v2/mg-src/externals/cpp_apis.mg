@@ -21,6 +21,8 @@ implementation CppUpdateablePriorityQueue =
 implementation CppVector = external C++ base.vector ExtVector;
 implementation CppThreadSafeVector =
     external C++ base.thread_safe_vector ExtVector;
+implementation CppForIteratorLoop =
+    external C++ base.for_iterator_loop ExtForIteratorLoop;
 implementation CppForIteratorLoop3_2 =
     external C++ base.for_iterator_loop3_2 ExtForIteratorLoop3_2;
 implementation CppForParallelIteratorLoop3_2 =

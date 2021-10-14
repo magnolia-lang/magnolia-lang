@@ -11,7 +11,7 @@ concept ForIteratorLoop = {
                            upd state: State,
                            obs ctx: Context);
     
-    procedure forLoopRepeat(upd itr: Iterator,
+    procedure forLoopRepeat(obs itr: Iterator,
                             obs endItr: Iterator,
                             upd state: State,
                             obs ctx: Context);
@@ -19,12 +19,10 @@ concept ForIteratorLoop = {
     axiom forIterationEnd(itr: Iterator, endItr: Iterator,
                           state: State, ctx: Context) {
         var mut_state = state;
-        var mut_itr = itr;
 
         if itr == endItr
         then {
-            call forLoopRepeat(mut_itr, endItr, mut_state, ctx);
-            assert mut_itr == itr;
+            call forLoopRepeat(itr, endItr, mut_state, ctx);
             assert mut_state == state;
         } else skip;
     }
@@ -49,7 +47,7 @@ concept ForIteratorLoop3_2 = {
                            obs ctx1: Context1,
                            obs ctx2: Context2);
 
-    procedure forLoopRepeat(upd itr: Iterator,
+    procedure forLoopRepeat(obs itr: Iterator,
                             obs endItr: Iterator,
                             upd s1: State1,
                             upd s2: State2,
@@ -58,6 +56,26 @@ concept ForIteratorLoop3_2 = {
                             obs ctx2: Context2);
 }
 
-concept ParallelForLoop = {
+concept ForIteratorLoop3_1 = {
+    require type Context1;
+    require type State1;
+    require type State2;
+    require type State3;
 
+    require type Iterator;
+
+    require procedure iterNext(upd itr: Iterator);
+    require procedure step(obs itr: Iterator,
+                           obs endItr: Iterator,
+                           upd s1: State1,
+                           upd s2: State2,
+                           upd s3: State3,
+                           obs ctx1: Context1);
+
+    procedure forLoopRepeat(obs itr: Iterator,
+                            obs endItr: Iterator,
+                            upd s1: State1,
+                            upd s2: State2,
+                            upd s3: State3,
+                            obs ctx1: Context1);
 }

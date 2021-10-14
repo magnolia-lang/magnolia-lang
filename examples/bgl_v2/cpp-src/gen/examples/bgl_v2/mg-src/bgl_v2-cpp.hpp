@@ -10,279 +10,355 @@ namespace mg_src {
 namespace bgl_v2_cpp {
 struct CppBFSTestVisitor {
 private:
-    static color_marker __color_marker;
     static base_types __base_types;
 public:
     typedef base_types::Vertex Vertex;
-    typedef list<CppBFSTestVisitor::Vertex>::List VertexList;
-    struct _emptyVertexList {
-        CppBFSTestVisitor::VertexList operator()();
+    typedef incidence_and_vertex_list_graph<CppBFSTestVisitor::Vertex>::VertexCount VertexCount;
+    typedef incidence_and_vertex_list_graph<CppBFSTestVisitor::Vertex>::VertexDescriptor VertexDescriptor;
+    typedef vector<CppBFSTestVisitor::VertexDescriptor>::Vector VertexVector;
+    struct _emptyVertexVector {
+        inline CppBFSTestVisitor::VertexVector operator()() {
+            return __vector.empty();
+        };
     };
 
-    static CppBFSTestVisitor::_emptyVertexList emptyVertexList;
+    static CppBFSTestVisitor::_emptyVertexVector emptyVertexVector;
 private:
-    static edge<CppBFSTestVisitor::Vertex> __edge;
-    static fifo_queue<CppBFSTestVisitor::Vertex> __fifo_queue;
-    static list<CppBFSTestVisitor::Vertex> __list0;
+    static fifo_queue<CppBFSTestVisitor::VertexDescriptor> __fifo_queue;
+    static vector<CppBFSTestVisitor::VertexDescriptor> __vector;
+public:
+    struct _pushBack {
+        inline void operator()(const CppBFSTestVisitor::VertexDescriptor& a, CppBFSTestVisitor::VertexVector& v) {
+            return __vector.pushBack(a, v);
+        };
+    };
+
+    static CppBFSTestVisitor::_pushBack pushBack;
+    typedef incidence_and_vertex_list_graph<CppBFSTestVisitor::Vertex>::VertexIterator VertexIterator;
+    struct _vertexIterNext {
+        inline void operator()(CppBFSTestVisitor::VertexIterator& ei) {
+            return __incidence_and_vertex_list_graph.vertexIterNext(ei);
+        };
+    };
+
+    static CppBFSTestVisitor::_vertexIterNext vertexIterNext;
+    struct _vertexIterUnpack {
+        inline CppBFSTestVisitor::VertexDescriptor operator()(const CppBFSTestVisitor::VertexIterator& ei) {
+            return __incidence_and_vertex_list_graph.vertexIterUnpack(ei);
+        };
+    };
+
+private:
+    static two_bit_color_map<CppBFSTestVisitor::VertexDescriptor, CppBFSTestVisitor::VertexIterator, CppBFSTestVisitor::_vertexIterNext, CppBFSTestVisitor::_vertexIterUnpack> __two_bit_color_map;
+public:
+    static CppBFSTestVisitor::_vertexIterUnpack vertexIterUnpack;
+private:
+    static incidence_and_vertex_list_graph<CppBFSTestVisitor::Vertex> __incidence_and_vertex_list_graph;
 public:
     typedef base_types::Int Int;
-    typedef fifo_queue<CppBFSTestVisitor::Vertex>::FIFOQueue FIFOQueue;
-    struct _empty {
-        CppBFSTestVisitor::FIFOQueue operator()();
-    };
-
-    static CppBFSTestVisitor::_empty empty;
-    struct _front {
-        CppBFSTestVisitor::Vertex operator()(const CppBFSTestVisitor::FIFOQueue& q);
-    };
-
-    static CppBFSTestVisitor::_front front;
-    struct _isEmptyQueue {
-        bool operator()(const CppBFSTestVisitor::FIFOQueue& q);
-    };
-
-    static CppBFSTestVisitor::_isEmptyQueue isEmptyQueue;
-    struct _pop {
-        CppBFSTestVisitor::FIFOQueue operator()(const CppBFSTestVisitor::FIFOQueue& q);
-    };
-
-    static CppBFSTestVisitor::_pop pop;
-    struct _push {
-        CppBFSTestVisitor::FIFOQueue operator()(const CppBFSTestVisitor::Vertex& a, const CppBFSTestVisitor::FIFOQueue& q);
-    };
-
-    static CppBFSTestVisitor::_push push;
-    typedef edge<CppBFSTestVisitor::Vertex>::Edge Edge;
-    typedef list<CppBFSTestVisitor::Edge>::List EdgeList;
-    struct _emptyEdgeList {
-        CppBFSTestVisitor::EdgeList operator()();
-    };
-
-    static CppBFSTestVisitor::_emptyEdgeList emptyEdgeList;
-    struct _isEmpty {
-        bool operator()(const CppBFSTestVisitor::EdgeList& l);
-        bool operator()(const CppBFSTestVisitor::VertexList& l);
-    };
-
-    static CppBFSTestVisitor::_isEmpty isEmpty;
-    struct _tail {
-        CppBFSTestVisitor::EdgeList operator()(const CppBFSTestVisitor::EdgeList& l);
-        CppBFSTestVisitor::VertexList operator()(const CppBFSTestVisitor::VertexList& l);
-    };
-
-    static CppBFSTestVisitor::_tail tail;
-private:
-    static list<CppBFSTestVisitor::Edge> __list;
-public:
-    struct _cons {
-        CppBFSTestVisitor::EdgeList operator()(const CppBFSTestVisitor::Edge& a, const CppBFSTestVisitor::EdgeList& l);
-        CppBFSTestVisitor::VertexList operator()(const CppBFSTestVisitor::Vertex& a, const CppBFSTestVisitor::VertexList& l);
-    };
-
-    static CppBFSTestVisitor::_cons cons;
-    struct _head {
-        CppBFSTestVisitor::Edge operator()(const CppBFSTestVisitor::EdgeList& l);
-        CppBFSTestVisitor::Vertex operator()(const CppBFSTestVisitor::VertexList& l);
-    };
-
-    static CppBFSTestVisitor::_head head;
-    struct _makeEdge {
-        CppBFSTestVisitor::Edge operator()(const CppBFSTestVisitor::Vertex& s, const CppBFSTestVisitor::Vertex& t);
-    };
-
-    static CppBFSTestVisitor::_makeEdge makeEdge;
-    struct _src {
-        CppBFSTestVisitor::Vertex operator()(const CppBFSTestVisitor::Edge& e);
-    };
-
-    static CppBFSTestVisitor::_src src;
-    struct _tgt {
-        CppBFSTestVisitor::Vertex operator()(const CppBFSTestVisitor::Edge& e);
-    };
-
-    typedef incidence_and_vertex_list_graph<CppBFSTestVisitor::Edge, CppBFSTestVisitor::EdgeList, CppBFSTestVisitor::Vertex, CppBFSTestVisitor::VertexList, CppBFSTestVisitor::_cons, CppBFSTestVisitor::_cons, CppBFSTestVisitor::_emptyEdgeList, CppBFSTestVisitor::_emptyVertexList, CppBFSTestVisitor::_head, CppBFSTestVisitor::_head, CppBFSTestVisitor::_isEmpty, CppBFSTestVisitor::_isEmpty, CppBFSTestVisitor::_makeEdge, CppBFSTestVisitor::_src, CppBFSTestVisitor::_tail, CppBFSTestVisitor::_tail, CppBFSTestVisitor::_tgt>::Graph Graph;
-    typedef pair<CppBFSTestVisitor::Graph, CppBFSTestVisitor::Vertex>::Pair InnerLoopContext;
-private:
-    static pair<CppBFSTestVisitor::Graph, CppBFSTestVisitor::Vertex> __pair;
-public:
+    typedef incidence_and_vertex_list_graph<CppBFSTestVisitor::Vertex>::Graph Graph;
     struct _breadthFirstSearch {
-        CppBFSTestVisitor::VertexList operator()(const CppBFSTestVisitor::Graph& g, const CppBFSTestVisitor::Vertex& start, const CppBFSTestVisitor::VertexList& init);
+        inline CppBFSTestVisitor::VertexVector operator()(const CppBFSTestVisitor::Graph& g, const CppBFSTestVisitor::VertexDescriptor& start, const CppBFSTestVisitor::VertexVector& init) {
+            CppBFSTestVisitor::FIFOQueue q = CppBFSTestVisitor::empty();
+            CppBFSTestVisitor::VertexIterator vertexBeg;
+            CppBFSTestVisitor::VertexIterator vertexEnd;
+            CppBFSTestVisitor::vertices(g, vertexBeg, vertexEnd);
+            CppBFSTestVisitor::ColorPropertyMap c = CppBFSTestVisitor::initMap(vertexBeg, vertexEnd, CppBFSTestVisitor::white());
+            CppBFSTestVisitor::VertexVector a = init;
+            CppBFSTestVisitor::breadthFirstVisit(g, start, a, q, c);
+            return a;
+        };
     };
 
     static CppBFSTestVisitor::_breadthFirstSearch breadthFirstSearch;
-    struct _defaultAction {
-        void operator()(const CppBFSTestVisitor::Vertex& edgeOrVertex, const CppBFSTestVisitor::Graph& g, CppBFSTestVisitor::FIFOQueue& q, CppBFSTestVisitor::VertexList& a);
-        void operator()(const CppBFSTestVisitor::Edge& edgeOrVertex, const CppBFSTestVisitor::Graph& g, CppBFSTestVisitor::FIFOQueue& q, CppBFSTestVisitor::VertexList& a);
-    };
-
-    static CppBFSTestVisitor::_defaultAction defaultAction;
-    struct _discoverVertex {
-        void operator()(const CppBFSTestVisitor::Vertex& v, const CppBFSTestVisitor::Graph& g, CppBFSTestVisitor::FIFOQueue& q, CppBFSTestVisitor::VertexList& a);
-    };
-
-    static CppBFSTestVisitor::_discoverVertex discoverVertex;
-    struct _makeInnerLoopContext {
-        CppBFSTestVisitor::InnerLoopContext operator()(const CppBFSTestVisitor::Graph& a, const CppBFSTestVisitor::Vertex& b);
-    };
-
-    static CppBFSTestVisitor::_makeInnerLoopContext makeInnerLoopContext;
-    struct _outEdges {
-        CppBFSTestVisitor::EdgeList operator()(const CppBFSTestVisitor::Vertex& v, const CppBFSTestVisitor::Graph& g);
-    };
-
-    static CppBFSTestVisitor::_outEdges outEdges;
-    struct _vertices {
-        CppBFSTestVisitor::VertexList operator()(const CppBFSTestVisitor::Graph& g);
-    };
-
-    static CppBFSTestVisitor::_vertices vertices;
-    typedef incidence_and_vertex_list_graph<CppBFSTestVisitor::Edge, CppBFSTestVisitor::EdgeList, CppBFSTestVisitor::Vertex, CppBFSTestVisitor::VertexList, CppBFSTestVisitor::_cons, CppBFSTestVisitor::_cons, CppBFSTestVisitor::_emptyEdgeList, CppBFSTestVisitor::_emptyVertexList, CppBFSTestVisitor::_head, CppBFSTestVisitor::_head, CppBFSTestVisitor::_isEmpty, CppBFSTestVisitor::_isEmpty, CppBFSTestVisitor::_makeEdge, CppBFSTestVisitor::_src, CppBFSTestVisitor::_tail, CppBFSTestVisitor::_tail, CppBFSTestVisitor::_tgt>::VertexCount VertexCount;
     struct _numVertices {
-        CppBFSTestVisitor::VertexCount operator()(const CppBFSTestVisitor::Graph& g);
+        inline CppBFSTestVisitor::VertexCount operator()(const CppBFSTestVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.numVertices(g);
+        };
     };
 
     static CppBFSTestVisitor::_numVertices numVertices;
     struct _outDegree {
-        CppBFSTestVisitor::VertexCount operator()(const CppBFSTestVisitor::Vertex& v, const CppBFSTestVisitor::Graph& g);
+        inline CppBFSTestVisitor::VertexCount operator()(const CppBFSTestVisitor::VertexDescriptor& v, const CppBFSTestVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.outDegree(v, g);
+        };
     };
 
     static CppBFSTestVisitor::_outDegree outDegree;
-private:
-    static incidence_and_vertex_list_graph<CppBFSTestVisitor::Edge, CppBFSTestVisitor::EdgeList, CppBFSTestVisitor::Vertex, CppBFSTestVisitor::VertexList, CppBFSTestVisitor::_cons, CppBFSTestVisitor::_cons, CppBFSTestVisitor::_emptyEdgeList, CppBFSTestVisitor::_emptyVertexList, CppBFSTestVisitor::_head, CppBFSTestVisitor::_head, CppBFSTestVisitor::_isEmpty, CppBFSTestVisitor::_isEmpty, CppBFSTestVisitor::_makeEdge, CppBFSTestVisitor::_src, CppBFSTestVisitor::_tail, CppBFSTestVisitor::_tail, CppBFSTestVisitor::_tgt> __incidence_and_vertex_list_graph;
-public:
-    static CppBFSTestVisitor::_tgt tgt;
-    typedef color_marker::Color Color;
-    typedef read_write_property_map<CppBFSTestVisitor::Vertex, CppBFSTestVisitor::VertexList, CppBFSTestVisitor::Color, CppBFSTestVisitor::_cons, CppBFSTestVisitor::_emptyVertexList, CppBFSTestVisitor::_head, CppBFSTestVisitor::_isEmpty, CppBFSTestVisitor::_tail>::PropertyMap ColorPropertyMap;
-    typedef triplet<CppBFSTestVisitor::VertexList, CppBFSTestVisitor::FIFOQueue, CppBFSTestVisitor::ColorPropertyMap>::Triplet OuterLoopState;
-    typedef pair<CppBFSTestVisitor::OuterLoopState, CppBFSTestVisitor::EdgeList>::Pair InnerLoopState;
-    struct _bfsInnerLoopCond {
-        bool operator()(const CppBFSTestVisitor::InnerLoopState& state, const CppBFSTestVisitor::InnerLoopContext& ctx);
+    struct _toVertexDescriptor {
+        inline CppBFSTestVisitor::VertexDescriptor operator()(const CppBFSTestVisitor::Vertex& v, const CppBFSTestVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.toVertexDescriptor(v, g);
+        };
     };
 
-    static CppBFSTestVisitor::_bfsInnerLoopCond bfsInnerLoopCond;
+    static CppBFSTestVisitor::_toVertexDescriptor toVertexDescriptor;
+    struct _vertices {
+        inline void operator()(const CppBFSTestVisitor::Graph& g, CppBFSTestVisitor::VertexIterator& itBeg, CppBFSTestVisitor::VertexIterator& itEnd) {
+            return __incidence_and_vertex_list_graph.vertices(g, itBeg, itEnd);
+        };
+    };
+
+    static CppBFSTestVisitor::_vertices vertices;
+    typedef fifo_queue<CppBFSTestVisitor::VertexDescriptor>::FIFOQueue FIFOQueue;
+    struct _discoverVertex {
+        inline void operator()(const CppBFSTestVisitor::VertexDescriptor& v, const CppBFSTestVisitor::Graph& g, CppBFSTestVisitor::FIFOQueue& q, CppBFSTestVisitor::VertexVector& a) {
+            CppBFSTestVisitor::pushBack(v, a);
+        };
+    };
+
+    static CppBFSTestVisitor::_discoverVertex discoverVertex;
+    struct _empty {
+        inline CppBFSTestVisitor::FIFOQueue operator()() {
+            return __fifo_queue.empty();
+        };
+    };
+
+    static CppBFSTestVisitor::_empty empty;
+    struct _front {
+        inline CppBFSTestVisitor::VertexDescriptor operator()(const CppBFSTestVisitor::FIFOQueue& q) {
+            return __fifo_queue.front(q);
+        };
+    };
+
+    static CppBFSTestVisitor::_front front;
+    struct _isEmptyQueue {
+        inline bool operator()(const CppBFSTestVisitor::FIFOQueue& q) {
+            return __fifo_queue.isEmpty(q);
+        };
+    };
+
+    static CppBFSTestVisitor::_isEmptyQueue isEmptyQueue;
+    struct _pop {
+        inline void operator()(CppBFSTestVisitor::FIFOQueue& q) {
+            return __fifo_queue.pop(q);
+        };
+    };
+
+    static CppBFSTestVisitor::_pop pop;
+    struct _push {
+        inline void operator()(const CppBFSTestVisitor::VertexDescriptor& a, CppBFSTestVisitor::FIFOQueue& q) {
+            return __fifo_queue.push(a, q);
+        };
+    };
+
+    static CppBFSTestVisitor::_push push;
+    struct _pushPopBehavior {
+        inline void operator()(const CppBFSTestVisitor::VertexDescriptor& a, const CppBFSTestVisitor::FIFOQueue& inq) {
+            CppBFSTestVisitor::FIFOQueue mut_inq = inq;
+            CppBFSTestVisitor::push(a, mut_inq);
+            assert((CppBFSTestVisitor::front(mut_inq)) == (a));
+            CppBFSTestVisitor::pop(mut_inq);
+            assert((inq) == (mut_inq));
+        };
+    };
+
+    static CppBFSTestVisitor::_pushPopBehavior pushPopBehavior;
+    typedef incidence_and_vertex_list_graph<CppBFSTestVisitor::Vertex>::EdgeIterator EdgeIterator;
+    typedef pair<CppBFSTestVisitor::EdgeIterator, CppBFSTestVisitor::EdgeIterator>::Pair EdgeIteratorRange;
+private:
+    static pair<CppBFSTestVisitor::EdgeIterator, CppBFSTestVisitor::EdgeIterator> __pair;
+public:
+    struct _edgeIterNext {
+        inline void operator()(CppBFSTestVisitor::EdgeIterator& ei) {
+            return __incidence_and_vertex_list_graph.edgeIterNext(ei);
+        };
+    };
+
+    static CppBFSTestVisitor::_edgeIterNext edgeIterNext;
+    struct _iterRangeBegin {
+        inline CppBFSTestVisitor::EdgeIterator operator()(const CppBFSTestVisitor::EdgeIteratorRange& p) {
+            return __pair.first(p);
+        };
+    };
+
+    static CppBFSTestVisitor::_iterRangeBegin iterRangeBegin;
+    struct _iterRangeEnd {
+        inline CppBFSTestVisitor::EdgeIterator operator()(const CppBFSTestVisitor::EdgeIteratorRange& p) {
+            return __pair.second(p);
+        };
+    };
+
+    static CppBFSTestVisitor::_iterRangeEnd iterRangeEnd;
+    struct _makeEdgeIteratorRange {
+        inline CppBFSTestVisitor::EdgeIteratorRange operator()(const CppBFSTestVisitor::EdgeIterator& a, const CppBFSTestVisitor::EdgeIterator& b) {
+            return __pair.makePair(a, b);
+        };
+    };
+
+    static CppBFSTestVisitor::_makeEdgeIteratorRange makeEdgeIteratorRange;
+    struct _outEdges {
+        inline void operator()(const CppBFSTestVisitor::VertexDescriptor& v, const CppBFSTestVisitor::Graph& g, CppBFSTestVisitor::EdgeIterator& itBeg, CppBFSTestVisitor::EdgeIterator& itEnd) {
+            return __incidence_and_vertex_list_graph.outEdges(v, g, itBeg, itEnd);
+        };
+    };
+
+    static CppBFSTestVisitor::_outEdges outEdges;
+    typedef incidence_and_vertex_list_graph<CppBFSTestVisitor::Vertex>::EdgeDescriptor EdgeDescriptor;
+    struct _defaultAction {
+        inline void operator()(const CppBFSTestVisitor::VertexDescriptor& edgeOrVertex, const CppBFSTestVisitor::Graph& g, CppBFSTestVisitor::FIFOQueue& q, CppBFSTestVisitor::VertexVector& a) {
+            ;
+        };
+        inline void operator()(const CppBFSTestVisitor::EdgeDescriptor& edgeOrVertex, const CppBFSTestVisitor::Graph& g, CppBFSTestVisitor::FIFOQueue& q, CppBFSTestVisitor::VertexVector& a) {
+            ;
+        };
+    };
+
+    static CppBFSTestVisitor::_defaultAction defaultAction;
+    struct _edgeIterUnpack {
+        inline CppBFSTestVisitor::EdgeDescriptor operator()(const CppBFSTestVisitor::EdgeIterator& ei) {
+            return __incidence_and_vertex_list_graph.edgeIterUnpack(ei);
+        };
+    };
+
+    static CppBFSTestVisitor::_edgeIterUnpack edgeIterUnpack;
+    struct _src {
+        inline CppBFSTestVisitor::VertexDescriptor operator()(const CppBFSTestVisitor::EdgeDescriptor& e, const CppBFSTestVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.src(e, g);
+        };
+    };
+
+    static CppBFSTestVisitor::_src src;
+    struct _tgt {
+        inline CppBFSTestVisitor::VertexDescriptor operator()(const CppBFSTestVisitor::EdgeDescriptor& e, const CppBFSTestVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.tgt(e, g);
+        };
+    };
+
+    static CppBFSTestVisitor::_tgt tgt;
+    struct _toEdgeDescriptor {
+        inline CppBFSTestVisitor::EdgeDescriptor operator()(const CppBFSTestVisitor::VertexDescriptor& v1, const CppBFSTestVisitor::VertexDescriptor& v2, const CppBFSTestVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.toEdgeDescriptor(v1, v2, g);
+        };
+    };
+
+    static CppBFSTestVisitor::_toEdgeDescriptor toEdgeDescriptor;
+    typedef incidence_and_vertex_list_graph<CppBFSTestVisitor::Vertex>::Edge Edge;
+    struct _makeEdge {
+        inline CppBFSTestVisitor::Edge operator()(const CppBFSTestVisitor::Vertex& s, const CppBFSTestVisitor::Vertex& t) {
+            return __incidence_and_vertex_list_graph.makeEdge(s, t);
+        };
+    };
+
+    static CppBFSTestVisitor::_makeEdge makeEdge;
+    typedef two_bit_color_map<CppBFSTestVisitor::VertexDescriptor, CppBFSTestVisitor::VertexIterator, CppBFSTestVisitor::_vertexIterNext, CppBFSTestVisitor::_vertexIterUnpack>::ColorPropertyMap ColorPropertyMap;
     struct _bfsInnerLoopRepeat {
-        void operator()(CppBFSTestVisitor::InnerLoopState& s, const CppBFSTestVisitor::InnerLoopContext& c);
+        inline void operator()(const CppBFSTestVisitor::EdgeIterator& itr, const CppBFSTestVisitor::EdgeIterator& endItr, CppBFSTestVisitor::VertexVector& s1, CppBFSTestVisitor::FIFOQueue& s2, CppBFSTestVisitor::ColorPropertyMap& s3, const CppBFSTestVisitor::Graph& ctx1, const CppBFSTestVisitor::VertexDescriptor& ctx2) {
+            return __for_iterator_loop3_2.forLoopRepeat(itr, endItr, s1, s2, s3, ctx1, ctx2);
+        };
     };
 
     static CppBFSTestVisitor::_bfsInnerLoopRepeat bfsInnerLoopRepeat;
     struct _bfsInnerLoopStep {
-        void operator()(CppBFSTestVisitor::InnerLoopState& state, const CppBFSTestVisitor::InnerLoopContext& ctx);
+        inline void operator()(const CppBFSTestVisitor::EdgeIterator& edgeItr, const CppBFSTestVisitor::EdgeIterator& edgeItrEnd, CppBFSTestVisitor::VertexVector& x, CppBFSTestVisitor::FIFOQueue& q, CppBFSTestVisitor::ColorPropertyMap& c, const CppBFSTestVisitor::Graph& g, const CppBFSTestVisitor::VertexDescriptor& u) {
+            CppBFSTestVisitor::EdgeDescriptor e = CppBFSTestVisitor::edgeIterUnpack(edgeItr);
+            CppBFSTestVisitor::VertexDescriptor v = CppBFSTestVisitor::tgt(e, g);
+            CppBFSTestVisitor::defaultAction(e, g, q, x);
+            CppBFSTestVisitor::Color vc = CppBFSTestVisitor::get(c, v);
+            if ((vc) == (CppBFSTestVisitor::white()))
+            {
+                CppBFSTestVisitor::defaultAction(e, g, q, x);
+                CppBFSTestVisitor::put(c, v, CppBFSTestVisitor::gray());
+                CppBFSTestVisitor::discoverVertex(v, g, q, x);
+                CppBFSTestVisitor::push(v, q);
+            }
+            else
+                if ((vc) == (CppBFSTestVisitor::gray()))
+                {
+                    CppBFSTestVisitor::defaultAction(e, g, q, x);
+                }
+                else
+                {
+                    CppBFSTestVisitor::defaultAction(e, g, q, x);
+                }
+        };
     };
 
 private:
-    static while_loop<CppBFSTestVisitor::InnerLoopContext, CppBFSTestVisitor::InnerLoopState, CppBFSTestVisitor::_bfsInnerLoopCond, CppBFSTestVisitor::_bfsInnerLoopStep> __while_loop0;
+    static for_iterator_loop3_2<CppBFSTestVisitor::Graph, CppBFSTestVisitor::VertexDescriptor, CppBFSTestVisitor::EdgeIterator, CppBFSTestVisitor::VertexVector, CppBFSTestVisitor::FIFOQueue, CppBFSTestVisitor::ColorPropertyMap, CppBFSTestVisitor::_edgeIterNext, CppBFSTestVisitor::_bfsInnerLoopStep> __for_iterator_loop3_2;
 public:
     static CppBFSTestVisitor::_bfsInnerLoopStep bfsInnerLoopStep;
-private:
-    static pair<CppBFSTestVisitor::OuterLoopState, CppBFSTestVisitor::EdgeList> __pair0;
-public:
     struct _bfsOuterLoopCond {
-        bool operator()(const CppBFSTestVisitor::OuterLoopState& state, const CppBFSTestVisitor::Graph& g);
+        inline bool operator()(const CppBFSTestVisitor::VertexVector& a, const CppBFSTestVisitor::FIFOQueue& q, const CppBFSTestVisitor::ColorPropertyMap& c, const CppBFSTestVisitor::Graph& g) {
+            return !CppBFSTestVisitor::isEmptyQueue(q);
+        };
     };
 
     static CppBFSTestVisitor::_bfsOuterLoopCond bfsOuterLoopCond;
     struct _bfsOuterLoopRepeat {
-        void operator()(CppBFSTestVisitor::OuterLoopState& s, const CppBFSTestVisitor::Graph& c);
+        inline void operator()(CppBFSTestVisitor::VertexVector& s1, CppBFSTestVisitor::FIFOQueue& s2, CppBFSTestVisitor::ColorPropertyMap& s3, const CppBFSTestVisitor::Graph& ctx) {
+            return __while_loop3.repeat(s1, s2, s3, ctx);
+        };
     };
 
     static CppBFSTestVisitor::_bfsOuterLoopRepeat bfsOuterLoopRepeat;
     struct _bfsOuterLoopStep {
-        void operator()(CppBFSTestVisitor::OuterLoopState& state, const CppBFSTestVisitor::Graph& g);
+        inline void operator()(CppBFSTestVisitor::VertexVector& x, CppBFSTestVisitor::FIFOQueue& q, CppBFSTestVisitor::ColorPropertyMap& c, const CppBFSTestVisitor::Graph& g) {
+            CppBFSTestVisitor::VertexDescriptor u = CppBFSTestVisitor::front(q);
+            CppBFSTestVisitor::pop(q);
+            CppBFSTestVisitor::defaultAction(u, g, q, x);
+            CppBFSTestVisitor::EdgeIterator edgeItrBegin;
+            CppBFSTestVisitor::EdgeIterator edgeItrEnd;
+            CppBFSTestVisitor::outEdges(u, g, edgeItrBegin, edgeItrEnd);
+            CppBFSTestVisitor::bfsInnerLoopRepeat(edgeItrBegin, edgeItrEnd, x, q, c, g, u);
+            CppBFSTestVisitor::put(c, u, CppBFSTestVisitor::black());
+            CppBFSTestVisitor::defaultAction(u, g, q, x);
+        };
     };
 
 private:
-    static while_loop<CppBFSTestVisitor::Graph, CppBFSTestVisitor::OuterLoopState, CppBFSTestVisitor::_bfsOuterLoopCond, CppBFSTestVisitor::_bfsOuterLoopStep> __while_loop;
+    static while_loop3<CppBFSTestVisitor::Graph, CppBFSTestVisitor::VertexVector, CppBFSTestVisitor::FIFOQueue, CppBFSTestVisitor::ColorPropertyMap, CppBFSTestVisitor::_bfsOuterLoopCond, CppBFSTestVisitor::_bfsOuterLoopStep> __while_loop3;
 public:
     static CppBFSTestVisitor::_bfsOuterLoopStep bfsOuterLoopStep;
-    struct _first {
-        CppBFSTestVisitor::Graph operator()(const CppBFSTestVisitor::InnerLoopContext& p);
-        CppBFSTestVisitor::OuterLoopState operator()(const CppBFSTestVisitor::InnerLoopState& p);
-        CppBFSTestVisitor::VertexList operator()(const CppBFSTestVisitor::OuterLoopState& p);
-    };
-
-    static CppBFSTestVisitor::_first first;
-    struct _makeInnerLoopState {
-        CppBFSTestVisitor::InnerLoopState operator()(const CppBFSTestVisitor::OuterLoopState& a, const CppBFSTestVisitor::EdgeList& b);
-    };
-
-    static CppBFSTestVisitor::_makeInnerLoopState makeInnerLoopState;
-    struct _projectionBehaviorPair {
-        void operator()(const CppBFSTestVisitor::Graph& a, const CppBFSTestVisitor::Vertex& b);
-        void operator()(const CppBFSTestVisitor::OuterLoopState& a, const CppBFSTestVisitor::EdgeList& b);
-    };
-
-    static CppBFSTestVisitor::_projectionBehaviorPair projectionBehaviorPair;
-    struct _second {
-        CppBFSTestVisitor::Vertex operator()(const CppBFSTestVisitor::InnerLoopContext& p);
-        CppBFSTestVisitor::EdgeList operator()(const CppBFSTestVisitor::InnerLoopState& p);
-        CppBFSTestVisitor::FIFOQueue operator()(const CppBFSTestVisitor::OuterLoopState& p);
-    };
-
-    static CppBFSTestVisitor::_second second;
-    struct _whileLoopBehavior {
-        void operator()(const CppBFSTestVisitor::OuterLoopState& s, const CppBFSTestVisitor::Graph& c);
-        void operator()(const CppBFSTestVisitor::InnerLoopState& s, const CppBFSTestVisitor::InnerLoopContext& c);
-    };
-
-    static CppBFSTestVisitor::_whileLoopBehavior whileLoopBehavior;
-private:
-    static triplet<CppBFSTestVisitor::VertexList, CppBFSTestVisitor::FIFOQueue, CppBFSTestVisitor::ColorPropertyMap> __triplet;
-public:
     struct _breadthFirstVisit {
-        void operator()(const CppBFSTestVisitor::Graph& g, const CppBFSTestVisitor::Vertex& s, CppBFSTestVisitor::VertexList& a, CppBFSTestVisitor::FIFOQueue& q, CppBFSTestVisitor::ColorPropertyMap& c);
+        inline void operator()(const CppBFSTestVisitor::Graph& g, const CppBFSTestVisitor::VertexDescriptor& s, CppBFSTestVisitor::VertexVector& a, CppBFSTestVisitor::FIFOQueue& q, CppBFSTestVisitor::ColorPropertyMap& c) {
+            CppBFSTestVisitor::discoverVertex(s, g, q, a);
+            CppBFSTestVisitor::push(s, q);
+            CppBFSTestVisitor::put(c, s, CppBFSTestVisitor::gray());
+            CppBFSTestVisitor::bfsOuterLoopRepeat(a, q, c, g);
+        };
     };
 
     static CppBFSTestVisitor::_breadthFirstVisit breadthFirstVisit;
-    struct _emptyMap {
-        CppBFSTestVisitor::ColorPropertyMap operator()();
-    };
-
-    static CppBFSTestVisitor::_emptyMap emptyMap;
-    struct _makeOuterLoopState {
-        CppBFSTestVisitor::OuterLoopState operator()(const CppBFSTestVisitor::VertexList& a, const CppBFSTestVisitor::FIFOQueue& b, const CppBFSTestVisitor::ColorPropertyMap& c);
-    };
-
-    static CppBFSTestVisitor::_makeOuterLoopState makeOuterLoopState;
-    struct _projectionBehaviorTriplet {
-        void operator()(const CppBFSTestVisitor::VertexList& a, const CppBFSTestVisitor::FIFOQueue& b, const CppBFSTestVisitor::ColorPropertyMap& c);
-    };
-
-    static CppBFSTestVisitor::_projectionBehaviorTriplet projectionBehaviorTriplet;
-    struct _third {
-        CppBFSTestVisitor::ColorPropertyMap operator()(const CppBFSTestVisitor::OuterLoopState& p);
-    };
-
-    static CppBFSTestVisitor::_third third;
-private:
-    static read_write_property_map<CppBFSTestVisitor::Vertex, CppBFSTestVisitor::VertexList, CppBFSTestVisitor::Color, CppBFSTestVisitor::_cons, CppBFSTestVisitor::_emptyVertexList, CppBFSTestVisitor::_head, CppBFSTestVisitor::_isEmpty, CppBFSTestVisitor::_tail> __read_write_property_map;
-public:
+    typedef two_bit_color_map<CppBFSTestVisitor::VertexDescriptor, CppBFSTestVisitor::VertexIterator, CppBFSTestVisitor::_vertexIterNext, CppBFSTestVisitor::_vertexIterUnpack>::Color Color;
     struct _black {
-        CppBFSTestVisitor::Color operator()();
+        inline CppBFSTestVisitor::Color operator()() {
+            return __two_bit_color_map.black();
+        };
     };
 
     static CppBFSTestVisitor::_black black;
     struct _get {
-        CppBFSTestVisitor::Color operator()(const CppBFSTestVisitor::ColorPropertyMap& pm, const CppBFSTestVisitor::Vertex& k);
+        inline CppBFSTestVisitor::Color operator()(const CppBFSTestVisitor::ColorPropertyMap& pm, const CppBFSTestVisitor::VertexDescriptor& k) {
+            return __two_bit_color_map.get(pm, k);
+        };
     };
 
     static CppBFSTestVisitor::_get get;
     struct _gray {
-        CppBFSTestVisitor::Color operator()();
+        inline CppBFSTestVisitor::Color operator()() {
+            return __two_bit_color_map.gray();
+        };
     };
 
     static CppBFSTestVisitor::_gray gray;
     struct _initMap {
-        CppBFSTestVisitor::ColorPropertyMap operator()(const CppBFSTestVisitor::VertexList& kl, const CppBFSTestVisitor::Color& v);
+        inline CppBFSTestVisitor::ColorPropertyMap operator()(const CppBFSTestVisitor::VertexIterator& klBeg, const CppBFSTestVisitor::VertexIterator& klEnd, const CppBFSTestVisitor::Color& v) {
+            return __two_bit_color_map.initMap(klBeg, klEnd, v);
+        };
     };
 
     static CppBFSTestVisitor::_initMap initMap;
     struct _put {
-        CppBFSTestVisitor::ColorPropertyMap operator()(const CppBFSTestVisitor::ColorPropertyMap& pm, const CppBFSTestVisitor::Vertex& k, const CppBFSTestVisitor::Color& v);
+        inline void operator()(CppBFSTestVisitor::ColorPropertyMap& pm, const CppBFSTestVisitor::VertexDescriptor& k, const CppBFSTestVisitor::Color& v) {
+            return __two_bit_color_map.put(pm, k, v);
+        };
     };
 
     static CppBFSTestVisitor::_put put;
     struct _white {
-        CppBFSTestVisitor::Color operator()();
+        inline CppBFSTestVisitor::Color operator()() {
+            return __two_bit_color_map.white();
+        };
     };
 
     static CppBFSTestVisitor::_white white;
@@ -298,451 +374,579 @@ namespace mg_src {
 namespace bgl_v2_cpp {
 struct CppDijkstraVisitor {
 private:
-    static color_marker __color_marker;
     static base_types __base_types;
     static base_float_ops __base_float_ops;
 public:
     typedef base_types::Vertex Vertex;
-    typedef list<CppDijkstraVisitor::Vertex>::List VertexList;
-    struct _emptyVertexList {
-        CppDijkstraVisitor::VertexList operator()();
+    typedef incidence_and_vertex_list_graph<CppDijkstraVisitor::Vertex>::VertexCount VertexCount;
+    typedef incidence_and_vertex_list_graph<CppDijkstraVisitor::Vertex>::VertexDescriptor VertexDescriptor;
+    typedef vector<CppDijkstraVisitor::VertexDescriptor>::Vector VertexVector;
+    struct _emptyVertexVector {
+        inline CppDijkstraVisitor::VertexVector operator()() {
+            return __vector.empty();
+        };
     };
 
-    static CppDijkstraVisitor::_emptyVertexList emptyVertexList;
-    typedef pair<CppDijkstraVisitor::Vertex, CppDijkstraVisitor::Vertex>::Pair VertexPair;
-    typedef list<CppDijkstraVisitor::VertexPair>::List VertexPairList;
-    struct _emptyVertexPairList {
-        CppDijkstraVisitor::VertexPairList operator()();
-    };
-
-    static CppDijkstraVisitor::_emptyVertexPairList emptyVertexPairList;
+    static CppDijkstraVisitor::_emptyVertexVector emptyVertexVector;
 private:
-    static list<CppDijkstraVisitor::VertexPair> __list1;
-    static edge<CppDijkstraVisitor::Vertex> __edge;
-    static list<CppDijkstraVisitor::Vertex> __list0;
-    static pair<CppDijkstraVisitor::Vertex, CppDijkstraVisitor::Vertex> __pair1;
+    static vector<CppDijkstraVisitor::VertexDescriptor> __vector;
 public:
-    struct _makeVertexPair {
-        CppDijkstraVisitor::VertexPair operator()(const CppDijkstraVisitor::Vertex& a, const CppDijkstraVisitor::Vertex& b);
+    struct _pushBack {
+        inline void operator()(const CppDijkstraVisitor::VertexDescriptor& a, CppDijkstraVisitor::VertexVector& v) {
+            return __vector.pushBack(a, v);
+        };
     };
 
-    static CppDijkstraVisitor::_makeVertexPair makeVertexPair;
-    typedef base_types::Int Int;
-    typedef edge<CppDijkstraVisitor::Vertex>::Edge Edge;
-    typedef list<CppDijkstraVisitor::Edge>::List EdgeList;
-    struct _emptyEdgeList {
-        CppDijkstraVisitor::EdgeList operator()();
+    static CppDijkstraVisitor::_pushBack pushBack;
+    typedef incidence_and_vertex_list_graph<CppDijkstraVisitor::Vertex>::VertexIterator VertexIterator;
+    struct _vertexIterNext {
+        inline void operator()(CppDijkstraVisitor::VertexIterator& ei) {
+            return __incidence_and_vertex_list_graph.vertexIterNext(ei);
+        };
     };
 
-    static CppDijkstraVisitor::_emptyEdgeList emptyEdgeList;
-    struct _isEmpty {
-        bool operator()(const CppDijkstraVisitor::EdgeList& l);
-        bool operator()(const CppDijkstraVisitor::VertexList& l);
-        bool operator()(const CppDijkstraVisitor::VertexPairList& l);
+    static CppDijkstraVisitor::_vertexIterNext vertexIterNext;
+    struct _vertexIterUnpack {
+        inline CppDijkstraVisitor::VertexDescriptor operator()(const CppDijkstraVisitor::VertexIterator& ei) {
+            return __incidence_and_vertex_list_graph.vertexIterUnpack(ei);
+        };
     };
 
-    static CppDijkstraVisitor::_isEmpty isEmpty;
-    struct _tail {
-        CppDijkstraVisitor::EdgeList operator()(const CppDijkstraVisitor::EdgeList& l);
-        CppDijkstraVisitor::VertexList operator()(const CppDijkstraVisitor::VertexList& l);
-        CppDijkstraVisitor::VertexPairList operator()(const CppDijkstraVisitor::VertexPairList& l);
+    typedef read_write_property_map<CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::VertexIterator, CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::_vertexIterNext, CppDijkstraVisitor::_vertexIterUnpack>::PropertyMap VertexPredecessorMap;
+    struct _emptyVPMap {
+        inline CppDijkstraVisitor::VertexPredecessorMap operator()() {
+            return __read_write_property_map1.emptyMap();
+        };
     };
 
-    static CppDijkstraVisitor::_tail tail;
-private:
-    static list<CppDijkstraVisitor::Edge> __list;
-public:
-    struct _cons {
-        CppDijkstraVisitor::EdgeList operator()(const CppDijkstraVisitor::Edge& a, const CppDijkstraVisitor::EdgeList& l);
-        CppDijkstraVisitor::VertexList operator()(const CppDijkstraVisitor::Vertex& a, const CppDijkstraVisitor::VertexList& l);
-        CppDijkstraVisitor::VertexPairList operator()(const CppDijkstraVisitor::VertexPair& a, const CppDijkstraVisitor::VertexPairList& l);
+    static CppDijkstraVisitor::_emptyVPMap emptyVPMap;
+    struct _forIterationEnd {
+        inline void operator()(const CppDijkstraVisitor::VertexIterator& itr, const CppDijkstraVisitor::VertexIterator& endItr, const CppDijkstraVisitor::VertexPredecessorMap& state, const CppDijkstraVisitor::VertexDescriptor& ctx) {
+            CppDijkstraVisitor::VertexPredecessorMap mut_state = state;
+            if ((itr) == (endItr))
+            {
+                CppDijkstraVisitor::populateVPMapLoopRepeat(itr, endItr, mut_state, ctx);
+                assert((mut_state) == (state));
+            }
+            else
+                ;
+        };
     };
 
-    static CppDijkstraVisitor::_cons cons;
-    struct _head {
-        CppDijkstraVisitor::Edge operator()(const CppDijkstraVisitor::EdgeList& l);
-        CppDijkstraVisitor::Vertex operator()(const CppDijkstraVisitor::VertexList& l);
-        CppDijkstraVisitor::VertexPair operator()(const CppDijkstraVisitor::VertexPairList& l);
-    };
-
-    typedef read_write_property_map<CppDijkstraVisitor::Vertex, CppDijkstraVisitor::VertexList, CppDijkstraVisitor::Vertex, CppDijkstraVisitor::_cons, CppDijkstraVisitor::_emptyVertexList, CppDijkstraVisitor::_head, CppDijkstraVisitor::_isEmpty, CppDijkstraVisitor::_tail>::PropertyMap VertexPredecessorMap;
-    typedef pair<CppDijkstraVisitor::VertexPredecessorMap, CppDijkstraVisitor::VertexList>::Pair PopulateVPMapState;
-    struct _populateVPMapLoopCond {
-        bool operator()(const CppDijkstraVisitor::PopulateVPMapState& state, const CppDijkstraVisitor::Vertex& s);
-    };
-
-    static CppDijkstraVisitor::_populateVPMapLoopCond populateVPMapLoopCond;
+    static CppDijkstraVisitor::_forIterationEnd forIterationEnd;
     struct _populateVPMapLoopRepeat {
-        void operator()(CppDijkstraVisitor::PopulateVPMapState& s, const CppDijkstraVisitor::Vertex& c);
+        inline void operator()(const CppDijkstraVisitor::VertexIterator& itr, const CppDijkstraVisitor::VertexIterator& endItr, CppDijkstraVisitor::VertexPredecessorMap& state, const CppDijkstraVisitor::VertexDescriptor& ctx) {
+            return __for_iterator_loop.forLoopRepeat(itr, endItr, state, ctx);
+        };
     };
 
     static CppDijkstraVisitor::_populateVPMapLoopRepeat populateVPMapLoopRepeat;
     struct _populateVPMapLoopStep {
-        void operator()(CppDijkstraVisitor::PopulateVPMapState& state, const CppDijkstraVisitor::Vertex& s);
+        inline void operator()(const CppDijkstraVisitor::VertexIterator& itr, const CppDijkstraVisitor::VertexIterator& endItr, CppDijkstraVisitor::VertexPredecessorMap& vpm, const CppDijkstraVisitor::VertexDescriptor& vd) {
+            CppDijkstraVisitor::VertexDescriptor v = CppDijkstraVisitor::vertexIterUnpack(itr);
+            CppDijkstraVisitor::put(vpm, v, v);
+        };
     };
 
 private:
-    static while_loop<CppDijkstraVisitor::Vertex, CppDijkstraVisitor::PopulateVPMapState, CppDijkstraVisitor::_populateVPMapLoopCond, CppDijkstraVisitor::_populateVPMapLoopStep> __while_loop1;
+    static for_iterator_loop<CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::VertexIterator, CppDijkstraVisitor::VertexPredecessorMap, CppDijkstraVisitor::_vertexIterNext, CppDijkstraVisitor::_populateVPMapLoopStep> __for_iterator_loop;
 public:
     static CppDijkstraVisitor::_populateVPMapLoopStep populateVPMapLoopStep;
 private:
-    static pair<CppDijkstraVisitor::VertexPredecessorMap, CppDijkstraVisitor::VertexList> __pair2;
+    static read_write_property_map<CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::VertexIterator, CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::_vertexIterNext, CppDijkstraVisitor::_vertexIterUnpack> __read_write_property_map1;
+    static two_bit_color_map<CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::VertexIterator, CppDijkstraVisitor::_vertexIterNext, CppDijkstraVisitor::_vertexIterUnpack> __two_bit_color_map;
 public:
-    struct _emptyVPMap {
-        CppDijkstraVisitor::VertexPredecessorMap operator()();
-    };
-
-    static CppDijkstraVisitor::_emptyVPMap emptyVPMap;
-    struct _makePair {
-        CppDijkstraVisitor::PopulateVPMapState operator()(const CppDijkstraVisitor::VertexPredecessorMap& a, const CppDijkstraVisitor::VertexList& b);
-    };
-
-    static CppDijkstraVisitor::_makePair makePair;
+    static CppDijkstraVisitor::_vertexIterUnpack vertexIterUnpack;
 private:
-    static read_write_property_map<CppDijkstraVisitor::Vertex, CppDijkstraVisitor::VertexList, CppDijkstraVisitor::Vertex, CppDijkstraVisitor::_cons, CppDijkstraVisitor::_emptyVertexList, CppDijkstraVisitor::_head, CppDijkstraVisitor::_isEmpty, CppDijkstraVisitor::_tail> __read_write_property_map2;
+    static incidence_and_vertex_list_graph<CppDijkstraVisitor::Vertex> __incidence_and_vertex_list_graph;
 public:
-    static CppDijkstraVisitor::_head head;
-    struct _makeEdge {
-        CppDijkstraVisitor::Edge operator()(const CppDijkstraVisitor::Vertex& s, const CppDijkstraVisitor::Vertex& t);
-    };
-
-    static CppDijkstraVisitor::_makeEdge makeEdge;
-    struct _src {
-        CppDijkstraVisitor::Vertex operator()(const CppDijkstraVisitor::Edge& e);
-    };
-
-    static CppDijkstraVisitor::_src src;
-    struct _tgt {
-        CppDijkstraVisitor::Vertex operator()(const CppDijkstraVisitor::Edge& e);
-    };
-
-    typedef incidence_and_vertex_list_graph<CppDijkstraVisitor::Edge, CppDijkstraVisitor::EdgeList, CppDijkstraVisitor::Vertex, CppDijkstraVisitor::VertexList, CppDijkstraVisitor::_cons, CppDijkstraVisitor::_cons, CppDijkstraVisitor::_emptyEdgeList, CppDijkstraVisitor::_emptyVertexList, CppDijkstraVisitor::_head, CppDijkstraVisitor::_head, CppDijkstraVisitor::_isEmpty, CppDijkstraVisitor::_isEmpty, CppDijkstraVisitor::_makeEdge, CppDijkstraVisitor::_src, CppDijkstraVisitor::_tail, CppDijkstraVisitor::_tail, CppDijkstraVisitor::_tgt>::Graph Graph;
-    typedef pair<CppDijkstraVisitor::Graph, CppDijkstraVisitor::Vertex>::Pair InnerLoopContext;
-private:
-    static pair<CppDijkstraVisitor::Graph, CppDijkstraVisitor::Vertex> __pair;
-public:
-    struct _makeInnerLoopContext {
-        CppDijkstraVisitor::InnerLoopContext operator()(const CppDijkstraVisitor::Graph& a, const CppDijkstraVisitor::Vertex& b);
-    };
-
-    static CppDijkstraVisitor::_makeInnerLoopContext makeInnerLoopContext;
-    struct _outEdges {
-        CppDijkstraVisitor::EdgeList operator()(const CppDijkstraVisitor::Vertex& v, const CppDijkstraVisitor::Graph& g);
-    };
-
-    static CppDijkstraVisitor::_outEdges outEdges;
-    struct _vertices {
-        CppDijkstraVisitor::VertexList operator()(const CppDijkstraVisitor::Graph& g);
-    };
-
-    static CppDijkstraVisitor::_vertices vertices;
-    typedef incidence_and_vertex_list_graph<CppDijkstraVisitor::Edge, CppDijkstraVisitor::EdgeList, CppDijkstraVisitor::Vertex, CppDijkstraVisitor::VertexList, CppDijkstraVisitor::_cons, CppDijkstraVisitor::_cons, CppDijkstraVisitor::_emptyEdgeList, CppDijkstraVisitor::_emptyVertexList, CppDijkstraVisitor::_head, CppDijkstraVisitor::_head, CppDijkstraVisitor::_isEmpty, CppDijkstraVisitor::_isEmpty, CppDijkstraVisitor::_makeEdge, CppDijkstraVisitor::_src, CppDijkstraVisitor::_tail, CppDijkstraVisitor::_tail, CppDijkstraVisitor::_tgt>::VertexCount VertexCount;
+    typedef base_types::Int Int;
+    typedef incidence_and_vertex_list_graph<CppDijkstraVisitor::Vertex>::Graph Graph;
     struct _numVertices {
-        CppDijkstraVisitor::VertexCount operator()(const CppDijkstraVisitor::Graph& g);
+        inline CppDijkstraVisitor::VertexCount operator()(const CppDijkstraVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.numVertices(g);
+        };
     };
 
     static CppDijkstraVisitor::_numVertices numVertices;
     struct _outDegree {
-        CppDijkstraVisitor::VertexCount operator()(const CppDijkstraVisitor::Vertex& v, const CppDijkstraVisitor::Graph& g);
+        inline CppDijkstraVisitor::VertexCount operator()(const CppDijkstraVisitor::VertexDescriptor& v, const CppDijkstraVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.outDegree(v, g);
+        };
     };
 
     static CppDijkstraVisitor::_outDegree outDegree;
+    struct _toVertexDescriptor {
+        inline CppDijkstraVisitor::VertexDescriptor operator()(const CppDijkstraVisitor::Vertex& v, const CppDijkstraVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.toVertexDescriptor(v, g);
+        };
+    };
+
+    static CppDijkstraVisitor::_toVertexDescriptor toVertexDescriptor;
+    struct _vertices {
+        inline void operator()(const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::VertexIterator& itBeg, CppDijkstraVisitor::VertexIterator& itEnd) {
+            return __incidence_and_vertex_list_graph.vertices(g, itBeg, itEnd);
+        };
+    };
+
+    static CppDijkstraVisitor::_vertices vertices;
+    typedef incidence_and_vertex_list_graph<CppDijkstraVisitor::Vertex>::EdgeIterator EdgeIterator;
+    typedef pair<CppDijkstraVisitor::EdgeIterator, CppDijkstraVisitor::EdgeIterator>::Pair EdgeIteratorRange;
 private:
-    static incidence_and_vertex_list_graph<CppDijkstraVisitor::Edge, CppDijkstraVisitor::EdgeList, CppDijkstraVisitor::Vertex, CppDijkstraVisitor::VertexList, CppDijkstraVisitor::_cons, CppDijkstraVisitor::_cons, CppDijkstraVisitor::_emptyEdgeList, CppDijkstraVisitor::_emptyVertexList, CppDijkstraVisitor::_head, CppDijkstraVisitor::_head, CppDijkstraVisitor::_isEmpty, CppDijkstraVisitor::_isEmpty, CppDijkstraVisitor::_makeEdge, CppDijkstraVisitor::_src, CppDijkstraVisitor::_tail, CppDijkstraVisitor::_tail, CppDijkstraVisitor::_tgt> __incidence_and_vertex_list_graph;
+    static pair<CppDijkstraVisitor::EdgeIterator, CppDijkstraVisitor::EdgeIterator> __pair;
 public:
+    struct _edgeIterNext {
+        inline void operator()(CppDijkstraVisitor::EdgeIterator& ei) {
+            return __incidence_and_vertex_list_graph.edgeIterNext(ei);
+        };
+    };
+
+    static CppDijkstraVisitor::_edgeIterNext edgeIterNext;
+    struct _iterRangeBegin {
+        inline CppDijkstraVisitor::EdgeIterator operator()(const CppDijkstraVisitor::EdgeIteratorRange& p) {
+            return __pair.first(p);
+        };
+    };
+
+    static CppDijkstraVisitor::_iterRangeBegin iterRangeBegin;
+    struct _iterRangeEnd {
+        inline CppDijkstraVisitor::EdgeIterator operator()(const CppDijkstraVisitor::EdgeIteratorRange& p) {
+            return __pair.second(p);
+        };
+    };
+
+    static CppDijkstraVisitor::_iterRangeEnd iterRangeEnd;
+    struct _makeEdgeIteratorRange {
+        inline CppDijkstraVisitor::EdgeIteratorRange operator()(const CppDijkstraVisitor::EdgeIterator& a, const CppDijkstraVisitor::EdgeIterator& b) {
+            return __pair.makePair(a, b);
+        };
+    };
+
+    static CppDijkstraVisitor::_makeEdgeIteratorRange makeEdgeIteratorRange;
+    struct _outEdges {
+        inline void operator()(const CppDijkstraVisitor::VertexDescriptor& v, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::EdgeIterator& itBeg, CppDijkstraVisitor::EdgeIterator& itEnd) {
+            return __incidence_and_vertex_list_graph.outEdges(v, g, itBeg, itEnd);
+        };
+    };
+
+    static CppDijkstraVisitor::_outEdges outEdges;
+    typedef incidence_and_vertex_list_graph<CppDijkstraVisitor::Vertex>::EdgeDescriptor EdgeDescriptor;
+    struct _edgeIterUnpack {
+        inline CppDijkstraVisitor::EdgeDescriptor operator()(const CppDijkstraVisitor::EdgeIterator& ei) {
+            return __incidence_and_vertex_list_graph.edgeIterUnpack(ei);
+        };
+    };
+
+    static CppDijkstraVisitor::_edgeIterUnpack edgeIterUnpack;
+    struct _src {
+        inline CppDijkstraVisitor::VertexDescriptor operator()(const CppDijkstraVisitor::EdgeDescriptor& e, const CppDijkstraVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.src(e, g);
+        };
+    };
+
+    static CppDijkstraVisitor::_src src;
+    struct _tgt {
+        inline CppDijkstraVisitor::VertexDescriptor operator()(const CppDijkstraVisitor::EdgeDescriptor& e, const CppDijkstraVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.tgt(e, g);
+        };
+    };
+
     static CppDijkstraVisitor::_tgt tgt;
+    struct _toEdgeDescriptor {
+        inline CppDijkstraVisitor::EdgeDescriptor operator()(const CppDijkstraVisitor::VertexDescriptor& v1, const CppDijkstraVisitor::VertexDescriptor& v2, const CppDijkstraVisitor::Graph& g) {
+            return __incidence_and_vertex_list_graph.toEdgeDescriptor(v1, v2, g);
+        };
+    };
+
+    static CppDijkstraVisitor::_toEdgeDescriptor toEdgeDescriptor;
+    typedef incidence_and_vertex_list_graph<CppDijkstraVisitor::Vertex>::Edge Edge;
+    struct _makeEdge {
+        inline CppDijkstraVisitor::Edge operator()(const CppDijkstraVisitor::Vertex& s, const CppDijkstraVisitor::Vertex& t) {
+            return __incidence_and_vertex_list_graph.makeEdge(s, t);
+        };
+    };
+
+    static CppDijkstraVisitor::_makeEdge makeEdge;
     typedef base_float_ops::Float Cost;
-    typedef read_write_property_map<CppDijkstraVisitor::Edge, CppDijkstraVisitor::EdgeList, CppDijkstraVisitor::Cost, CppDijkstraVisitor::_cons, CppDijkstraVisitor::_emptyEdgeList, CppDijkstraVisitor::_head, CppDijkstraVisitor::_isEmpty, CppDijkstraVisitor::_tail>::PropertyMap EdgeCostMap;
+    typedef read_write_property_map<CppDijkstraVisitor::EdgeDescriptor, CppDijkstraVisitor::EdgeIterator, CppDijkstraVisitor::Cost, CppDijkstraVisitor::_edgeIterNext, CppDijkstraVisitor::_edgeIterUnpack>::PropertyMap EdgeCostMap;
     struct _emptyECMap {
-        CppDijkstraVisitor::EdgeCostMap operator()();
+        inline CppDijkstraVisitor::EdgeCostMap operator()() {
+            return __read_write_property_map.emptyMap();
+        };
     };
 
     static CppDijkstraVisitor::_emptyECMap emptyECMap;
-    typedef read_write_property_map<CppDijkstraVisitor::Vertex, CppDijkstraVisitor::VertexList, CppDijkstraVisitor::Cost, CppDijkstraVisitor::_cons, CppDijkstraVisitor::_emptyVertexList, CppDijkstraVisitor::_head, CppDijkstraVisitor::_isEmpty, CppDijkstraVisitor::_tail>::PropertyMap VertexCostMap;
+    typedef read_write_property_map<CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::VertexIterator, CppDijkstraVisitor::Cost, CppDijkstraVisitor::_vertexIterNext, CppDijkstraVisitor::_vertexIterUnpack>::PropertyMap VertexCostMap;
     typedef triplet<CppDijkstraVisitor::VertexCostMap, CppDijkstraVisitor::VertexPredecessorMap, CppDijkstraVisitor::EdgeCostMap>::Triplet StateWithMaps;
     struct _getEdgeCostMap {
-        CppDijkstraVisitor::EdgeCostMap operator()(const CppDijkstraVisitor::StateWithMaps& p);
+        inline CppDijkstraVisitor::EdgeCostMap operator()(const CppDijkstraVisitor::StateWithMaps& p) {
+            return __triplet.third(p);
+        };
     };
 
     static CppDijkstraVisitor::_getEdgeCostMap getEdgeCostMap;
     struct _getVertexPredecessorMap {
-        CppDijkstraVisitor::VertexPredecessorMap operator()(const CppDijkstraVisitor::StateWithMaps& p);
+        inline CppDijkstraVisitor::VertexPredecessorMap operator()(const CppDijkstraVisitor::StateWithMaps& p) {
+            return __triplet.second(p);
+        };
     };
 
     static CppDijkstraVisitor::_getVertexPredecessorMap getVertexPredecessorMap;
     struct _putVertexPredecessorMap {
-        CppDijkstraVisitor::StateWithMaps operator()(const CppDijkstraVisitor::VertexPredecessorMap& vpm, const CppDijkstraVisitor::StateWithMaps& swm);
+        inline CppDijkstraVisitor::StateWithMaps operator()(const CppDijkstraVisitor::VertexPredecessorMap& vpm, const CppDijkstraVisitor::StateWithMaps& swm) {
+            return CppDijkstraVisitor::makeStateWithMaps(CppDijkstraVisitor::getVertexCostMap(swm), vpm, CppDijkstraVisitor::getEdgeCostMap(swm));
+        };
     };
 
     static CppDijkstraVisitor::_putVertexPredecessorMap putVertexPredecessorMap;
 private:
-    static triplet<CppDijkstraVisitor::VertexCostMap, CppDijkstraVisitor::VertexPredecessorMap, CppDijkstraVisitor::EdgeCostMap> __triplet0;
+    static triplet<CppDijkstraVisitor::VertexCostMap, CppDijkstraVisitor::VertexPredecessorMap, CppDijkstraVisitor::EdgeCostMap> __triplet;
 public:
     struct _emptyVCMap {
-        CppDijkstraVisitor::VertexCostMap operator()();
+        inline CppDijkstraVisitor::VertexCostMap operator()() {
+            return __read_write_property_map0.emptyMap();
+        };
     };
 
     static CppDijkstraVisitor::_emptyVCMap emptyVCMap;
     struct _getVertexCostMap {
-        CppDijkstraVisitor::VertexCostMap operator()(const CppDijkstraVisitor::StateWithMaps& p);
+        inline CppDijkstraVisitor::VertexCostMap operator()(const CppDijkstraVisitor::StateWithMaps& p) {
+            return __triplet.first(p);
+        };
     };
 
     static CppDijkstraVisitor::_getVertexCostMap getVertexCostMap;
     struct _makeStateWithMaps {
-        CppDijkstraVisitor::StateWithMaps operator()(const CppDijkstraVisitor::VertexCostMap& a, const CppDijkstraVisitor::VertexPredecessorMap& b, const CppDijkstraVisitor::EdgeCostMap& c);
+        inline CppDijkstraVisitor::StateWithMaps operator()(const CppDijkstraVisitor::VertexCostMap& a, const CppDijkstraVisitor::VertexPredecessorMap& b, const CppDijkstraVisitor::EdgeCostMap& c) {
+            return __triplet.makeTriplet(a, b, c);
+        };
     };
 
     static CppDijkstraVisitor::_makeStateWithMaps makeStateWithMaps;
     struct _putVertexCostMap {
-        CppDijkstraVisitor::StateWithMaps operator()(const CppDijkstraVisitor::VertexCostMap& vcm, const CppDijkstraVisitor::StateWithMaps& swm);
+        inline CppDijkstraVisitor::StateWithMaps operator()(const CppDijkstraVisitor::VertexCostMap& vcm, const CppDijkstraVisitor::StateWithMaps& swm) {
+            return CppDijkstraVisitor::makeStateWithMaps(vcm, CppDijkstraVisitor::getVertexPredecessorMap(swm), CppDijkstraVisitor::getEdgeCostMap(swm));
+        };
     };
 
     static CppDijkstraVisitor::_putVertexCostMap putVertexCostMap;
     struct _relax {
-        void operator()(const CppDijkstraVisitor::Edge& e, const CppDijkstraVisitor::EdgeCostMap& ecm, CppDijkstraVisitor::VertexCostMap& vcm, CppDijkstraVisitor::VertexPredecessorMap& vpm);
+        inline void operator()(const CppDijkstraVisitor::EdgeDescriptor& e, const CppDijkstraVisitor::Graph& g, const CppDijkstraVisitor::EdgeCostMap& ecm, CppDijkstraVisitor::VertexCostMap& vcm, CppDijkstraVisitor::VertexPredecessorMap& vpm) {
+            CppDijkstraVisitor::VertexDescriptor u = CppDijkstraVisitor::src(e, g);
+            CppDijkstraVisitor::VertexDescriptor v = CppDijkstraVisitor::tgt(e, g);
+            CppDijkstraVisitor::Cost uCost = CppDijkstraVisitor::get(vcm, u);
+            CppDijkstraVisitor::Cost vCost = CppDijkstraVisitor::get(vcm, v);
+            CppDijkstraVisitor::Cost edgeCost = CppDijkstraVisitor::get(ecm, e);
+            if (CppDijkstraVisitor::less(CppDijkstraVisitor::plus(uCost, edgeCost), vCost))
+            {
+                CppDijkstraVisitor::put(vcm, v, CppDijkstraVisitor::plus(uCost, edgeCost));
+                CppDijkstraVisitor::put(vpm, v, u);
+            }
+            else
+                ;
+        };
     };
 
     static CppDijkstraVisitor::_relax relax;
 private:
-    static read_write_property_map<CppDijkstraVisitor::Edge, CppDijkstraVisitor::EdgeList, CppDijkstraVisitor::Cost, CppDijkstraVisitor::_cons, CppDijkstraVisitor::_emptyEdgeList, CppDijkstraVisitor::_head, CppDijkstraVisitor::_isEmpty, CppDijkstraVisitor::_tail> __read_write_property_map;
-    static read_write_property_map<CppDijkstraVisitor::Vertex, CppDijkstraVisitor::VertexList, CppDijkstraVisitor::Cost, CppDijkstraVisitor::_cons, CppDijkstraVisitor::_emptyVertexList, CppDijkstraVisitor::_head, CppDijkstraVisitor::_isEmpty, CppDijkstraVisitor::_tail> __read_write_property_map1;
+    static read_write_property_map<CppDijkstraVisitor::EdgeDescriptor, CppDijkstraVisitor::EdgeIterator, CppDijkstraVisitor::Cost, CppDijkstraVisitor::_edgeIterNext, CppDijkstraVisitor::_edgeIterUnpack> __read_write_property_map;
+    static read_write_property_map<CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::VertexIterator, CppDijkstraVisitor::Cost, CppDijkstraVisitor::_vertexIterNext, CppDijkstraVisitor::_vertexIterUnpack> __read_write_property_map0;
 public:
     struct _dijkstraShortestPaths {
-        void operator()(const CppDijkstraVisitor::Graph& g, const CppDijkstraVisitor::Vertex& start, CppDijkstraVisitor::VertexCostMap& vcm, const CppDijkstraVisitor::EdgeCostMap& ecm, const CppDijkstraVisitor::Cost& initialCost, CppDijkstraVisitor::VertexPredecessorMap& vpm);
+        inline void operator()(const CppDijkstraVisitor::Graph& g, const CppDijkstraVisitor::VertexDescriptor& start, CppDijkstraVisitor::VertexCostMap& vcm, const CppDijkstraVisitor::EdgeCostMap& ecm, const CppDijkstraVisitor::Cost& initialCost, CppDijkstraVisitor::VertexPredecessorMap& vpm) {
+            CppDijkstraVisitor::put(vcm, start, initialCost);
+            CppDijkstraVisitor::VertexIterator vertexBeg;
+            CppDijkstraVisitor::VertexIterator vertexEnd;
+            CppDijkstraVisitor::vertices(g, vertexBeg, vertexEnd);
+            vpm = CppDijkstraVisitor::emptyVPMap();
+            CppDijkstraVisitor::populateVPMapLoopRepeat(vertexBeg, vertexEnd, vpm, start);
+            CppDijkstraVisitor::PriorityQueue pq = CppDijkstraVisitor::emptyPriorityQueue(vcm);
+            CppDijkstraVisitor::StateWithMaps swm = CppDijkstraVisitor::makeStateWithMaps(vcm, vpm, ecm);
+            CppDijkstraVisitor::ColorPropertyMap c = CppDijkstraVisitor::initMap(vertexBeg, vertexEnd, CppDijkstraVisitor::white());
+            CppDijkstraVisitor::breadthFirstVisit(g, start, swm, pq, c);
+            vcm = CppDijkstraVisitor::getVertexCostMap(swm);
+            vpm = CppDijkstraVisitor::getVertexPredecessorMap(swm);
+        };
     };
 
     static CppDijkstraVisitor::_dijkstraShortestPaths dijkstraShortestPaths;
     struct _less {
-        bool operator()(const CppDijkstraVisitor::Cost& i1, const CppDijkstraVisitor::Cost& i2);
+        inline bool operator()(const CppDijkstraVisitor::Cost& i1, const CppDijkstraVisitor::Cost& i2) {
+            return __base_float_ops.less(i1, i2);
+        };
     };
 
     static CppDijkstraVisitor::_less less;
     struct _plus {
-        CppDijkstraVisitor::Cost operator()(const CppDijkstraVisitor::Cost& i1, const CppDijkstraVisitor::Cost& i2);
+        inline CppDijkstraVisitor::Cost operator()(const CppDijkstraVisitor::Cost& i1, const CppDijkstraVisitor::Cost& i2) {
+            return __base_float_ops.plus(i1, i2);
+        };
     };
 
     static CppDijkstraVisitor::_plus plus;
-    typedef color_marker::Color Color;
-    typedef read_write_property_map<CppDijkstraVisitor::Vertex, CppDijkstraVisitor::VertexList, CppDijkstraVisitor::Color, CppDijkstraVisitor::_cons, CppDijkstraVisitor::_emptyVertexList, CppDijkstraVisitor::_head, CppDijkstraVisitor::_isEmpty, CppDijkstraVisitor::_tail>::PropertyMap ColorPropertyMap;
-    struct _emptyMap {
-        CppDijkstraVisitor::ColorPropertyMap operator()();
-    };
-
-    static CppDijkstraVisitor::_emptyMap emptyMap;
-private:
-    static read_write_property_map<CppDijkstraVisitor::Vertex, CppDijkstraVisitor::VertexList, CppDijkstraVisitor::Color, CppDijkstraVisitor::_cons, CppDijkstraVisitor::_emptyVertexList, CppDijkstraVisitor::_head, CppDijkstraVisitor::_isEmpty, CppDijkstraVisitor::_tail> __read_write_property_map0;
-public:
+    typedef two_bit_color_map<CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::VertexIterator, CppDijkstraVisitor::_vertexIterNext, CppDijkstraVisitor::_vertexIterUnpack>::ColorPropertyMap ColorPropertyMap;
+    typedef two_bit_color_map<CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::VertexIterator, CppDijkstraVisitor::_vertexIterNext, CppDijkstraVisitor::_vertexIterUnpack>::Color Color;
     struct _black {
-        CppDijkstraVisitor::Color operator()();
+        inline CppDijkstraVisitor::Color operator()() {
+            return __two_bit_color_map.black();
+        };
     };
 
     static CppDijkstraVisitor::_black black;
     struct _get {
-        CppDijkstraVisitor::Cost operator()(const CppDijkstraVisitor::VertexCostMap& pm, const CppDijkstraVisitor::Vertex& k);
-        CppDijkstraVisitor::Vertex operator()(const CppDijkstraVisitor::VertexPredecessorMap& pm, const CppDijkstraVisitor::Vertex& k);
-        CppDijkstraVisitor::Cost operator()(const CppDijkstraVisitor::EdgeCostMap& pm, const CppDijkstraVisitor::Edge& k);
-        CppDijkstraVisitor::Color operator()(const CppDijkstraVisitor::ColorPropertyMap& pm, const CppDijkstraVisitor::Vertex& k);
+        inline CppDijkstraVisitor::Cost operator()(const CppDijkstraVisitor::VertexCostMap& pm, const CppDijkstraVisitor::VertexDescriptor& k) {
+            return __read_write_property_map0.get(pm, k);
+        };
+        inline CppDijkstraVisitor::VertexDescriptor operator()(const CppDijkstraVisitor::VertexPredecessorMap& pm, const CppDijkstraVisitor::VertexDescriptor& k) {
+            return __read_write_property_map1.get(pm, k);
+        };
+        inline CppDijkstraVisitor::Cost operator()(const CppDijkstraVisitor::EdgeCostMap& pm, const CppDijkstraVisitor::EdgeDescriptor& k) {
+            return __read_write_property_map.get(pm, k);
+        };
+        inline CppDijkstraVisitor::Color operator()(const CppDijkstraVisitor::ColorPropertyMap& pm, const CppDijkstraVisitor::VertexDescriptor& k) {
+            return __two_bit_color_map.get(pm, k);
+        };
     };
 
-    typedef priority_queue<CppDijkstraVisitor::Vertex, CppDijkstraVisitor::Cost, CppDijkstraVisitor::VertexCostMap, CppDijkstraVisitor::_get>::PriorityQueue PriorityQueue;
-    typedef triplet<CppDijkstraVisitor::StateWithMaps, CppDijkstraVisitor::PriorityQueue, CppDijkstraVisitor::ColorPropertyMap>::Triplet OuterLoopState;
-    typedef pair<CppDijkstraVisitor::OuterLoopState, CppDijkstraVisitor::EdgeList>::Pair InnerLoopState;
-    struct _bfsInnerLoopCond {
-        bool operator()(const CppDijkstraVisitor::InnerLoopState& state, const CppDijkstraVisitor::InnerLoopContext& ctx);
-    };
-
-    static CppDijkstraVisitor::_bfsInnerLoopCond bfsInnerLoopCond;
+    typedef priority_queue<CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::Cost, CppDijkstraVisitor::VertexCostMap, CppDijkstraVisitor::_get>::PriorityQueue PriorityQueue;
     struct _bfsInnerLoopRepeat {
-        void operator()(CppDijkstraVisitor::InnerLoopState& s, const CppDijkstraVisitor::InnerLoopContext& c);
+        inline void operator()(const CppDijkstraVisitor::EdgeIterator& itr, const CppDijkstraVisitor::EdgeIterator& endItr, CppDijkstraVisitor::StateWithMaps& s1, CppDijkstraVisitor::PriorityQueue& s2, CppDijkstraVisitor::ColorPropertyMap& s3, const CppDijkstraVisitor::Graph& ctx1, const CppDijkstraVisitor::VertexDescriptor& ctx2) {
+            return __for_iterator_loop3_2.forLoopRepeat(itr, endItr, s1, s2, s3, ctx1, ctx2);
+        };
     };
 
     static CppDijkstraVisitor::_bfsInnerLoopRepeat bfsInnerLoopRepeat;
     struct _bfsInnerLoopStep {
-        void operator()(CppDijkstraVisitor::InnerLoopState& state, const CppDijkstraVisitor::InnerLoopContext& ctx);
+        inline void operator()(const CppDijkstraVisitor::EdgeIterator& edgeItr, const CppDijkstraVisitor::EdgeIterator& edgeItrEnd, CppDijkstraVisitor::StateWithMaps& x, CppDijkstraVisitor::PriorityQueue& q, CppDijkstraVisitor::ColorPropertyMap& c, const CppDijkstraVisitor::Graph& g, const CppDijkstraVisitor::VertexDescriptor& u) {
+            CppDijkstraVisitor::EdgeDescriptor e = CppDijkstraVisitor::edgeIterUnpack(edgeItr);
+            CppDijkstraVisitor::VertexDescriptor v = CppDijkstraVisitor::tgt(e, g);
+            CppDijkstraVisitor::examineEdge(e, g, q, x);
+            CppDijkstraVisitor::Color vc = CppDijkstraVisitor::get(c, v);
+            if ((vc) == (CppDijkstraVisitor::white()))
+            {
+                CppDijkstraVisitor::treeEdge(e, g, q, x);
+                CppDijkstraVisitor::put(c, v, CppDijkstraVisitor::gray());
+                CppDijkstraVisitor::discoverVertex(v, g, q, x);
+                CppDijkstraVisitor::push(v, q);
+            }
+            else
+                if ((vc) == (CppDijkstraVisitor::gray()))
+                {
+                    CppDijkstraVisitor::grayTarget(e, g, q, x);
+                }
+                else
+                {
+                    CppDijkstraVisitor::blackTarget(e, g, q, x);
+                }
+        };
     };
 
 private:
-    static while_loop<CppDijkstraVisitor::InnerLoopContext, CppDijkstraVisitor::InnerLoopState, CppDijkstraVisitor::_bfsInnerLoopCond, CppDijkstraVisitor::_bfsInnerLoopStep> __while_loop0;
+    static for_iterator_loop3_2<CppDijkstraVisitor::Graph, CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::EdgeIterator, CppDijkstraVisitor::StateWithMaps, CppDijkstraVisitor::PriorityQueue, CppDijkstraVisitor::ColorPropertyMap, CppDijkstraVisitor::_edgeIterNext, CppDijkstraVisitor::_bfsInnerLoopStep> __for_iterator_loop3_2;
 public:
     static CppDijkstraVisitor::_bfsInnerLoopStep bfsInnerLoopStep;
-private:
-    static pair<CppDijkstraVisitor::OuterLoopState, CppDijkstraVisitor::EdgeList> __pair0;
-public:
     struct _bfsOuterLoopCond {
-        bool operator()(const CppDijkstraVisitor::OuterLoopState& state, const CppDijkstraVisitor::Graph& g);
+        inline bool operator()(const CppDijkstraVisitor::StateWithMaps& a, const CppDijkstraVisitor::PriorityQueue& q, const CppDijkstraVisitor::ColorPropertyMap& c, const CppDijkstraVisitor::Graph& g) {
+            return !CppDijkstraVisitor::isEmptyQueue(q);
+        };
     };
 
     static CppDijkstraVisitor::_bfsOuterLoopCond bfsOuterLoopCond;
     struct _bfsOuterLoopRepeat {
-        void operator()(CppDijkstraVisitor::OuterLoopState& s, const CppDijkstraVisitor::Graph& c);
+        inline void operator()(CppDijkstraVisitor::StateWithMaps& s1, CppDijkstraVisitor::PriorityQueue& s2, CppDijkstraVisitor::ColorPropertyMap& s3, const CppDijkstraVisitor::Graph& ctx) {
+            return __while_loop3.repeat(s1, s2, s3, ctx);
+        };
     };
 
     static CppDijkstraVisitor::_bfsOuterLoopRepeat bfsOuterLoopRepeat;
     struct _bfsOuterLoopStep {
-        void operator()(CppDijkstraVisitor::OuterLoopState& state, const CppDijkstraVisitor::Graph& g);
+        inline void operator()(CppDijkstraVisitor::StateWithMaps& x, CppDijkstraVisitor::PriorityQueue& q, CppDijkstraVisitor::ColorPropertyMap& c, const CppDijkstraVisitor::Graph& g) {
+            CppDijkstraVisitor::VertexDescriptor u = CppDijkstraVisitor::front(q);
+            CppDijkstraVisitor::pop(q);
+            CppDijkstraVisitor::examineVertex(u, g, q, x);
+            CppDijkstraVisitor::EdgeIterator edgeItrBegin;
+            CppDijkstraVisitor::EdgeIterator edgeItrEnd;
+            CppDijkstraVisitor::outEdges(u, g, edgeItrBegin, edgeItrEnd);
+            CppDijkstraVisitor::bfsInnerLoopRepeat(edgeItrBegin, edgeItrEnd, x, q, c, g, u);
+            CppDijkstraVisitor::put(c, u, CppDijkstraVisitor::black());
+            CppDijkstraVisitor::finishVertex(u, g, q, x);
+        };
     };
 
 private:
-    static while_loop<CppDijkstraVisitor::Graph, CppDijkstraVisitor::OuterLoopState, CppDijkstraVisitor::_bfsOuterLoopCond, CppDijkstraVisitor::_bfsOuterLoopStep> __while_loop;
+    static while_loop3<CppDijkstraVisitor::Graph, CppDijkstraVisitor::StateWithMaps, CppDijkstraVisitor::PriorityQueue, CppDijkstraVisitor::ColorPropertyMap, CppDijkstraVisitor::_bfsOuterLoopCond, CppDijkstraVisitor::_bfsOuterLoopStep> __while_loop3;
 public:
     static CppDijkstraVisitor::_bfsOuterLoopStep bfsOuterLoopStep;
-    struct _first {
-        CppDijkstraVisitor::Vertex operator()(const CppDijkstraVisitor::VertexPair& p);
-        CppDijkstraVisitor::VertexPredecessorMap operator()(const CppDijkstraVisitor::PopulateVPMapState& p);
-        CppDijkstraVisitor::Graph operator()(const CppDijkstraVisitor::InnerLoopContext& p);
-        CppDijkstraVisitor::OuterLoopState operator()(const CppDijkstraVisitor::InnerLoopState& p);
-        CppDijkstraVisitor::StateWithMaps operator()(const CppDijkstraVisitor::OuterLoopState& p);
-    };
-
-    static CppDijkstraVisitor::_first first;
-    struct _makeInnerLoopState {
-        CppDijkstraVisitor::InnerLoopState operator()(const CppDijkstraVisitor::OuterLoopState& a, const CppDijkstraVisitor::EdgeList& b);
-    };
-
-    static CppDijkstraVisitor::_makeInnerLoopState makeInnerLoopState;
-    struct _projectionBehaviorPair {
-        void operator()(const CppDijkstraVisitor::VertexPredecessorMap& a, const CppDijkstraVisitor::VertexList& b);
-        void operator()(const CppDijkstraVisitor::Graph& a, const CppDijkstraVisitor::Vertex& b);
-        void operator()(const CppDijkstraVisitor::OuterLoopState& a, const CppDijkstraVisitor::EdgeList& b);
-    };
-
-    static CppDijkstraVisitor::_projectionBehaviorPair projectionBehaviorPair;
-    struct _third {
-        CppDijkstraVisitor::ColorPropertyMap operator()(const CppDijkstraVisitor::OuterLoopState& p);
-    };
-
-    static CppDijkstraVisitor::_third third;
-    struct _whileLoopBehavior {
-        void operator()(const CppDijkstraVisitor::PopulateVPMapState& s, const CppDijkstraVisitor::Vertex& c);
-        void operator()(const CppDijkstraVisitor::OuterLoopState& s, const CppDijkstraVisitor::Graph& c);
-        void operator()(const CppDijkstraVisitor::InnerLoopState& s, const CppDijkstraVisitor::InnerLoopContext& c);
-    };
-
-    static CppDijkstraVisitor::_whileLoopBehavior whileLoopBehavior;
-private:
-    static triplet<CppDijkstraVisitor::StateWithMaps, CppDijkstraVisitor::PriorityQueue, CppDijkstraVisitor::ColorPropertyMap> __triplet;
-public:
     struct _blackTarget {
-        void operator()(const CppDijkstraVisitor::Edge& edgeOrVertex, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& q, CppDijkstraVisitor::StateWithMaps& a);
+        inline void operator()(const CppDijkstraVisitor::EdgeDescriptor& edgeOrVertex, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& q, CppDijkstraVisitor::StateWithMaps& a) {
+            ;
+        };
     };
 
     static CppDijkstraVisitor::_blackTarget blackTarget;
     struct _breadthFirstVisit {
-        void operator()(const CppDijkstraVisitor::Graph& g, const CppDijkstraVisitor::Vertex& s, CppDijkstraVisitor::StateWithMaps& a, CppDijkstraVisitor::PriorityQueue& q, CppDijkstraVisitor::ColorPropertyMap& c);
+        inline void operator()(const CppDijkstraVisitor::Graph& g, const CppDijkstraVisitor::VertexDescriptor& s, CppDijkstraVisitor::StateWithMaps& a, CppDijkstraVisitor::PriorityQueue& q, CppDijkstraVisitor::ColorPropertyMap& c) {
+            CppDijkstraVisitor::discoverVertex(s, g, q, a);
+            CppDijkstraVisitor::push(s, q);
+            CppDijkstraVisitor::put(c, s, CppDijkstraVisitor::gray());
+            CppDijkstraVisitor::bfsOuterLoopRepeat(a, q, c, g);
+        };
     };
 
     static CppDijkstraVisitor::_breadthFirstVisit breadthFirstVisit;
     struct _discoverVertex {
-        void operator()(const CppDijkstraVisitor::Vertex& edgeOrVertex, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& q, CppDijkstraVisitor::StateWithMaps& a);
+        inline void operator()(const CppDijkstraVisitor::VertexDescriptor& edgeOrVertex, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& q, CppDijkstraVisitor::StateWithMaps& a) {
+            ;
+        };
     };
 
     static CppDijkstraVisitor::_discoverVertex discoverVertex;
     struct _emptyPriorityQueue {
-        CppDijkstraVisitor::PriorityQueue operator()(const CppDijkstraVisitor::VertexCostMap& pm);
+        inline CppDijkstraVisitor::PriorityQueue operator()(const CppDijkstraVisitor::VertexCostMap& pm) {
+            return __priority_queue.empty(pm);
+        };
     };
 
     static CppDijkstraVisitor::_emptyPriorityQueue emptyPriorityQueue;
     struct _examineEdge {
-        void operator()(const CppDijkstraVisitor::Edge& edgeOrVertex, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& q, CppDijkstraVisitor::StateWithMaps& a);
+        inline void operator()(const CppDijkstraVisitor::EdgeDescriptor& edgeOrVertex, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& q, CppDijkstraVisitor::StateWithMaps& a) {
+            ;
+        };
     };
 
     static CppDijkstraVisitor::_examineEdge examineEdge;
     struct _examineVertex {
-        void operator()(const CppDijkstraVisitor::Vertex& edgeOrVertex, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& q, CppDijkstraVisitor::StateWithMaps& a);
+        inline void operator()(const CppDijkstraVisitor::VertexDescriptor& edgeOrVertex, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& q, CppDijkstraVisitor::StateWithMaps& a) {
+            ;
+        };
     };
 
     static CppDijkstraVisitor::_examineVertex examineVertex;
     struct _finishVertex {
-        void operator()(const CppDijkstraVisitor::Vertex& edgeOrVertex, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& q, CppDijkstraVisitor::StateWithMaps& a);
+        inline void operator()(const CppDijkstraVisitor::VertexDescriptor& edgeOrVertex, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& q, CppDijkstraVisitor::StateWithMaps& a) {
+            ;
+        };
     };
 
     static CppDijkstraVisitor::_finishVertex finishVertex;
     struct _front {
-        CppDijkstraVisitor::Vertex operator()(const CppDijkstraVisitor::PriorityQueue& q);
+        inline CppDijkstraVisitor::VertexDescriptor operator()(const CppDijkstraVisitor::PriorityQueue& q) {
+            return __priority_queue.front(q);
+        };
     };
 
     static CppDijkstraVisitor::_front front;
     struct _grayTarget {
-        void operator()(const CppDijkstraVisitor::Edge& e, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& pq, CppDijkstraVisitor::StateWithMaps& swm);
+        inline void operator()(const CppDijkstraVisitor::EdgeDescriptor& e, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& pq, CppDijkstraVisitor::StateWithMaps& swm) {
+            CppDijkstraVisitor::VertexCostMap origVcm = CppDijkstraVisitor::getVertexCostMap(swm);
+            CppDijkstraVisitor::VertexPredecessorMap vpm = CppDijkstraVisitor::getVertexPredecessorMap(swm);
+            CppDijkstraVisitor::EdgeCostMap ecm = CppDijkstraVisitor::getEdgeCostMap(swm);
+            CppDijkstraVisitor::VertexCostMap vcm = origVcm;
+            CppDijkstraVisitor::relax(e, g, ecm, vcm, vpm);
+            if ((vcm) == (origVcm))
+                ;
+            else
+            {
+                swm = CppDijkstraVisitor::putVertexPredecessorMap(vpm, CppDijkstraVisitor::putVertexCostMap(vcm, swm));
+                pq = CppDijkstraVisitor::update(vcm, CppDijkstraVisitor::tgt(e, g), pq);
+            }
+        };
     };
 
     static CppDijkstraVisitor::_grayTarget grayTarget;
     struct _isEmptyQueue {
-        bool operator()(const CppDijkstraVisitor::PriorityQueue& q);
+        inline bool operator()(const CppDijkstraVisitor::PriorityQueue& q) {
+            return __priority_queue.isEmpty(q);
+        };
     };
 
     static CppDijkstraVisitor::_isEmptyQueue isEmptyQueue;
-    struct _makeOuterLoopState {
-        CppDijkstraVisitor::OuterLoopState operator()(const CppDijkstraVisitor::StateWithMaps& a, const CppDijkstraVisitor::PriorityQueue& b, const CppDijkstraVisitor::ColorPropertyMap& c);
-    };
-
-    static CppDijkstraVisitor::_makeOuterLoopState makeOuterLoopState;
     struct _nonTreeEdge {
-        void operator()(const CppDijkstraVisitor::Edge& edgeOrVertex, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& q, CppDijkstraVisitor::StateWithMaps& a);
+        inline void operator()(const CppDijkstraVisitor::EdgeDescriptor& edgeOrVertex, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& q, CppDijkstraVisitor::StateWithMaps& a) {
+            ;
+        };
     };
 
     static CppDijkstraVisitor::_nonTreeEdge nonTreeEdge;
     struct _pop {
-        CppDijkstraVisitor::PriorityQueue operator()(const CppDijkstraVisitor::PriorityQueue& q);
+        inline void operator()(CppDijkstraVisitor::PriorityQueue& q) {
+            return __priority_queue.pop(q);
+        };
     };
 
     static CppDijkstraVisitor::_pop pop;
-    struct _projectionBehaviorTriplet {
-        void operator()(const CppDijkstraVisitor::StateWithMaps& a, const CppDijkstraVisitor::PriorityQueue& b, const CppDijkstraVisitor::ColorPropertyMap& c);
-    };
-
-    static CppDijkstraVisitor::_projectionBehaviorTriplet projectionBehaviorTriplet;
     struct _push {
-        CppDijkstraVisitor::PriorityQueue operator()(const CppDijkstraVisitor::Vertex& a, const CppDijkstraVisitor::PriorityQueue& q);
+        inline void operator()(const CppDijkstraVisitor::VertexDescriptor& a, CppDijkstraVisitor::PriorityQueue& q) {
+            return __priority_queue.push(a, q);
+        };
     };
 
     static CppDijkstraVisitor::_push push;
-    struct _second {
-        CppDijkstraVisitor::Vertex operator()(const CppDijkstraVisitor::VertexPair& p);
-        CppDijkstraVisitor::VertexList operator()(const CppDijkstraVisitor::PopulateVPMapState& p);
-        CppDijkstraVisitor::Vertex operator()(const CppDijkstraVisitor::InnerLoopContext& p);
-        CppDijkstraVisitor::EdgeList operator()(const CppDijkstraVisitor::InnerLoopState& p);
-        CppDijkstraVisitor::PriorityQueue operator()(const CppDijkstraVisitor::OuterLoopState& p);
-    };
-
-    static CppDijkstraVisitor::_second second;
     struct _treeEdge {
-        void operator()(const CppDijkstraVisitor::Edge& e, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& pq, CppDijkstraVisitor::StateWithMaps& swm);
+        inline void operator()(const CppDijkstraVisitor::EdgeDescriptor& e, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& pq, CppDijkstraVisitor::StateWithMaps& swm) {
+            CppDijkstraVisitor::VertexCostMap vcm = CppDijkstraVisitor::getVertexCostMap(swm);
+            CppDijkstraVisitor::VertexPredecessorMap vpm = CppDijkstraVisitor::getVertexPredecessorMap(swm);
+            CppDijkstraVisitor::EdgeCostMap ecm = CppDijkstraVisitor::getEdgeCostMap(swm);
+            CppDijkstraVisitor::relax(e, g, ecm, vcm, vpm);
+            swm = CppDijkstraVisitor::putVertexPredecessorMap(vpm, CppDijkstraVisitor::putVertexCostMap(vcm, swm));
+        };
     };
 
     static CppDijkstraVisitor::_treeEdge treeEdge;
     struct _update {
-        CppDijkstraVisitor::PriorityQueue operator()(const CppDijkstraVisitor::VertexCostMap& pm, const CppDijkstraVisitor::Vertex& a, const CppDijkstraVisitor::PriorityQueue& pq);
+        inline CppDijkstraVisitor::PriorityQueue operator()(const CppDijkstraVisitor::VertexCostMap& pm, const CppDijkstraVisitor::VertexDescriptor& a, const CppDijkstraVisitor::PriorityQueue& pq) {
+            return __priority_queue.update(pm, a, pq);
+        };
     };
 
     static CppDijkstraVisitor::_update update;
 private:
-    static priority_queue<CppDijkstraVisitor::Vertex, CppDijkstraVisitor::Cost, CppDijkstraVisitor::VertexCostMap, CppDijkstraVisitor::_get> __priority_queue;
+    static priority_queue<CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::Cost, CppDijkstraVisitor::VertexCostMap, CppDijkstraVisitor::_get> __priority_queue;
 public:
     static CppDijkstraVisitor::_get get;
     struct _gray {
-        CppDijkstraVisitor::Color operator()();
+        inline CppDijkstraVisitor::Color operator()() {
+            return __two_bit_color_map.gray();
+        };
     };
 
     static CppDijkstraVisitor::_gray gray;
     struct _initMap {
-        CppDijkstraVisitor::VertexCostMap operator()(const CppDijkstraVisitor::VertexList& kl, const CppDijkstraVisitor::Cost& v);
-        CppDijkstraVisitor::VertexPredecessorMap operator()(const CppDijkstraVisitor::VertexList& kl, const CppDijkstraVisitor::Vertex& v);
-        CppDijkstraVisitor::EdgeCostMap operator()(const CppDijkstraVisitor::EdgeList& kl, const CppDijkstraVisitor::Cost& v);
-        CppDijkstraVisitor::ColorPropertyMap operator()(const CppDijkstraVisitor::VertexList& kl, const CppDijkstraVisitor::Color& v);
+        inline CppDijkstraVisitor::VertexCostMap operator()(const CppDijkstraVisitor::VertexIterator& klBeg, const CppDijkstraVisitor::VertexIterator& klEnd, const CppDijkstraVisitor::Cost& v) {
+            return __read_write_property_map0.initMap(klBeg, klEnd, v);
+        };
+        inline CppDijkstraVisitor::VertexPredecessorMap operator()(const CppDijkstraVisitor::VertexIterator& klBeg, const CppDijkstraVisitor::VertexIterator& klEnd, const CppDijkstraVisitor::VertexDescriptor& v) {
+            return __read_write_property_map1.initMap(klBeg, klEnd, v);
+        };
+        inline CppDijkstraVisitor::EdgeCostMap operator()(const CppDijkstraVisitor::EdgeIterator& klBeg, const CppDijkstraVisitor::EdgeIterator& klEnd, const CppDijkstraVisitor::Cost& v) {
+            return __read_write_property_map.initMap(klBeg, klEnd, v);
+        };
+        inline CppDijkstraVisitor::ColorPropertyMap operator()(const CppDijkstraVisitor::VertexIterator& klBeg, const CppDijkstraVisitor::VertexIterator& klEnd, const CppDijkstraVisitor::Color& v) {
+            return __two_bit_color_map.initMap(klBeg, klEnd, v);
+        };
     };
 
     static CppDijkstraVisitor::_initMap initMap;
     struct _put {
-        CppDijkstraVisitor::VertexCostMap operator()(const CppDijkstraVisitor::VertexCostMap& pm, const CppDijkstraVisitor::Vertex& k, const CppDijkstraVisitor::Cost& v);
-        CppDijkstraVisitor::VertexPredecessorMap operator()(const CppDijkstraVisitor::VertexPredecessorMap& pm, const CppDijkstraVisitor::Vertex& k, const CppDijkstraVisitor::Vertex& v);
-        CppDijkstraVisitor::EdgeCostMap operator()(const CppDijkstraVisitor::EdgeCostMap& pm, const CppDijkstraVisitor::Edge& k, const CppDijkstraVisitor::Cost& v);
-        CppDijkstraVisitor::ColorPropertyMap operator()(const CppDijkstraVisitor::ColorPropertyMap& pm, const CppDijkstraVisitor::Vertex& k, const CppDijkstraVisitor::Color& v);
+        inline void operator()(CppDijkstraVisitor::VertexCostMap& pm, const CppDijkstraVisitor::VertexDescriptor& k, const CppDijkstraVisitor::Cost& v) {
+            return __read_write_property_map0.put(pm, k, v);
+        };
+        inline void operator()(CppDijkstraVisitor::VertexPredecessorMap& pm, const CppDijkstraVisitor::VertexDescriptor& k, const CppDijkstraVisitor::VertexDescriptor& v) {
+            return __read_write_property_map1.put(pm, k, v);
+        };
+        inline void operator()(CppDijkstraVisitor::EdgeCostMap& pm, const CppDijkstraVisitor::EdgeDescriptor& k, const CppDijkstraVisitor::Cost& v) {
+            return __read_write_property_map.put(pm, k, v);
+        };
+        inline void operator()(CppDijkstraVisitor::ColorPropertyMap& pm, const CppDijkstraVisitor::VertexDescriptor& k, const CppDijkstraVisitor::Color& v) {
+            return __two_bit_color_map.put(pm, k, v);
+        };
     };
 
     static CppDijkstraVisitor::_put put;
     struct _white {
-        CppDijkstraVisitor::Color operator()();
+        inline CppDijkstraVisitor::Color operator()() {
+            return __two_bit_color_map.white();
+        };
     };
 
     static CppDijkstraVisitor::_white white;

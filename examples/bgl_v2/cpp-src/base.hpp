@@ -107,29 +107,12 @@ template <typename _Vertex>
 
         typedef int VertexCount;
 
-        /*
-        static inline _consEdgeList consEdgeList;
-        static inline _consVertexList consVertexList;
-        static inline _edgeIterBegin edgeIterBegin;
-        static inline _edgeIterEnd edgeIterEnd;
-        static inline _edgeIterNext edgeIterNext;
-        static inline _edgeIterUnpack edgeIterUnpack;
-        static inline _emptyEdgeList emptyEdgeList;
-        static inline _emptyVertexList emptyVertexList;
-        static inline _headEdgeList headEdgeList;
-        static inline _headVertexList headVertexList;
-        static inline _isEmptyEdgeList isEmptyEdgeList;
-        static inline _isEmptyVertexList isEmptyVertexList;
-        static inline _makeEdge makeEdge;
-        static inline _src src;
-        static inline _tailEdgeList tailEdgeList;
-        static inline _tailVertexList tailVertexList;
-        static inline _tgt tgt;
-        static inline _vertexIterBegin vertexIterBegin;
-        static inline _vertexIterEnd vertexIterEnd;
-        static inline _vertexIterNext vertexIterNext;
-        static inline _vertexIterUnpack vertexIterUnpack;
-        */
+        inline EdgeDescriptor toEdgeDescriptor(const VertexDescriptor &v1,
+                                               const VertexDescriptor &v2,
+                                               const Graph &g) {
+            auto edge_pair = boost::edge(v1, v2, g);
+            return boost::edge(v1, v2, g).first;
+        }
 
         inline VertexDescriptor toVertexDescriptor(const Vertex &v, const Graph &g) {
             return boost::vertex(v, g);
@@ -333,30 +316,20 @@ struct thread_safe_iterable_list {
 };
 
 // property_map_cpp
-template <typename _Key, typename _KeyList, typename _KeyListIterator,
-          typename _Value, class _cons, class _emptyKeyList, class _head,
-          class _isEmpty, class _iterBegin, class _iterEnd, class _iterNext,
-          class _iterUnpack, class _tail>
+template <typename _Key, typename _KeyListIterator,
+          typename _Value, class _iterNext, class _iterUnpack>
 struct read_write_property_map {
     typedef _Key Key;
-    typedef _KeyList KeyList;
     typedef _KeyListIterator KeyListIterator;
     typedef _Value Value;
     typedef std::map<Key, Value> PropertyMap;
 
-    static inline _cons cons;
-    static inline _emptyKeyList emptyKeyList;
-    static inline _head head;
-    static inline _isEmpty isEmpty;
-    static inline _iterBegin iterBegin;
-    static inline _iterEnd iterEnd;
     static inline _iterNext iterNext;
     static inline _iterUnpack iterUnpack;
-    static inline _tail tail;
 
     inline PropertyMap emptyMap() { return PropertyMap(); }
 
-    inline const Value &get(const PropertyMap &pm, const Key &k) {
+    inline const Value get(const PropertyMap &pm, const Key &k) {
         return pm.find(k)->second;
     }
 
@@ -364,12 +337,13 @@ struct read_write_property_map {
         pm[k] = v;
     }
 
-    inline PropertyMap initMap(const KeyList &kl, const Value &v) {
+    inline PropertyMap initMap(KeyListIterator kl_it,
+                               KeyListIterator kl_end,
+                               const Value &v) {
         auto result = PropertyMap();
-        auto begin = iterBegin(kl), end = iterEnd(kl);
         BENCHD("initMap",
-        for (auto k_it = begin; k_it != end; ++k_it) {
-            put(result, iterUnpack(k_it), v);
+        for (; kl_it != kl_end; iterNext(kl_it)) {
+            put(result, iterUnpack(kl_it), v);
         })
 
         return result;
@@ -392,9 +366,9 @@ struct two_bit_color_map {
     inline Color gray() { return boost::two_bit_gray; }
     inline Color black() { return boost::two_bit_black; }
 
-    // TODO: pass graph
+    // TODO: pass graph?
     private:
-    typedef typename boost::vec_adj_list_vertex_id_map<boost::no_property, unsigned long> IndexMap;
+    typedef typename boost::vec_adj_list_vertex_id_map<boost::no_property, Key> IndexMap;
     typedef typename boost::property_traits<IndexMap> Traits;
     
     public:
@@ -405,7 +379,7 @@ struct two_bit_color_map {
     _iterUnpack iterUnpack;
 
     // TODO: fix
-    inline void put(const ColorPropertyMap &cm, const typename Traits::key_type &key, const Color v) {
+    inline void put(const ColorPropertyMap &cm, const Key &key, const Color v) {
         typename Traits::value_type k = boost::get(cm.index, key);
         size_t byte_num = k / 4;
         size_t bit_position = ((k % 4) * 2);
@@ -671,7 +645,7 @@ struct priority_queue {
 
     inline void pop(PriorityQueue &pq) { pq.pop(); }
 
-    A front(const PriorityQueue &pq) {
+    A front(const PriorityQueue &pq) const {
         return pq.front();
     }
 };
@@ -707,6 +681,26 @@ struct triplet {
     inline C third(const Triplet &triplet) { return std::get<2>(triplet); }
 };
 
+// while_loop cpp
+template <typename _Context, typename _Iterator, typename _State,
+          class _iterNext, class _step>
+struct for_iterator_loop {
+    typedef _State State;
+    typedef _Context Context;
+    typedef _Iterator Iterator;
+
+    _iterNext iterNext;
+    _step step;
+
+    inline __attribute__((always_inline)) void forLoopRepeat(Iterator itr,
+                                                             const Iterator &end_itr,
+                                                             State &state,
+                                                             const Context &context) {
+        for (; itr != end_itr; iterNext(itr)) {
+            step(itr, end_itr, state, context);
+        }
+    }
+};
 
 template <typename _Context1, typename _Context2, typename _Iterator,
           typename _State1, typename _State2, typename _State3,
@@ -722,7 +716,7 @@ struct for_iterator_loop3_2 {
     _iterNext iterNext;
     _step step;
 
-    inline __attribute__((always_inline)) void forLoopRepeat(Iterator &itr,
+    inline __attribute__((always_inline)) void forLoopRepeat(Iterator itr,
                                                              const Iterator &end_itr,
                                                              State1 &s1,
                                                              State2 &s2,
@@ -749,7 +743,7 @@ struct for_parallel_iterator_loop3_2 {
     _iterNext iterNext;
     _step step;
 
-    inline __attribute__((always_inline)) void forLoopRepeat(Iterator &itr,
+    inline __attribute__((always_inline)) void forLoopRepeat(Iterator itr,
                                                              const Iterator &end_itr,
                                                              State1 &s1,
                                                              State2 &s2,

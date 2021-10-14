@@ -1,5 +1,6 @@
 package examples.bgl_v2.mg-src.dijkstra_utils
     imports examples.bgl_v2.mg-src.bfs
+          , examples.bgl_v2.mg-src.for_loop
           // TODO: the following line triggers a compiler bug if removed and
           //       we write 'require VertexListGraph', for instance.
           , examples.bgl_v2.mg-src.graph
@@ -22,8 +23,10 @@ implementation DijkstraVisitorBase = {
                 , A => StateWithMaps
                 ]; // TODO: the rest
 
-    use Relax[ Edge => EdgeDescriptor
-             , Vertex => VertexDescriptor
+    use Relax[ Edge => Edge
+             , EdgeDescriptor => EdgeDescriptor
+             , Vertex => Vertex
+             , VertexDescriptor => VertexDescriptor
              ];
 
     require function getVertexCostMap(s: StateWithMaps): VertexCostMap;
@@ -49,7 +52,7 @@ implementation DijkstraVisitorBase = {
         var vpm = getVertexPredecessorMap(swm);
         var ecm = getEdgeCostMap(swm);
 
-        call relax(e, ecm, vcm, vpm);
+        call relax(e, g, ecm, vcm, vpm);
 
         swm = putVertexPredecessorMap(vpm, putVertexCostMap(vcm, swm));
     }
@@ -64,55 +67,33 @@ implementation DijkstraVisitorBase = {
 
         var vcm = origVcm;
 
-        call relax(e, ecm, vcm, vpm);
+        call relax(e, g, ecm, vcm, vpm);
 
         if vcm == origVcm
         then skip // nothing changed
         else { // cost diminished or path changed
             swm = putVertexPredecessorMap(vpm, putVertexCostMap(vcm, swm));
-            pq = update(vcm, tgt(e), pq);
+            pq = update(vcm, tgt(e, g), pq);
         };
     }
 
     require VertexListGraph;
     require IncidenceGraph;
 
-    require Pair[ Pair => VertexPair
-                , A => VertexDescriptor
-                , B => VertexDescriptor
-                , makePair => makeVertexPair
-                ];
-    require List[ A => VertexPair
-                , List => VertexPairList
-                , empty => emptyVertexPairList
-                ];
+    use ForIteratorLoop[ Context => VertexDescriptor
+                       , Iterator => VertexIterator
+                       , State => VertexPredecessorMap
+                       , iterNext => vertexIterNext
+                       , step => populateVPMapLoopStep
+                       , forLoopRepeat => populateVPMapLoopRepeat
+                       ];
 
-    use WhileLoop[ Context => VertexDescriptor
-                 , State => PopulateVPMapState
-                 , cond => populateVPMapLoopCond
-                 , step => populateVPMapLoopStep
-                 , repeat => populateVPMapLoopRepeat
-                 ];
-
-    use Pair[ A => VertexPredecessorMap
-            , B => VertexList
-            , Pair => PopulateVPMapState
-            ];
-    
-    // TODO: vertex parameter is useless, what to do?
-    predicate populateVPMapLoopCond(state: PopulateVPMapState, s: Vertex) =
-        !isEmpty(second(state));
-
-    procedure populateVPMapLoopStep(upd state: PopulateVPMapState,
-                                    obs s: VertexDescriptor) {
-        var vpm = first(state);
-        var vertexList = second(state);
-        var v = head(vertexList);
-
-        call tail(vertexList);
+    procedure populateVPMapLoopStep(obs itr: VertexIterator,
+                                    obs endItr: VertexIterator,
+                                    upd vpm: VertexPredecessorMap,
+                                    obs vd: VertexDescriptor) {
+        var v = vertexIterUnpack(itr);
         call put(vpm, v, v);
-
-        state = makePair(vpm, vertexList);
     }
 
     require function emptyVPMap(): VertexPredecessorMap;
@@ -129,10 +110,9 @@ implementation DijkstraVisitorBase = {
         var vertexEnd: VertexIterator;
         call vertices(g, vertexBeg, vertexEnd);
 
-        var populateVPMapState = makePair(emptyVPMap(), vertices(g));
-        call populateVPMapLoopRepeat(populateVPMapState, start);
+        vpm = emptyVPMap();
 
-        vpm = first(populateVPMapState);
+        call populateVPMapLoopRepeat(vertexBeg, vertexEnd, vpm, start);
 
         var pq = emptyPriorityQueue(vcm);
         var swm = makeStateWithMaps(vcm, vpm, ecm);
@@ -161,167 +141,34 @@ implementation DijkstraVisitorBase = {
 implementation GenericDijkstraVisitor = {
     use DijkstraVisitorBase;
 
-    use BFSVisitorDefaultAction[ EdgeOrVertex => Vertex
+    use BFSVisitorDefaultAction[ EdgeOrVertex => VertexDescriptor
                                , defaultAction => discoverVertex
                                , Queue => PriorityQueue
                                , A => StateWithMaps
                                ];
-    use BFSVisitorDefaultAction[ EdgeOrVertex => Vertex
+    use BFSVisitorDefaultAction[ EdgeOrVertex => VertexDescriptor
                                , defaultAction => examineVertex
                                , Queue => PriorityQueue
                                , A => StateWithMaps
                                ];
-    use BFSVisitorDefaultAction[ EdgeOrVertex => Edge
+    use BFSVisitorDefaultAction[ EdgeOrVertex => EdgeDescriptor
                                , defaultAction => examineEdge
                                , Queue => PriorityQueue
                                , A => StateWithMaps
                                ];
-    use BFSVisitorDefaultAction[ EdgeOrVertex => Edge
+    use BFSVisitorDefaultAction[ EdgeOrVertex => EdgeDescriptor
                                , defaultAction => nonTreeEdge
                                , Queue => PriorityQueue
                                , A => StateWithMaps
                                ];
-    use BFSVisitorDefaultAction[ EdgeOrVertex => Edge
+    use BFSVisitorDefaultAction[ EdgeOrVertex => EdgeDescriptor
                                , defaultAction => blackTarget
                                , Queue => PriorityQueue
                                , A => StateWithMaps
                                ];
-    use BFSVisitorDefaultAction[ EdgeOrVertex => Vertex
+    use BFSVisitorDefaultAction[ EdgeOrVertex => VertexDescriptor
                                , defaultAction => finishVertex
                                , Queue => PriorityQueue
                                , A => StateWithMaps
                                ];
 }
-
-// TODO: just cast as program to generate
-implementation CppDijkstraVisitorImpl = {
-    use GenericDijkstraVisitor;
-
-    use CppColorMarker;
-    use CppList[ A => Edge
-               , List => EdgeList
-               , empty => emptyEdgeList
-               ];
-    use CppList[ A => Vertex
-               , List => VertexList
-               , empty => emptyVertexList
-               ];
-    use CppList[ A => VertexPair
-               , List => VertexPairList
-               , empty => emptyVertexPairList
-               ];
-    
-    use CppTriplet[ A => StateWithMaps
-                  , B => PriorityQueue
-                  , C => ColorPropertyMap
-                  , Triplet => OuterLoopState
-                  , makeTriplet => makeOuterLoopState
-                  ];
-
-    use CppTriplet[ A => VertexCostMap
-                  , B => VertexPredecessorMap
-                  , C => EdgeCostMap
-                  , Triplet => StateWithMaps
-                  , makeTriplet => makeStateWithMaps
-                  , first => getVertexCostMap
-                  , second => getVertexPredecessorMap
-                  , third => getEdgeCostMap
-                  ];
-
-    use CppPair[ A => OuterLoopState
-               , B => EdgeList
-               , Pair => InnerLoopState
-               , makePair => makeInnerLoopState
-               ];
-
-    use CppPair[ A => Graph
-               , B => Vertex
-               , Pair => InnerLoopContext
-               , makePair => makeInnerLoopContext
-               ];
-
-    use CppPair[ A => VertexPredecessorMap
-               , B => VertexList
-               , Pair => PopulateVPMapState
-               ];
-
-    use CppPair[ A => Vertex
-               , B => Vertex
-               , Pair => VertexPair
-               , makePair => makeVertexPair
-               ];
-
-    use CppUpdateablePriorityQueue[ A => Vertex
-                                  , Priority => Cost
-                                  , PriorityMap => VertexCostMap
-                                  , empty => emptyPriorityQueue
-                                  , isEmpty => isEmptyQueue
-                                  ];
-    //use CppUpdateablePriorityQueue[ A => CostAndVertex ];
-    use CppWhileLoop[ Context => Graph
-                    , State => OuterLoopState
-                    , cond => bfsOuterLoopCond
-                    , step => bfsOuterLoopStep
-                    , repeat => bfsOuterLoopRepeat
-                    ];
-
-    use CppWhileLoop[ Context => InnerLoopContext
-                    , State => InnerLoopState
-                    , cond => bfsInnerLoopCond
-                    , step => bfsInnerLoopStep
-                    , repeat => bfsInnerLoopRepeat
-                    ];
-
-    use CppWhileLoop[ Context => Vertex
-                    , State => PopulateVPMapState
-                    , cond => populateVPMapLoopCond
-                    , step => populateVPMapLoopStep
-                    , repeat => populateVPMapLoopRepeat
-                    ];
-
-    use CppReadWritePropertyMapWithInitList[ Key => Vertex
-                                           , KeyList => VertexList
-                                           , Value => Color
-                                           , PropertyMap => ColorPropertyMap
-                                           , emptyKeyList => emptyVertexList
-                                           ];
-
-    use CppReadWritePropertyMapWithInitList[ Key => Edge
-                                           , KeyList => EdgeList
-                                           , Value => Cost
-                                           , PropertyMap => EdgeCostMap
-                                           , emptyKeyList => emptyEdgeList
-                                           , emptyMap => emptyECMap
-                                           ];
-    
-    use CppReadWritePropertyMapWithInitList[ Key => Vertex
-                                           , KeyList => VertexList
-                                           , Value => Vertex
-                                           , PropertyMap => VertexPredecessorMap
-                                           , emptyKeyList => emptyVertexList
-                                           , emptyMap => emptyVPMap
-                                           ];
-
-    use CppReadWritePropertyMapWithInitList[ Key => Vertex
-                                           , KeyList => VertexList
-                                           , Value => Cost
-                                           , PropertyMap => VertexCostMap
-                                           , emptyKeyList => emptyVertexList
-                                           , emptyMap => emptyVCMap
-                                           ];
-
-    use CppBaseTypes;
-    use CppBaseFloatOps[ Float => Cost ];
-    use CppEdge;
-    // CppIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
-    // and VertexListGraph.
-    use CppIncidenceAndVertexListGraph[ consEdgeList => cons
-                                      , consVertexList => cons
-                                      , headEdgeList => head
-                                      , headVertexList => head
-                                      , isEmptyEdgeList => isEmpty
-                                      , isEmptyVertexList => isEmpty
-                                      , tailEdgeList => tail
-                                      , tailVertexList => tail
-                                      ];
-};

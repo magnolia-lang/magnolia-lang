@@ -5,7 +5,6 @@
 #include "base.hpp"
 #include "gen/examples/bgl_v2/mg-src/bgl_v2-cpp.hpp"
 
-/*
 namespace dijkstra {
 // Dijkstra test
 using examples::bgl_v2::mg_src::bgl_v2_cpp::CppDijkstraVisitor;
@@ -15,60 +14,60 @@ typedef CppDijkstraVisitor::Graph Graph;
 typedef CppDijkstraVisitor::Vertex Vertex;
 typedef CppDijkstraVisitor::VertexCostMap VertexCostMap;
 typedef CppDijkstraVisitor::EdgeCostMap EdgeCostMap;
+typedef CppDijkstraVisitor::VertexDescriptor VertexDescriptor;
+typedef CppDijkstraVisitor::VertexIterator VertexIterator;
 typedef CppDijkstraVisitor::VertexPredecessorMap VertexPredecessorMap;
 
 auto makeEdge = CppDijkstraVisitor::makeEdge;
-auto emptyVertexList = CppDijkstraVisitor::emptyVertexList;
-auto head = CppDijkstraVisitor::head;
-auto tail = CppDijkstraVisitor::tail;
 auto get = CppDijkstraVisitor::get;
 auto put = CppDijkstraVisitor::put;
+auto toEdgeDescriptor = CppDijkstraVisitor::toEdgeDescriptor;
+auto toVertexDescriptor = CppDijkstraVisitor::toVertexDescriptor;
 
 
-inline std::pair<std::list<CppDijkstraVisitor::Edge>, EdgeCostMap>
-        testEdgesWithCost() {
+inline void testGraphWithCost(Graph &g, EdgeCostMap &ecm) {
     std::list<CppDijkstraVisitor::Edge> edges;
-    EdgeCostMap edgeCostMap = CppDijkstraVisitor::emptyECMap();
+    ecm = CppDijkstraVisitor::emptyECMap();
 
     edges.push_back(makeEdge(0, 1));
-    put(edgeCostMap, makeEdge(0, 1), 0.5);
-
     edges.push_back(makeEdge(1, 2));
-    put(edgeCostMap, makeEdge(1, 2), 5.6);
-
     edges.push_back(makeEdge(1, 3));
-    put(edgeCostMap, makeEdge(1, 3), 0.2);
-    
     edges.push_back(makeEdge(3, 4));
-    put(edgeCostMap, makeEdge(3, 4), 0.1);
-    
     edges.push_back(makeEdge(0, 4));
-    put(edgeCostMap, makeEdge(0, 4), 3.2);
+
+    g = Graph(edges.begin(), edges.end(),
+              boost::graph_traits<Graph>::vertices_size_type(5));
+
+    put(ecm, toEdgeDescriptor(toVertexDescriptor(0, g), toVertexDescriptor(1, g), g), 0.5);
+    put(ecm, toEdgeDescriptor(toVertexDescriptor(1, g), toVertexDescriptor(2, g), g), 5.6);
+    put(ecm, toEdgeDescriptor(toVertexDescriptor(1, g), toVertexDescriptor(3, g), g), 0.2);
+    put(ecm, toEdgeDescriptor(toVertexDescriptor(3, g), toVertexDescriptor(4, g), g), 0.1);
+    put(ecm, toEdgeDescriptor(toVertexDescriptor(0, g), toVertexDescriptor(4, g), g), 3.2);
 
     // Some more tests
     //edges.push_back(makeEdge(0, 4));
-    //put(edgeCostMap, makeEdge(0, 4), 0.6);
+    ////put(ecm, makeEdge(0, 4), 0.6);
 
     //edges.push_back(makeEdge(4, 2));
-    //put(edgeCostMap, makeEdge(4, 2), 1.5);
-
-    return std::make_pair(edges, edgeCostMap);
+    ////put(ecm, makeEdge(4, 2), 1.5);
 }
 
 inline void dijkstraTest() {
     std::cout << "Dijkstra test:" << std::endl;
 
-    auto edges_and_edge_cost_map = testEdgesWithCost();
-    std::list<Edge> edges = edges_and_edge_cost_map.first;
-    EdgeCostMap ecm = edges_and_edge_cost_map.second;
+    Graph g;
+    EdgeCostMap ecm;
+    testGraphWithCost(g, ecm);
 
-    Graph g(edges, 10);
-    Vertex start = 0;
+    VertexDescriptor start = toVertexDescriptor(0, g);
     Cost start_cost = 0;
     Cost other_vertex_base_cost = 100.0;
 
+    VertexIterator itrStart, itrEnd;
+    CppDijkstraVisitor::vertices(g, itrStart, itrEnd);
+    
     VertexCostMap vcm = CppDijkstraVisitor::initMap(
-        CppDijkstraVisitor::vertices(g), other_vertex_base_cost);
+        itrStart, itrEnd, other_vertex_base_cost);
 
     VertexPredecessorMap vpm;
 
@@ -79,4 +78,4 @@ inline void dijkstraTest() {
         std::cout << "Distance to " << i << ": " << get(vcm, i) << std::endl; 
     }
 }
-}*/
+}

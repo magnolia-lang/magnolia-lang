@@ -34,6 +34,9 @@ implementation ExtIncidenceAndVertexListGraph = {
     use VertexListGraph;
 
     function toVertexDescriptor(v: Vertex, g: Graph): VertexDescriptor;
+    function toEdgeDescriptor(v1: VertexDescriptor,
+                              v2: VertexDescriptor,
+                              g: Graph): EdgeDescriptor;
 }
 
 implementation ExtList = signature(List);
@@ -66,7 +69,9 @@ implementation ExtReadWritePropertyMapWithInitList = {
     require function iterUnpack(kli: KeyListIterator): Key;
 
     function emptyMap(): PropertyMap;
-    // TODO: function initMap(kl: KeyList, v: Value): PropertyMap;
+    function initMap(klBeg: KeyListIterator,
+                     klEnd: KeyListIterator,
+                     v: Value): PropertyMap;
 }
 
 implementation ExtFIFOQueue = signature(FIFOQueue);
@@ -77,6 +82,7 @@ implementation ExtTriplet = signature(Triplet);
 
 implementation ExtVector = signature(Vector);
 
+implementation ExtForIteratorLoop = signature(ForIteratorLoop);
 implementation ExtForIteratorLoop3_2 = signature(ForIteratorLoop3_2);
 
 implementation ExtWhileLoop = signature(WhileLoop);
