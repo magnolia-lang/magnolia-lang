@@ -39,6 +39,17 @@ implementation ExtIncidenceAndVertexListGraph = {
                               g: Graph): EdgeDescriptor;
 }
 
+/*
+implementation ExtCustomIncidenceAndVertexListGraph = {
+    require type Vertex;
+
+    use IncidenceGraph;
+    use VertexListGraph;
+
+    function toVertexDescripor(v: Vertex, g: Graph): VertexDescriptor;
+    function toEdgeDescriptor(v1: VertexDescriptor,
+}*/
+
 implementation ExtList = signature(List);
 
 implementation ExtIterableList = signature(IterableList);

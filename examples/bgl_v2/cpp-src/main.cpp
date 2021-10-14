@@ -8,9 +8,9 @@
 int main() {
     //bfs::bfsTest();
     //dfs::dfsTest();
-    dijkstra::dijkstraTest();
-    //bfs::bfsPerfTest();
-    //bfsParallel::bfsParallelPerfTest();
+    //dijkstra::dijkstraTest();
+    bfs::bfsPerfTest();
+    bfsParallel::bfsParallelPerfTest();
     //bgl::testBgl();
     return 0;
 }

@@ -90,140 +90,232 @@ struct edge {
     }
 };*/
 
+template <typename _Edge, typename _EdgeIterator, typename _EdgeList,
+          typename _Vertex, typename _VertexIterator, typename _VertexList,
+          class _consEdgeList, class _consVertexList, class _edgeIterBegin,
+          class _edgeIterEnd, class _edgeIterNext, class _edgeIterUnpack,
+          class _emptyEdgeList, class _emptyVertexList, class _headEdgeList,
+          class _headVertexList, class _isEmptyEdgeList,
+          class _isEmptyVertexList, class _makeEdge, class _src,
+          class _tailEdgeList, class _tailVertexList, class _tgt,
+          class _vertexIterBegin, class _vertexIterEnd, class _vertexIterNext,
+          class _vertexIterUnpack>
+struct custom_incidence_and_vertex_list_graph {
+    typedef _Edge Edge;
+    typedef _EdgeIterator EdgeIterator;
+    typedef _EdgeList EdgeList;
+    typedef _Vertex Vertex;
+    typedef _VertexIterator VertexIterator;
+    typedef _VertexList VertexList;
+
+    typedef int VertexCount;
+
+    struct DirectedGraph {
+        VertexList vertices;
+        EdgeList *edges;
+        // TODO: spec somewhere we can always use vertices as unsigned int kinda
+
+        DirectedGraph(const std::list<Edge> &edges, size_t num_vertices) : edges(new EdgeList[num_vertices]) {
+            std::unordered_set<Vertex> _vertices;
+            std::unordered_set<Vertex> *unique_out_edges = new std::unordered_set<Vertex>[num_vertices];
+            for (auto edge_it = edges.begin(); edge_it != edges.end(); ++edge_it) {
+                //std::cout << src(*edge_it) << std::endl;
+                unique_out_edges[src(*edge_it)].insert(tgt(*edge_it));
+                _vertices.insert(src(*edge_it));
+                _vertices.insert(tgt(*edge_it));
+            }
+
+            for (auto vertex_it = _vertices.begin(); vertex_it != _vertices.end(); ++vertex_it) {
+                consVertexList(*vertex_it, this->vertices);
+            }
+            for (auto i = 0; i < num_vertices; ++i) {
+                for (auto vertex_it = unique_out_edges[i].begin(); vertex_it != unique_out_edges[i].end(); ++vertex_it) {
+                    consEdgeList(makeEdge(i, *vertex_it), this->edges[i]);
+                }
+            }
+
+            delete[] unique_out_edges;
+        }
+
+        bool operator==(const DirectedGraph &other) const = default;
+
+        // TODO
+    };
+
+    typedef DirectedGraph Graph;
+
+    static inline _consEdgeList consEdgeList;
+    static inline _consVertexList consVertexList;
+    static inline _edgeIterBegin edgeIterBegin;
+    static inline _edgeIterEnd edgeIterEnd;
+    static inline _edgeIterNext edgeIterNext;
+    static inline _emptyEdgeList emptyEdgeList;
+    static inline _emptyVertexList emptyVertexList;
+    static inline _makeEdge makeEdge;
+    static inline _src src;
+    static inline _tgt tgt;
+    static inline _vertexIterBegin vertexIterBegin;
+    static inline _vertexIterEnd vertexIterEnd;
+
+    inline void outEdges(const Vertex &v, const Graph &g, EdgeIterator &it_begin, EdgeIterator &it_end) {
+        it_begin = edgeIterBegin(g.edges[v]);
+        it_end = edgeIterEnd(g.edges[v]);
+    }
+
+    inline VertexCount outDegree(const Vertex &v, const Graph &g) {
+        /*auto outEdgesList = outEdges(v, g);
+        VertexCount result = 0;
+        while (!isEmptyEdgeList(outEdgesList)) {
+            tailEdgeList(outEdgesList);
+            result += 1;
+        }
+        return result;*/
+        return 0;
+    }
+
+    inline void vertices(const Graph &g, VertexIterator &it_begin, VertexIterator &it_end) {
+        it_begin = g.vertices.begin();
+        it_end = g.vertices.end();
+    }
+
+    inline VertexCount numVertices(const Graph &g) {
+        return g.vertices.size();
+    }
+};
+
+
 template <typename _Vertex>
-    struct incidence_and_vertex_list_graph {
-        typedef _Vertex Vertex;
-        typedef std::pair<Vertex, Vertex> Edge;
+struct incidence_and_vertex_list_graph {
+    typedef _Vertex Vertex;
+    typedef std::pair<Vertex, Vertex> Edge;
 
-        typedef boost::adjacency_list< boost::vecS, boost::vecS, boost::directedS > Graph;
-        typedef Graph::vertex_descriptor VertexDescriptor;
-        typedef Graph::edge_descriptor EdgeDescriptor;
+    typedef boost::adjacency_list< boost::vecS, boost::vecS, boost::directedS > Graph;
+    typedef Graph::vertex_descriptor VertexDescriptor;
+    typedef Graph::edge_descriptor EdgeDescriptor;
 
-        typedef Graph::out_edge_iterator EdgeIterator;
-        typedef Graph::vertex_iterator VertexIterator;
+    typedef Graph::out_edge_iterator EdgeIterator;
+    typedef Graph::vertex_iterator VertexIterator;
 
-        typedef std::list<EdgeDescriptor> EdgeList;
-        typedef std::list<VertexDescriptor> VertexList;
+    typedef std::list<EdgeDescriptor> EdgeList;
+    typedef std::list<VertexDescriptor> VertexList;
 
-        typedef int VertexCount;
+    typedef int VertexCount;
 
-        inline EdgeDescriptor toEdgeDescriptor(const VertexDescriptor &v1,
-                                               const VertexDescriptor &v2,
-                                               const Graph &g) {
-            auto edge_pair = boost::edge(v1, v2, g);
-            return boost::edge(v1, v2, g).first;
+    inline EdgeDescriptor toEdgeDescriptor(const VertexDescriptor &v1,
+                                           const VertexDescriptor &v2,
+                                           const Graph &g) {
+        auto edge_pair = boost::edge(v1, v2, g);
+        return boost::edge(v1, v2, g).first;
+    }
+
+    inline VertexDescriptor toVertexDescriptor(const Vertex &v, const Graph &g) {
+        return boost::vertex(v, g);
+    }
+
+    inline VertexDescriptor src(const EdgeDescriptor &ed, const Graph &g) {
+        return boost::source(ed, g);
+    }
+
+    inline VertexDescriptor tgt(const EdgeDescriptor &ed, const Graph &g) {
+        return boost::target(ed, g);
+    }
+
+    inline Edge makeEdge(const Vertex &v1, const Vertex& v2) {
+        return std::make_pair(v1, v2);
+    }
+
+    inline void edgeIterNext(EdgeIterator &it) { ++it; }
+    inline EdgeDescriptor edgeIterUnpack(const EdgeIterator &it) { return *it; }
+
+    inline void vertexIterNext(VertexIterator &it) { ++it; }
+    inline VertexDescriptor vertexIterUnpack(const VertexIterator &it) { return *it; }
+
+    inline void outEdges(const VertexDescriptor &v, const Graph &g, EdgeIterator &it_begin, EdgeIterator &it_end) {
+        boost::tie(it_begin, it_end) = boost::out_edges(v, g);
+    }
+
+    inline VertexCount outDegree(const VertexDescriptor &v, const Graph &g) {
+        /*auto outEdgesList = outEdges(v, g);
+        VertexCount result = 0;
+        while (!isEmptyEdgeList(outEdgesList)) {
+            tailEdgeList(outEdgesList);
+            result += 1;
         }
+        return result;*/
+        return 0;
+    }
 
-        inline VertexDescriptor toVertexDescriptor(const Vertex &v, const Graph &g) {
-            return boost::vertex(v, g);
-        }
+    inline void vertices(const Graph &g, VertexIterator &it_begin, VertexIterator &it_end) {
+        boost::tie(it_begin, it_end) = boost::vertices(g);
+    }
 
-        inline VertexDescriptor src(const EdgeDescriptor &ed, const Graph &g) {
-            return boost::source(ed, g);
-        }
+    inline VertexCount numVertices(const Graph &g) {
+        auto vs = boost::vertices(g);
+        return std::distance(vs.first, vs.second);
+        //.size();
+    }
+};
 
-        inline VertexDescriptor tgt(const EdgeDescriptor &ed, const Graph &g) {
-            return boost::target(ed, g);
-        }
+// list_cpp
+template <typename _A>
+struct list {
+    typedef _A A;
+    typedef std::list<A> List;
 
-        inline Edge makeEdge(const Vertex &v1, const Vertex& v2) {
-            return std::make_pair(v1, v2);
-        }
-
-        inline void edgeIterNext(EdgeIterator &it) { ++it; }
-        inline EdgeDescriptor edgeIterUnpack(const EdgeIterator &it) { return *it; }
-
-        inline void vertexIterNext(VertexIterator &it) { ++it; }
-        inline VertexDescriptor vertexIterUnpack(const VertexIterator &it) { return *it; }
-
-        inline void outEdges(const VertexDescriptor &v, const Graph &g, EdgeIterator &it_begin, EdgeIterator &it_end) {
-            boost::tie(it_begin, it_end) = boost::out_edges(v, g);
-        }
-
-        inline VertexCount outDegree(const VertexDescriptor &v, const Graph &g) {
-            /*auto outEdgesList = outEdges(v, g);
-            VertexCount result = 0;
-            while (!isEmptyEdgeList(outEdgesList)) {
-                tailEdgeList(outEdgesList);
-                result += 1;
-            }
-            return result;*/
-            return 0;
-        }
-
-        inline void vertices(const Graph &g, VertexIterator &it_begin, VertexIterator &it_end) {
-            boost::tie(it_begin, it_end) = boost::vertices(g);
-        }
-
-        inline VertexCount numVertices(const Graph &g) {
-            auto vs = boost::vertices(g);
-            return std::distance(vs.first, vs.second);
-            //.size();
-        }
-    };
-
-    // list_cpp
-    template <typename _A>
-    struct list {
-        typedef _A A;
-        typedef std::list<A> List;
-
-        inline List empty() { return List(); }
-        inline void cons(const A &a, List &l) { l.push_front(a); }
+    inline List empty() { return List(); }
+    inline void cons(const A &a, List &l) { l.push_front(a); }
         
-        inline const A& head(const List &l) {
-            return l.front();
-        }
-        inline void tail(List &l) { l.pop_front(); }
+    inline const A& head(const List &l) {
+        return l.front();
+    }
+    inline void tail(List &l) { l.pop_front(); }
         
-        inline bool isEmpty(const List &l) {
-            return l.empty();
+    inline bool isEmpty(const List &l) {
+        return l.empty();
+    }
+};
+
+// vector_cpp
+template <typename _A>
+struct vector {
+    typedef _A A;
+    typedef std::vector<A> Vector;
+
+    inline Vector empty() { return Vector(); }
+    inline void pushBack(const A &a, Vector &v) { v.push_back(a); }
+};
+
+
+template <typename _A>
+struct thread_safe_vector {
+    typedef _A A;
+    struct Vector {
+        std::vector<A> m_vec;
+        private:
+        mutable std::mutex m_mutex;
+        public:
+        Vector() : m_vec(), m_mutex() {};
+        Vector(const Vector &source) : m_vec(source.m_vec), m_mutex() {};
+        void push_back(const A &a) {
+            std::unique_lock<std::mutex> lock(m_mutex);
+            m_vec.push_back(a);
         }
+
+        // TODO: add iterators to vector
     };
 
-    // vector_cpp
-    template <typename _A>
-    struct vector {
-        typedef _A A;
-        typedef std::vector<A> Vector;
+    inline Vector empty() { return Vector(); }
+    inline void pushBack(const A &a, Vector &v) { v.push_back(a); }
+};
 
-        inline Vector empty() { return Vector(); }
-        inline void pushBack(const A &a, Vector &v) { v.push_back(a); }
-    };
+// list_cpp
+template <typename _A>
+struct iterable_list {
+    typedef _A A;
+    typedef std::list<A> List;
+    typedef typename std::list<A>::const_iterator ListIterator;
 
-
-    template <typename _A>
-    struct thread_safe_vector {
-        typedef _A A;
-        struct Vector {
-            std::vector<A> m_vec;
-            private:
-            mutable std::mutex m_mutex;
-
-            public:
-            Vector() : m_vec(), m_mutex() {};
-            Vector(const Vector &source) : m_vec(source.m_vec), m_mutex() {};
-
-            void push_back(const A &a) {
-                std::unique_lock<std::mutex> lock(m_mutex);
-                m_vec.push_back(a);
-            }
-
-            // TODO: add iterators to vector
-        };
-
-        inline Vector empty() { return Vector(); }
-        inline void pushBack(const A &a, Vector &v) { v.push_back(a); }
-    };
-
-    // list_cpp
-    template <typename _A>
-    struct iterable_list {
-        typedef _A A;
-        typedef std::list<A> List;
-        typedef typename std::list<A>::const_iterator ListIterator;
-
-        inline List empty() { return List(); }
+    inline List empty() { return List(); }
     inline void cons(const A &a, List &l) { l.push_front(a); }
 
     inline const A& head(const List &l) {
@@ -743,15 +835,15 @@ struct for_parallel_iterator_loop3_2 {
     _iterNext iterNext;
     _step step;
 
-    inline __attribute__((always_inline)) void forLoopRepeat(Iterator itr,
+    inline __attribute__((always_inline)) void forLoopRepeat(Iterator start_itr,
                                                              const Iterator &end_itr,
                                                              State1 &s1,
                                                              State2 &s2,
                                                              State3 &s3,
                                                              const Context1 &c1,
                                                              const Context2 &c2) {
-        #pragma omp parallel for
-        for (; itr != end_itr; iterNext(itr)) {
+        #pragma omp parallel for num_threads(3)
+        for (auto itr = start_itr; itr != end_itr; ++itr) { //iterNext(itr)) {
             step(itr, end_itr, s1, s2, s3, c1, c2);
         }
     }

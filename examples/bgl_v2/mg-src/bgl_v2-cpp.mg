@@ -57,6 +57,124 @@ program CppBFSTestVisitor = {
                  ];
 };
 
+
+program CppParallelBFSTestVisitor = {
+    use GenericBFSTestVisitor;
+
+    use CppThreadSafeFIFOQueue[ A => VertexDescriptor
+                              , isEmpty => isEmptyQueue
+                              ];
+
+    use CppWhileLoop3[ Context => Graph
+                     , State1 => VertexVector
+                     , State2 => FIFOQueue
+                     , State3 => ColorPropertyMap
+                     , cond => bfsOuterLoopCond
+                     , step => bfsOuterLoopStep
+                     , repeat => bfsOuterLoopRepeat
+                     ];
+
+    // TODO: technically, we only need to have an iterNext expression. In
+    // practice, for the sake of the example, we use openmp in the backend for
+    // our example, which requires the ability to write ++itr instead of
+    // iterNext(itr).
+    use CppForParallelIteratorLoop3_2[ Iterator => EdgeIterator
+                                     , Context1 => Graph
+                                     , Context2 => VertexDescriptor
+                                     , State1 => VertexVector
+                                     , State2 => FIFOQueue
+                                     , State3 => ColorPropertyMap
+                                     // must be equivalent to incrementation
+                                     , iterNext => edgeIterNext
+                                     , step => bfsInnerLoopStep
+                                     , forLoopRepeat => bfsInnerLoopRepeat
+                                     ];
+
+
+    use CppReadWriteColorMapWithInitList[ Key => VertexDescriptor
+                                        , KeyListIterator => VertexIterator
+                                        , iterNext => vertexIterNext
+                                        , iterUnpack => vertexIterUnpack
+                                        ];
+
+    use CppBaseTypes;
+
+    // CppIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
+    // and VertexListGraph.
+    use CppIncidenceAndVertexListGraph;
+
+    use CppPair[ A => EdgeIterator
+               , B => EdgeIterator
+               , Pair => EdgeIteratorRange
+               , first => iterRangeBegin
+               , second => iterRangeEnd
+               , makePair => makeEdgeIteratorRange
+               ];
+
+    use CppThreadSafeVector[ A => VertexDescriptor
+                           , Vector => VertexVector
+                           , empty => emptyVertexVector
+                           ];
+};
+
+
+/*
+program CppParallelBFSTestVisitor = {
+    use GenericBFSTestVisitor;
+
+    use CppFIFOQueue[ A => VertexDescriptor
+                    , isEmpty => isEmptyQueue
+                    ];
+
+    use CppWhileLoop3[ Context => Graph
+                     , State1 => VertexVector
+                     , State2 => FIFOQueue
+                     , State3 => ColorPropertyMap
+                     , cond => bfsOuterLoopCond
+                     , step => bfsOuterLoopStep
+                     , repeat => bfsOuterLoopRepeat
+                     ];
+
+    use CppForParallelIteratorLoop3_2[ Iterator => EdgeIterator
+                                     , Context1 => Graph
+                                     , Context2 => VertexDescriptor
+                                     , State1 => VertexVector
+                                     , State2 => FIFOQueue
+                                     , State3 => ColorPropertyMap
+                                     , iterNext => edgeIterNext
+                                     , step => bfsInnerLoopStep
+                                     , forLoopRepeat => bfsInnerLoopRepeat
+                                     ];
+
+
+    use CppReadWriteColorMapWithInitList[ Key => VertexDescriptor
+                                        , KeyListIterator => VertexIterator
+                                        , iterNext => vertexIterNext
+                                        , iterUnpack => vertexIterUnpack
+                                        ];
+
+    use CppBaseTypes;
+
+    // CppIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
+    // and VertexListGraph.
+    use CppIncidenceAndVertexListGraph;
+
+    use CppPair[ A => EdgeIterator
+               , B => EdgeIterator
+               , Pair => EdgeIteratorRange
+               , first => iterRangeBegin
+               , second => iterRangeEnd
+               , makePair => makeEdgeIteratorRange
+               ];
+
+    use CppVector[ A => VertexDescriptor
+                 , Vector => VertexVector
+                 , empty => emptyVertexVector
+                 ];
+};
+*/
+
+
 program CppDijkstraVisitor = {
     use GenericDijkstraVisitor;
 

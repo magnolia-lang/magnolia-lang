@@ -52,14 +52,17 @@ inline void bfsTest() {
     Graph g(edges.begin(), edges.end(), 7);
     VertexDescriptor start = toVertexDescriptor(0, g);
 
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     auto bfsResult =
         CppBFSTestVisitor::breadthFirstSearch(g, start, emptyVertexVector());
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
     for (auto vit = bfsResult.begin(); vit != bfsResult.end(); ++vit) {
         std::cout << *vit << " ";
     }
 
     std::cout << std::endl;
+    std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[ms]" << std::endl;
 }
 
 inline void bfsPerfTest() {
