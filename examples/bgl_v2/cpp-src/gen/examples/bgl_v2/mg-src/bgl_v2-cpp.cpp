@@ -21,11 +21,15 @@ namespace bgl_v2_cpp {
 
 
 
+    CppBFSTestVisitor::_vertexIterEnd CppBFSTestVisitor::vertexIterEnd;
+
+
+
     CppBFSTestVisitor::_vertexIterNext CppBFSTestVisitor::vertexIterNext;
 
 
 
-    two_bit_color_map<CppBFSTestVisitor::VertexDescriptor, CppBFSTestVisitor::VertexIterator, CppBFSTestVisitor::_vertexIterNext, CppBFSTestVisitor::_vertexIterUnpack> CppBFSTestVisitor::__two_bit_color_map;
+    two_bit_color_map<CppBFSTestVisitor::VertexDescriptor, CppBFSTestVisitor::VertexIterator, CppBFSTestVisitor::_vertexIterEnd, CppBFSTestVisitor::_vertexIterNext, CppBFSTestVisitor::_vertexIterUnpack> CppBFSTestVisitor::__two_bit_color_map;
 
     CppBFSTestVisitor::_vertexIterUnpack CppBFSTestVisitor::vertexIterUnpack;
 
@@ -83,6 +87,10 @@ namespace bgl_v2_cpp {
 
 
 
+    CppBFSTestVisitor::_edgeIterEnd CppBFSTestVisitor::edgeIterEnd;
+
+
+
     CppBFSTestVisitor::_edgeIterNext CppBFSTestVisitor::edgeIterNext;
 
 
@@ -131,7 +139,7 @@ namespace bgl_v2_cpp {
 
 
 
-    for_iterator_loop3_2<CppBFSTestVisitor::Graph, CppBFSTestVisitor::VertexDescriptor, CppBFSTestVisitor::EdgeIterator, CppBFSTestVisitor::VertexVector, CppBFSTestVisitor::FIFOQueue, CppBFSTestVisitor::ColorPropertyMap, CppBFSTestVisitor::_edgeIterNext, CppBFSTestVisitor::_bfsInnerLoopStep> CppBFSTestVisitor::__for_iterator_loop3_2;
+    for_iterator_loop3_2<CppBFSTestVisitor::Graph, CppBFSTestVisitor::VertexDescriptor, CppBFSTestVisitor::EdgeIterator, CppBFSTestVisitor::VertexVector, CppBFSTestVisitor::FIFOQueue, CppBFSTestVisitor::ColorPropertyMap, CppBFSTestVisitor::_edgeIterEnd, CppBFSTestVisitor::_edgeIterNext, CppBFSTestVisitor::_bfsInnerLoopStep> CppBFSTestVisitor::__for_iterator_loop3_2;
 
     CppBFSTestVisitor::_bfsInnerLoopStep CppBFSTestVisitor::bfsInnerLoopStep;
 
@@ -206,11 +214,15 @@ namespace bgl_v2_cpp {
 
 
 
+    CppDFSTestVisitor::_vertexIterEnd CppDFSTestVisitor::vertexIterEnd;
+
+
+
     CppDFSTestVisitor::_vertexIterNext CppDFSTestVisitor::vertexIterNext;
 
 
 
-    two_bit_color_map<CppDFSTestVisitor::VertexDescriptor, CppDFSTestVisitor::VertexIterator, CppDFSTestVisitor::_vertexIterNext, CppDFSTestVisitor::_vertexIterUnpack> CppDFSTestVisitor::__two_bit_color_map;
+    two_bit_color_map<CppDFSTestVisitor::VertexDescriptor, CppDFSTestVisitor::VertexIterator, CppDFSTestVisitor::_vertexIterEnd, CppDFSTestVisitor::_vertexIterNext, CppDFSTestVisitor::_vertexIterUnpack> CppDFSTestVisitor::__two_bit_color_map;
 
     CppDFSTestVisitor::_vertexIterUnpack CppDFSTestVisitor::vertexIterUnpack;
 
@@ -268,6 +280,10 @@ namespace bgl_v2_cpp {
 
 
 
+    CppDFSTestVisitor::_edgeIterEnd CppDFSTestVisitor::edgeIterEnd;
+
+
+
     CppDFSTestVisitor::_edgeIterNext CppDFSTestVisitor::edgeIterNext;
 
 
@@ -316,7 +332,7 @@ namespace bgl_v2_cpp {
 
 
 
-    for_iterator_loop3_2<CppDFSTestVisitor::Graph, CppDFSTestVisitor::VertexDescriptor, CppDFSTestVisitor::EdgeIterator, CppDFSTestVisitor::VertexVector, CppDFSTestVisitor::Stack, CppDFSTestVisitor::ColorPropertyMap, CppDFSTestVisitor::_edgeIterNext, CppDFSTestVisitor::_bfsInnerLoopStep> CppDFSTestVisitor::__for_iterator_loop3_2;
+    for_iterator_loop3_2<CppDFSTestVisitor::Graph, CppDFSTestVisitor::VertexDescriptor, CppDFSTestVisitor::EdgeIterator, CppDFSTestVisitor::VertexVector, CppDFSTestVisitor::Stack, CppDFSTestVisitor::ColorPropertyMap, CppDFSTestVisitor::_edgeIterEnd, CppDFSTestVisitor::_edgeIterNext, CppDFSTestVisitor::_bfsInnerLoopStep> CppDFSTestVisitor::__for_iterator_loop3_2;
 
     CppDFSTestVisitor::_bfsInnerLoopStep CppDFSTestVisitor::bfsInnerLoopStep;
 
@@ -387,6 +403,10 @@ namespace bgl_v2_cpp {
 
 
 
+    CppDijkstraVisitor::_vertexIterEnd CppDijkstraVisitor::vertexIterEnd;
+
+
+
     CppDijkstraVisitor::_vertexIterNext CppDijkstraVisitor::vertexIterNext;
 
 
@@ -405,13 +425,13 @@ namespace bgl_v2_cpp {
 
 
 
-    for_iterator_loop<CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::VertexIterator, CppDijkstraVisitor::VertexPredecessorMap, CppDijkstraVisitor::_vertexIterNext, CppDijkstraVisitor::_populateVPMapLoopStep> CppDijkstraVisitor::__for_iterator_loop;
+    for_iterator_loop<CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::VertexIterator, CppDijkstraVisitor::VertexPredecessorMap, CppDijkstraVisitor::_vertexIterEnd, CppDijkstraVisitor::_vertexIterNext, CppDijkstraVisitor::_populateVPMapLoopStep> CppDijkstraVisitor::__for_iterator_loop;
 
     CppDijkstraVisitor::_populateVPMapLoopStep CppDijkstraVisitor::populateVPMapLoopStep;
 
-    read_write_property_map<CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::VertexIterator, CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::_vertexIterNext, CppDijkstraVisitor::_vertexIterUnpack> CppDijkstraVisitor::__read_write_property_map1;
+    read_write_property_map<CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::VertexIterator, CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::_vertexIterEnd, CppDijkstraVisitor::_vertexIterNext, CppDijkstraVisitor::_vertexIterUnpack> CppDijkstraVisitor::__read_write_property_map1;
 
-    two_bit_color_map<CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::VertexIterator, CppDijkstraVisitor::_vertexIterNext, CppDijkstraVisitor::_vertexIterUnpack> CppDijkstraVisitor::__two_bit_color_map;
+    two_bit_color_map<CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::VertexIterator, CppDijkstraVisitor::_vertexIterEnd, CppDijkstraVisitor::_vertexIterNext, CppDijkstraVisitor::_vertexIterUnpack> CppDijkstraVisitor::__two_bit_color_map;
 
     CppDijkstraVisitor::_vertexIterUnpack CppDijkstraVisitor::vertexIterUnpack;
 
@@ -434,6 +454,10 @@ namespace bgl_v2_cpp {
     CppDijkstraVisitor::_vertices CppDijkstraVisitor::vertices;
 
     pair<CppDijkstraVisitor::EdgeIterator, CppDijkstraVisitor::EdgeIterator> CppDijkstraVisitor::__pair;
+
+
+
+    CppDijkstraVisitor::_edgeIterEnd CppDijkstraVisitor::edgeIterEnd;
 
 
 
@@ -513,9 +537,9 @@ namespace bgl_v2_cpp {
 
     CppDijkstraVisitor::_relax CppDijkstraVisitor::relax;
 
-    read_write_property_map<CppDijkstraVisitor::EdgeDescriptor, CppDijkstraVisitor::EdgeIterator, CppDijkstraVisitor::Cost, CppDijkstraVisitor::_edgeIterNext, CppDijkstraVisitor::_edgeIterUnpack> CppDijkstraVisitor::__read_write_property_map;
+    read_write_property_map<CppDijkstraVisitor::EdgeDescriptor, CppDijkstraVisitor::EdgeIterator, CppDijkstraVisitor::Cost, CppDijkstraVisitor::_edgeIterEnd, CppDijkstraVisitor::_edgeIterNext, CppDijkstraVisitor::_edgeIterUnpack> CppDijkstraVisitor::__read_write_property_map;
 
-    read_write_property_map<CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::VertexIterator, CppDijkstraVisitor::Cost, CppDijkstraVisitor::_vertexIterNext, CppDijkstraVisitor::_vertexIterUnpack> CppDijkstraVisitor::__read_write_property_map0;
+    read_write_property_map<CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::VertexIterator, CppDijkstraVisitor::Cost, CppDijkstraVisitor::_vertexIterEnd, CppDijkstraVisitor::_vertexIterNext, CppDijkstraVisitor::_vertexIterUnpack> CppDijkstraVisitor::__read_write_property_map0;
 
 
 
@@ -541,7 +565,7 @@ namespace bgl_v2_cpp {
 
 
 
-    for_iterator_loop3_2<CppDijkstraVisitor::Graph, CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::EdgeIterator, CppDijkstraVisitor::StateWithMaps, CppDijkstraVisitor::PriorityQueue, CppDijkstraVisitor::ColorPropertyMap, CppDijkstraVisitor::_edgeIterNext, CppDijkstraVisitor::_bfsInnerLoopStep> CppDijkstraVisitor::__for_iterator_loop3_2;
+    for_iterator_loop3_2<CppDijkstraVisitor::Graph, CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::EdgeIterator, CppDijkstraVisitor::StateWithMaps, CppDijkstraVisitor::PriorityQueue, CppDijkstraVisitor::ColorPropertyMap, CppDijkstraVisitor::_edgeIterEnd, CppDijkstraVisitor::_edgeIterNext, CppDijkstraVisitor::_bfsInnerLoopStep> CppDijkstraVisitor::__for_iterator_loop3_2;
 
     CppDijkstraVisitor::_bfsInnerLoopStep CppDijkstraVisitor::bfsInnerLoopStep;
 
@@ -664,11 +688,15 @@ namespace bgl_v2_cpp {
 
 
 
+    CppParallelBFSTestVisitor::_vertexIterEnd CppParallelBFSTestVisitor::vertexIterEnd;
+
+
+
     CppParallelBFSTestVisitor::_vertexIterNext CppParallelBFSTestVisitor::vertexIterNext;
 
 
 
-    two_bit_color_map<CppParallelBFSTestVisitor::VertexDescriptor, CppParallelBFSTestVisitor::VertexIterator, CppParallelBFSTestVisitor::_vertexIterNext, CppParallelBFSTestVisitor::_vertexIterUnpack> CppParallelBFSTestVisitor::__two_bit_color_map;
+    two_bit_color_map<CppParallelBFSTestVisitor::VertexDescriptor, CppParallelBFSTestVisitor::VertexIterator, CppParallelBFSTestVisitor::_vertexIterEnd, CppParallelBFSTestVisitor::_vertexIterNext, CppParallelBFSTestVisitor::_vertexIterUnpack> CppParallelBFSTestVisitor::__two_bit_color_map;
 
     CppParallelBFSTestVisitor::_vertexIterUnpack CppParallelBFSTestVisitor::vertexIterUnpack;
 
@@ -726,6 +754,10 @@ namespace bgl_v2_cpp {
 
 
 
+    CppParallelBFSTestVisitor::_edgeIterEnd CppParallelBFSTestVisitor::edgeIterEnd;
+
+
+
     CppParallelBFSTestVisitor::_edgeIterNext CppParallelBFSTestVisitor::edgeIterNext;
 
 
@@ -774,7 +806,7 @@ namespace bgl_v2_cpp {
 
 
 
-    for_parallel_iterator_loop3_2<CppParallelBFSTestVisitor::Graph, CppParallelBFSTestVisitor::VertexDescriptor, CppParallelBFSTestVisitor::EdgeIterator, CppParallelBFSTestVisitor::VertexVector, CppParallelBFSTestVisitor::FIFOQueue, CppParallelBFSTestVisitor::ColorPropertyMap, CppParallelBFSTestVisitor::_edgeIterNext, CppParallelBFSTestVisitor::_bfsInnerLoopStep> CppParallelBFSTestVisitor::__for_parallel_iterator_loop3_2;
+    for_parallel_iterator_loop3_2<CppParallelBFSTestVisitor::Graph, CppParallelBFSTestVisitor::VertexDescriptor, CppParallelBFSTestVisitor::EdgeIterator, CppParallelBFSTestVisitor::VertexVector, CppParallelBFSTestVisitor::FIFOQueue, CppParallelBFSTestVisitor::ColorPropertyMap, CppParallelBFSTestVisitor::_edgeIterEnd, CppParallelBFSTestVisitor::_edgeIterNext, CppParallelBFSTestVisitor::_bfsInnerLoopStep> CppParallelBFSTestVisitor::__for_parallel_iterator_loop3_2;
 
     CppParallelBFSTestVisitor::_bfsInnerLoopStep CppParallelBFSTestVisitor::bfsInnerLoopStep;
 

@@ -26,6 +26,7 @@ program CppBFSTestVisitor = {
                              , State1 => VertexVector
                              , State2 => FIFOQueue
                              , State3 => ColorPropertyMap
+                             , iterEnd => edgeIterEnd
                              , iterNext => edgeIterNext
                              , step => bfsInnerLoopStep
                              , forLoopRepeat => bfsInnerLoopRepeat
@@ -34,6 +35,7 @@ program CppBFSTestVisitor = {
     
     use CppReadWriteColorMapWithInitList[ Key => VertexDescriptor
                                         , KeyListIterator => VertexIterator
+                                        , iterEnd => vertexIterEnd
                                         , iterNext => vertexIterNext
                                         , iterUnpack => vertexIterUnpack
                                         ];
@@ -81,6 +83,7 @@ program CppDFSTestVisitor = {
                              , State1 => VertexVector
                              , State2 => Stack
                              , State3 => ColorPropertyMap
+                             , iterEnd => edgeIterEnd
                              , iterNext => edgeIterNext
                              , step => bfsInnerLoopStep
                              , forLoopRepeat => bfsInnerLoopRepeat
@@ -89,6 +92,7 @@ program CppDFSTestVisitor = {
 
     use CppReadWriteColorMapWithInitList[ Key => VertexDescriptor
                                         , KeyListIterator => VertexIterator
+                                        , iterEnd => vertexIterEnd
                                         , iterNext => vertexIterNext
                                         , iterUnpack => vertexIterUnpack
                                         ];
@@ -140,6 +144,7 @@ program CppParallelBFSTestVisitor = {
                                      , State1 => VertexVector
                                      , State2 => FIFOQueue
                                      , State3 => ColorPropertyMap
+                                     , iterEnd => edgeIterEnd
                                      // must be equivalent to incrementation
                                      , iterNext => edgeIterNext
                                      , step => bfsInnerLoopStep
@@ -149,6 +154,7 @@ program CppParallelBFSTestVisitor = {
 
     use CppReadWriteColorMapWithInitList[ Key => VertexDescriptor
                                         , KeyListIterator => VertexIterator
+                                        , iterEnd => vertexIterEnd
                                         , iterNext => vertexIterNext
                                         , iterUnpack => vertexIterUnpack
                                         ];
@@ -258,6 +264,7 @@ program CppDijkstraVisitor = {
                              , State1 => StateWithMaps
                              , State2 => PriorityQueue
                              , State3 => ColorPropertyMap
+                             , iterEnd => edgeIterEnd
                              , iterNext => edgeIterNext
                              , step => bfsInnerLoopStep
                              , forLoopRepeat => bfsInnerLoopRepeat
@@ -266,6 +273,7 @@ program CppDijkstraVisitor = {
     use CppForIteratorLoop[ Context => VertexDescriptor
                           , Iterator => VertexIterator
                           , State => VertexPredecessorMap
+                          , iterEnd => vertexIterEnd
                           , iterNext => vertexIterNext
                           , step => populateVPMapLoopStep
                           , forLoopRepeat => populateVPMapLoopRepeat
@@ -273,6 +281,7 @@ program CppDijkstraVisitor = {
 
     use CppReadWriteColorMapWithInitList[ Key => VertexDescriptor
                                         , KeyListIterator => VertexIterator
+                                        , iterEnd => vertexIterEnd
                                         , iterNext => vertexIterNext
                                         , iterUnpack => vertexIterUnpack
                                         ];
@@ -283,6 +292,7 @@ program CppDijkstraVisitor = {
                                            , Value => Cost
                                            , PropertyMap => EdgeCostMap
                                            , emptyMap => emptyECMap
+                                           , iterEnd => edgeIterEnd
                                            , iterNext => edgeIterNext
                                            , iterUnpack => edgeIterUnpack
                                            ];
@@ -292,6 +302,7 @@ program CppDijkstraVisitor = {
                                            , Value => VertexDescriptor
                                            , PropertyMap => VertexPredecessorMap
                                            , emptyMap => emptyVPMap
+                                           , iterEnd => vertexIterEnd
                                            , iterNext => vertexIterNext
                                            , iterUnpack => vertexIterUnpack
                                            ];
@@ -301,6 +312,7 @@ program CppDijkstraVisitor = {
                                            , Value => Cost
                                            , PropertyMap => VertexCostMap
                                            , emptyMap => emptyVCMap
+                                           , iterEnd => vertexIterEnd
                                            , iterNext => vertexIterNext
                                            , iterUnpack => vertexIterUnpack
                                            ];

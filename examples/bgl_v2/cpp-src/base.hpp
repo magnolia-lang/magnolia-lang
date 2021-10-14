@@ -194,8 +194,8 @@ struct incidence_and_vertex_list_graph {
     typedef Graph::vertex_descriptor VertexDescriptor;
     typedef Graph::edge_descriptor EdgeDescriptor;
 
-    typedef Graph::out_edge_iterator EdgeIterator;
-    typedef Graph::vertex_iterator VertexIterator;
+    typedef std::pair<Graph::out_edge_iterator, Graph::out_edge_iterator> EdgeIterator;
+    typedef std::pair<Graph::vertex_iterator, Graph::vertex_iterator> VertexIterator;
 
     typedef std::list<EdgeDescriptor> EdgeList;
     typedef std::list<VertexDescriptor> VertexList;
@@ -225,14 +225,16 @@ struct incidence_and_vertex_list_graph {
         return std::make_pair(v1, v2);
     }
 
-    inline void edgeIterNext(EdgeIterator &it) { ++it; }
-    inline EdgeDescriptor edgeIterUnpack(const EdgeIterator &it) { return *it; }
+    inline bool edgeIterEnd(const EdgeIterator &it) { return it.first == it.second; }
+    inline void edgeIterNext(EdgeIterator &it) { ++(it.first); }
+    inline EdgeDescriptor edgeIterUnpack(const EdgeIterator &it) { return *(it.first); }
 
-    inline void vertexIterNext(VertexIterator &it) { ++it; }
-    inline VertexDescriptor vertexIterUnpack(const VertexIterator &it) { return *it; }
+    inline bool vertexIterEnd(const VertexIterator &it) { return it.first == it.second; }
+    inline void vertexIterNext(VertexIterator &it) { ++(it.first); }
+    inline VertexDescriptor vertexIterUnpack(const VertexIterator &it) { return *(it.first); }
 
-    inline void outEdges(const VertexDescriptor &v, const Graph &g, EdgeIterator &it_begin, EdgeIterator &it_end) {
-        boost::tie(it_begin, it_end) = boost::out_edges(v, g);
+    inline void outEdges(const VertexDescriptor &v, const Graph &g, EdgeIterator &itr) {
+        itr = boost::out_edges(v, g);
     }
 
     inline VertexCount outDegree(const VertexDescriptor &v, const Graph &g) {
@@ -246,8 +248,8 @@ struct incidence_and_vertex_list_graph {
         return 0;
     }
 
-    inline void vertices(const Graph &g, VertexIterator &it_begin, VertexIterator &it_end) {
-        boost::tie(it_begin, it_end) = boost::vertices(g);
+    inline void vertices(const Graph &g, VertexIterator &itr) {
+        itr = boost::vertices(g);
     }
 
     inline VertexCount numVertices(const Graph &g) {
@@ -410,13 +412,15 @@ struct thread_safe_iterable_list {
 
 // property_map_cpp
 template <typename _Key, typename _KeyListIterator,
-          typename _Value, class _iterNext, class _iterUnpack>
+          typename _Value, class _iterEnd,
+          class _iterNext, class _iterUnpack>
 struct read_write_property_map {
     typedef _Key Key;
     typedef _KeyListIterator KeyListIterator;
     typedef _Value Value;
     typedef std::map<Key, Value> PropertyMap;
 
+    static inline _iterEnd iterEnd;
     static inline _iterNext iterNext;
     static inline _iterUnpack iterUnpack;
 
@@ -430,13 +434,12 @@ struct read_write_property_map {
         pm[k] = v;
     }
 
-    inline PropertyMap initMap(KeyListIterator kl_it,
-                               KeyListIterator kl_end,
+    inline PropertyMap initMap(KeyListIterator itr,
                                const Value &v) {
         auto result = PropertyMap();
         BENCHD("initMap",
-        for (; kl_it != kl_end; iterNext(kl_it)) {
-            put(result, iterUnpack(kl_it), v);
+        for (; !iterEnd(itr); iterNext(itr)) {
+            put(result, iterUnpack(itr), v);
         })
 
         return result;
@@ -448,7 +451,7 @@ struct read_write_property_map {
 
 
 template <typename _Key, typename _KeyListIterator,
-          class _iterNext, class _iterUnpack>
+          class _iterEnd, class _iterNext, class _iterUnpack>
 struct two_bit_color_map {
     typedef _Key Key;
     typedef _KeyListIterator KeyListIterator;
@@ -468,6 +471,7 @@ struct two_bit_color_map {
     typedef typename boost::two_bit_color_map<IndexMap>
             ColorPropertyMap;
 
+    _iterEnd iterEnd;
     _iterNext iterNext;
     _iterUnpack iterUnpack;
 
@@ -487,23 +491,22 @@ struct two_bit_color_map {
         return Color((cm.data[byte_num] >> bit_position) & 3);
     }
 
-    inline ColorPropertyMap initMap(KeyListIterator kl_it,
-                                    KeyListIterator kl_end,
+    inline ColorPropertyMap initMap(KeyListIterator itr,
                                     const Color &v) {
-        size_t distance = ([this](KeyListIterator first, KeyListIterator last) {
+        size_t distance = ([this](KeyListIterator _itr) {
                 size_t difference = 0;
-                while (first != last) {
+                while (!iterEnd(_itr)) {
                     ++difference;
-                    iterNext(first);
+                    iterNext(_itr);
                 }
                 return difference;
-            })(kl_it, kl_end);
+            })(itr);
         auto result =
             boost::make_two_bit_color_map<IndexMap>(
                 distance,
                 IndexMap());
-        for (; kl_it != kl_end; iterNext(kl_it)) {
-            put(result, iterUnpack(kl_it), v);
+        for (; !iterEnd(itr); iterNext(itr)) {
+            put(result, iterUnpack(itr), v);
         }
 
         return result;
@@ -787,28 +790,28 @@ struct triplet {
 
 // while_loop cpp
 template <typename _Context, typename _Iterator, typename _State,
-          class _iterNext, class _step>
+          class _iterEnd, class _iterNext, class _step>
 struct for_iterator_loop {
     typedef _State State;
     typedef _Context Context;
     typedef _Iterator Iterator;
-
+    
+    _iterEnd iterEnd;
     _iterNext iterNext;
     _step step;
 
     inline __attribute__((always_inline)) void forLoopRepeat(Iterator itr,
-                                                             const Iterator &end_itr,
                                                              State &state,
                                                              const Context &context) {
-        for (; itr != end_itr; iterNext(itr)) {
-            step(itr, end_itr, state, context);
+        for (; !iterEnd(itr); iterNext(itr)) {
+            step(itr, state, context);
         }
     }
 };
 
 template <typename _Context1, typename _Context2, typename _Iterator,
           typename _State1, typename _State2, typename _State3,
-          class _iterNext, class _step>
+          class _iterEnd, class _iterNext, class _step>
 struct for_iterator_loop3_2 {
     typedef _Context1 Context1;
     typedef _Context2 Context2;
@@ -817,25 +820,25 @@ struct for_iterator_loop3_2 {
     typedef _State2 State2;
     typedef _State3 State3;
 
+    _iterEnd iterEnd;
     _iterNext iterNext;
     _step step;
 
     inline __attribute__((always_inline)) void forLoopRepeat(Iterator itr,
-                                                             const Iterator &end_itr,
                                                              State1 &s1,
                                                              State2 &s2,
                                                              State3 &s3,
                                                              const Context1 &c1,
                                                              const Context2 &c2) {
-        for (; itr != end_itr; iterNext(itr)) {
-            step(itr, end_itr, s1, s2, s3, c1, c2);
+        for (; !iterEnd(itr); iterNext(itr)) {
+            step(itr, s1, s2, s3, c1, c2);
         }
     }
 };
 
 template <typename _Context1, typename _Context2, typename _Iterator,
           typename _State1, typename _State2, typename _State3,
-          class _iterNext, class _step>
+          class _iterEnd, class _iterNext, class _step>
 struct for_parallel_iterator_loop3_2 {
     typedef _Context1 Context1;
     typedef _Context2 Context2;
@@ -844,19 +847,19 @@ struct for_parallel_iterator_loop3_2 {
     typedef _State2 State2;
     typedef _State3 State3;
 
+    _iterEnd iterEnd;
     _iterNext iterNext;
     _step step;
 
     inline __attribute__((always_inline)) void forLoopRepeat(Iterator start_itr,
-                                                             const Iterator &end_itr,
                                                              State1 &s1,
                                                              State2 &s2,
                                                              State3 &s3,
                                                              const Context1 &c1,
                                                              const Context2 &c2) {
-        #pragma omp parallel for num_threads(3)
-        for (auto itr = start_itr; itr != end_itr; ++itr) { //iterNext(itr)) {
-            step(itr, end_itr, s1, s2, s3, c1, c2);
+        //#pragma omp parallel for num_threads(3)
+        for (auto itr = start_itr; !iterEnd(itr); ++(itr.first)) { //iterNext(itr)) {
+            step(itr, s1, s2, s3, c1, c2);
         }
     }
 };

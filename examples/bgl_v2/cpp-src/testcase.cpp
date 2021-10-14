@@ -2,7 +2,7 @@
 
 #include "testcase.hpp"
 
-/*
+
 std::pair<int, std::list<std::pair<int, int>>> gen_test_case() {
     int nb_vertices = NB_TEST_VERTICES, nb_edges = NB_TEST_EDGES;
     static std::list<std::pair<int, int>> edges;
@@ -21,9 +21,8 @@ std::pair<int, std::list<std::pair<int, int>>> gen_test_case() {
     }
     return std::make_pair(nb_vertices, edges);
 }
-*/
 
-
+/*
 std::pair<int, std::list<std::pair<int, int>>> gen_test_case() {
     int nb_vertices = NB_TEST_VERTICES, nb_edges = NB_TEST_EDGES;
     static std::list<std::pair<int, int>> edges;
@@ -41,4 +40,4 @@ std::pair<int, std::list<std::pair<int, int>>> gen_test_case() {
         //          << std::endl;
     }
     return std::make_pair(nb_vertices, edges);
-}
+}*/

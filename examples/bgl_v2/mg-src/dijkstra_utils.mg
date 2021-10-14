@@ -83,13 +83,13 @@ implementation DijkstraVisitorBase = {
     use ForIteratorLoop[ Context => VertexDescriptor
                        , Iterator => VertexIterator
                        , State => VertexPredecessorMap
+                       , iterEnd => vertexIterEnd
                        , iterNext => vertexIterNext
                        , step => populateVPMapLoopStep
                        , forLoopRepeat => populateVPMapLoopRepeat
                        ];
 
     procedure populateVPMapLoopStep(obs itr: VertexIterator,
-                                    obs endItr: VertexIterator,
                                     upd vpm: VertexPredecessorMap,
                                     obs vd: VertexDescriptor) {
         var v = vertexIterUnpack(itr);
@@ -106,17 +106,16 @@ implementation DijkstraVisitorBase = {
                                     out vpm: VertexPredecessorMap) {
         call put(vcm, start, initialCost);
 
-        var vertexBeg: VertexIterator;
-        var vertexEnd: VertexIterator;
-        call vertices(g, vertexBeg, vertexEnd);
+        var vertexItr: VertexIterator;
+        call vertices(g, vertexItr);
 
         vpm = emptyVPMap();
 
-        call populateVPMapLoopRepeat(vertexBeg, vertexEnd, vpm, start);
+        call populateVPMapLoopRepeat(vertexItr, vpm, start);
 
         var pq = emptyPriorityQueue(vcm);
         var swm = makeStateWithMaps(vcm, vpm, ecm);
-        var c = initMap(vertexBeg, vertexEnd, white());
+        var c = initMap(vertexItr, white());
 
         call breadthFirstVisit(g, start, swm, pq, c);
 

@@ -65,11 +65,11 @@ implementation ExtReadWriteColorMapWithInitList = {
     function gray(): Color;
 
     require type KeyListIterator;
+    require predicate iterEnd(kli: KeyListIterator);
     require procedure iterNext(upd kli: KeyListIterator);
     require function iterUnpack(kli: KeyListIterator): Key;
 
-    function initMap(klBeg: KeyListIterator,
-                     klEnd: KeyListIterator,
+    function initMap(kli: KeyListIterator,
                      v: Color): ColorPropertyMap;
 }
 
@@ -77,12 +77,12 @@ implementation ExtReadWritePropertyMapWithInitList = {
     use signature(ReadWritePropertyMap);
 
     require type KeyListIterator;
+    require predicate iterEnd(kli: KeyListIterator);
     require procedure iterNext(upd kli: KeyListIterator);
     require function iterUnpack(kli: KeyListIterator): Key;
 
     function emptyMap(): PropertyMap;
-    function initMap(klBeg: KeyListIterator,
-                     klEnd: KeyListIterator,
+    function initMap(kli: KeyListIterator,
                      v: Value): PropertyMap;
 }
 

@@ -63,11 +63,11 @@ inline void dijkstraTest() {
     Cost start_cost = 0;
     Cost other_vertex_base_cost = 100.0;
 
-    VertexIterator itrStart, itrEnd;
-    CppDijkstraVisitor::vertices(g, itrStart, itrEnd);
+    VertexIterator itr;
+    CppDijkstraVisitor::vertices(g, itr);
     
     VertexCostMap vcm = CppDijkstraVisitor::initMap(
-        itrStart, itrEnd, other_vertex_base_cost);
+        itr, other_vertex_base_cost);
 
     VertexPredecessorMap vpm;
 

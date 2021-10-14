@@ -34,10 +34,10 @@ concept Iterator = {
     type Iterator;
     require type A;
 
-    function iterBegin(itb: Iterable): Iterator;
+    function getIterator(itb: Iterable): Iterator;
     procedure iterNext(upd itr: Iterator);
-    function iterEnd(itb: Iterable): Iterator;
 
+    predicate iterEnd(itr: Iterator);
     function iterUnpack(itr: Iterator): A;
 }
 

@@ -95,7 +95,7 @@ implementation BFSVisit = {
                                 , Value => Color
                                 ];
 
-    require function initMap(vs: VertexIterator, ve: VertexIterator,
+    require function initMap(vitr: VertexIterator,
                              c: Color): ColorPropertyMap;
 
     procedure breadthFirstVisit(obs g: Graph,
@@ -120,7 +120,8 @@ implementation BFSVisit = {
                   , Context => Graph
                   ];
 
-    use ForIteratorLoop3_2[ iterNext => edgeIterNext
+    use ForIteratorLoop3_2[ iterEnd => edgeIterEnd
+                          , iterNext => edgeIterNext
                           , forLoopRepeat => bfsInnerLoopRepeat
                           , step => bfsInnerLoopStep
                           , Iterator => EdgeIterator
@@ -144,12 +145,11 @@ implementation BFSVisit = {
 
         call examineVertex(u, g, q, x);
 
-        var edgeItrBegin: EdgeIterator;
-        var edgeItrEnd: EdgeIterator;
+        var edgeItr: EdgeIterator;
         
-        call outEdges(u, g, edgeItrBegin, edgeItrEnd);
+        call outEdges(u, g, edgeItr);
 
-        call bfsInnerLoopRepeat(edgeItrBegin, edgeItrEnd, x, q, c, g, u);
+        call bfsInnerLoopRepeat(edgeItr, x, q, c, g, u);
 
         call put(c, u, black());
         call finishVertex(u, g, q, x);
@@ -161,7 +161,6 @@ implementation BFSVisit = {
     require function tgt(ed: EdgeDescriptor, g: Graph): VertexDescriptor;
 
     procedure bfsInnerLoopStep(obs edgeItr: EdgeIterator,
-                               obs edgeItrEnd: EdgeIterator,
                                upd x: A,
                                upd q: Queue,
                                upd c: ColorPropertyMap,
@@ -198,10 +197,9 @@ implementation BFSOrDFS = {
                     start: VertexDescriptor,
                     init: A): A = {
         var q = empty(): Queue;
-        var vertexBeg: VertexIterator;
-        var vertexEnd: VertexIterator;
-        call vertices(g, vertexBeg, vertexEnd);
-        var c = initMap(vertexBeg, vertexEnd, white());
+        var vertexItr: VertexIterator;
+        call vertices(g, vertexItr);
+        var c = initMap(vertexItr, white());
         var a = init;
 
         call breadthFirstVisit(g, start, a, q, c);

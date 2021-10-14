@@ -6,23 +6,22 @@ concept ForIteratorLoop = {
     require type Iterator;
 
     require procedure iterNext(upd itr: Iterator);
+    require predicate iterEnd(itr: Iterator);
     require procedure step(obs itr: Iterator,
-                           obs endItr: Iterator, // maybe not necessary?
                            upd state: State,
                            obs ctx: Context);
-    
     procedure forLoopRepeat(obs itr: Iterator,
-                            obs endItr: Iterator,
                             upd state: State,
                             obs ctx: Context);
 
-    axiom forIterationEnd(itr: Iterator, endItr: Iterator,
-                          state: State, ctx: Context) {
+    axiom forIterationEnd(itr: Iterator,
+                          state: State,
+                          ctx: Context) {
         var mut_state = state;
 
-        if itr == endItr
+        if iterEnd(itr)
         then {
-            call forLoopRepeat(itr, endItr, mut_state, ctx);
+            call forLoopRepeat(itr, mut_state, ctx);
             assert mut_state == state;
         } else skip;
     }
@@ -38,9 +37,9 @@ concept ForIteratorLoop3_2 = {
 
     require type Iterator;
 
+    require predicate iterEnd(itr: Iterator);
     require procedure iterNext(upd itr: Iterator);
     require procedure step(obs itr: Iterator,
-                           obs endItr: Iterator,
                            upd s1: State1,
                            upd s2: State2,
                            upd s3: State3,
@@ -48,7 +47,6 @@ concept ForIteratorLoop3_2 = {
                            obs ctx2: Context2);
 
     procedure forLoopRepeat(obs itr: Iterator,
-                            obs endItr: Iterator,
                             upd s1: State1,
                             upd s2: State2,
                             upd s3: State3,
@@ -64,16 +62,15 @@ concept ForIteratorLoop3_1 = {
 
     require type Iterator;
 
+    require predicate iterEnd(itr: Iterator);
     require procedure iterNext(upd itr: Iterator);
     require procedure step(obs itr: Iterator,
-                           obs endItr: Iterator,
                            upd s1: State1,
                            upd s2: State2,
                            upd s3: State3,
                            obs ctx1: Context1);
 
     procedure forLoopRepeat(obs itr: Iterator,
-                            obs endItr: Iterator,
                             upd s1: State1,
                             upd s2: State2,
                             upd s3: State3,
