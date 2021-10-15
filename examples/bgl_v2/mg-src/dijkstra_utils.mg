@@ -43,7 +43,7 @@ implementation DijkstraVisitorBase = {
     require function makeStateWithMaps(vcm: VertexCostMap,
                                        vpm: VertexPredecessorMap,
                                        ecm: EdgeCostMap): StateWithMaps;
-    procedure treeEdge(obs e: EdgeDescriptor,
+    /*procedure treeEdge(obs e: EdgeDescriptor,
                        obs g: Graph,
                        upd pq: PriorityQueue,
                        upd swm: StateWithMaps) {
@@ -55,9 +55,9 @@ implementation DijkstraVisitorBase = {
         call relax(e, g, ecm, vcm, vpm);
 
         swm = putVertexPredecessorMap(vpm, putVertexCostMap(vcm, swm));
-    }
+    }*/
 
-    procedure grayTarget(obs e: EdgeDescriptor,
+    procedure examineEdge(obs e: EdgeDescriptor,
                          obs g: Graph,
                          upd pq: PriorityQueue,
                          upd swm: StateWithMaps) {
@@ -151,7 +151,13 @@ implementation GenericDijkstraVisitor = {
                                , A => StateWithMaps
                                ];
     use BFSVisitorDefaultAction[ EdgeOrVertex => EdgeDescriptor
-                               , defaultAction => examineEdge
+                               , defaultAction => grayTarget
+                               , Queue => PriorityQueue
+                               , A => StateWithMaps
+                               ];
+
+    use BFSVisitorDefaultAction[ EdgeOrVertex => EdgeDescriptor
+                               , defaultAction => treeEdge //grayTarget
                                , Queue => PriorityQueue
                                , A => StateWithMaps
                                ];
