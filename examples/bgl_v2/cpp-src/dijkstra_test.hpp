@@ -34,6 +34,7 @@ inline void testGraphWithCost(Graph &g, EdgeCostMap &ecm) {
     edges.push_back(makeEdge(1, 3));
     edges.push_back(makeEdge(3, 4));
     edges.push_back(makeEdge(0, 4));
+    //edges.push_back(makeEdge(4, 2));
 
     g = Graph(edges.begin(), edges.end(),
               boost::graph_traits<Graph>::vertices_size_type(5));
@@ -43,13 +44,7 @@ inline void testGraphWithCost(Graph &g, EdgeCostMap &ecm) {
     put(ecm, toEdgeDescriptor(toVertexDescriptor(1, g), toVertexDescriptor(3, g), g), 0.2);
     put(ecm, toEdgeDescriptor(toVertexDescriptor(3, g), toVertexDescriptor(4, g), g), 0.1);
     put(ecm, toEdgeDescriptor(toVertexDescriptor(0, g), toVertexDescriptor(4, g), g), 3.2);
-
-    // Some more tests
-    //edges.push_back(makeEdge(0, 4));
-    ////put(ecm, makeEdge(0, 4), 0.6);
-
-    //edges.push_back(makeEdge(4, 2));
-    ////put(ecm, makeEdge(4, 2), 1.5);
+    //put(ecm, toEdgeDescriptor(toVertexDescriptor(4, g), toVertexDescriptor(2, g), g), 1.5);
 }
 
 inline void dijkstraTest() {
