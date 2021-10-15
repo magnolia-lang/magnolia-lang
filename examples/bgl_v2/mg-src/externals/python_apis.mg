@@ -18,8 +18,7 @@ implementation PyFIFOQueue = external Python base.fifo_queue ExtFIFOQueue;
 //    external Python base.thread_safe_fifo_queue ExtFIFOQueue;
 implementation PyUpdateablePriorityQueue =
     external Python base.priority_queue ExtUpdateablePriorityQueue;
-//implementation PyStack =
-//    external Python base.stack ExtStack;
+implementation PyStack = external Python base.stack ExtStack;
 implementation PyVector = external Python base.vector ExtVector;
 //implementation PyThreadSafeVector =
 //    external Python base.thread_safe_vector ExtVector;

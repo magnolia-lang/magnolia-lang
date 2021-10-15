@@ -61,7 +61,6 @@ program PyBFSTestVisitor = {
 };
 
 
-/*
 program PyDFSTestVisitor = {
     use GenericDFSTestVisitor;
 
@@ -118,7 +117,7 @@ program PyDFSTestVisitor = {
                  ];
 };
 
-
+/*
 program PyParallelBFSTestVisitor = {
     use GenericBFSTestVisitor;
 

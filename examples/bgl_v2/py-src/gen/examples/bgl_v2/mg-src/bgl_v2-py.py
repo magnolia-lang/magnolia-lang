@@ -9,6 +9,7 @@ from base import list_py
 from base import pair
 from base import priority_queue
 from base import read_write_property_map
+from base import stack
 from base import triplet
 from base import two_bit_color_map
 from base import vector
@@ -249,6 +250,242 @@ def PyBFSTestVisitor():
 
     __namedtuple = namedtuple("PyBFSTestVisitor", ["Color", "ColorPropertyMap", "Edge", "EdgeDescriptor", "EdgeIterator", "EdgeIteratorRange", "FIFOQueue", "Graph", "Int", "Vertex", "VertexCount", "VertexDescriptor", "VertexIterator", "VertexVector", "bfsInnerLoopRepeat", "bfsInnerLoopStep", "bfsOuterLoopCond", "bfsOuterLoopRepeat", "bfsOuterLoopStep", "black", "breadthFirstSearch", "breadthFirstVisit", "defaultAction", "edgeIterEnd", "edgeIterNext", "edgeIterUnpack", "empty", "emptyVertexVector", "examineVertex", "front", "get", "gray", "initMap", "isEmptyQueue", "iterRangeBegin", "iterRangeEnd", "makeEdge", "makeEdgeIteratorRange", "numVertices", "outDegree", "outEdges", "pop", "push", "pushBack", "pushPopBehavior", "put", "src", "tgt", "toEdgeDescriptor", "toVertexDescriptor", "vertexIterEnd", "vertexIterNext", "vertexIterUnpack", "vertices", "white"])
     return __namedtuple(Color, ColorPropertyMap, Edge, EdgeDescriptor, EdgeIterator, EdgeIteratorRange, FIFOQueue, Graph, Int, Vertex, VertexCount, VertexDescriptor, VertexIterator, VertexVector, bfsInnerLoopRepeat, bfsInnerLoopStep, bfsOuterLoopCond, bfsOuterLoopRepeat, bfsOuterLoopStep, black, breadthFirstSearch, breadthFirstVisit, defaultAction, edgeIterEnd, edgeIterNext, edgeIterUnpack, empty, emptyVertexVector, examineVertex, front, get, gray, initMap, isEmptyQueue, iterRangeBegin, iterRangeEnd, makeEdge, makeEdgeIteratorRange, numVertices, outDegree, outEdges, pop, push, pushBack, pushPopBehavior, put, src, tgt, toEdgeDescriptor, toVertexDescriptor, vertexIterEnd, vertexIterNext, vertexIterUnpack, vertices, white)
+
+
+def PyDFSTestVisitor():
+    overload = functools.partial(multiple_dispatch.overload, {})
+    @overload(return_type=None)
+    def emptyStackIsEmpty():
+        assert isEmptyStack(empty(return_type=Stack), return_type=bool)
+
+    __base_types = base_types()
+    Vertex = __base_types.Vertex
+    __incidence_and_vertex_list_graph = incidence_and_vertex_list_graph(Vertex)
+    VertexCount = __incidence_and_vertex_list_graph.VertexCount
+    VertexDescriptor = __incidence_and_vertex_list_graph.VertexDescriptor
+    __stack = stack(VertexDescriptor)
+    __vector = vector(VertexDescriptor)
+    VertexVector = __vector.Vector
+    @overload(return_type=VertexVector)
+    def emptyVertexVector():
+        return __vector.empty()
+
+    @overload(VertexDescriptor, VertexVector, return_type=None)
+    def pushBack(a, v):
+        return __vector.pushBack(a, v)
+
+    VertexIterator = __incidence_and_vertex_list_graph.VertexIterator
+    @overload(VertexIterator, return_type=bool)
+    def vertexIterEnd(ei):
+        return __incidence_and_vertex_list_graph.vertexIterEnd(ei)
+
+    @overload(VertexIterator, return_type=None)
+    def vertexIterNext(ei):
+        return __incidence_and_vertex_list_graph.vertexIterNext(ei)
+
+    @overload(VertexIterator, return_type=VertexDescriptor)
+    def vertexIterUnpack(ei):
+        return __incidence_and_vertex_list_graph.vertexIterUnpack(ei)
+
+    __two_bit_color_map = two_bit_color_map(VertexDescriptor, VertexIterator, vertexIterEnd, vertexIterNext, vertexIterUnpack)
+    Stack = __stack.Stack
+    @overload(return_type=Stack)
+    def empty():
+        return __stack.empty()
+
+    @overload(Stack, return_type=bool)
+    def isEmptyStack(s):
+        return __stack.isEmpty(s)
+
+    @overload(Stack, return_type=None)
+    def pop(s):
+        return __stack.pop(s)
+
+    @overload(VertexDescriptor, Stack, return_type=None)
+    def push(a, s):
+        return __stack.push(a, s)
+
+    @overload(Stack, VertexDescriptor, return_type=None)
+    def pushPopTopBehavior(s, a):
+        mut_s = s
+        push(a, mut_s, return_type=None)
+        assert (top(mut_s, return_type=VertexDescriptor)) == (a)
+        pop(mut_s, return_type=None)
+        assert (mut_s) == (s)
+
+    @overload(Stack, return_type=VertexDescriptor)
+    def top(s):
+        return __stack.top(s)
+
+    Int = __base_types.Int
+    Graph = __incidence_and_vertex_list_graph.Graph
+    @overload(VertexDescriptor, Graph, Stack, VertexVector, return_type=None)
+    def defaultAction(edgeOrVertex, g, q, a):
+        pass
+
+    @overload(Graph, VertexDescriptor, VertexVector, return_type=VertexVector)
+    def depthFirstSearch(g, start, init):
+        q = empty(return_type=Stack)
+        vertexItr = VertexIterator()
+        vertices(g, vertexItr, return_type=None)
+        c = initMap(vertexItr, white(return_type=Color), return_type=ColorPropertyMap)
+        a = init
+        breadthFirstVisit(g, start, a, q, c, return_type=None)
+        return a
+
+    @overload(VertexDescriptor, Graph, Stack, VertexVector, return_type=None)
+    def examineVertex(v, g, q, a):
+        pushBack(v, a, return_type=None)
+
+    @overload(Graph, return_type=VertexCount)
+    def numVertices(g):
+        return __incidence_and_vertex_list_graph.numVertices(g)
+
+    @overload(VertexDescriptor, Graph, return_type=VertexCount)
+    def outDegree(v, g):
+        return __incidence_and_vertex_list_graph.outDegree(v, g)
+
+    @overload(Vertex, Graph, return_type=VertexDescriptor)
+    def toVertexDescriptor(v, g):
+        return __incidence_and_vertex_list_graph.toVertexDescriptor(v, g)
+
+    @overload(Graph, VertexIterator, return_type=None)
+    def vertices(g, itr):
+        return __incidence_and_vertex_list_graph.vertices(g, itr)
+
+    EdgeIterator = __incidence_and_vertex_list_graph.EdgeIterator
+    __pair = pair(EdgeIterator, EdgeIterator)
+    EdgeIteratorRange = __pair.Pair
+    @overload(EdgeIterator, return_type=bool)
+    def edgeIterEnd(ei):
+        return __incidence_and_vertex_list_graph.edgeIterEnd(ei)
+
+    @overload(EdgeIterator, return_type=None)
+    def edgeIterNext(ei):
+        return __incidence_and_vertex_list_graph.edgeIterNext(ei)
+
+    @overload(EdgeIteratorRange, return_type=EdgeIterator)
+    def iterRangeBegin(p):
+        return __pair.first(p)
+
+    @overload(EdgeIteratorRange, return_type=EdgeIterator)
+    def iterRangeEnd(p):
+        return __pair.second(p)
+
+    @overload(EdgeIterator, EdgeIterator, return_type=EdgeIteratorRange)
+    def makeEdgeIteratorRange(a, b):
+        return __pair.makePair(a, b)
+
+    @overload(VertexDescriptor, Graph, EdgeIterator, return_type=None)
+    def outEdges(v, g, itr):
+        return __incidence_and_vertex_list_graph.outEdges(v, g, itr)
+
+    EdgeDescriptor = __incidence_and_vertex_list_graph.EdgeDescriptor
+    @overload(EdgeDescriptor, Graph, Stack, VertexVector, return_type=None)
+    def defaultAction(edgeOrVertex, g, q, a):
+        pass
+
+    @overload(EdgeIterator, return_type=EdgeDescriptor)
+    def edgeIterUnpack(ei):
+        return __incidence_and_vertex_list_graph.edgeIterUnpack(ei)
+
+    @overload(EdgeDescriptor, Graph, return_type=VertexDescriptor)
+    def src(e, g):
+        return __incidence_and_vertex_list_graph.src(e, g)
+
+    @overload(EdgeDescriptor, Graph, return_type=VertexDescriptor)
+    def tgt(e, g):
+        return __incidence_and_vertex_list_graph.tgt(e, g)
+
+    @overload(VertexDescriptor, VertexDescriptor, Graph, return_type=EdgeDescriptor)
+    def toEdgeDescriptor(v1, v2, g):
+        return __incidence_and_vertex_list_graph.toEdgeDescriptor(v1, v2, g)
+
+    Edge = __incidence_and_vertex_list_graph.Edge
+    @overload(Vertex, Vertex, return_type=Edge)
+    def makeEdge(s, t):
+        return __incidence_and_vertex_list_graph.makeEdge(s, t)
+
+    ColorPropertyMap = __two_bit_color_map.ColorPropertyMap
+    @overload(EdgeIterator, VertexVector, Stack, ColorPropertyMap, Graph, VertexDescriptor, return_type=None)
+    def bfsInnerLoopRepeat(itr, s1, s2, s3, ctx1, ctx2):
+        return __for_iterator_loop3_2.forLoopRepeat(itr, s1, s2, s3, ctx1, ctx2)
+
+    @overload(EdgeIterator, VertexVector, Stack, ColorPropertyMap, Graph, VertexDescriptor, return_type=None)
+    def bfsInnerLoopStep(edgeItr, x, q, c, g, u):
+        e = edgeIterUnpack(edgeItr, return_type=EdgeDescriptor)
+        v = tgt(e, g, return_type=VertexDescriptor)
+        defaultAction(e, g, q, x, return_type=None)
+        vc = get(c, v, return_type=Color)
+        if (vc) == (white(return_type=Color)):
+            if True:
+                defaultAction(e, g, q, x, return_type=None)
+                put(c, v, gray(return_type=Color), return_type=None)
+                defaultAction(v, g, q, x, return_type=None)
+                push(v, q, return_type=None)
+        else:
+            if (vc) == (gray(return_type=Color)):
+                if True:
+                    defaultAction(e, g, q, x, return_type=None)
+            else:
+                if True:
+                    defaultAction(e, g, q, x, return_type=None)
+
+    __for_iterator_loop3_2 = for_iterator_loop3_2(Graph, VertexDescriptor, EdgeIterator, VertexVector, Stack, ColorPropertyMap, edgeIterEnd, edgeIterNext, bfsInnerLoopStep)
+    @overload(VertexVector, Stack, ColorPropertyMap, Graph, return_type=bool)
+    def bfsOuterLoopCond(a, q, c, g):
+        return not isEmptyStack(q, return_type=bool)
+
+    @overload(VertexVector, Stack, ColorPropertyMap, Graph, return_type=None)
+    def bfsOuterLoopRepeat(s1, s2, s3, ctx):
+        return __while_loop3.repeat(s1, s2, s3, ctx)
+
+    @overload(VertexVector, Stack, ColorPropertyMap, Graph, return_type=None)
+    def bfsOuterLoopStep(x, q, c, g):
+        u = top(q, return_type=VertexDescriptor)
+        pop(q, return_type=None)
+        examineVertex(u, g, q, x, return_type=None)
+        edgeItr = EdgeIterator()
+        outEdges(u, g, edgeItr, return_type=None)
+        bfsInnerLoopRepeat(edgeItr, x, q, c, g, u, return_type=None)
+        put(c, u, black(return_type=Color), return_type=None)
+        defaultAction(u, g, q, x, return_type=None)
+
+    __while_loop3 = while_loop3(Graph, VertexVector, Stack, ColorPropertyMap, bfsOuterLoopCond, bfsOuterLoopStep)
+    @overload(Graph, VertexDescriptor, VertexVector, Stack, ColorPropertyMap, return_type=None)
+    def breadthFirstVisit(g, s, a, q, c):
+        defaultAction(s, g, q, a, return_type=None)
+        push(s, q, return_type=None)
+        put(c, s, gray(return_type=Color), return_type=None)
+        bfsOuterLoopRepeat(a, q, c, g, return_type=None)
+
+    Color = __two_bit_color_map.Color
+    @overload(return_type=Color)
+    def black():
+        return __two_bit_color_map.black()
+
+    @overload(ColorPropertyMap, VertexDescriptor, return_type=Color)
+    def get(pm, k):
+        return __two_bit_color_map.get(pm, k)
+
+    @overload(return_type=Color)
+    def gray():
+        return __two_bit_color_map.gray()
+
+    @overload(VertexIterator, Color, return_type=ColorPropertyMap)
+    def initMap(kli, v):
+        return __two_bit_color_map.initMap(kli, v)
+
+    @overload(ColorPropertyMap, VertexDescriptor, Color, return_type=None)
+    def put(pm, k, v):
+        return __two_bit_color_map.put(pm, k, v)
+
+    @overload(return_type=Color)
+    def white():
+        return __two_bit_color_map.white()
+
+    __namedtuple = namedtuple("PyDFSTestVisitor", ["Color", "ColorPropertyMap", "Edge", "EdgeDescriptor", "EdgeIterator", "EdgeIteratorRange", "Graph", "Int", "Stack", "Vertex", "VertexCount", "VertexDescriptor", "VertexIterator", "VertexVector", "bfsInnerLoopRepeat", "bfsInnerLoopStep", "bfsOuterLoopCond", "bfsOuterLoopRepeat", "bfsOuterLoopStep", "black", "breadthFirstVisit", "defaultAction", "depthFirstSearch", "edgeIterEnd", "edgeIterNext", "edgeIterUnpack", "empty", "emptyStackIsEmpty", "emptyVertexVector", "examineVertex", "get", "gray", "initMap", "isEmptyStack", "iterRangeBegin", "iterRangeEnd", "makeEdge", "makeEdgeIteratorRange", "numVertices", "outDegree", "outEdges", "pop", "push", "pushBack", "pushPopTopBehavior", "put", "src", "tgt", "toEdgeDescriptor", "toVertexDescriptor", "top", "vertexIterEnd", "vertexIterNext", "vertexIterUnpack", "vertices", "white"])
+    return __namedtuple(Color, ColorPropertyMap, Edge, EdgeDescriptor, EdgeIterator, EdgeIteratorRange, Graph, Int, Stack, Vertex, VertexCount, VertexDescriptor, VertexIterator, VertexVector, bfsInnerLoopRepeat, bfsInnerLoopStep, bfsOuterLoopCond, bfsOuterLoopRepeat, bfsOuterLoopStep, black, breadthFirstVisit, defaultAction, depthFirstSearch, edgeIterEnd, edgeIterNext, edgeIterUnpack, empty, emptyStackIsEmpty, emptyVertexVector, examineVertex, get, gray, initMap, isEmptyStack, iterRangeBegin, iterRangeEnd, makeEdge, makeEdgeIteratorRange, numVertices, outDegree, outEdges, pop, push, pushBack, pushPopTopBehavior, put, src, tgt, toEdgeDescriptor, toVertexDescriptor, top, vertexIterEnd, vertexIterNext, vertexIterUnpack, vertices, white)
 
 
 def PyDijkstraVisitor():

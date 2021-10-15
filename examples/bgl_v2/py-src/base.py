@@ -584,6 +584,45 @@ def fifo_queue(A):
 
     return fifo_queue_tuple(A, FIFOQueue, empty, isEmpty, pop, push, front)
 
+
+def stack(A):
+    class Stack:
+        def __init__(self):
+            self.stack = []
+
+        def isEmpty(self):
+            return not self.stack
+
+        def push(self, a: A):
+            self.stack.insert(0, a)
+
+        def pop(self):
+            self.stack = self.stack[1:]
+
+        def top(self):
+            return copy(self.stack[0])
+
+    def empty():
+        return Stack()
+
+    def isEmpty(s: Stack):
+        return s.isEmpty()
+
+    def push(a: A, s: Stack):
+        s.push(a)
+
+    def pop(s: Stack):
+        s.pop()
+
+    def top(s: Stack):
+        return s.top()
+
+    stack_tuple = namedtuple('stack',
+        ['A', 'Stack', 'empty', 'isEmpty', 'push', 'pop', 'top'])
+
+    return stack_tuple(A, Stack, empty, isEmpty, push, pop, top)
+
+
 def priority_queue(A, Priority, PriorityMap, get):
     class HeapNode:
         def __init__(self, element, prio):
