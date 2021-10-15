@@ -3,28 +3,23 @@ bgl_v2 = importlib.import_module('gen.examples.bgl_v2.mg-src.bgl_v2-py')
 
 PyBFSTestVisitor = bgl_v2.PyBFSTestVisitor()
 
-cons = PyBFSTestVisitor.cons
-emptyVertexList = PyBFSTestVisitor.emptyVertexList
-head = PyBFSTestVisitor.head
-isEmpty = PyBFSTestVisitor.isEmpty
+emptyVertexVector = PyBFSTestVisitor.emptyVertexVector
 make_edge = PyBFSTestVisitor.makeEdge
-tail = PyBFSTestVisitor.tail
+to_vertex_descriptor = PyBFSTestVisitor.toVertexDescriptor
 
 Graph = PyBFSTestVisitor.Graph
-EdgeList = PyBFSTestVisitor.EdgeList
 Vertex = PyBFSTestVisitor.Vertex
-VertexList = PyBFSTestVisitor.VertexList
 
 def test_edges():
-    edges = EdgeList()
+    edges = []
 
-    edges = cons(make_edge(Vertex(0), Vertex(1)), edges)
-    edges = cons(make_edge(Vertex(1), Vertex(2)), edges)
-    edges = cons(make_edge(Vertex(1), Vertex(3)), edges)
-    edges = cons(make_edge(Vertex(3), Vertex(4)), edges)
-    edges = cons(make_edge(Vertex(0), Vertex(4)), edges)
-    edges = cons(make_edge(Vertex(4), Vertex(5)), edges)
-    edges = cons(make_edge(Vertex(3), Vertex(6)), edges)
+    edges.append(make_edge(Vertex(0), Vertex(1)))
+    edges.append(make_edge(Vertex(1), Vertex(2)))
+    edges.append(make_edge(Vertex(1), Vertex(3)))
+    edges.append(make_edge(Vertex(3), Vertex(4)))
+    edges.append(make_edge(Vertex(0), Vertex(4)))
+    edges.append(make_edge(Vertex(4), Vertex(5)))
+    edges.append(make_edge(Vertex(3), Vertex(6)))
 
     return edges
 
@@ -34,15 +29,11 @@ def bfs_test():
 
     g = Graph(edges)
 
-    start = Vertex(0)
+    start = to_vertex_descriptor(Vertex(0), g)
 
     bfs_result = PyBFSTestVisitor.breadthFirstSearch(g, start,
-                                                     emptyVertexList());
+                                                     emptyVertexVector());
     
     ordered_nodes = list()
 
-    while not isEmpty(bfs_result):
-        ordered_nodes = [head(bfs_result)] + ordered_nodes
-        bfs_result = tail(bfs_result)
-
-    print(ordered_nodes)
+    print(bfs_result.vector)

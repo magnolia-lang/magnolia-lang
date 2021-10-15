@@ -1,6 +1,7 @@
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from copy import copy
 from enum import Enum
+import itertools
 from typing import List
 
 import heapq
@@ -111,7 +112,218 @@ def edge(Vertex):
                             ['Vertex', 'Edge', 'src', 'tgt', 'makeEdge'])
     return edge_tuple(Vertex, Edge, src, tgt, makeEdge)
 
-def incidence_and_vertex_list_graph(Edge, EdgeList, Vertex, VertexList,
+def incidence_and_vertex_list_graph(Vertex):
+    class Edge:
+        def __init__(self, source, target):
+            self.source, self.target = source, target
+
+        def mutate(self, other):
+            self.source, self.target = other.source, other.target
+
+    class EdgeDescriptor:
+        def __init__(self, source, target):
+            self.source, self.target = source, target
+
+        def mutate(self, other):
+            self.source, self.target = other.source, other.target
+
+        def __eq__(self, other):
+            return self.source == other.source and self.target == other.target
+
+        def __hash__(self):
+            return hash((self.source, self.target))
+
+    class EdgeIterator:
+        def __init__(self, *args):
+            if len(args) == 0:
+                pass
+            else:
+                itr = args[0]
+                self.itr = itr
+                self.is_end = False
+                self.value = None
+                self.next()
+
+        def __copy__(self):
+            cls = self.__class__
+            self.itr, copy_itr = itertools.tee(self.itr)
+            result = EdgeIterator()
+            result.itr = copy_itr
+            result.value = self.value
+            result.is_end = self.is_end
+            return result
+
+        def mutate(self, other):
+            self.itr = copy(other.itr)
+            self.is_end = other.is_end
+            self.value = other.value
+
+        def unpack(self):
+            assert not self.is_end, "can't unpack ended iterator"
+            return self.value
+
+        def next(self):
+            try:
+                self.value = next(self.itr)
+            except:
+                self.is_end = True
+                self.value = None
+
+    class VertexDescriptor:
+        def __init__(self, vertex):
+            self.vertex = vertex
+        
+        def mutate(self, other):
+            self.vertex = other.vertex
+
+        def __eq__(self, other):
+            return self.vertex == other.vertex
+
+        def __hash__(self):
+            return self.vertex.__hash__()
+
+        def __repr__(self):
+            return f'VertexDescriptor({self.vertex})'
+
+    class VertexIterator:
+        def __init__(self, *args): #itr):
+            if len(args) == 0:
+                pass
+            else:
+                itr = args[0]
+                self.itr = itr
+                self.is_end = False
+                self.value = None
+                self.next()
+
+        def mutate(self, other):
+            self.itr = copy(other.itr)
+            self.is_end = other.is_end
+            self.value = other.value
+
+        def unpack(self):
+            assert not self.is_end, "can't unpack ended iterator"
+            return self.value
+
+        def next(self):
+            try:
+                self.value = next(self.itr)
+            except:
+                self.is_end = True
+                self.value = None
+
+        def __copy__(self):
+            cls = self.__class__
+            self.itr, copy_itr = itertools.tee(self.itr)
+            result = VertexIterator()
+            result.itr = copy_itr
+            result.value = self.value
+            result.is_end = self.is_end
+            return result
+
+    class VertexCount:
+        def __init__(self, val):
+            self.val = val
+
+        def mutate(self, other):
+            self.val = other.val
+
+    class Graph:
+        def __init__(self, edge_list: List[Edge]):
+            # TODO: check if vertices are hashable, but for the moment (and the
+            #       poc), we don't care.
+            self.vertices = set()
+            self.out_edge_map = defaultdict(list)
+            for edge in edge_list:
+                source, target = (self.toVertexDescriptor(edge.source),
+                                  self.toVertexDescriptor(edge.target))
+                self.vertices.add(source)
+                self.vertices.add(target)
+                self.out_edge_map[source].append(
+                    self.toEdgeDescriptor(source, target))
+
+        def toVertexDescriptor(self, v: Vertex):
+            return VertexDescriptor(v)
+
+        def toEdgeDescriptor(self, v1: VertexDescriptor, v2: VertexDescriptor):
+            return EdgeDescriptor(v1, v2)
+
+        def out_edges(self, v: VertexDescriptor):
+            return EdgeIterator(iter(self.out_edge_map[v]))
+
+        def num_vertices(self):
+            return len(self.vertices)
+
+        def get_vertices(self):
+            return VertexIterator(iter(self.vertices))
+
+    def toEdgeDescriptor(v1: VertexDescriptor, v2: VertexDescriptor,
+                         g: Graph) -> EdgeDescriptor:
+        return g.toEdgeDescriptor(v1, v2)
+
+    def toVertexDescriptor(v: Vertex, g: Graph) -> VertexDescriptor:
+        return g.toVertexDescriptor(v)
+
+    def makeEdge(v1: Vertex, v2: Vertex):
+        return Edge(v1, v2)
+
+    def src(ed: EdgeDescriptor, g: Graph) -> VertexDescriptor:
+        return ed.source
+
+    def tgt(ed: EdgeDescriptor, g: Graph) -> VertexDescriptor:
+        return ed.target
+
+    def edgeIterEnd(itr: EdgeIterator) -> bool:
+        return itr.is_end
+
+    def edgeIterNext(itr: EdgeIterator):
+        itr.next()
+
+    def edgeIterUnpack(itr: EdgeIterator) -> EdgeDescriptor:
+        return itr.unpack()
+
+    def vertexIterEnd(itr: VertexIterator) -> bool:
+        return itr.is_end
+
+    def vertexIterNext(itr: VertexIterator):
+        itr.next()
+
+    def vertexIterUnpack(itr: VertexIterator) -> VertexDescriptor:
+        return itr.unpack()
+
+    def outEdges(v: VertexDescriptor, g: Graph, ei: EdgeIterator):
+        ei.mutate(g.out_edges(v))
+    
+    def outDegree(v: VertexDescriptor, g: Graph):
+        return 0 # TODO
+
+    def vertices(g: Graph, itr: VertexIterator):
+        itr.mutate(g.get_vertices())
+        x = g.get_vertices()
+        while not vertexIterEnd(x):
+            vertexIterNext(x)
+
+    def numVertices(g: Graph):
+        return g.num_vertices
+
+    incidence_and_vertex_list_graph_tuple = (
+        namedtuple('incidence_and_vertex_list_graph',
+                   ['Edge', 'EdgeDescriptor', 'EdgeIterator', 'Graph',
+                    'Vertex', 'VertexCount', 'VertexDescriptor',
+                    'VertexIterator', 'edgeIterEnd', 'edgeIterNext',
+                    'edgeIterUnpack', 'makeEdge', 'outDegree', 'outEdges',
+                    'src', 'tgt', 'toEdgeDescriptor', 'toVertexDescriptor',
+                    'vertexIterEnd', 'vertexIterNext', 'vertexIterUnpack',
+                    'vertices']))
+
+    return incidence_and_vertex_list_graph_tuple(
+        Edge, EdgeDescriptor, EdgeIterator, Graph, Vertex, VertexCount,
+        VertexDescriptor, VertexIterator, edgeIterEnd, edgeIterNext,
+        edgeIterUnpack, makeEdge, outDegree, outEdges, src, tgt,
+        toEdgeDescriptor, toVertexDescriptor, vertexIterEnd, vertexIterNext,
+        vertexIterUnpack, vertices)
+
+def custom_incidence_and_vertex_list_graph(Edge, EdgeList, Vertex, VertexList,
         consEdgeList, consVertexList, emptyEdgeList, emptyVertexList,
         headEdgeList, headVertexList, isEmptyEdgeList, isEmptyVertexList,
         makeEdge, src, tailEdgeList, tailVertexList, tgt):
@@ -165,8 +377,8 @@ def incidence_and_vertex_list_graph(Edge, EdgeList, Vertex, VertexList,
     def numVertices(g: Graph) -> VertexCount:
         return VertexCount(len(g.vertices))
     
-    incidence_and_vertex_list_graph_tuple = (
-        namedtuple('incidence_and_vertex_list_graph',
+    custom_incidence_and_vertex_list_graph_tuple = (
+        namedtuple('custom_incidence_and_vertex_list_graph',
                    ['Edge', 'EdgeList', 'Graph', 'Vertex', 'VertexCount',
                     'VertexList', 'consEdgeList', 'consVertexList',
                     'emptyEdgeList', 'emptyVertexList', 'headEdgeList',
@@ -174,7 +386,7 @@ def incidence_and_vertex_list_graph(Edge, EdgeList, Vertex, VertexList,
                     'makeEdge', 'src', 'tailEdgeList', 'tailVertexList', 'tgt',
                     'outEdges', 'outDegree', 'vertices', 'numVertices']))
     
-    return incidence_and_vertex_list_graph_tuple(
+    return custom_incidence_and_vertex_list_graph_tuple(
         Edge, EdgeList, Graph, Vertex, VertexCount, VertexList, consEdgeList,
         consVertexList, emptyEdgeList, emptyVertexList, headEdgeList,
         headVertexList, isEmptyEdgeList, isEmptyVertexList, makeEdge, src,
@@ -224,8 +436,26 @@ def list_py(A):
                                 'isEmpty'])
     return list_py_tuple(A, List, cons, empty, head, tail, isEmpty)
 
-def read_write_property_map(Key, KeyList, Value, cons, emptyKeyList,
-                            head, isEmpty, tail):
+def vector(A):
+    class Vector:
+        def __init__(self):
+            self.vector = []
+        
+        def push_back(self, a: A):
+            self.vector.append(a)
+
+    def empty():
+        return Vector()
+
+    def pushBack(a: A, v: Vector) -> Vector:
+        v.push_back(a)
+
+    vector_tuple = namedtuple('vector', ['A', 'Vector', 'empty', 'pushBack'])
+    return vector_tuple(A, Vector, empty, pushBack)
+
+def read_write_property_map(Key, KeyListIterator, Value,
+    iterEnd, iterNext, iterUnpack):
+    
     class PropertyMap:
         def __init__(self, _map):
             self.map = _map
@@ -235,18 +465,17 @@ def read_write_property_map(Key, KeyList, Value, cons, emptyKeyList,
 
         def put(self, k: Key, v: Value):
             self.map[k] = v
-            return self
 
         @classmethod
         def emptyMap(cls):
             return cls(dict())
 
         @classmethod
-        def initMap(cls, kl: KeyList, v: Value):
+        def initMap(cls, itr: KeyListIterator, v: Value):
             dic = dict()
-            while not isEmpty(kl):
-                dic[head(kl)] = v
-                kl = tail(kl)
+            while not iterEnd(itr):
+                dic[iterUnpack(itr)] = v
+                iterNext(itr)
             return cls(dic) #{k: v for k in kl})
 
         def mutate(self, pm2):
@@ -254,22 +483,65 @@ def read_write_property_map(Key, KeyList, Value, cons, emptyKeyList,
 
         def __repr__(self):
             return str(self.map)
+
     def get(pm: PropertyMap, k: Key):
         return copy(pm.get(k))
 
     def put(pm: PropertyMap, k: Key, v: Value):
-        _pm = copy(pm)
-        _pm.put(k, v)
-        return _pm
+        pm.put(k, v)
 
     read_write_property_map_tuple = (
         namedtuple('read_write_property_map',
-                   ['Key', 'KeyList', 'PropertyMap', 'Value', 'cons',
-                    'emptyKeyList', 'head', 'isEmpty', 'tail', 'emptyMap',
-                    'get', 'put', 'initMap']))
-    return read_write_property_map_tuple(Key, KeyList, PropertyMap, Value, cons,
-        emptyKeyList, head, isEmpty, tail, PropertyMap.emptyMap, get, put,
-        PropertyMap.initMap)
+                   ['Key', 'KeyListIterator', 'PropertyMap', 'Value',
+                    'emptyMap', 'get', 'put', 'initMap']))
+    return read_write_property_map_tuple(Key, KeyListIterator, PropertyMap,
+        Value, PropertyMap.emptyMap, get, put, PropertyMap.initMap)
+
+def two_bit_color_map(Key, KeyListIterator, iterEnd, iterNext, iterUnpack):
+
+    class Color(Enum):
+        WHITE = 1
+        GRAY = 2
+        BLACK = 3
+
+    def white():
+        return Color.WHITE
+
+    def gray():
+        return Color.GRAY
+
+    def black():
+        return Color.BLACK
+
+    class ColorPropertyMap:
+        def __init__(self):
+            self.map = dict()
+
+        def get(self, key):
+            return self.map[key]
+
+        def put(self, key, color):
+            self.map[key] = color
+
+    def get(cm: ColorPropertyMap, k: Key):
+        return cm.get(k)
+
+    def put(cm: ColorPropertyMap, k: Key, c: Color):
+        cm.put(k, c)
+
+    def initMap(itr: KeyListIterator, c: Color) -> ColorPropertyMap:
+        result = ColorPropertyMap()
+        while not iterEnd(itr):
+            put(result, iterUnpack(itr), c)
+            iterNext(itr)
+        return result
+
+    two_bit_color_map_tuple = namedtuple('two_bit_color_map',
+        ['Color', 'ColorPropertyMap', 'Key', 'KeyListIterator', 'get',
+         'put', 'gray', 'white', 'black', 'initMap'])
+
+    return two_bit_color_map_tuple(Color, ColorPropertyMap, Key,
+        KeyListIterator, get, put, gray, white, black, initMap)
 
 def fifo_queue(A):
     class FIFOQueue:
@@ -281,14 +553,12 @@ def fifo_queue(A):
 
         def push(self, a: A):
             self.queue.append(a)
-            return self
 
         def pop(self):
             self.queue = self.queue[1:]
-            return self
 
         def front(self):
-            return self.queue[0]
+            return copy(self.queue[0])
 
         def mutate(self, fq2):
             self.queue = copy(fq2.queue)
@@ -299,16 +569,14 @@ def fifo_queue(A):
     def isEmpty(q: FIFOQueue) -> bool:
         return q.isEmpty()
 
-    def pop(q: FIFOQueue) -> FIFOQueue:
-        _q = copy(q)
-        return _q.pop()
+    def pop(q: FIFOQueue):
+        q.pop()
 
     def push(a: A, q: FIFOQueue) -> FIFOQueue:
-        _q = copy(q)
-        return _q.push(a)
+        q.push(a)
 
     def front(q: FIFOQueue) -> A:
-        return copy(q.front())
+        return q.front()
 
     fifo_queue_tuple = namedtuple('fifo_queue',
                                   ['A', 'FIFOQueue', 'empty', 'isEmpty',
@@ -437,6 +705,57 @@ def triplet(A, B, C):
     return triplet_tuple(A, B, C, Triplet, first, second, third, makeTriplet)
 
 
+def for_iterator_loop(Context, Iterator, State, iterEnd, iterNext, step):
+    
+    def forLoopRepeat(in_itr: Iterator, s: State, ctx: Context):
+        itr = copy(in_itr)
+        while not iterEnd(itr):
+            step(itr, s, ctx)
+            iterNext(itr)
+
+    for_iterator_loop_tuple = namedtuple('for_iterator_loop',
+                            ['Context', 'Iterator', 'State', 'iterEnd',
+                             'iterNext', 'step', 'forLoopRepeat'])
+
+    return for_iterator_loop_tuple(Context, Iterator, State, iterEnd, iterNext,
+                                   step, forLoopRepeat)
+
+def for_iterator_loop3_2(Context1, Context2, Iterator,
+                         State1, State2, State3, iterEnd, iterNext, step):
+
+    def forLoopRepeat(in_itr: Iterator, s1: State1, s2: State2, s3: State3,
+                      ctx1: Context1, ctx2: Context2):
+        itr = copy(in_itr)
+        while not iterEnd(itr):
+            step(itr, s1, s2, s3, ctx1, ctx2)
+            iterNext(itr)
+
+    for_iterator_loop3_2_tuple = namedtuple('for_iterator_loop3_2',
+        ['Context1', 'Context2', 'Iterator',
+         'State1', 'State2', 'State3', 'iterEnd', 'iterNext', 'step',
+         'forLoopRepeat'])
+
+    return for_iterator_loop3_2_tuple(Context1, Context2, Iterator,
+        State1, State2, State3, iterEnd, iterNext, step, forLoopRepeat)
+
+# TODO: not really parallel, but here for sake of completion
+def for_parallel_iterator_loop3_2(Context1, Context2, Iterator,
+                         State1, State2, State3, iterEnd, iterNext, step):
+
+    def forLoopRepeat(in_itr: Iterator, s1: State1, s2: State2, s3: State3,
+                      ctx1: Context1, ctx2: Context2):
+        itr = copy(in_itr)
+        while not iterEnd(itr):
+            step(itr, s1, s2, s3, ctx1, ctx2)
+            iterNext(itr)
+
+    for_iterator_loop3_2_tuple('for_iterator_loop3_2',
+        ['Context1', 'Context2', 'Iterator',
+         'State1', 'State2', 'State3', 'iterEnd', 'iterNext', 'step'])
+
+    return for_iterator_loop_tuple(Context1, Context2, Iterator,
+        State1, State2, State3, iterEnd, iterNext, step)
+
 def while_loop(Context, State, cond, step):
     def repeat(state: State, context: Context):
         while cond(state, context):
@@ -446,3 +765,12 @@ def while_loop(Context, State, cond, step):
                                   ['Context', 'State', 'cond', 'step',
                                    'repeat'])
     return while_loop_tuple(Context, State, cond, step, repeat)
+
+def while_loop3(Context, State1, State2, State3, cond, step):
+    def repeat(s1: State1, s2: State2, s3: State3, context: Context):
+        while cond(s1, s2, s3, context):
+            step(s1, s2, s3, context)
+
+    while_loop_tuple = namedtuple('while_loop',
+        ['Context', 'State1', 'State2', 'State3', 'cond', 'step', 'repeat'])
+    return while_loop_tuple(Context, State1, State2, State3, cond, step, repeat)
