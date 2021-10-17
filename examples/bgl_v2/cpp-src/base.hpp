@@ -452,10 +452,10 @@ struct read_write_property_map {
     inline PropertyMap initMap(KeyListIterator itr,
                                const Value &v) {
         auto result = PropertyMap();
-        BENCHD("initMap",
+        //BENCHD("initMap",
         for (; !iterEnd(itr); iterNext(itr)) {
             put(result, iterUnpack(itr), v);
-        })
+        }//)
 
         return result;
     }
