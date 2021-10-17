@@ -11,7 +11,13 @@ implementation CppReadWriteColorMapWithInitList = external C++
 implementation CppReadWritePropertyMapWithInitList = external C++ base.read_write_property_map ExtReadWritePropertyMapWithInitList;
 implementation CppPair = external C++ base.pair ExtPair;
 implementation CppTriplet = external C++ base.triplet ExtTriplet;
-//implementation CppEdge = external C++ base.edge ExtEdge;
+implementation CppEdgeWithoutDescriptor = external C++ base.edge_without_descriptor
+    ExtEdgeWithoutDescriptor[ src => srcPlainEdge
+                            , tgt => tgtPlainEdge
+                            ];
+implementation CppCustomIncidenceAndVertexListGraph =
+    external C++ base.custom_incidence_and_vertex_list_graph
+        ExtCustomIncidenceAndVertexListGraph;
 implementation CppIncidenceAndVertexListGraph = external C++ base.incidence_and_vertex_list_graph ExtIncidenceAndVertexListGraph;
 implementation CppFIFOQueue = external C++ base.fifo_queue ExtFIFOQueue;
 implementation CppThreadSafeFIFOQueue =

@@ -1,6 +1,17 @@
 package examples.bgl_v2.mg-src.graph
     imports examples.bgl_v2.mg-src.list;
 
+concept EdgeWithoutDescriptor = {
+    require type Vertex;
+
+    type Edge;
+    
+    function src(e: Edge): Vertex;
+    function tgt(e: Edge): Vertex;
+
+    function makeEdge(s: Vertex, t: Vertex): Edge;
+}
+
 concept Edge = {
     require type Vertex;
     require type VertexDescriptor;

@@ -56,13 +56,9 @@ struct color_marker {
 };
 
 // graph_cpp
-/*
-template <typename _Vertex, typename _VertexDescriptor>
-struct edge {
+template <typename _Vertex>
+struct edge_without_descriptor {
     typedef _Vertex Vertex;
-    typedef _VertexDescriptor VertexDescriptor;
-
-    typedef boost::adjacency_list< boost::listS, boost::listS, boost::directedS >::edge_descriptor EdgeDescriptor;
 
     struct Edge {
         Vertex source;
@@ -82,24 +78,25 @@ struct edge {
         bool operator==(const Edge &other) const = default;
     };
 
-    inline const VertexDescriptor &src(const EdgeDescriptor &e) { return boost::source(e); }
-    inline const VertexDescriptor &tgt(const EdgeDescriptor &e) { return boost::target(e); }
-    inline const Vertex &src(const Edge &e) { return e.source; }
-    inline const Vertex &tgt(const Edge &e) { return e.target; }
+    inline const Vertex &srcPlainEdge(const Edge &e) { return e.source; }
+    inline const Vertex &tgtPlainEdge(const Edge &e) { return e.target; }
+
     inline Edge makeEdge(const Vertex &s, const Vertex &t) {
         return Edge(s, t);
     }
-};*/
+};
+
+//template <typename 
 
 template <typename _Edge, typename _EdgeIterator, typename _EdgeList,
           typename _Vertex, typename _VertexIterator, typename _VertexList,
-          class _consEdgeList, class _consVertexList, class _edgeIterBegin,
-          class _edgeIterEnd, class _edgeIterNext, class _edgeIterUnpack,
-          class _emptyEdgeList, class _emptyVertexList, class _headEdgeList,
-          class _headVertexList, class _isEmptyEdgeList,
-          class _isEmptyVertexList, class _makeEdge, class _src,
-          class _tailEdgeList, class _tailVertexList, class _tgt,
-          class _vertexIterBegin, class _vertexIterEnd, class _vertexIterNext,
+          class _consEdgeList, class _consVertexList, class _edgeIterEnd,
+          class _edgeIterNext, class _edgeIterUnpack, class _emptyEdgeList,
+          class _emptyVertexList, class _getEdgeIterator,
+          class _getVertexIterator, class _headEdgeList, class _headVertexList,
+          class _isEmptyEdgeList, class _isEmptyVertexList, class _makeEdge,
+          class _srcPlainEdge,  class _tailEdgeList, class _tailVertexList,
+          class _tgtPlainEdge, class _vertexIterEnd, class _vertexIterNext,
           class _vertexIterUnpack>
 struct custom_incidence_and_vertex_list_graph {
     typedef _Edge Edge;
@@ -109,6 +106,28 @@ struct custom_incidence_and_vertex_list_graph {
     typedef _VertexIterator VertexIterator;
     typedef _VertexList VertexList;
 
+    static inline _consEdgeList consEdgeList;
+    static inline _consVertexList consVertexList;
+    static inline _edgeIterEnd edgeIterEnd;
+    static inline _edgeIterNext edgeIterNext;
+    static inline _edgeIterUnpack edgeIterUnpack;
+    static inline _emptyEdgeList emptyEdgeList;
+    static inline _emptyVertexList emptyVertexList;
+    static inline _getEdgeIterator getEdgeIterator;
+    static inline _getVertexIterator getVertexIterator;
+    static inline _headEdgeList headEdgeList;
+    static inline _headVertexList headVertexList;
+    static inline _isEmptyEdgeList isEmptyEdgeList;
+    static inline _isEmptyVertexList isEmptyVertexList;
+    static inline _makeEdge makeEdge;
+    static inline _srcPlainEdge srcPlainEdge;
+    static inline _tailEdgeList tailEdgeList;
+    static inline _tailVertexList tailVertexList;
+    static inline _tgtPlainEdge tgtPlainEdge;
+    static inline _vertexIterEnd vertexIterEnd;
+    static inline _vertexIterNext vertexIterNext;
+    static inline _vertexIterUnpack vertexIterUnpack;
+
     typedef int VertexCount;
 
     struct DirectedGraph {
@@ -116,14 +135,16 @@ struct custom_incidence_and_vertex_list_graph {
         EdgeList *edges;
         // TODO: spec somewhere we can always use vertices as unsigned int kinda
 
-        DirectedGraph(const std::list<Edge> &edges, size_t num_vertices) : edges(new EdgeList[num_vertices]) {
+        DirectedGraph(const std::list<Edge> &edges,
+                      size_t num_vertices)
+                : edges(new EdgeList[num_vertices]) {
             std::unordered_set<Vertex> _vertices;
             std::unordered_set<Vertex> *unique_out_edges = new std::unordered_set<Vertex>[num_vertices];
             for (auto edge_it = edges.begin(); edge_it != edges.end(); ++edge_it) {
-                //std::cout << src(*edge_it) << std::endl;
-                unique_out_edges[src(*edge_it)].insert(tgt(*edge_it));
-                _vertices.insert(src(*edge_it));
-                _vertices.insert(tgt(*edge_it));
+                unique_out_edges[srcPlainEdge(*edge_it)].insert(
+                    tgtPlainEdge(*edge_it));
+                _vertices.insert(srcPlainEdge(*edge_it));
+                _vertices.insert(tgtPlainEdge(*edge_it));
             }
 
             for (auto vertex_it = _vertices.begin(); vertex_it != _vertices.end(); ++vertex_it) {
@@ -139,48 +160,37 @@ struct custom_incidence_and_vertex_list_graph {
         }
 
         bool operator==(const DirectedGraph &other) const = default;
-
-        // TODO
     };
 
     typedef DirectedGraph Graph;
 
-    static inline _consEdgeList consEdgeList;
-    static inline _consVertexList consVertexList;
-    static inline _edgeIterBegin edgeIterBegin;
-    static inline _edgeIterEnd edgeIterEnd;
-    static inline _edgeIterNext edgeIterNext;
-    static inline _emptyEdgeList emptyEdgeList;
-    static inline _emptyVertexList emptyVertexList;
-    static inline _makeEdge makeEdge;
-    static inline _src src;
-    static inline _tgt tgt;
-    static inline _vertexIterBegin vertexIterBegin;
-    static inline _vertexIterEnd vertexIterEnd;
-
-    inline void outEdges(const Vertex &v, const Graph &g, EdgeIterator &it_begin, EdgeIterator &it_end) {
-        it_begin = edgeIterBegin(g.edges[v]);
-        it_end = edgeIterEnd(g.edges[v]);
+    inline void outEdges(const Vertex &v, const Graph &g, EdgeIterator &itr) {
+        itr = getEdgeIterator(g.edges[v]);
     }
 
     inline VertexCount outDegree(const Vertex &v, const Graph &g) {
-        /*auto outEdgesList = outEdges(v, g);
-        VertexCount result = 0;
-        while (!isEmptyEdgeList(outEdgesList)) {
-            tailEdgeList(outEdgesList);
-            result += 1;
-        }
-        return result;*/
         return 0;
     }
 
-    inline void vertices(const Graph &g, VertexIterator &it_begin, VertexIterator &it_end) {
-        it_begin = g.vertices.begin();
-        it_end = g.vertices.end();
+    inline Vertex src(const Edge &e, const Graph &g) {
+        return srcPlainEdge(e);
+    }
+
+    inline Vertex tgt(const Edge &e, const Graph &g) {
+        return tgtPlainEdge(e);
+    }
+
+    inline void vertices(const Graph &g, VertexIterator &itr) {
+        itr = getVertexIterator(g.vertices);
     }
 
     inline VertexCount numVertices(const Graph &g) {
-        return g.vertices.size();
+        VertexCount count = 0;
+        for (auto itr = getVertexIterator(g.vertices);
+             !vertexIterEnd(itr);
+             vertexIterNext(itr), ++count) {}
+        
+        return count;
     }
 };
 
@@ -316,7 +326,8 @@ template <typename _A>
 struct iterable_list {
     typedef _A A;
     typedef std::list<A> List;
-    typedef typename std::list<A>::const_iterator ListIterator;
+    typedef std::pair<typename std::list<A>::const_iterator,
+                      typename std::list<A>::const_iterator> ListIterator;
 
     inline List empty() { return List(); }
     inline void cons(const A &a, List &l) { l.push_front(a); }
@@ -330,10 +341,14 @@ struct iterable_list {
         return l.empty();
     }
 
-    inline ListIterator iterBegin(const List &l) { return l.begin(); }
-    constexpr inline void iterNext(ListIterator &it) { ++it; }
-    inline ListIterator iterEnd(const List &l) { return l.end(); }
-    inline const A &iterUnpack(const ListIterator &it) { return *it; }
+    inline ListIterator getIterator(const List &l) {
+        return std::make_pair(l.begin(), l.end());
+    }
+    constexpr inline void iterNext(ListIterator &it) { ++(it.first); }
+    inline bool iterEnd(const ListIterator &l) {
+        return l.first == l.second;
+    }
+    inline const A &iterUnpack(const ListIterator &it) { return *(it.first); }
 };
 
 namespace utils {

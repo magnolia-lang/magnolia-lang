@@ -384,6 +384,455 @@ namespace examples {
 namespace bgl_v2 {
 namespace mg_src {
 namespace bgl_v2_cpp {
+struct CppCustomGraphTypeBFSTestVisitor {
+private:
+    static base_types __base_types;
+public:
+    typedef base_types::Vertex Vertex;
+    typedef iterable_list<CppCustomGraphTypeBFSTestVisitor::Vertex>::ListIterator VertexIterator;
+    struct _vertexIterEnd {
+        inline bool operator()(const CppCustomGraphTypeBFSTestVisitor::VertexIterator& itr) {
+            return __iterable_list0.iterEnd(itr);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_vertexIterEnd vertexIterEnd;
+    struct _vertexIterNext {
+        inline void operator()(CppCustomGraphTypeBFSTestVisitor::VertexIterator& itr) {
+            return __iterable_list0.iterNext(itr);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_vertexIterNext vertexIterNext;
+    typedef iterable_list<CppCustomGraphTypeBFSTestVisitor::Vertex>::List VertexList;
+    struct _emptyVertexList {
+        inline CppCustomGraphTypeBFSTestVisitor::VertexList operator()() {
+            return __iterable_list0.empty();
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_emptyVertexList emptyVertexList;
+    struct _getVertexIterator {
+        inline CppCustomGraphTypeBFSTestVisitor::VertexIterator operator()(const CppCustomGraphTypeBFSTestVisitor::VertexList& itb) {
+            return __iterable_list0.getIterator(itb);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_getVertexIterator getVertexIterator;
+    typedef vector<CppCustomGraphTypeBFSTestVisitor::Vertex>::Vector VertexVector;
+    struct _emptyVertexVector {
+        inline CppCustomGraphTypeBFSTestVisitor::VertexVector operator()() {
+            return __vector.empty();
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_emptyVertexVector emptyVertexVector;
+private:
+    static edge_without_descriptor<CppCustomGraphTypeBFSTestVisitor::Vertex> __edge_without_descriptor;
+    static fifo_queue<CppCustomGraphTypeBFSTestVisitor::Vertex> __fifo_queue;
+    static iterable_list<CppCustomGraphTypeBFSTestVisitor::Vertex> __iterable_list0;
+    static vector<CppCustomGraphTypeBFSTestVisitor::Vertex> __vector;
+public:
+    struct _pushBack {
+        inline void operator()(const CppCustomGraphTypeBFSTestVisitor::Vertex& a, CppCustomGraphTypeBFSTestVisitor::VertexVector& v) {
+            return __vector.pushBack(a, v);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_pushBack pushBack;
+    struct _vertexIterUnpack {
+        inline CppCustomGraphTypeBFSTestVisitor::Vertex operator()(const CppCustomGraphTypeBFSTestVisitor::VertexIterator& itr) {
+            return __iterable_list0.iterUnpack(itr);
+        };
+    };
+
+private:
+    static two_bit_color_map<CppCustomGraphTypeBFSTestVisitor::Vertex, CppCustomGraphTypeBFSTestVisitor::VertexIterator, CppCustomGraphTypeBFSTestVisitor::_vertexIterEnd, CppCustomGraphTypeBFSTestVisitor::_vertexIterNext, CppCustomGraphTypeBFSTestVisitor::_vertexIterUnpack> __two_bit_color_map;
+public:
+    static CppCustomGraphTypeBFSTestVisitor::_vertexIterUnpack vertexIterUnpack;
+    typedef base_types::Int Int;
+    typedef fifo_queue<CppCustomGraphTypeBFSTestVisitor::Vertex>::FIFOQueue FIFOQueue;
+    struct _empty {
+        inline CppCustomGraphTypeBFSTestVisitor::FIFOQueue operator()() {
+            return __fifo_queue.empty();
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_empty empty;
+    struct _front {
+        inline CppCustomGraphTypeBFSTestVisitor::Vertex operator()(const CppCustomGraphTypeBFSTestVisitor::FIFOQueue& q) {
+            return __fifo_queue.front(q);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_front front;
+    struct _isEmptyQueue {
+        inline bool operator()(const CppCustomGraphTypeBFSTestVisitor::FIFOQueue& q) {
+            return __fifo_queue.isEmpty(q);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_isEmptyQueue isEmptyQueue;
+    struct _pop {
+        inline void operator()(CppCustomGraphTypeBFSTestVisitor::FIFOQueue& q) {
+            return __fifo_queue.pop(q);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_pop pop;
+    struct _push {
+        inline void operator()(const CppCustomGraphTypeBFSTestVisitor::Vertex& a, CppCustomGraphTypeBFSTestVisitor::FIFOQueue& q) {
+            return __fifo_queue.push(a, q);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_push push;
+    struct _pushPopBehavior {
+        inline void operator()(const CppCustomGraphTypeBFSTestVisitor::Vertex& a, const CppCustomGraphTypeBFSTestVisitor::FIFOQueue& inq) {
+            CppCustomGraphTypeBFSTestVisitor::FIFOQueue mut_inq = inq;
+            CppCustomGraphTypeBFSTestVisitor::push(a, mut_inq);
+            assert((CppCustomGraphTypeBFSTestVisitor::front(mut_inq)) == (a));
+            CppCustomGraphTypeBFSTestVisitor::pop(mut_inq);
+            assert((inq) == (mut_inq));
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_pushPopBehavior pushPopBehavior;
+    typedef edge_without_descriptor<CppCustomGraphTypeBFSTestVisitor::Vertex>::Edge Edge;
+    typedef iterable_list<CppCustomGraphTypeBFSTestVisitor::Edge>::ListIterator EdgeIterator;
+    typedef pair<CppCustomGraphTypeBFSTestVisitor::EdgeIterator, CppCustomGraphTypeBFSTestVisitor::EdgeIterator>::Pair EdgeIteratorRange;
+private:
+    static pair<CppCustomGraphTypeBFSTestVisitor::EdgeIterator, CppCustomGraphTypeBFSTestVisitor::EdgeIterator> __pair;
+public:
+    struct _edgeIterEnd {
+        inline bool operator()(const CppCustomGraphTypeBFSTestVisitor::EdgeIterator& itr) {
+            return __iterable_list.iterEnd(itr);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_edgeIterEnd edgeIterEnd;
+    struct _edgeIterNext {
+        inline void operator()(CppCustomGraphTypeBFSTestVisitor::EdgeIterator& itr) {
+            return __iterable_list.iterNext(itr);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_edgeIterNext edgeIterNext;
+    struct _iterRangeBegin {
+        inline CppCustomGraphTypeBFSTestVisitor::EdgeIterator operator()(const CppCustomGraphTypeBFSTestVisitor::EdgeIteratorRange& p) {
+            return __pair.first(p);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_iterRangeBegin iterRangeBegin;
+    struct _iterRangeEnd {
+        inline CppCustomGraphTypeBFSTestVisitor::EdgeIterator operator()(const CppCustomGraphTypeBFSTestVisitor::EdgeIteratorRange& p) {
+            return __pair.second(p);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_iterRangeEnd iterRangeEnd;
+    struct _makeEdgeIteratorRange {
+        inline CppCustomGraphTypeBFSTestVisitor::EdgeIteratorRange operator()(const CppCustomGraphTypeBFSTestVisitor::EdgeIterator& a, const CppCustomGraphTypeBFSTestVisitor::EdgeIterator& b) {
+            return __pair.makePair(a, b);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_makeEdgeIteratorRange makeEdgeIteratorRange;
+    typedef iterable_list<CppCustomGraphTypeBFSTestVisitor::Edge>::List EdgeList;
+    struct _emptyEdgeList {
+        inline CppCustomGraphTypeBFSTestVisitor::EdgeList operator()() {
+            return __iterable_list.empty();
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_emptyEdgeList emptyEdgeList;
+    struct _getEdgeIterator {
+        inline CppCustomGraphTypeBFSTestVisitor::EdgeIterator operator()(const CppCustomGraphTypeBFSTestVisitor::EdgeList& itb) {
+            return __iterable_list.getIterator(itb);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_getEdgeIterator getEdgeIterator;
+    struct _isEmpty {
+        inline bool operator()(const CppCustomGraphTypeBFSTestVisitor::EdgeList& l) {
+            return __iterable_list.isEmpty(l);
+        };
+        inline bool operator()(const CppCustomGraphTypeBFSTestVisitor::VertexList& l) {
+            return __iterable_list0.isEmpty(l);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_isEmpty isEmpty;
+    struct _tail {
+        inline void operator()(CppCustomGraphTypeBFSTestVisitor::EdgeList& l) {
+            return __iterable_list.tail(l);
+        };
+        inline void operator()(CppCustomGraphTypeBFSTestVisitor::VertexList& l) {
+            return __iterable_list0.tail(l);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_tail tail;
+private:
+    static iterable_list<CppCustomGraphTypeBFSTestVisitor::Edge> __iterable_list;
+public:
+    struct _cons {
+        inline void operator()(const CppCustomGraphTypeBFSTestVisitor::Edge& a, CppCustomGraphTypeBFSTestVisitor::EdgeList& l) {
+            return __iterable_list.cons(a, l);
+        };
+        inline void operator()(const CppCustomGraphTypeBFSTestVisitor::Vertex& a, CppCustomGraphTypeBFSTestVisitor::VertexList& l) {
+            return __iterable_list0.cons(a, l);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_cons cons;
+    struct _edgeIterUnpack {
+        inline CppCustomGraphTypeBFSTestVisitor::Edge operator()(const CppCustomGraphTypeBFSTestVisitor::EdgeIterator& itr) {
+            return __iterable_list.iterUnpack(itr);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_edgeIterUnpack edgeIterUnpack;
+    struct _head {
+        inline CppCustomGraphTypeBFSTestVisitor::Edge operator()(const CppCustomGraphTypeBFSTestVisitor::EdgeList& l) {
+            return __iterable_list.head(l);
+        };
+        inline CppCustomGraphTypeBFSTestVisitor::Vertex operator()(const CppCustomGraphTypeBFSTestVisitor::VertexList& l) {
+            return __iterable_list0.head(l);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_head head;
+    struct _makeEdge {
+        inline CppCustomGraphTypeBFSTestVisitor::Edge operator()(const CppCustomGraphTypeBFSTestVisitor::Vertex& s, const CppCustomGraphTypeBFSTestVisitor::Vertex& t) {
+            return __edge_without_descriptor.makeEdge(s, t);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_makeEdge makeEdge;
+    struct _srcPlainEdge {
+        inline CppCustomGraphTypeBFSTestVisitor::Vertex operator()(const CppCustomGraphTypeBFSTestVisitor::Edge& e) {
+            return __edge_without_descriptor.srcPlainEdge(e);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_srcPlainEdge srcPlainEdge;
+    struct _tgtPlainEdge {
+        inline CppCustomGraphTypeBFSTestVisitor::Vertex operator()(const CppCustomGraphTypeBFSTestVisitor::Edge& e) {
+            return __edge_without_descriptor.tgtPlainEdge(e);
+        };
+    };
+
+    typedef custom_incidence_and_vertex_list_graph<CppCustomGraphTypeBFSTestVisitor::Edge, CppCustomGraphTypeBFSTestVisitor::EdgeIterator, CppCustomGraphTypeBFSTestVisitor::EdgeList, CppCustomGraphTypeBFSTestVisitor::Vertex, CppCustomGraphTypeBFSTestVisitor::VertexIterator, CppCustomGraphTypeBFSTestVisitor::VertexList, CppCustomGraphTypeBFSTestVisitor::_cons, CppCustomGraphTypeBFSTestVisitor::_cons, CppCustomGraphTypeBFSTestVisitor::_edgeIterEnd, CppCustomGraphTypeBFSTestVisitor::_edgeIterNext, CppCustomGraphTypeBFSTestVisitor::_edgeIterUnpack, CppCustomGraphTypeBFSTestVisitor::_emptyEdgeList, CppCustomGraphTypeBFSTestVisitor::_emptyVertexList, CppCustomGraphTypeBFSTestVisitor::_getEdgeIterator, CppCustomGraphTypeBFSTestVisitor::_getVertexIterator, CppCustomGraphTypeBFSTestVisitor::_head, CppCustomGraphTypeBFSTestVisitor::_head, CppCustomGraphTypeBFSTestVisitor::_isEmpty, CppCustomGraphTypeBFSTestVisitor::_isEmpty, CppCustomGraphTypeBFSTestVisitor::_makeEdge, CppCustomGraphTypeBFSTestVisitor::_srcPlainEdge, CppCustomGraphTypeBFSTestVisitor::_tail, CppCustomGraphTypeBFSTestVisitor::_tail, CppCustomGraphTypeBFSTestVisitor::_tgtPlainEdge, CppCustomGraphTypeBFSTestVisitor::_vertexIterEnd, CppCustomGraphTypeBFSTestVisitor::_vertexIterNext, CppCustomGraphTypeBFSTestVisitor::_vertexIterUnpack>::Graph Graph;
+    struct _breadthFirstSearch {
+        inline CppCustomGraphTypeBFSTestVisitor::VertexVector operator()(const CppCustomGraphTypeBFSTestVisitor::Graph& g, const CppCustomGraphTypeBFSTestVisitor::Vertex& start, const CppCustomGraphTypeBFSTestVisitor::VertexVector& init) {
+            CppCustomGraphTypeBFSTestVisitor::FIFOQueue q = CppCustomGraphTypeBFSTestVisitor::empty();
+            CppCustomGraphTypeBFSTestVisitor::VertexIterator vertexItr;
+            CppCustomGraphTypeBFSTestVisitor::vertices(g, vertexItr);
+            CppCustomGraphTypeBFSTestVisitor::ColorPropertyMap c = CppCustomGraphTypeBFSTestVisitor::initMap(vertexItr, CppCustomGraphTypeBFSTestVisitor::white());
+            CppCustomGraphTypeBFSTestVisitor::VertexVector a = init;
+            CppCustomGraphTypeBFSTestVisitor::breadthFirstVisit(g, start, a, q, c);
+            return a;
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_breadthFirstSearch breadthFirstSearch;
+    struct _defaultAction {
+        inline void operator()(const CppCustomGraphTypeBFSTestVisitor::Vertex& edgeOrVertex, const CppCustomGraphTypeBFSTestVisitor::Graph& g, CppCustomGraphTypeBFSTestVisitor::FIFOQueue& q, CppCustomGraphTypeBFSTestVisitor::VertexVector& a) {
+            ;
+        };
+        inline void operator()(const CppCustomGraphTypeBFSTestVisitor::Edge& edgeOrVertex, const CppCustomGraphTypeBFSTestVisitor::Graph& g, CppCustomGraphTypeBFSTestVisitor::FIFOQueue& q, CppCustomGraphTypeBFSTestVisitor::VertexVector& a) {
+            ;
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_defaultAction defaultAction;
+    struct _examineVertex {
+        inline void operator()(const CppCustomGraphTypeBFSTestVisitor::Vertex& v, const CppCustomGraphTypeBFSTestVisitor::Graph& g, CppCustomGraphTypeBFSTestVisitor::FIFOQueue& q, CppCustomGraphTypeBFSTestVisitor::VertexVector& a) {
+            CppCustomGraphTypeBFSTestVisitor::pushBack(v, a);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_examineVertex examineVertex;
+    struct _outEdges {
+        inline void operator()(const CppCustomGraphTypeBFSTestVisitor::Vertex& v, const CppCustomGraphTypeBFSTestVisitor::Graph& g, CppCustomGraphTypeBFSTestVisitor::EdgeIterator& itr) {
+            return __custom_incidence_and_vertex_list_graph.outEdges(v, g, itr);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_outEdges outEdges;
+    struct _src {
+        inline CppCustomGraphTypeBFSTestVisitor::Vertex operator()(const CppCustomGraphTypeBFSTestVisitor::Edge& e, const CppCustomGraphTypeBFSTestVisitor::Graph& g) {
+            return __custom_incidence_and_vertex_list_graph.src(e, g);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_src src;
+    struct _tgt {
+        inline CppCustomGraphTypeBFSTestVisitor::Vertex operator()(const CppCustomGraphTypeBFSTestVisitor::Edge& e, const CppCustomGraphTypeBFSTestVisitor::Graph& g) {
+            return __custom_incidence_and_vertex_list_graph.tgt(e, g);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_tgt tgt;
+    struct _vertices {
+        inline void operator()(const CppCustomGraphTypeBFSTestVisitor::Graph& g, CppCustomGraphTypeBFSTestVisitor::VertexIterator& itr) {
+            return __custom_incidence_and_vertex_list_graph.vertices(g, itr);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_vertices vertices;
+    typedef custom_incidence_and_vertex_list_graph<CppCustomGraphTypeBFSTestVisitor::Edge, CppCustomGraphTypeBFSTestVisitor::EdgeIterator, CppCustomGraphTypeBFSTestVisitor::EdgeList, CppCustomGraphTypeBFSTestVisitor::Vertex, CppCustomGraphTypeBFSTestVisitor::VertexIterator, CppCustomGraphTypeBFSTestVisitor::VertexList, CppCustomGraphTypeBFSTestVisitor::_cons, CppCustomGraphTypeBFSTestVisitor::_cons, CppCustomGraphTypeBFSTestVisitor::_edgeIterEnd, CppCustomGraphTypeBFSTestVisitor::_edgeIterNext, CppCustomGraphTypeBFSTestVisitor::_edgeIterUnpack, CppCustomGraphTypeBFSTestVisitor::_emptyEdgeList, CppCustomGraphTypeBFSTestVisitor::_emptyVertexList, CppCustomGraphTypeBFSTestVisitor::_getEdgeIterator, CppCustomGraphTypeBFSTestVisitor::_getVertexIterator, CppCustomGraphTypeBFSTestVisitor::_head, CppCustomGraphTypeBFSTestVisitor::_head, CppCustomGraphTypeBFSTestVisitor::_isEmpty, CppCustomGraphTypeBFSTestVisitor::_isEmpty, CppCustomGraphTypeBFSTestVisitor::_makeEdge, CppCustomGraphTypeBFSTestVisitor::_srcPlainEdge, CppCustomGraphTypeBFSTestVisitor::_tail, CppCustomGraphTypeBFSTestVisitor::_tail, CppCustomGraphTypeBFSTestVisitor::_tgtPlainEdge, CppCustomGraphTypeBFSTestVisitor::_vertexIterEnd, CppCustomGraphTypeBFSTestVisitor::_vertexIterNext, CppCustomGraphTypeBFSTestVisitor::_vertexIterUnpack>::VertexCount VertexCount;
+    struct _numVertices {
+        inline CppCustomGraphTypeBFSTestVisitor::VertexCount operator()(const CppCustomGraphTypeBFSTestVisitor::Graph& g) {
+            return __custom_incidence_and_vertex_list_graph.numVertices(g);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_numVertices numVertices;
+    struct _outDegree {
+        inline CppCustomGraphTypeBFSTestVisitor::VertexCount operator()(const CppCustomGraphTypeBFSTestVisitor::Vertex& v, const CppCustomGraphTypeBFSTestVisitor::Graph& g) {
+            return __custom_incidence_and_vertex_list_graph.outDegree(v, g);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_outDegree outDegree;
+private:
+    static custom_incidence_and_vertex_list_graph<CppCustomGraphTypeBFSTestVisitor::Edge, CppCustomGraphTypeBFSTestVisitor::EdgeIterator, CppCustomGraphTypeBFSTestVisitor::EdgeList, CppCustomGraphTypeBFSTestVisitor::Vertex, CppCustomGraphTypeBFSTestVisitor::VertexIterator, CppCustomGraphTypeBFSTestVisitor::VertexList, CppCustomGraphTypeBFSTestVisitor::_cons, CppCustomGraphTypeBFSTestVisitor::_cons, CppCustomGraphTypeBFSTestVisitor::_edgeIterEnd, CppCustomGraphTypeBFSTestVisitor::_edgeIterNext, CppCustomGraphTypeBFSTestVisitor::_edgeIterUnpack, CppCustomGraphTypeBFSTestVisitor::_emptyEdgeList, CppCustomGraphTypeBFSTestVisitor::_emptyVertexList, CppCustomGraphTypeBFSTestVisitor::_getEdgeIterator, CppCustomGraphTypeBFSTestVisitor::_getVertexIterator, CppCustomGraphTypeBFSTestVisitor::_head, CppCustomGraphTypeBFSTestVisitor::_head, CppCustomGraphTypeBFSTestVisitor::_isEmpty, CppCustomGraphTypeBFSTestVisitor::_isEmpty, CppCustomGraphTypeBFSTestVisitor::_makeEdge, CppCustomGraphTypeBFSTestVisitor::_srcPlainEdge, CppCustomGraphTypeBFSTestVisitor::_tail, CppCustomGraphTypeBFSTestVisitor::_tail, CppCustomGraphTypeBFSTestVisitor::_tgtPlainEdge, CppCustomGraphTypeBFSTestVisitor::_vertexIterEnd, CppCustomGraphTypeBFSTestVisitor::_vertexIterNext, CppCustomGraphTypeBFSTestVisitor::_vertexIterUnpack> __custom_incidence_and_vertex_list_graph;
+public:
+    static CppCustomGraphTypeBFSTestVisitor::_tgtPlainEdge tgtPlainEdge;
+    typedef two_bit_color_map<CppCustomGraphTypeBFSTestVisitor::Vertex, CppCustomGraphTypeBFSTestVisitor::VertexIterator, CppCustomGraphTypeBFSTestVisitor::_vertexIterEnd, CppCustomGraphTypeBFSTestVisitor::_vertexIterNext, CppCustomGraphTypeBFSTestVisitor::_vertexIterUnpack>::ColorPropertyMap ColorPropertyMap;
+    struct _bfsInnerLoopRepeat {
+        inline void operator()(const CppCustomGraphTypeBFSTestVisitor::EdgeIterator& itr, CppCustomGraphTypeBFSTestVisitor::VertexVector& s1, CppCustomGraphTypeBFSTestVisitor::FIFOQueue& s2, CppCustomGraphTypeBFSTestVisitor::ColorPropertyMap& s3, const CppCustomGraphTypeBFSTestVisitor::Graph& ctx1, const CppCustomGraphTypeBFSTestVisitor::Vertex& ctx2) {
+            return __for_iterator_loop3_2.forLoopRepeat(itr, s1, s2, s3, ctx1, ctx2);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_bfsInnerLoopRepeat bfsInnerLoopRepeat;
+    struct _bfsInnerLoopStep {
+        inline void operator()(const CppCustomGraphTypeBFSTestVisitor::EdgeIterator& edgeItr, CppCustomGraphTypeBFSTestVisitor::VertexVector& x, CppCustomGraphTypeBFSTestVisitor::FIFOQueue& q, CppCustomGraphTypeBFSTestVisitor::ColorPropertyMap& c, const CppCustomGraphTypeBFSTestVisitor::Graph& g, const CppCustomGraphTypeBFSTestVisitor::Vertex& u) {
+            CppCustomGraphTypeBFSTestVisitor::Edge e = CppCustomGraphTypeBFSTestVisitor::edgeIterUnpack(edgeItr);
+            CppCustomGraphTypeBFSTestVisitor::Vertex v = CppCustomGraphTypeBFSTestVisitor::tgt(e, g);
+            CppCustomGraphTypeBFSTestVisitor::defaultAction(e, g, q, x);
+            CppCustomGraphTypeBFSTestVisitor::Color vc = CppCustomGraphTypeBFSTestVisitor::get(c, v);
+            if ((vc) == (CppCustomGraphTypeBFSTestVisitor::white()))
+            {
+                CppCustomGraphTypeBFSTestVisitor::defaultAction(e, g, q, x);
+                CppCustomGraphTypeBFSTestVisitor::put(c, v, CppCustomGraphTypeBFSTestVisitor::gray());
+                CppCustomGraphTypeBFSTestVisitor::defaultAction(v, g, q, x);
+                CppCustomGraphTypeBFSTestVisitor::push(v, q);
+            }
+            else
+                if ((vc) == (CppCustomGraphTypeBFSTestVisitor::gray()))
+                {
+                    CppCustomGraphTypeBFSTestVisitor::defaultAction(e, g, q, x);
+                }
+                else
+                {
+                    CppCustomGraphTypeBFSTestVisitor::defaultAction(e, g, q, x);
+                }
+        };
+    };
+
+private:
+    static for_iterator_loop3_2<CppCustomGraphTypeBFSTestVisitor::Graph, CppCustomGraphTypeBFSTestVisitor::Vertex, CppCustomGraphTypeBFSTestVisitor::EdgeIterator, CppCustomGraphTypeBFSTestVisitor::VertexVector, CppCustomGraphTypeBFSTestVisitor::FIFOQueue, CppCustomGraphTypeBFSTestVisitor::ColorPropertyMap, CppCustomGraphTypeBFSTestVisitor::_edgeIterEnd, CppCustomGraphTypeBFSTestVisitor::_edgeIterNext, CppCustomGraphTypeBFSTestVisitor::_bfsInnerLoopStep> __for_iterator_loop3_2;
+public:
+    static CppCustomGraphTypeBFSTestVisitor::_bfsInnerLoopStep bfsInnerLoopStep;
+    struct _bfsOuterLoopCond {
+        inline bool operator()(const CppCustomGraphTypeBFSTestVisitor::VertexVector& a, const CppCustomGraphTypeBFSTestVisitor::FIFOQueue& q, const CppCustomGraphTypeBFSTestVisitor::ColorPropertyMap& c, const CppCustomGraphTypeBFSTestVisitor::Graph& g) {
+            return !CppCustomGraphTypeBFSTestVisitor::isEmptyQueue(q);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_bfsOuterLoopCond bfsOuterLoopCond;
+    struct _bfsOuterLoopRepeat {
+        inline void operator()(CppCustomGraphTypeBFSTestVisitor::VertexVector& s1, CppCustomGraphTypeBFSTestVisitor::FIFOQueue& s2, CppCustomGraphTypeBFSTestVisitor::ColorPropertyMap& s3, const CppCustomGraphTypeBFSTestVisitor::Graph& ctx) {
+            return __while_loop3.repeat(s1, s2, s3, ctx);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_bfsOuterLoopRepeat bfsOuterLoopRepeat;
+    struct _bfsOuterLoopStep {
+        inline void operator()(CppCustomGraphTypeBFSTestVisitor::VertexVector& x, CppCustomGraphTypeBFSTestVisitor::FIFOQueue& q, CppCustomGraphTypeBFSTestVisitor::ColorPropertyMap& c, const CppCustomGraphTypeBFSTestVisitor::Graph& g) {
+            CppCustomGraphTypeBFSTestVisitor::Vertex u = CppCustomGraphTypeBFSTestVisitor::front(q);
+            CppCustomGraphTypeBFSTestVisitor::pop(q);
+            CppCustomGraphTypeBFSTestVisitor::examineVertex(u, g, q, x);
+            CppCustomGraphTypeBFSTestVisitor::EdgeIterator edgeItr;
+            CppCustomGraphTypeBFSTestVisitor::outEdges(u, g, edgeItr);
+            CppCustomGraphTypeBFSTestVisitor::bfsInnerLoopRepeat(edgeItr, x, q, c, g, u);
+            CppCustomGraphTypeBFSTestVisitor::put(c, u, CppCustomGraphTypeBFSTestVisitor::black());
+            CppCustomGraphTypeBFSTestVisitor::defaultAction(u, g, q, x);
+        };
+    };
+
+private:
+    static while_loop3<CppCustomGraphTypeBFSTestVisitor::Graph, CppCustomGraphTypeBFSTestVisitor::VertexVector, CppCustomGraphTypeBFSTestVisitor::FIFOQueue, CppCustomGraphTypeBFSTestVisitor::ColorPropertyMap, CppCustomGraphTypeBFSTestVisitor::_bfsOuterLoopCond, CppCustomGraphTypeBFSTestVisitor::_bfsOuterLoopStep> __while_loop3;
+public:
+    static CppCustomGraphTypeBFSTestVisitor::_bfsOuterLoopStep bfsOuterLoopStep;
+    struct _breadthFirstVisit {
+        inline void operator()(const CppCustomGraphTypeBFSTestVisitor::Graph& g, const CppCustomGraphTypeBFSTestVisitor::Vertex& s, CppCustomGraphTypeBFSTestVisitor::VertexVector& a, CppCustomGraphTypeBFSTestVisitor::FIFOQueue& q, CppCustomGraphTypeBFSTestVisitor::ColorPropertyMap& c) {
+            CppCustomGraphTypeBFSTestVisitor::defaultAction(s, g, q, a);
+            CppCustomGraphTypeBFSTestVisitor::push(s, q);
+            CppCustomGraphTypeBFSTestVisitor::put(c, s, CppCustomGraphTypeBFSTestVisitor::gray());
+            CppCustomGraphTypeBFSTestVisitor::bfsOuterLoopRepeat(a, q, c, g);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_breadthFirstVisit breadthFirstVisit;
+    typedef two_bit_color_map<CppCustomGraphTypeBFSTestVisitor::Vertex, CppCustomGraphTypeBFSTestVisitor::VertexIterator, CppCustomGraphTypeBFSTestVisitor::_vertexIterEnd, CppCustomGraphTypeBFSTestVisitor::_vertexIterNext, CppCustomGraphTypeBFSTestVisitor::_vertexIterUnpack>::Color Color;
+    struct _black {
+        inline CppCustomGraphTypeBFSTestVisitor::Color operator()() {
+            return __two_bit_color_map.black();
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_black black;
+    struct _get {
+        inline CppCustomGraphTypeBFSTestVisitor::Color operator()(const CppCustomGraphTypeBFSTestVisitor::ColorPropertyMap& pm, const CppCustomGraphTypeBFSTestVisitor::Vertex& k) {
+            return __two_bit_color_map.get(pm, k);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_get get;
+    struct _gray {
+        inline CppCustomGraphTypeBFSTestVisitor::Color operator()() {
+            return __two_bit_color_map.gray();
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_gray gray;
+    struct _initMap {
+        inline CppCustomGraphTypeBFSTestVisitor::ColorPropertyMap operator()(const CppCustomGraphTypeBFSTestVisitor::VertexIterator& kli, const CppCustomGraphTypeBFSTestVisitor::Color& v) {
+            return __two_bit_color_map.initMap(kli, v);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_initMap initMap;
+    struct _put {
+        inline void operator()(CppCustomGraphTypeBFSTestVisitor::ColorPropertyMap& pm, const CppCustomGraphTypeBFSTestVisitor::Vertex& k, const CppCustomGraphTypeBFSTestVisitor::Color& v) {
+            return __two_bit_color_map.put(pm, k, v);
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_put put;
+    struct _white {
+        inline CppCustomGraphTypeBFSTestVisitor::Color operator()() {
+            return __two_bit_color_map.white();
+        };
+    };
+
+    static CppCustomGraphTypeBFSTestVisitor::_white white;
+};
+} // examples
+} // bgl_v2
+} // mg_src
+} // bgl_v2_cpp
+
+namespace examples {
+namespace bgl_v2 {
+namespace mg_src {
+namespace bgl_v2_cpp {
 struct CppDFSTestVisitor {
     struct _emptyStackIsEmpty {
         inline void operator()() {
@@ -1216,8 +1665,19 @@ public:
 
     static CppDijkstraVisitor::_emptyPriorityQueue emptyPriorityQueue;
     struct _examineEdge {
-        inline void operator()(const CppDijkstraVisitor::EdgeDescriptor& edgeOrVertex, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& q, CppDijkstraVisitor::StateWithMaps& a) {
-            ;
+        inline void operator()(const CppDijkstraVisitor::EdgeDescriptor& e, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& pq, CppDijkstraVisitor::StateWithMaps& swm) {
+            CppDijkstraVisitor::VertexCostMap origVcm = CppDijkstraVisitor::getVertexCostMap(swm);
+            CppDijkstraVisitor::VertexPredecessorMap vpm = CppDijkstraVisitor::getVertexPredecessorMap(swm);
+            CppDijkstraVisitor::EdgeCostMap ecm = CppDijkstraVisitor::getEdgeCostMap(swm);
+            CppDijkstraVisitor::VertexCostMap vcm = origVcm;
+            CppDijkstraVisitor::relax(e, g, ecm, vcm, vpm);
+            if ((vcm) == (origVcm))
+                ;
+            else
+            {
+                swm = CppDijkstraVisitor::putVertexPredecessorMap(vpm, CppDijkstraVisitor::putVertexCostMap(vcm, swm));
+                pq = CppDijkstraVisitor::update(vcm, CppDijkstraVisitor::tgt(e, g), pq);
+            }
         };
     };
 
@@ -1244,19 +1704,8 @@ public:
 
     static CppDijkstraVisitor::_front front;
     struct _grayTarget {
-        inline void operator()(const CppDijkstraVisitor::EdgeDescriptor& e, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& pq, CppDijkstraVisitor::StateWithMaps& swm) {
-            CppDijkstraVisitor::VertexCostMap origVcm = CppDijkstraVisitor::getVertexCostMap(swm);
-            CppDijkstraVisitor::VertexPredecessorMap vpm = CppDijkstraVisitor::getVertexPredecessorMap(swm);
-            CppDijkstraVisitor::EdgeCostMap ecm = CppDijkstraVisitor::getEdgeCostMap(swm);
-            CppDijkstraVisitor::VertexCostMap vcm = origVcm;
-            CppDijkstraVisitor::relax(e, g, ecm, vcm, vpm);
-            if ((vcm) == (origVcm))
-                ;
-            else
-            {
-                swm = CppDijkstraVisitor::putVertexPredecessorMap(vpm, CppDijkstraVisitor::putVertexCostMap(vcm, swm));
-                pq = CppDijkstraVisitor::update(vcm, CppDijkstraVisitor::tgt(e, g), pq);
-            }
+        inline void operator()(const CppDijkstraVisitor::EdgeDescriptor& edgeOrVertex, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& q, CppDijkstraVisitor::StateWithMaps& a) {
+            ;
         };
     };
 
@@ -1290,12 +1739,8 @@ public:
 
     static CppDijkstraVisitor::_push push;
     struct _treeEdge {
-        inline void operator()(const CppDijkstraVisitor::EdgeDescriptor& e, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& pq, CppDijkstraVisitor::StateWithMaps& swm) {
-            CppDijkstraVisitor::VertexCostMap vcm = CppDijkstraVisitor::getVertexCostMap(swm);
-            CppDijkstraVisitor::VertexPredecessorMap vpm = CppDijkstraVisitor::getVertexPredecessorMap(swm);
-            CppDijkstraVisitor::EdgeCostMap ecm = CppDijkstraVisitor::getEdgeCostMap(swm);
-            CppDijkstraVisitor::relax(e, g, ecm, vcm, vpm);
-            swm = CppDijkstraVisitor::putVertexPredecessorMap(vpm, CppDijkstraVisitor::putVertexCostMap(vcm, swm));
+        inline void operator()(const CppDijkstraVisitor::EdgeDescriptor& edgeOrVertex, const CppDijkstraVisitor::Graph& g, CppDijkstraVisitor::PriorityQueue& q, CppDijkstraVisitor::StateWithMaps& a) {
+            ;
         };
     };
 

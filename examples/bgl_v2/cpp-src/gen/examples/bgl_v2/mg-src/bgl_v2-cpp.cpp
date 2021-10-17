@@ -194,6 +194,233 @@ namespace examples {
 namespace bgl_v2 {
 namespace mg_src {
 namespace bgl_v2_cpp {
+    base_types CppCustomGraphTypeBFSTestVisitor::__base_types;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_vertexIterEnd CppCustomGraphTypeBFSTestVisitor::vertexIterEnd;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_vertexIterNext CppCustomGraphTypeBFSTestVisitor::vertexIterNext;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_emptyVertexList CppCustomGraphTypeBFSTestVisitor::emptyVertexList;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_getVertexIterator CppCustomGraphTypeBFSTestVisitor::getVertexIterator;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_emptyVertexVector CppCustomGraphTypeBFSTestVisitor::emptyVertexVector;
+
+    edge_without_descriptor<CppCustomGraphTypeBFSTestVisitor::Vertex> CppCustomGraphTypeBFSTestVisitor::__edge_without_descriptor;
+
+    fifo_queue<CppCustomGraphTypeBFSTestVisitor::Vertex> CppCustomGraphTypeBFSTestVisitor::__fifo_queue;
+
+    iterable_list<CppCustomGraphTypeBFSTestVisitor::Vertex> CppCustomGraphTypeBFSTestVisitor::__iterable_list0;
+
+    vector<CppCustomGraphTypeBFSTestVisitor::Vertex> CppCustomGraphTypeBFSTestVisitor::__vector;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_pushBack CppCustomGraphTypeBFSTestVisitor::pushBack;
+
+
+
+    two_bit_color_map<CppCustomGraphTypeBFSTestVisitor::Vertex, CppCustomGraphTypeBFSTestVisitor::VertexIterator, CppCustomGraphTypeBFSTestVisitor::_vertexIterEnd, CppCustomGraphTypeBFSTestVisitor::_vertexIterNext, CppCustomGraphTypeBFSTestVisitor::_vertexIterUnpack> CppCustomGraphTypeBFSTestVisitor::__two_bit_color_map;
+
+    CppCustomGraphTypeBFSTestVisitor::_vertexIterUnpack CppCustomGraphTypeBFSTestVisitor::vertexIterUnpack;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_empty CppCustomGraphTypeBFSTestVisitor::empty;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_front CppCustomGraphTypeBFSTestVisitor::front;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_isEmptyQueue CppCustomGraphTypeBFSTestVisitor::isEmptyQueue;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_pop CppCustomGraphTypeBFSTestVisitor::pop;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_push CppCustomGraphTypeBFSTestVisitor::push;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_pushPopBehavior CppCustomGraphTypeBFSTestVisitor::pushPopBehavior;
+
+    pair<CppCustomGraphTypeBFSTestVisitor::EdgeIterator, CppCustomGraphTypeBFSTestVisitor::EdgeIterator> CppCustomGraphTypeBFSTestVisitor::__pair;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_edgeIterEnd CppCustomGraphTypeBFSTestVisitor::edgeIterEnd;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_edgeIterNext CppCustomGraphTypeBFSTestVisitor::edgeIterNext;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_iterRangeBegin CppCustomGraphTypeBFSTestVisitor::iterRangeBegin;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_iterRangeEnd CppCustomGraphTypeBFSTestVisitor::iterRangeEnd;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_makeEdgeIteratorRange CppCustomGraphTypeBFSTestVisitor::makeEdgeIteratorRange;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_emptyEdgeList CppCustomGraphTypeBFSTestVisitor::emptyEdgeList;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_getEdgeIterator CppCustomGraphTypeBFSTestVisitor::getEdgeIterator;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_isEmpty CppCustomGraphTypeBFSTestVisitor::isEmpty;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_tail CppCustomGraphTypeBFSTestVisitor::tail;
+
+    iterable_list<CppCustomGraphTypeBFSTestVisitor::Edge> CppCustomGraphTypeBFSTestVisitor::__iterable_list;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_cons CppCustomGraphTypeBFSTestVisitor::cons;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_edgeIterUnpack CppCustomGraphTypeBFSTestVisitor::edgeIterUnpack;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_head CppCustomGraphTypeBFSTestVisitor::head;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_makeEdge CppCustomGraphTypeBFSTestVisitor::makeEdge;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_srcPlainEdge CppCustomGraphTypeBFSTestVisitor::srcPlainEdge;
+
+
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_breadthFirstSearch CppCustomGraphTypeBFSTestVisitor::breadthFirstSearch;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_defaultAction CppCustomGraphTypeBFSTestVisitor::defaultAction;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_examineVertex CppCustomGraphTypeBFSTestVisitor::examineVertex;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_outEdges CppCustomGraphTypeBFSTestVisitor::outEdges;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_src CppCustomGraphTypeBFSTestVisitor::src;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_tgt CppCustomGraphTypeBFSTestVisitor::tgt;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_vertices CppCustomGraphTypeBFSTestVisitor::vertices;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_numVertices CppCustomGraphTypeBFSTestVisitor::numVertices;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_outDegree CppCustomGraphTypeBFSTestVisitor::outDegree;
+
+    custom_incidence_and_vertex_list_graph<CppCustomGraphTypeBFSTestVisitor::Edge, CppCustomGraphTypeBFSTestVisitor::EdgeIterator, CppCustomGraphTypeBFSTestVisitor::EdgeList, CppCustomGraphTypeBFSTestVisitor::Vertex, CppCustomGraphTypeBFSTestVisitor::VertexIterator, CppCustomGraphTypeBFSTestVisitor::VertexList, CppCustomGraphTypeBFSTestVisitor::_cons, CppCustomGraphTypeBFSTestVisitor::_cons, CppCustomGraphTypeBFSTestVisitor::_edgeIterEnd, CppCustomGraphTypeBFSTestVisitor::_edgeIterNext, CppCustomGraphTypeBFSTestVisitor::_edgeIterUnpack, CppCustomGraphTypeBFSTestVisitor::_emptyEdgeList, CppCustomGraphTypeBFSTestVisitor::_emptyVertexList, CppCustomGraphTypeBFSTestVisitor::_getEdgeIterator, CppCustomGraphTypeBFSTestVisitor::_getVertexIterator, CppCustomGraphTypeBFSTestVisitor::_head, CppCustomGraphTypeBFSTestVisitor::_head, CppCustomGraphTypeBFSTestVisitor::_isEmpty, CppCustomGraphTypeBFSTestVisitor::_isEmpty, CppCustomGraphTypeBFSTestVisitor::_makeEdge, CppCustomGraphTypeBFSTestVisitor::_srcPlainEdge, CppCustomGraphTypeBFSTestVisitor::_tail, CppCustomGraphTypeBFSTestVisitor::_tail, CppCustomGraphTypeBFSTestVisitor::_tgtPlainEdge, CppCustomGraphTypeBFSTestVisitor::_vertexIterEnd, CppCustomGraphTypeBFSTestVisitor::_vertexIterNext, CppCustomGraphTypeBFSTestVisitor::_vertexIterUnpack> CppCustomGraphTypeBFSTestVisitor::__custom_incidence_and_vertex_list_graph;
+
+    CppCustomGraphTypeBFSTestVisitor::_tgtPlainEdge CppCustomGraphTypeBFSTestVisitor::tgtPlainEdge;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_bfsInnerLoopRepeat CppCustomGraphTypeBFSTestVisitor::bfsInnerLoopRepeat;
+
+
+
+    for_iterator_loop3_2<CppCustomGraphTypeBFSTestVisitor::Graph, CppCustomGraphTypeBFSTestVisitor::Vertex, CppCustomGraphTypeBFSTestVisitor::EdgeIterator, CppCustomGraphTypeBFSTestVisitor::VertexVector, CppCustomGraphTypeBFSTestVisitor::FIFOQueue, CppCustomGraphTypeBFSTestVisitor::ColorPropertyMap, CppCustomGraphTypeBFSTestVisitor::_edgeIterEnd, CppCustomGraphTypeBFSTestVisitor::_edgeIterNext, CppCustomGraphTypeBFSTestVisitor::_bfsInnerLoopStep> CppCustomGraphTypeBFSTestVisitor::__for_iterator_loop3_2;
+
+    CppCustomGraphTypeBFSTestVisitor::_bfsInnerLoopStep CppCustomGraphTypeBFSTestVisitor::bfsInnerLoopStep;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_bfsOuterLoopCond CppCustomGraphTypeBFSTestVisitor::bfsOuterLoopCond;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_bfsOuterLoopRepeat CppCustomGraphTypeBFSTestVisitor::bfsOuterLoopRepeat;
+
+
+
+    while_loop3<CppCustomGraphTypeBFSTestVisitor::Graph, CppCustomGraphTypeBFSTestVisitor::VertexVector, CppCustomGraphTypeBFSTestVisitor::FIFOQueue, CppCustomGraphTypeBFSTestVisitor::ColorPropertyMap, CppCustomGraphTypeBFSTestVisitor::_bfsOuterLoopCond, CppCustomGraphTypeBFSTestVisitor::_bfsOuterLoopStep> CppCustomGraphTypeBFSTestVisitor::__while_loop3;
+
+    CppCustomGraphTypeBFSTestVisitor::_bfsOuterLoopStep CppCustomGraphTypeBFSTestVisitor::bfsOuterLoopStep;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_breadthFirstVisit CppCustomGraphTypeBFSTestVisitor::breadthFirstVisit;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_black CppCustomGraphTypeBFSTestVisitor::black;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_get CppCustomGraphTypeBFSTestVisitor::get;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_gray CppCustomGraphTypeBFSTestVisitor::gray;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_initMap CppCustomGraphTypeBFSTestVisitor::initMap;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_put CppCustomGraphTypeBFSTestVisitor::put;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_white CppCustomGraphTypeBFSTestVisitor::white;
+
+} // examples
+} // bgl_v2
+} // mg_src
+} // bgl_v2_cpp
+
+namespace examples {
+namespace bgl_v2 {
+namespace mg_src {
+namespace bgl_v2_cpp {
 
 
     CppDFSTestVisitor::_emptyStackIsEmpty CppDFSTestVisitor::emptyStackIsEmpty;

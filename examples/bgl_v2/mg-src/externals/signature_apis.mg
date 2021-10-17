@@ -25,7 +25,7 @@ implementation ExtColorMarker = signature(ColorMarker);
 
 // TODO: there is a lot of requirements to pass through because we do not have
 // the extend keyword. Perhaps this should be improved.
-//implementation ExtEdge = signature(Edge);
+implementation ExtEdge = signature(Edge);
 
 implementation ExtIncidenceAndVertexListGraph = {
     require type Vertex;
@@ -40,6 +40,54 @@ implementation ExtIncidenceAndVertexListGraph = {
                               g: Graph): EdgeDescriptor;
 }
 
+implementation ExtCustomIncidenceAndVertexListGraph = {
+    require EdgeWithoutDescriptor[ src => srcPlainEdge
+                                 , tgt => tgtPlainEdge
+                                 ];
+    require IterableList[ A => Edge
+                        , ListIterator => EdgeIterator
+                        , List => EdgeList
+                        , cons => consEdgeList
+                        , empty => emptyEdgeList
+                        , getIterator => getEdgeIterator
+                        , head => headEdgeList
+                        , isEmpty => isEmptyEdgeList
+                        , iterEnd => edgeIterEnd
+                        , iterNext => edgeIterNext
+                        , iterUnpack => edgeIterUnpack
+                        , tail => tailEdgeList
+                        ];
+
+    require type Vertex;
+    require IterableList[ A => Vertex
+                        , ListIterator => VertexIterator
+                        , List => VertexList
+                        , cons => consVertexList
+                        , empty => emptyVertexList
+                        , getIterator => getVertexIterator
+                        , head => headVertexList
+                        , isEmpty => isEmptyVertexList
+                        , iterEnd => vertexIterEnd
+                        , iterNext => vertexIterNext
+                        , iterUnpack => vertexIterUnpack
+                        , tail => tailVertexList
+                        ];
+    
+    type Graph;
+    type VertexCount;
+
+    function src(e: Edge, g: Graph): Vertex;
+    function tgt(e: Edge, g: Graph): Vertex;
+
+    procedure outEdges(obs v: Vertex, obs g: Graph,
+                       out itr: EdgeIterator);
+    function outDegree(v: Vertex, g: Graph): VertexCount;
+
+    procedure vertices(obs g: Graph, out itr: VertexIterator);
+    function numVertices(g: Graph): VertexCount;
+}
+
+implementation ExtEdgeWithoutDescriptor = signature(EdgeWithoutDescriptor);
 /*
 implementation ExtCustomIncidenceAndVertexListGraph = {
     require type Vertex;
