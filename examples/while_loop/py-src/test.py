@@ -1,9 +1,10 @@
-from while_loop import *
+from gen_while_loop import IterationProgram
 
 def main():
-    for cls in [Int16, Int32]:
+    p = IterationProgram()
+    for cls in [p.Int16, p.Int32]:
         state, bound = cls(0), cls(65537)
-        repeat(state, bound)
+        p.repeat(state, bound)
         print(f'With class {cls.__name__}:', state)
 
 if __name__ == '__main__':

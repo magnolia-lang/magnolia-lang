@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-def while_ops(_State, _Context, _cond, _body):
+def while_ops(_Context, _State, _cond, _body):
     def body(state, context):
         return _body(state, context)
     
