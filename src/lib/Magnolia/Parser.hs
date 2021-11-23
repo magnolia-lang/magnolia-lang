@@ -286,13 +286,25 @@ blockExpr = annot $ do
 
 -- TODO: re-habilitate the 'end' keyword, or force users to put brackets.
 ifExpr :: Parser ParsedExpr
-ifExpr = annot $ do
+ifExpr = label "if-expr" $ annot $ do
   keyword IfKW
   cond <- expr
   keyword ThenKW
-  tbranch <- expr
+  tbranch <- try branchBlockExpr <|> (expr <* many semi)
   keyword ElseKW
-  MIf cond tbranch <$> expr
+  MIf cond tbranch <$> (    try (branchBlockExpr <* keyword EndKW)
+                        <|> try (expr <* keyword EndKW)
+                        <|> expr) --choice [branchBlockExpr <* keyword EndKW, expr]
+  where
+    branchBlockExpr = annot $ do
+      block <- some (expr <* some semi)
+      case block of
+        [] -> error "unreachable code path"
+        [Ann _ e] -> pure e
+        _:_       -> do let blockType = if any isValueExpr block
+                                        then MValueBlock
+                                        else MEffectfulBlock
+                        pure $ MBlockExpr blockType (NE.fromList block)
 
 callableCall :: (String -> Name) -> Parser ParsedExpr
 callableCall nameCons = annot $ do
@@ -410,7 +422,8 @@ data Keyword = ConceptKW | ImplementationKW | ProgramKW | SignatureKW
              | RequireKW | UseKW
              | ObsKW | OutKW | UpdKW
              | GuardKW
-             | AssertKW | CallKW | IfKW | ThenKW | ElseKW | LetKW | SkipKW
+             | AssertKW | CallKW | IfKW | ThenKW | ElseKW | EndKW | LetKW
+             | SkipKW
              | ValueKW
              | PackageKW | ImportKW
 
@@ -448,11 +461,21 @@ keyword kw = (lexeme . try) $ string s *> notFollowedBy nameChar
       IfKW             -> "if"
       ThenKW           -> "then"
       ElseKW           -> "else"
+      EndKW            -> "end"
       LetKW            -> "var"
       SkipKW           -> "skip"
       ValueKW          -> "value"
       PackageKW        -> "package"
       ImportKW         -> "imports"
+
+keywordStrings :: [String]
+keywordStrings = [
+    "concept", "implementation", "program", "signature", "external", "C++",
+    "JavaScript", "Python", "renaming", "satisfaction", "models",
+    "approximates", "with", "axiom", "function", "predicate", "procedure",
+    "theorem", "type", "require", "use", "obs", "out", "upd", "guard",
+    "assert", "call", "if", "then", "else", "end", "var", "skip", "value",
+    "package", "imports"]
 
 sc :: Parser ()
 sc = skipMany $
@@ -526,7 +549,14 @@ sourceFileString =
     sourceFileChar = nameChar <|> char '/'
 
 nameString :: Parser String
-nameString = lexeme . try $ (:) <$> nameChar <*> many nameChar
+nameString = try $ do
+  startState <- getParserState
+  nameStr <- lexeme . try $ (:) <$> nameChar <*> many nameChar
+  if nameStr `elem` keywordStrings
+  then do
+    updateParserState (const startState)
+    fail $ "\"" <> nameStr <> "\"" <> " is a reserved keyword."
+  else pure nameStr
 
 nameChar :: Parser Char
 nameChar = alphaNumChar <|> char '_'
