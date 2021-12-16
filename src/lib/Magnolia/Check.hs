@@ -320,7 +320,8 @@ checkCallable _ env modifiers
   mapM_ (checkArgIsUpdated finalScope) args
   Ann (_, absDeclOs) (Callable _ _ tcArgs _ tcGuard _) <-
     checkProto True env decl
-  conDeclO <- mkConcreteLocalDecl Nothing src name
+  let allRequirements = gatherAllRequirements $ join (M.elems env)
+  conDeclO <- mkConcreteLocalDecl Nothing allRequirements src name
   let tcCallableDecl = Ann (Just conDeclO, absDeclOs) $
         Callable ctype name tcArgs retType tcGuard (MagnoliaBody tcBodyExpr)
   insertAndMergeDecl env (MCallableDecl modifiers tcCallableDecl)
@@ -335,6 +336,14 @@ checkCallable _ env modifiers
             pshow (nodeName arg) <> " is 'out' but is not populated by the " <>
             "procedure body"
       _ -> pure ()
+
+    gatherAllRequirements :: [TcDecl] -> [TcDecl]
+    gatherAllRequirements = filter isRequirement
+
+    isRequirement :: TcDecl -> Bool
+    isRequirement tcDecl = case tcDecl of
+      MTypeDecl _ (Ann (conDeclO, _) _) -> isNothing conDeclO
+      MCallableDecl _ (Ann (conDeclO, _) _) -> isNothing conDeclO
 
 -- | Checks that a module expression is an inhabitant of the module type passed
 -- as a parameter.
@@ -548,7 +557,8 @@ externalizeModuleExpr backend extModuleFqn src tcModuleExpr
           then pure tcDecl
           else do
             conDeclO <- mkConcreteLocalDecl
-                  (Just (backend, extModuleFqn, allRequirements))
+                  (Just (backend, extModuleFqn))
+                  allRequirements
                   (srcCtx $ NE.head absDeclOs)
                   (nodeName tcDecl)
             pure $ MTypeDecl modifiers $ Ann (Just conDeclO, absDeclOs) tyDecl
@@ -557,7 +567,8 @@ externalizeModuleExpr backend extModuleFqn src tcModuleExpr
           then pure tcDecl
           else do
             conDeclO <- mkConcreteLocalDecl
-                  (Just (backend, extModuleFqn, allRequirements))
+                  (Just (backend, extModuleFqn))
+                  allRequirements
                   (srcCtx $ NE.head absDeclOs)
                   (nodeName tcDecl)
             pure $ MCallableDecl modifiers $
@@ -955,16 +966,22 @@ insertAndMergeDecl env decl = do
           newAnns <- mergeAnns anns matchAnn
           -- TODO: add check
           -- If a body is provided, we must take care to pick the right
-          -- prototype so the name of the arguments mathces the names that are
+          -- prototype so the name of the arguments matches the names that are
           -- used in the body of the callable.
           (newArgs, newBody) <- case (body, matchBody) of
             (EmptyBody, _) -> pure (matchArgs, matchBody)
             (_, EmptyBody) -> pure (args, body)
             _ -> do
-              unless (body == matchBody) $
+              unless (body == matchBody) $ do
+                let ~(Just conDeclO1, absDeclO1 :| _) = matchAnn
+                    ~(Just conDeclO2, absDeclO2 :| _) = anns
                 throwLocatedE CompilerErr errorLoc $
                   "annotation merging succeeded but got two different " <>
-                  "implementations for " <> nameAndProto
+                  "implementations for " <> nameAndProto <> " declared at " <>
+                  pshow (srcCtx absDeclO1) <> " and " <>
+                  pshow (srcCtx absDeclO2) <> " (requirements are: " <>
+                  pshow (L.sort $ concreteDeclOriginRequirements conDeclO2) <>
+                  " vs " <> pshow (L.sort $ concreteDeclOriginRequirements conDeclO1) <> ")"
               pure (args, body)
           let newModifiers = [Require | Require `elem` modifiers &&
                                         Require `elem` matchModifiers]
@@ -1019,20 +1036,31 @@ insertAndMergeDecl env decl = do
       let newAbsDeclOs = mergeAbstractDeclOs absDeclOs1 absDeclOs2
       in case (mconDeclO1, mconDeclO2) of
         (Just conDeclO1, Just conDeclO2) -> do
-          newConDeclO <- mergeConcreteDeclOs conDeclO1 conDeclO2
+          let (absDeclO1, absDeclO2) = (NE.head absDeclOs1, NE.head absDeclOs2)
+          newConDeclO <- mergeConcreteDeclOs (conDeclO1, absDeclO1)
+                                             (conDeclO2, absDeclO2)
           return (Just newConDeclO, newAbsDeclOs)
         _ -> return (mconDeclO1 <|> mconDeclO2, newAbsDeclOs)
 
-    mergeConcreteDeclOs :: ConcreteDeclOrigin
-                        -> ConcreteDeclOrigin
+    mergeConcreteDeclOs :: (ConcreteDeclOrigin, AbstractDeclOrigin)
+                        -> (ConcreteDeclOrigin, AbstractDeclOrigin)
                         -> MgMonad ConcreteDeclOrigin
-    mergeConcreteDeclOs conDeclO1 conDeclO2
+    mergeConcreteDeclOs (conDeclO1, absDeclO1) (conDeclO2, absDeclO2)
       | conDeclO1 == conDeclO2 = pure conDeclO1
-      | srcCtx conDeclO1 == srcCtx conDeclO2 =
+      | srcCtx conDeclO1 == srcCtx conDeclO2 = do
+          -- TODO: sort according to original order of map
+          let reqs1 = L.sort $ concreteDeclOriginRequirements conDeclO1
+              reqs2 = L.sort $ concreteDeclOriginRequirements conDeclO2
+              (src1, src2, reqs1', reqs2') =
+                if absDeclO1 < absDeclO2
+                then (srcCtx absDeclO1, srcCtx absDeclO2, reqs1, reqs2)
+                else (srcCtx absDeclO2, srcCtx absDeclO1, reqs2, reqs1)
           throwLocatedE InvalidDeclErr errorLoc $
             nameAndProto <> " declared at " <> pshow (srcCtx conDeclO1) <>
-            " was imported twice with conflicting requirements. Consider " <>
-            "renaming one of the imported instances."
+            " was imported at " <> pshow src1 <> " and " <> pshow src2 <>
+            " with conflicting requirements (one instance depends on " <>
+            T.intercalate "," (map pshow reqs1') <> " while the other " <>
+            "depends on " <> T.intercalate "," (map pshow reqs2') <> ")"
       | otherwise = let (src1, src2) = if conDeclO1 < conDeclO2
                                        then (srcCtx conDeclO1, srcCtx conDeclO2)
                                        else (srcCtx conDeclO2, srcCtx conDeclO1)
