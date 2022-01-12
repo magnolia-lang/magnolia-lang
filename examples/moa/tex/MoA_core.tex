@@ -1,0 +1,79 @@
+\documentclass{article}
+\author{Marius Kleppe Larnøy}
+
+\begin{document}
+
+
+\title{MoA core Magnolia API}
+\maketitle
+
+\noindent Here we outline the core MoA Magnolia API, including padding operations. For now all modules are \texttt{signature} modules, but we will introduce axioms when the core structure is in place.
+
+\noindent Rather than going really abstract top-level when designing the API, this specification will be developed more with a concrete implementation in mind.
+
+\section{Core concepts/signatures}
+
+\subsection{\texttt{signature/concept Array}}
+\noindent The generic Array signature. Contains the basic types we need, and the core functions.
+
+\noindent \textbf{Types:}
+\begin{itemize}
+    \item A: generic (A)rray type
+    \item E: generic (E)lement type
+    \item I: generic (I)ndex type
+    \item Int: some form of integer
+    \item Shape: type to represent the collection of an arrays dimensional lengths
+\end{itemize}
+
+\noindent \textbf{Unary Operations}
+\begin{itemize}
+    \item \texttt{dim(a:A):Int}
+    \item \texttt{shape(a:A):Shape}
+    \item \texttt{total(s:Shape):Int}
+\end{itemize}
+
+\noindent \textbf{(Helper predicates? not sure about these)}
+\begin{itemize}
+    \item \texttt{validIndex(i:I,a:A)}
+    \item \texttt{partialIndex(i:I,a:A)} (i.e. \texttt{total(i) < total(shape(a))})
+    \item \texttt{totalIndex(i:I,a:A)} (i.e. \texttt{total(i) == total(shape(a))})
+\end{itemize}
+\noindent \textbf{Binary Operations}
+\begin{itemize}
+    \item \texttt{cat(a:A,b:A):A guard shape(a) == shape(b)}
+    \item \texttt{psi(i:I,a:A):A guard partialIndex(i,a)}
+    \item \texttt{psi(i:I,a:A):E guard totalIndex(i,a)}
+    \item \texttt{take(i:I,a:A):A guard validIndex(i,a)}
+    \item \texttt{drop(i:I,a:A):A guard validIndex(i,a)}
+\end{itemize}
+
+\section{\texttt{concept Padding}}
+\noindent \textbf{TODO}
+\section{\texttt{concept MoA}}
+\noindent Here we import the generic Array concept, and can define separate array types. This also allows us to define more operations requiring finer typing.
+
+\noindent \textbf{Imports/renamings}
+\begin{itemize}
+    \item \texttt{Array[A => LinearArray, I => LinearIndex]}
+    \item \texttt{Array[A => MultiArray, I => MultiIndex]}
+\end{itemize}
+
+\noindent \textbf{Operations}
+\begin{itemize}
+    \item \texttt{iota(i:Int):LinearArray}
+    \item \texttt{ravel(a:MultiArray):LinearArray}
+    \item \texttt{reshape(s:Shape,a:MultiArray):MultiArray \\ guard total(s)==total(shape(a))}
+\end{itemize}
+\section{General notes, thoughts}
+
+\begin{itemize}
+    \item Question: overload functions like total on argument type, or define separate functions for different types. E.g. total of a shape neccessary, or just design shape signature with a function that yields the total
+    \item Question: specify Util concepts like Int and abstract structures like Semigroup/Monoid. Not part of core moa, but useful
+    \item Question: Would it be any benefit to further split up the concepts? e.g. some functions in one concept, padding separated maybe? not sure
+    \item Follow-up: Might be best to define operations closer to their intended arguments. The upside to doing it like this is that we keep the signatures lean and clean, and dont have to import redundant signatures for defining operations. Also avoid circular dependencies
+    \item Follow-up2: separate DNF and ONF level operations?
+    \item some sort of Map concept? more of a underlying concept, how does the operations actually apply to arrays
+\end{itemize}
+
+
+\end{document}
