@@ -73,6 +73,7 @@
     \item Follow-up: Might be best to define operations closer to their intended arguments. The upside to doing it like this is that we keep the signatures lean and clean, and dont have to import redundant signatures for defining operations. Also avoid circular dependencies
     \item Follow-up2: separate DNF and ONF level operations?
     \item some sort of Map concept? more of a underlying concept, how does the operations actually apply to arrays
+    \item Note: Separating the types, while bringing some much needed distinctions between elements, brings with it its own set of issues. Neccessarily it leads to many of the functions requiring overloading, bringing redundancy into the code. Might need some design rethinking to avoid it, or maybe it is a neccessary evil.
 \end{itemize}
 
 

@@ -24,7 +24,7 @@ concept Monoid = {
     }
 }
 
-concept Int = {
+concept Int= {
 
     // gives us zero and addition
     use Monoid [M => Int,

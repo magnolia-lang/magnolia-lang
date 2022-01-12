@@ -6,7 +6,9 @@ package moa imports Util;
 * @since 2022-01-11
 */
 
-signature Array = {
+concept Array = {
+
+    use Int;
 
     // the array type
     type A;
@@ -17,7 +19,6 @@ signature Array = {
     // the index type
     type I;
 
-    type Int;
     type Shape;
 
     // core unary functions
@@ -38,29 +39,63 @@ signature Array = {
 
     function psi(i: I, a: A): A guard partialIndex(i,a);
     function psi(i: I, a: A): E guard totalIndex(i,a);
+    function psi(i: I, s: Shape): Int;  // accessing elements of the shape
 
     function take(i: I, a: A): A guard validIndex(i,a);
     function drop(i: I, a: A): A guard validIndex(i,a);
 
-    // onf level?
+
+    // transformations
+    function reverse(a: A): A;
+    function reverse(s: Shape): Shape;
+
+    axiom reverseAxiom(a: A, s: Shape) {
+        assert shape(reverse(a)) == shape(a);
+        assert shape(reverse(s)) == shape(s);
+    }
+
+    function rotate(ax: Int, a: A): A guard ax < total(shape(a));
+
+    function transpose(a: A): A;
+    axiom transposeAxiom(a: A) {
+        assert shape(transpose(a)) == reverse(shape(a));
+    }
+
+    // ONF
     function reshape(s: Shape, a: A): A guard total(s) == total(shape(a));
     //function gamma
 
+    // from padding paper, what is s_j, the j'th element of shape(a)?
+    function lift(j: I, d: Int, q: Int, a: A): A;
+    // TODO maybe put as guard instead?
+    axiom liftAxiom(j: I, d: Int, q: Int, a: A) {
+        assert d*q == psi(j, shape(a));
+    }
 }
 
 // put in array concept instead? more to avoid (more) messy code for now
-signature Padding = {
+concept Padding = {
 
     use Array;
 
-    function shape_ann(a: A): Shape;
+    // is this neccessary?
+    type Shape_ann;
+
+    function shape_ann(a: A): Shape_ann;
+
+    function padr(ax: Int, a: A, k: I): A;
+    function padl(ax: Int, a: A, k: I): A;
 
 
+    function liftp(): A;
+    /* prelift_i(d,A) = B
+
+    */
+    function prelift(): A;
     /*
-    function padr()
-    function padl()
+
     function prelift()
-    function liftp()
+
     function dpadr()
     function dpadl()
 */
@@ -69,7 +104,9 @@ signature Padding = {
 
 }
 
-signature MoA = {
+concept MoA = {
+
+    use Padding;
 
     use Array[A => LinearArray, I => LinearIndex];
     use Array[A => MultiArray, I => MultiIndex];
