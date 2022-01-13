@@ -24,7 +24,7 @@ concept Monoid = {
     }
 }
 
-concept Int= {
+concept Int = {
 
     // gives us zero and addition
     use Monoid [M => Int,
@@ -80,5 +80,26 @@ concept BMap = {
 
     function bop(e1: E, e2: E): E;
     function bopmap(e: E, a: A): A;
+}
 
+/*
+useful predicates and helper functions
+*/
+
+concept UtilFunctions = {
+
+    type A;
+    type E;
+    type I;
+    type Shape;
+
+    // need some form of predicate to define valid bounds
+    predicate validIndex(i: I, a: A);
+    // i.e. total(i) < total(shape(a))
+    predicate partialIndex(i: I, a: A);
+    // i.e. total(i) == total(shape(a))
+    predicate totalIndex(i: I, a: A);
+
+    // conversions between differernt "equivalent" array types
+    function shapeToArray(s: Shape): A;
 }
