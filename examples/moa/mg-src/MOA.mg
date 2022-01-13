@@ -1,4 +1,4 @@
-package moa imports Util;
+package MOA imports Util;
 
 /*
 * Barebone MoA API with core operations
@@ -10,6 +10,10 @@ concept Array = {
 
     use Int;
 
+    type A;
+    type E;
+    type I;
+    type Shape;
     /*
     gives us:
         type A;
@@ -21,7 +25,7 @@ concept Array = {
 
         predicates for checking index bounds and lengths
     */
-    use UtilFunctions;
+    use UtilFunctions[A=>A,E=>E,I=>I,Shape=>Shape];
 
     // core unary functions
     function dim(a: A): Int;
@@ -99,12 +103,10 @@ concept Padding = {
 
 }
 
-concept MoA = {
+concept MOA = {
 
-    use Padding;
-
-    use Array[A => LinearArray, I => LinearIndex];
-    use Array[A => MultiArray, I => MultiIndex];
+    use Padding[A => LinearArray, I => LinearIndex];
+    use Padding[A => MultiArray, I => MultiIndex];
 
     function iota(i: Int): LinearArray;
 
