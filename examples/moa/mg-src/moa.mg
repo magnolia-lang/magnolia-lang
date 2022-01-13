@@ -35,7 +35,9 @@ concept Array = {
     predicate totalIndex(i: I, a: A);
 
     // core binary operations
-    function cat(a: A, b: A): A guard shape(a) == shape(b);
+
+    // function cat(a: A, b: A): A ;
+    use Monoid[M => A, op => cat, id => empty];
 
     function psi(i: I, a: A): A guard partialIndex(i,a);
     function psi(i: I, a: A): E guard totalIndex(i,a);
@@ -47,31 +49,21 @@ concept Array = {
 
     // transformations
     function reverse(a: A): A;
-    function reverse(s: Shape): Shape;
-
-    axiom reverseAxiom(a: A, s: Shape) {
-        assert shape(reverse(a)) == shape(a);
-        assert shape(reverse(s)) == shape(s);
-    }
 
     function rotate(ax: Int, a: A): A guard ax < total(shape(a));
 
     function transpose(a: A): A;
-    axiom transposeAxiom(a: A) {
-        assert shape(transpose(a)) == reverse(shape(a));
-    }
 
     // ONF
     function reshape(s: Shape, a: A): A guard total(s) == total(shape(a));
     //function gamma
 
-    // from padding paper, what is s_j, the j'th element of shape(a)?
-    function lift(j: I, d: Int, q: Int, a: A): A;
-    // TODO maybe put as guard instead?
-    axiom liftAxiom(j: I, d: Int, q: Int, a: A) {
-        assert d*q == psi(j, shape(a));
-    }
+    // arithmetic operations on arrays
+    use BMap[A => A, E => E, bop => _+_, bopmap => _+_];
+    use BMap[A => A, E => E, bop => _*_, bopmap => _*_];
 }
+
+
 
 // put in array concept instead? more to avoid (more) messy code for now
 concept Padding = {
@@ -82,6 +74,13 @@ concept Padding = {
     type Shape_ann;
 
     function shape_ann(a: A): Shape_ann;
+
+     // from padding paper, what is s_j, the j'th element of shape(a)?
+    function lift(j: I, d: Int, q: Int, a: A): A;
+    // TODO maybe put as guard instead?
+    axiom liftAxiom(j: I, d: Int, q: Int, a: A) {
+        assert d*q == psi(j, shape(a));
+    }
 
     function padr(ax: Int, a: A, k: I): A;
     function padl(ax: Int, a: A, k: I): A;
@@ -99,8 +98,6 @@ concept Padding = {
     function dpadr()
     function dpadl()
 */
-
-
 
 }
 

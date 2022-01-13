@@ -70,3 +70,15 @@ concept Int= {
         (lowerInclusive <= i) && (i <= upperInclusive);
     }
 }
+
+/*
+need to be able to map functions over array elements
+*/
+concept BMap = {
+    type A;
+    type E;
+
+    function bop(e1: E, e2: E): E;
+    function bopmap(e: E, a: A): A;
+
+}
