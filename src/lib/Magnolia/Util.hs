@@ -25,7 +25,7 @@ import Control.Monad
 import qualified Data.Graph as G
 import qualified Data.List as L
 import qualified Data.Map as M
-import Data.Text.Prettyprint.Doc (Pretty)
+import Prettyprinter (Pretty)
 import qualified Data.Text.Lazy as T
 import Data.Void (absurd)
 

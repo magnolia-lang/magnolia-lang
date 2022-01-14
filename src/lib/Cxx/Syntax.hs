@@ -52,8 +52,8 @@ import qualified Data.Set as S
 import qualified Data.Text.Lazy as T
 import qualified Data.Text.Lazy.IO as TIO
 
-import Data.Text.Prettyprint.Doc
-import Data.Text.Prettyprint.Doc.Render.Text
+import Prettyprinter
+import Prettyprinter.Render.Text
 
 import Env
 import Magnolia.PPrint
