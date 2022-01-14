@@ -330,7 +330,7 @@ data CxxStmt = CxxStmtBlock CxxStmtBlock
 type CxxStmtBlock = [CxxStmt]
 
 -- | Useful inline statements in the C++ world.
-data CxxStmtInline = -- | A variable assignement.
+data CxxStmtInline = -- | A variable assignment.
                      CxxAssign CxxName CxxExpr
                      -- | A variable declaration.
                    | CxxVarDecl CxxVar (Maybe CxxExpr)
@@ -371,7 +371,7 @@ data CxxExpr = -- | A call to a function.
 data CxxUnOp = CxxLogicalNot
                deriving (Eq, Ord, Show)
 
-data CxxBinOp = CxxLogicalAnd | CxxLogicalOr | CxxEqual
+data CxxBinOp = CxxLogicalAnd | CxxLogicalOr | CxxEqual | CxxNotEqual
                 deriving (Eq, Ord, Show)
 
 data CxxLambdaCaptureDefault = CxxLambdaCaptureDefaultValue
@@ -482,7 +482,8 @@ pshowCxxPackage mbasePath cxxOutMode =
 prettyCxxPackage :: Maybe FilePath -> CxxOutMode -> CxxPackage -> Doc ann
 prettyCxxPackage mbasePath cxxOutMode (CxxPackage pkgName includes modules) =
     (case cxxOutMode of
-      CxxHeader -> vsep (map (prettyCxxInclude mbasePath) $ L.sort includes)
+      CxxHeader -> "#pragma once" <> line <> line <>
+        vsep (map (prettyCxxInclude mbasePath) $ L.sort includes)
       CxxImplementation -> prettyCxxInclude mbasePath
         (mkCxxRelativeMgIncludeFromName pkgName)) <> line <> line <>
     vsep (map ((line <>) . prettyCxxModule cxxOutMode) $
@@ -688,6 +689,7 @@ instance Pretty CxxBinOp where
     CxxLogicalOr -> "||"
     CxxLogicalAnd -> "&&"
     CxxEqual -> "=="
+    CxxNotEqual -> "!="
 
 instance Pretty CxxLambdaCaptureDefault where
   -- When capturing by value, we explicitly capture "this", to avoid the

@@ -49,6 +49,11 @@ update-tests:
 		make update-tests-pass pass=$$pass ; \
 	done
 
+tmp-tests-py: $(self-contained-codegen-test-targets:%=tmp-test-py-%)
+
+tmp-test-py-%: tests/self-contained-codegen/inputs/%.mg
+	$(mgn) test --pass self-contained-codegen --backend python $<
+
 tests-pass: $($(pass)-test-targets:%=check-output-%)
 
 update-tests-pass: $($(pass)-test-targets:%=update-output-%)
@@ -62,15 +67,23 @@ check-output-%: tests/$(pass)/inputs/%.mg tests/$(pass)/outputs/%.mg.out build
 update-output-%: tests/$(pass)/inputs/%.mg build
 	$(mgn) test --pass $(pass) --output-directory=$(tests-out-dir) $< > tests/$(pass)/outputs/$(notdir $<).out
 
-example-names = containers \
+example-names = bgl \
+                containers \
                 fizzbuzz \
                 while_loop
 
-build-examples: $(example-names:%=build-example-%)
+build-examples: build-examples-cpp build-examples-py
 
-build-example-%: examples/% build
+build-examples-cpp: $(example-names:%=build-example-cpp-%)
+build-examples-py:  $(example-names:%=build-example-py-%)
+
+build-example-cpp-%: examples/% build
 	$(eval example-name := $(notdir $<))
-	$(mgn) build --output-directory $</cpp-src/gen --base-import-directory gen --allow-overwrite $</mg-src/$(example-name).mg
+	$(mgn) build --output-directory $</cpp-src/gen --backend cpp --base-import-directory gen --allow-overwrite $</mg-src/$(example-name)-cpp.mg
 	make -C $<
-	# TODO(bchetioui): add hashtree tool to check generation is a noop
-	# TODO(bchetioui): add to CI
+	@# TODO(bchetioui): add hashtree tool to check generation is a noop
+	@# TODO(bchetioui): add to CI
+
+build-example-py-%: examples/% build
+	$(eval example-name := $(notdir $<))
+	$(mgn) build --output-directory $</py-src/gen --backend python --base-import-directory gen --allow-overwrite $</mg-src/$(example-name)-py.mg

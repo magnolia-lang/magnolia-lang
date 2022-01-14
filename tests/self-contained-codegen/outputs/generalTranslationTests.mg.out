@@ -1,3 +1,5 @@
+#pragma once
+
 #include "E.hpp"
 #include <cassert>
 
@@ -23,15 +25,21 @@ public:
     typedef ExternalImplementationSomeType::B X;
     typedef ExternalImplementation<P::X>::Y Y;
     struct __mkY {
-        P::Y operator()();
+        inline P::Y operator()() {
+            return __ExternalImplementation.mkY();
+        };
     };
 
     static P::__mkY _mkY;
 private:
-    static void some_f_overloaded_on_return_type0(P::Y& o);
+    static inline void some_f_overloaded_on_return_type0(P::Y& o) {
+        o = P::_mkY();
+    };
 public:
     struct __+_ {
-        P::X operator()(const P::X& lhs, const P::X& rhs);
+        inline P::X operator()(const P::X& lhs, const P::X& rhs) {
+            return __ExternalImplementation.binary_add(lhs, rhs);
+        };
     };
 
     static P::__+_ binary_add;
@@ -39,22 +47,54 @@ private:
     static ExternalImplementation<P::X> __ExternalImplementation;
 public:
     struct _all_statements {
-        void operator()(const P::X& x_obs, P::X& x_upd, P::X& x_out);
+        inline void operator()(const P::X& x_obs, P::X& x_upd, P::X& x_out) {
+            x_out = x_obs;
+            x_out = [=, this]() {
+                return P::mkX();
+            }();
+            P::X x_var_unassigned;
+            P::X x_var_assigned = x_obs;
+            assert((x_obs) == (x_obs));
+            P::helper_assign(x_upd);
+            x_out = (x_obs) == (x_obs) ? x_out : x_obs;
+            if ((x_obs) == (x_obs))
+            {
+                ;
+            }
+            else
+            {
+                ;
+            }
+            if ((true) || (false))
+            {
+                ;
+            }
+            else
+            {
+                ;
+            }
+        };
     };
 
     static P::_all_statements all_statements;
     struct _call_f_overloaded_on_return_type {
-        P::X operator()();
+        inline P::X operator()() {
+            return P::some_f_overloaded_on_return_type.operator()<X>();
+        };
     };
 
     static P::_call_f_overloaded_on_return_type call_f_overloaded_on_return_type;
     struct _helper_assign {
-        void operator()(P::X& x_out);
+        inline void operator()(P::X& x_out) {
+            x_out = P::mkX();
+        };
     };
 
     static P::_helper_assign helper_assign;
     struct _mkX {
-        P::X operator()();
+        inline P::X operator()() {
+            return __ExternalImplementation.mkX();
+        };
     };
 
 private:
@@ -62,7 +102,9 @@ private:
 public:
     static P::_mkX mkX;
 private:
-    static void some_f_overloaded_on_return_type0(P::X& o);
+    static inline void some_f_overloaded_on_return_type0(P::X& o) {
+        o = P::mkX();
+    };
 public:
     typedef ExternalImplementationSomeMoreTypes<P::Y, P::X, P::Y, P::_mkX>::AConcreteType AConcreteType;
 };
@@ -94,83 +136,33 @@ namespace generalTranslationTests {
 
     ExternalImplementationSomeType P::__ExternalImplementationSomeType;
 
-    P::Y P::__mkY::operator()() {
-        return __ExternalImplementation.mkY();
-    };
 
 
     P::__mkY P::_mkY;
 
-    void P::some_f_overloaded_on_return_type0(P::Y& o) {
-        o = P::_mkY();
-    };
-
-    P::X P::__+_::operator()(const P::X& lhs, const P::X& rhs) {
-        return __ExternalImplementation.binary_add(lhs, rhs);
-    };
 
 
     P::__+_ P::binary_add;
 
     ExternalImplementation<P::X> P::__ExternalImplementation;
 
-    void P::_all_statements::operator()(const P::X& x_obs, P::X& x_upd, P::X& x_out) {
-        x_out = x_obs;
-        x_out = [=, this]() {
-            return P::mkX();
-        }();
-        P::X x_var_unassigned;
-        P::X x_var_assigned = x_obs;
-        assert((x_obs) == (x_obs));
-        P::helper_assign(x_upd);
-        x_out = (x_obs) == (x_obs) ? x_out : x_obs;
-        if ((x_obs) == (x_obs))
-        {
-            ;
-        }
-        else
-        {
-            ;
-        }
-        if ((true) || (false))
-        {
-            ;
-        }
-        else
-        {
-            ;
-        }
-    };
 
 
     P::_all_statements P::all_statements;
 
-    P::X P::_call_f_overloaded_on_return_type::operator()() {
-        return P::some_f_overloaded_on_return_type.operator()<X>();
-    };
 
 
     P::_call_f_overloaded_on_return_type P::call_f_overloaded_on_return_type;
 
-    void P::_helper_assign::operator()(P::X& x_out) {
-        x_out = P::mkX();
-    };
 
 
     P::_helper_assign P::helper_assign;
 
-    P::X P::_mkX::operator()() {
-        return __ExternalImplementation.mkX();
-    };
 
 
     ExternalImplementationSomeMoreTypes<P::Y, P::X, P::Y, P::_mkX> P::__ExternalImplementationSomeMoreTypes;
 
     P::_mkX P::mkX;
-
-    void P::some_f_overloaded_on_return_type0(P::X& o) {
-        o = P::mkX();
-    };
 
 } // tests
 } // self_contained_codegen

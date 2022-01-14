@@ -48,6 +48,9 @@ library
                   , Make
                   , Monad
                   , MgToCxx
+                  , MgToPython
+                  , MgToUtil
+                  , Python.Syntax
 
 executable magnolia
   default-language:    Haskell2010

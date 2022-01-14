@@ -15,7 +15,12 @@ type Env a = M.Map Name a
 data Name = Name { _namespace :: NameSpace
                  , _name :: String
                  }
-            deriving (Eq, Ord, Show)
+            deriving (Eq, Show)
+
+-- TODO: Document somewhere the order for generated code.
+instance Ord Name where
+  (Name ns1 n1) `compare` (Name ns2 n2) =
+    n1 `compare` n2 <> ns1 `compare` ns2
 
 data FullyQualifiedName = FullyQualifiedName { _scopeName :: Maybe Name
                                              , _targetName :: Name

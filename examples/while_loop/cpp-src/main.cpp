@@ -1,5 +1,5 @@
 #include <iostream>
-#include "gen/examples/while_loop/mg-src/while_loop.hpp"
+#include "gen/examples/while_loop/mg-src/while_loop-cpp.hpp"
 
 int main(int argc, char **argv) {
     --argc;
@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
 
     // TODO: add a base build path to compiler args to avoid having so many
     // nested useless folders when compiling from somewhere else.
-    examples::while_loop::mg_src::while_loop::IterationProgram P;
+    examples::while_loop::mg_src::while_loop_cpp::IterationProgram P;
 
     int32_utils::Int32 iterator32, bound32;
     int16_utils::Int16 iterator16, bound16;
