@@ -29,27 +29,43 @@
 \begin{itemize}
     \item \texttt{dim(a:A):Int}
     \item \texttt{shape(a:A):Shape}
+    \item \texttt{total(a:A):Int}
+    \item \texttt{total(i:I):Int}
     \item \texttt{total(s:Shape):Int}
 \end{itemize}
 
-\noindent \textbf{(Helper predicates? not sure about these)}
-\begin{itemize}
-    \item \texttt{validIndex(i:I,a:A)}
-    \item \texttt{partialIndex(i:I,a:A)} (i.e. \texttt{total(i) < total(shape(a))})
-    \item \texttt{totalIndex(i:I,a:A)} (i.e. \texttt{total(i) == total(shape(a))})
-\end{itemize}
 \noindent \textbf{Binary Operations}
 \begin{itemize}
-    \item \texttt{cat(a:A,b:A):A guard shape(a) == shape(b)}
+    \item \texttt{cat: Monoid[M => A, op => cat, id => empty]}
     \item \texttt{psi(i:I,a:A):A guard partialIndex(i,a)}
     \item \texttt{psi(i:I,a:A):E guard totalIndex(i,a)}
+    \item \texttt{psi(i:I,s:Shape):Int guard total(i)<total(s)}
     \item \texttt{take(i:I,a:A):A guard validIndex(i,a)}
     \item \texttt{drop(i:I,a:A):A guard validIndex(i,a)}
 \end{itemize}
 
-\section{\texttt{concept Padding}}
+\noindent \textbf{Transformations}
+\begin{itemize}
+    \item \texttt{reverse(a:A):A}
+    \item \texttt{rotate(ax:Int,a:A):A guard ax < total(shape(a))}
+    \item \texttt{transpose(a:A):A}
+\end{itemize}
+
+\noindent \textbf{ONF operations}
+\begin{itemize}
+    \item \texttt{reshape(s:Shape,a:MultiArray):MultiArray \\ guard total(s)==total(shape(a))}
+    \item \texttt{gamma(i:I,s:Shape):I \\ guard totalIndex(i,shapeToArray(s));}
+\end{itemize}
+
+
+\noindent \textbf{Arithmetic operations (map)}
+\begin{itemize}
+    \item \texttt{BMap[A => A, E => E, bop => \_+\_, bopmap => \_+\_]}
+    \item \texttt{BMap[A => A, E => E, bop => \_*\_, bopmap => \_*\_]}
+\end{itemize}
+\subsection{\texttt{concept Padding}}
 \noindent \textbf{TODO}
-\section{\texttt{concept MoA}}
+\subsection{\texttt{concept MoA}}
 \noindent Here we import the generic Array concept, and can define separate array types. This also allows us to define more operations requiring finer typing.
 
 \noindent \textbf{Imports/renamings}
@@ -62,8 +78,23 @@
 \begin{itemize}
     \item \texttt{iota(i:Int):LinearArray}
     \item \texttt{ravel(a:MultiArray):LinearArray}
-    \item \texttt{reshape(s:Shape,a:MultiArray):MultiArray \\ guard total(s)==total(shape(a))}
 \end{itemize}
+
+\section{Util?}
+\begin{itemize}
+    \item \texttt{concept Semigroup}
+    \item \texttt{concept Monoid}
+    \item \texttt{concept Int}
+    \item \texttt{concept BMap}
+    \item \texttt{concept UtilFunctions}
+    \begin{itemize}
+        \item \texttt{function shapeToArray(s:Shape):A}
+        \item \texttt{validIndex(i:I,a:A)}
+        \item \texttt{partialIndex(i:I,a:A)} (i.e. \texttt{total(i) < total(shape(a))})
+        \item \texttt{totalIndex(i:I,a:A)} (i.e. \texttt{total(i) == total(shape(a))}
+    \end{itemize}
+\end{itemize}
+
 \section{General notes, thoughts}
 
 \begin{itemize}
