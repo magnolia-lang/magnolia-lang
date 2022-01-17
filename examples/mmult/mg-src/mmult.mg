@@ -10,6 +10,7 @@ implementation ImplMatrixMult = external C++ base.matrix {
     type Matrix;
 
     procedure printMatrix(obs a: Matrix);
+    function create_matrix(row: Size, col: Size): Matrix;
     function zeros(row: Size, col: Size): Matrix;
     function rand_matrix(row: Size, col: Size, upper_bound: Size): Matrix;
 

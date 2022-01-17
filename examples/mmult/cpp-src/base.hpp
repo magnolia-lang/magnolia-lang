@@ -34,7 +34,18 @@ struct matrix {
 
         return Matrix(row,col);
     }
-
+    inline matrix::Matrix create_matrix(const Size row, const Size col) {
+        auto m = Matrix(row,col);
+        std::cout << "Enter elements:" << std::endl;
+        for (auto i = 0; i < row; i++) {
+            for (auto j = 0; j < col; j++) {
+                Element num;
+                std::cin >> num;
+                m.set(i,j, num);
+            }
+        }
+        return m;
+    }
     inline matrix::Matrix rand_matrix(const Size row, const Size col, const int upper_bound) {
         Matrix matr = zeros(row,col);
         for (auto i = 0; i < row; i++) {

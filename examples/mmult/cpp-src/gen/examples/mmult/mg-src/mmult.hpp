@@ -23,6 +23,11 @@ public:
 
     static MatrixProgram::_printMatrix printMatrix;
     typedef matrix<MatrixProgram::Int32>::Size Size;
+    struct _create_matrix {
+        MatrixProgram::Matrix operator()(const MatrixProgram::Size& row, const MatrixProgram::Size& col);
+    };
+
+    static MatrixProgram::_create_matrix create_matrix;
     struct _rand_matrix {
         MatrixProgram::Matrix operator()(const MatrixProgram::Size& row, const MatrixProgram::Size& col, const MatrixProgram::Size& upper_bound);
     };

@@ -15,21 +15,17 @@ int main(int argc, char **argv) {
 
     if (atoi(argv[2]) == atoi(argv[3])) {
 
-        examples::mmult::mg_src::mmult::MatrixProgram::Matrix a = P.rand_matrix(atoi(argv[1]), atoi(argv[2]),10);
-        examples::mmult::mg_src::mmult::MatrixProgram::Matrix b = P.rand_matrix(atoi(argv[3]), atoi(argv[4]),10);
+        examples::mmult::mg_src::mmult::MatrixProgram::Matrix a = P.create_matrix(atoi(argv[1]), atoi(argv[2]));
+
+        examples::mmult::mg_src::mmult::MatrixProgram::Matrix b = P.create_matrix(atoi(argv[3]), atoi(argv[4]));
+
         P.printMatrix(a);
         std::cout << "x" << std::endl;
         P.printMatrix(b);
         std::cout << "=" << std::endl;
-        P.printMatrix(P.mmult(
-        P.rand_matrix(atoi(argv[1]), atoi(argv[2]),10),
-        P.rand_matrix(atoi(argv[3]), atoi(argv[3]),10)));
+        P.printMatrix(P.mmult(a,b));
     }
     else {
         std::cout << "Cannot multiply matrices, need shapes m x n and n x p" << std::endl;
     }
-
-
-
-
 }

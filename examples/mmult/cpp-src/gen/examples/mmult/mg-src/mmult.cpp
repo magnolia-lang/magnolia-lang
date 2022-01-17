@@ -21,6 +21,13 @@ namespace mmult {
 
     MatrixProgram::_printMatrix MatrixProgram::printMatrix;
 
+    MatrixProgram::Matrix MatrixProgram::_create_matrix::operator()(const MatrixProgram::Size& row, const MatrixProgram::Size& col) {
+        return __matrix.create_matrix(row, col);
+    };
+
+
+    MatrixProgram::_create_matrix MatrixProgram::create_matrix;
+
     MatrixProgram::Matrix MatrixProgram::_rand_matrix::operator()(const MatrixProgram::Size& row, const MatrixProgram::Size& col, const MatrixProgram::Size& upper_bound) {
         return __matrix.rand_matrix(row, col, upper_bound);
     };
