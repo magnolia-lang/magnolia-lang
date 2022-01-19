@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "*.mg": "magnolia",
+        "iostream": "cpp"
+    }
+}

@@ -105,7 +105,16 @@
     \item Follow-up2: separate DNF and ONF level operations?
     \item some sort of Map concept? more of a underlying concept, how does the operations actually apply to arrays
     \item Note: Separating the types, while bringing some much needed distinctions between elements, brings with it its own set of issues. Neccessarily it leads to many of the functions requiring overloading, bringing redundancy into the code. Might need some design rethinking to avoid it, or maybe it is a neccessary evil.
+    \item Finding it a bit hard to distinguish between which functions are staying in C++ and those that have to be implemented in Magnolia. Why even leave implementation to Mg when it can be done in Cpp
+    \item \begin{itemize}
+        \item \textbf{Benjamin:} For example, we can not apply rewrite rules on backend code. For axiom-based rewriting, we need to write in Magnolia. Also, our language is more restricted, which allows for different kinds of transformations that would not be possible in C++.
+    \end{itemize}
+    \item Only template types have keyword required? Makes sense as other types are provided
+    \item \begin{itemize}
+        \item \textbf{Benjamin:} Required = this external block is well-defined if this type is provided. Not required (in external blocks) = this external block, once well-defined, provides you with this type
+    \end{itemize}
+    \item Design choice, limit C++ implemented functions to basic access, define the rest via moa in Magnolia
+    \item Loops in Magnolia
 \end{itemize}
-
 
 \end{document}

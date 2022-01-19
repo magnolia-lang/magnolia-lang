@@ -3,7 +3,7 @@
 *
 *
 */
-package Util;
+package examples.moa.mg-src.Util;
 
 concept Semigroup = {
     type S;

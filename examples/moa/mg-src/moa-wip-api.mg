@@ -1,4 +1,5 @@
-package MOA imports Util;
+package examples.moa.mg-src.moa
+    imports examples.moa.mg-src.Util;
 
 /*
 * Barebone MoA API with core operations

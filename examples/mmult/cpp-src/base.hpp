@@ -46,6 +46,7 @@ struct matrix {
         }
         return m;
     }
+
     inline matrix::Matrix rand_matrix(const Size row, const Size col, const int upper_bound) {
         Matrix matr = zeros(row,col);
         for (auto i = 0; i < row; i++) {
