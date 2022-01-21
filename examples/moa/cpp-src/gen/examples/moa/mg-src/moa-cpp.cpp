@@ -21,15 +21,23 @@ namespace moa_cpp {
 
 
 
-    ArrayProgram::_get_shape ArrayProgram::get_shape;
+    ArrayProgram::_test_vector ArrayProgram::test_vector;
+
+
+
+    ArrayProgram::_transpose ArrayProgram::transpose;
+
+
+
+    ArrayProgram::_shape ArrayProgram::shape;
+
+
+
+    ArrayProgram::_access_shape ArrayProgram::access_shape;
 
 
 
     ArrayProgram::_create_matrix ArrayProgram::create_matrix;
-
-
-
-    ArrayProgram::_iota ArrayProgram::iota;
 
 
 
@@ -47,7 +55,11 @@ namespace moa_cpp {
 
 
 
-    ArrayProgram::_innerLoop ArrayProgram::innerLoop;
+    ArrayProgram::_doMatMult ArrayProgram::doMatMult;
+
+
+
+    ArrayProgram::_integerToSize ArrayProgram::integerToSize;
 
 
 
@@ -55,23 +67,11 @@ namespace moa_cpp {
 
 
 
-    while_loop5_2<ArrayProgram::Matrix, ArrayProgram::Matrix, ArrayProgram::Int32, ArrayProgram::Int32, ArrayProgram::Int32, ArrayProgram::Int32, ArrayProgram::Matrix, ArrayProgram::_innerLoop, ArrayProgram::_isLowerThanInner> ArrayProgram::__while_loop5_2;
-
-    ArrayProgram::_isLowerThanInner ArrayProgram::isLowerThanInner;
+    ArrayProgram::_mapsum ArrayProgram::mapsum;
 
 
 
-    ArrayProgram::_isLowerThanMid ArrayProgram::isLowerThanMid;
-
-
-
-    ArrayProgram::_isLowerThanOuter ArrayProgram::isLowerThanOuter;
-
-
-
-    while_loop6_2<ArrayProgram::Matrix, ArrayProgram::Matrix, ArrayProgram::Int32, ArrayProgram::Int32, ArrayProgram::Int32, ArrayProgram::Int32, ArrayProgram::Int32, ArrayProgram::Matrix, ArrayProgram::_middleLoop, ArrayProgram::_isLowerThanMid> ArrayProgram::__while_loop6_2;
-
-    ArrayProgram::_middleLoop ArrayProgram::middleLoop;
+    ArrayProgram::_matmult ArrayProgram::matmult;
 
 
 
@@ -79,13 +79,11 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_mult_elementwise ArrayProgram::mult_elementwise;
+
+
+
     ArrayProgram::_one ArrayProgram::one;
-
-
-
-    while_loop7_2<ArrayProgram::Matrix, ArrayProgram::Matrix, ArrayProgram::Int32, ArrayProgram::Int32, ArrayProgram::Int32, ArrayProgram::Int32, ArrayProgram::Int32, ArrayProgram::Int32, ArrayProgram::Matrix, ArrayProgram::_outerLoop, ArrayProgram::_isLowerThanOuter> ArrayProgram::__while_loop7_2;
-
-    ArrayProgram::_outerLoop ArrayProgram::outerLoop;
 
 
 
@@ -93,15 +91,41 @@ namespace moa_cpp {
 
 
 
-    ArrayProgram::_repeat ArrayProgram::repeat;
+    ArrayProgram::_set ArrayProgram::set;
 
 
 
-    ArrayProgram::_repeatInner ArrayProgram::repeatInner;
+    ArrayProgram::_sizeToInteger ArrayProgram::sizeToInteger;
 
 
 
-    ArrayProgram::_repeatMiddle ArrayProgram::repeatMiddle;
+    ArrayProgram::_sum_vector ArrayProgram::sum_vector;
+
+
+
+    ArrayProgram::_unwrap_scalar ArrayProgram::unwrap_scalar;
+
+
+
+    while_loop2_3<ArrayProgram::Matrix, ArrayProgram::Matrix, ArrayProgram::Matrix, ArrayProgram::Int32, ArrayProgram::Int32, ArrayProgram::_doMatMult, ArrayProgram::_upperBoundMatMult> ArrayProgram::__while_loop2_3;
+
+    ArrayProgram::_upperBoundMatMult ArrayProgram::upperBoundMatMult;
+
+
+
+    while_loop2_2<ArrayProgram::Matrix, ArrayProgram::Matrix, ArrayProgram::Matrix, ArrayProgram::Int32, ArrayProgram::_mult_elementwise, ArrayProgram::_upperBoundMulElem> ArrayProgram::__while_loop2_2;
+
+    ArrayProgram::_upperBoundMulElem ArrayProgram::upperBoundMulElem;
+
+
+
+    while_loop1_2<ArrayProgram::Matrix, ArrayProgram::Int32, ArrayProgram::Int32, ArrayProgram::_sum_vector, ArrayProgram::_upperBoundSum> ArrayProgram::__while_loop1_2;
+
+    ArrayProgram::_upperBoundSum ArrayProgram::upperBoundSum;
+
+
+
+    ArrayProgram::_vecmult ArrayProgram::vecmult;
 
 
 
@@ -109,7 +133,7 @@ namespace moa_cpp {
 
 
 
-    ArrayProgram::_access_shape ArrayProgram::access_shape;
+    ArrayProgram::_create_singleton_index ArrayProgram::create_singleton_index;
 
 
 
@@ -117,15 +141,11 @@ namespace moa_cpp {
 
 
 
-    ArrayProgram::_indexToInteger ArrayProgram::indexToInteger;
+    ArrayProgram::_test_partial_index ArrayProgram::test_partial_index;
 
 
 
-    ArrayProgram::_integerToIndex ArrayProgram::integerToIndex;
-
-
-
-    ArrayProgram::_set ArrayProgram::set;
+    ArrayProgram::_test_total_index ArrayProgram::test_total_index;
 
 } // examples
 } // moa

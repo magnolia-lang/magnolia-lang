@@ -11,6 +11,15 @@
 
 \noindent Rather than going really abstract top-level when designing the API, this specification will be developed more with a concrete implementation in mind.
 
+\noindent The core API will be built upon a small set of external operations for accessing and modifying arrays.
+
+\section{External API (C++ for now)}
+\begin{itemize}
+    \item A stuct \texttt{Array} for representing an Array. Stores the elements of the array and its shape.
+    \item \texttt{function get(a: Array, i: Index): Array}
+    \item \texttt{procedure set(a: Array, i: Index, e: Element)}
+\end{itemize}
+
 \section{Core concepts/signatures}
 
 \subsection{\texttt{signature/concept Array}}
