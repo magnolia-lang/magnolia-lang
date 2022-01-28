@@ -35,6 +35,13 @@ public:
     };
 
     static ArrayProgram::_test_matrix test_matrix;
+    struct _test_matrix2 {
+        inline ArrayProgram::Matrix operator()() {
+            return __matrix.test_matrix2();
+        };
+    };
+
+    static ArrayProgram::_test_matrix2 test_matrix2;
     struct _test_vector {
         inline ArrayProgram::Matrix operator()() {
             return __matrix.test_vector();
@@ -102,7 +109,7 @@ public:
             ArrayProgram::Matrix slice2 = ArrayProgram::get(m2, ArrayProgram::create_singleton_index(k));
             ArrayProgram::Int32 i_dim = ArrayProgram::sizeToInteger(ArrayProgram::access_shape(resM, ArrayProgram::integerToSize(ArrayProgram::zero())));
             ArrayProgram::Int32 k_dim = ArrayProgram::sizeToInteger(ArrayProgram::access_shape(resM, ArrayProgram::integerToSize(ArrayProgram::one())));
-            ArrayProgram::Matrix result_slice = ArrayProgram::zeros(ArrayProgram::integerToSize(ArrayProgram::one()), ArrayProgram::integerToSize(k_dim));
+            ArrayProgram::Matrix result_slice = ArrayProgram::zeros(ArrayProgram::integerToSize(ArrayProgram::one()), ArrayProgram::integerToSize(i_dim));
             ArrayProgram::Int32 vecmultC = ArrayProgram::zero();
             ArrayProgram::vecmult(slice1, slice2, result_slice, vecmultC);
             ArrayProgram::Int32 reduced = ArrayProgram::zero();

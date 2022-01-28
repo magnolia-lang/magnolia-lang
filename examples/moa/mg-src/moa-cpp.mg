@@ -42,6 +42,7 @@ implementation BasicOps = external C++ base.matrix {
     function create_matrix(i: Size, j: Size): Matrix;
     function test_vector(): Matrix;
     function test_matrix(): Matrix;
+    function test_matrix2(): Matrix;
     function test_partial_index(): Index;
     function test_total_index(): Index;
     function create_singleton_index(i: Integer): Index;
@@ -129,7 +130,7 @@ implementation MatMult = {
         var i_dim = sizeToInteger(access_shape(resM, integerToSize(zero())));
         var k_dim = sizeToInteger(access_shape(resM, integerToSize(one())));
 
-        var result_slice = zeros(integerToSize(one()), integerToSize(k_dim));
+        var result_slice = zeros(integerToSize(one()), integerToSize(i_dim));
         var vecmultC = zero();
         call vecmult(slice1, slice2, result_slice, vecmultC);
 

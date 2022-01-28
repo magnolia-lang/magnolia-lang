@@ -21,6 +21,10 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_test_matrix2 ArrayProgram::test_matrix2;
+
+
+
     ArrayProgram::_test_vector ArrayProgram::test_vector;
 
 

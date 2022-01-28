@@ -170,6 +170,19 @@ struct matrix {
         return m;
     }
 
+    inline matrix::Matrix test_matrix2() {
+        auto m = Matrix(5,3);
+        size_t elems[25] = {6,8,5,3,3,3,3,1,4,1,3,4,5,8,0};
+        auto counter = 0;
+        for (auto i = 0; i < 5; i++) {
+            for (auto j = 0; j < 3; j++) {
+
+                set(m,i,j,elems[counter++]);
+            }
+        }
+        return m;
+    }
+
     /*
     IO print functions
     */

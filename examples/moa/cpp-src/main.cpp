@@ -60,6 +60,27 @@ int main(int argc, char **argv) {
 
     P.matmult(m1, m2, res, i, k);
     P.print_matrix(res);
+
+    std::cout <<"MATMULT TEST 2" << std::endl;
+
+    auto test1 = P.test_matrix();
+    auto test2 = P.test_matrix2();
+
+    P.print_matrix(test1);
+    std::cout << "x" << std::endl;
+    P.print_matrix(test2);
+
+    int32_utils::Int32 a, b;
+    a = 0;
+    b = 0;
+
+    auto res2 = P.zeros(5,3);
+    P.matmult(test1,P.transpose(test2),res2,a,b);
+
+    std::cout << "=" << std::endl;
+    P.print_matrix(res2);
+
+
     // TODO: add a base build path to compiler args to avoid having so many
     // nested useless folders when compiling from somewhere else.
 
