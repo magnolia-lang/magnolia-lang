@@ -9,6 +9,14 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_cat ArrayProgram::cat;
+
+
+
+    ArrayProgram::_matmult ArrayProgram::matmult;
+
+
+
     ArrayProgram::_print_matrix ArrayProgram::print_matrix;
 
 
@@ -59,7 +67,25 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_catBody ArrayProgram::catBody;
+
+
+
+    while_loop2_3<ArrayProgram::Matrix, ArrayProgram::Matrix, ArrayProgram::Matrix, ArrayProgram::Int32, ArrayProgram::Int32, ArrayProgram::_catBody, ArrayProgram::_catUpperBound> ArrayProgram::__while_loop2_3;
+
+    ArrayProgram::_catUpperBound ArrayProgram::catUpperBound;
+
+
+
     ArrayProgram::_doMatMult ArrayProgram::doMatMult;
+
+
+
+    ArrayProgram::_doMatmult ArrayProgram::doMatmult;
+
+
+
+    ArrayProgram::_equals ArrayProgram::equals;
 
 
 
@@ -71,11 +97,11 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_iterMatMult ArrayProgram::iterMatMult;
+
+
+
     ArrayProgram::_mapsum ArrayProgram::mapsum;
-
-
-
-    ArrayProgram::_matmult ArrayProgram::matmult;
 
 
 
@@ -103,6 +129,10 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_sub ArrayProgram::sub;
+
+
+
     ArrayProgram::_sum_vector ArrayProgram::sum_vector;
 
 
@@ -111,7 +141,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_3<ArrayProgram::Matrix, ArrayProgram::Matrix, ArrayProgram::Matrix, ArrayProgram::Int32, ArrayProgram::Int32, ArrayProgram::_doMatMult, ArrayProgram::_upperBoundMatMult> ArrayProgram::__while_loop2_3;
+    while_loop2_3<ArrayProgram::Matrix, ArrayProgram::Matrix, ArrayProgram::Matrix, ArrayProgram::Int32, ArrayProgram::Int32, ArrayProgram::_iterMatMult, ArrayProgram::_upperBoundMatMult> ArrayProgram::__while_loop2_30;
 
     ArrayProgram::_upperBoundMatMult ArrayProgram::upperBoundMatMult;
 
@@ -137,11 +167,15 @@ namespace moa_cpp {
 
 
 
-    ArrayProgram::_create_singleton_index ArrayProgram::create_singleton_index;
+    ArrayProgram::_create_index ArrayProgram::create_index;
 
 
 
     ArrayProgram::_get ArrayProgram::get;
+
+
+
+    ArrayProgram::_single_I ArrayProgram::single_I;
 
 
 

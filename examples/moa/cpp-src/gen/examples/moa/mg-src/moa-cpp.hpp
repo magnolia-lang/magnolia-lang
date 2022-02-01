@@ -14,6 +14,32 @@ private:
 public:
     typedef int32_utils::Int32 Int32;
     typedef matrix<ArrayProgram::Int32>::Matrix Matrix;
+    struct _cat {
+        inline ArrayProgram::Matrix operator()(const ArrayProgram::Matrix& m1, const ArrayProgram::Matrix& m2) {
+            ArrayProgram::Size x_dim = ArrayProgram::access_shape(m1, ArrayProgram::integerToSize(ArrayProgram::zero()));
+            ArrayProgram::Size y_dim = ArrayProgram::integerToSize(ArrayProgram::add(ArrayProgram::sizeToInteger(ArrayProgram::access_shape(m1, ArrayProgram::integerToSize(ArrayProgram::one()))), ArrayProgram::sizeToInteger(ArrayProgram::access_shape(m2, ArrayProgram::integerToSize(ArrayProgram::one())))));
+            ArrayProgram::Matrix res = ArrayProgram::zeros(x_dim, y_dim);
+            ArrayProgram::Int32 c1 = ArrayProgram::zero();
+            ArrayProgram::Int32 c2 = ArrayProgram::zero();
+            ArrayProgram::doMatMult(m1, m2, res, c1, c2);
+            return res;
+        };
+    };
+
+    static ArrayProgram::_cat cat;
+    struct _matmult {
+        inline ArrayProgram::Matrix operator()(const ArrayProgram::Matrix& m1, const ArrayProgram::Matrix& m2) {
+            ArrayProgram::Size x_dim = ArrayProgram::access_shape(m1, ArrayProgram::integerToSize(ArrayProgram::zero()));
+            ArrayProgram::Size y_dim = ArrayProgram::access_shape(m2, ArrayProgram::integerToSize(ArrayProgram::one()));
+            ArrayProgram::Matrix res = ArrayProgram::zeros(x_dim, y_dim);
+            ArrayProgram::Int32 c1 = ArrayProgram::zero();
+            ArrayProgram::Int32 c2 = ArrayProgram::zero();
+            ArrayProgram::doMatmult(m1, ArrayProgram::transpose(m2), res, c1, c2);
+            return res;
+        };
+    };
+
+    static ArrayProgram::_matmult matmult;
     struct _print_matrix {
         inline void operator()(const ArrayProgram::Matrix& m) {
             return __matrix.print_matrix(m);
@@ -103,10 +129,84 @@ public:
     };
 
     static ArrayProgram::_add add;
+    struct _catBody {
+        inline void operator()(const ArrayProgram::Matrix& m1, const ArrayProgram::Matrix& m2, ArrayProgram::Matrix& res, ArrayProgram::Int32& c1, ArrayProgram::Int32& c2) {
+            ArrayProgram::Int32 m1_row_bound = ArrayProgram::sizeToInteger(ArrayProgram::access_shape(m1, ArrayProgram::integerToSize(ArrayProgram::one())));
+            ArrayProgram::Int32 res_row_bound = ArrayProgram::sizeToInteger(ArrayProgram::access_shape(res, ArrayProgram::integerToSize(ArrayProgram::one())));
+            if (ArrayProgram::isLowerThan(c2, m1_row_bound))
+            {
+                ArrayProgram::Index ix = ArrayProgram::create_index(c1, c2);
+                ArrayProgram::set(res, c1, c2, ArrayProgram::unwrap_scalar(ArrayProgram::get(m1, ix)));
+                c2 = ArrayProgram::add(c2, ArrayProgram::one());
+            }
+            else
+            {
+                ArrayProgram::Index ix = ArrayProgram::create_index(c1, ArrayProgram::sub(c2, m1_row_bound));
+                ArrayProgram::set(res, c1, c2, ArrayProgram::unwrap_scalar(ArrayProgram::get(m2, ix)));
+                if (ArrayProgram::isLowerThan(c2, res_row_bound))
+                {
+                    c2 = ArrayProgram::add(c2, ArrayProgram::one());
+                }
+                else
+                {
+                    c1 = ArrayProgram::add(c1, ArrayProgram::one());
+                    c2 = ArrayProgram::zero();
+                }
+            }
+        };
+    };
+
+    static ArrayProgram::_catBody catBody;
+    struct _catUpperBound {
+        inline bool operator()(const ArrayProgram::Matrix& m1, const ArrayProgram::Matrix& m2, const ArrayProgram::Matrix& res, const ArrayProgram::Int32& c1, const ArrayProgram::Int32& c2) {
+            ArrayProgram::Int32 row_upper = ArrayProgram::sizeToInteger(ArrayProgram::access_shape(res, ArrayProgram::integerToSize(ArrayProgram::zero())));
+            return ArrayProgram::isLowerThan(c1, row_upper);
+        };
+    };
+
+private:
+    static while_loop2_3<ArrayProgram::Matrix, ArrayProgram::Matrix, ArrayProgram::Matrix, ArrayProgram::Int32, ArrayProgram::Int32, ArrayProgram::_catBody, ArrayProgram::_catUpperBound> __while_loop2_3;
+public:
+    static ArrayProgram::_catUpperBound catUpperBound;
     struct _doMatMult {
+        inline void operator()(const ArrayProgram::Matrix& context1, const ArrayProgram::Matrix& context2, ArrayProgram::Matrix& state1, ArrayProgram::Int32& state2, ArrayProgram::Int32& state3) {
+            return __while_loop2_3.repeat(context1, context2, state1, state2, state3);
+        };
+    };
+
+    static ArrayProgram::_doMatMult doMatMult;
+    struct _doMatmult {
+        inline void operator()(const ArrayProgram::Matrix& context1, const ArrayProgram::Matrix& context2, ArrayProgram::Matrix& state1, ArrayProgram::Int32& state2, ArrayProgram::Int32& state3) {
+            return __while_loop2_30.repeat(context1, context2, state1, state2, state3);
+        };
+    };
+
+    static ArrayProgram::_doMatmult doMatmult;
+    struct _equals {
+        inline bool operator()(const ArrayProgram::Int32& a, const ArrayProgram::Int32& b) {
+            return __int32_utils.equals(a, b);
+        };
+    };
+
+    static ArrayProgram::_equals equals;
+    struct _integerToSize {
+        inline ArrayProgram::Size operator()(const ArrayProgram::Int32& i) {
+            return __matrix.integerToSize(i);
+        };
+    };
+
+    static ArrayProgram::_integerToSize integerToSize;
+    struct _isLowerThan {
+        inline bool operator()(const ArrayProgram::Int32& a, const ArrayProgram::Int32& b) {
+            return __int32_utils.isLowerThan(a, b);
+        };
+    };
+
+    static ArrayProgram::_isLowerThan isLowerThan;
+    struct _iterMatMult {
         inline void operator()(const ArrayProgram::Matrix& m1, const ArrayProgram::Matrix& m2, ArrayProgram::Matrix& resM, ArrayProgram::Int32& i, ArrayProgram::Int32& k) {
-            ArrayProgram::Matrix slice1 = ArrayProgram::get(m1, ArrayProgram::create_singleton_index(i));
-            ArrayProgram::Matrix slice2 = ArrayProgram::get(m2, ArrayProgram::create_singleton_index(k));
+            ArrayProgram::Matrix slice1 = ArrayProgram::get(m1, ArrayProgram::single_I(i));
+            ArrayProgram::Matrix slice2 = ArrayProgram::get(m2, ArrayProgram::single_I(k));
             ArrayProgram::Int32 i_dim = ArrayProgram::sizeToInteger(ArrayProgram::access_shape(resM, ArrayProgram::integerToSize(ArrayProgram::zero())));
             ArrayProgram::Int32 k_dim = ArrayProgram::sizeToInteger(ArrayProgram::access_shape(resM, ArrayProgram::integerToSize(ArrayProgram::one())));
             ArrayProgram::Matrix result_slice = ArrayProgram::zeros(ArrayProgram::integerToSize(ArrayProgram::one()), ArrayProgram::integerToSize(i_dim));
@@ -128,21 +228,7 @@ public:
         };
     };
 
-    static ArrayProgram::_doMatMult doMatMult;
-    struct _integerToSize {
-        inline ArrayProgram::Size operator()(const ArrayProgram::Int32& i) {
-            return __matrix.integerToSize(i);
-        };
-    };
-
-    static ArrayProgram::_integerToSize integerToSize;
-    struct _isLowerThan {
-        inline bool operator()(const ArrayProgram::Int32& a, const ArrayProgram::Int32& b) {
-            return __int32_utils.isLowerThan(a, b);
-        };
-    };
-
-    static ArrayProgram::_isLowerThan isLowerThan;
+    static ArrayProgram::_iterMatMult iterMatMult;
     struct _mapsum {
         inline void operator()(const ArrayProgram::Matrix& context1, ArrayProgram::Int32& state1, ArrayProgram::Int32& state2) {
             return __while_loop1_2.repeat(context1, state1, state2);
@@ -150,13 +236,6 @@ public:
     };
 
     static ArrayProgram::_mapsum mapsum;
-    struct _matmult {
-        inline void operator()(const ArrayProgram::Matrix& context1, const ArrayProgram::Matrix& context2, ArrayProgram::Matrix& state1, ArrayProgram::Int32& state2, ArrayProgram::Int32& state3) {
-            return __while_loop2_3.repeat(context1, context2, state1, state2, state3);
-        };
-    };
-
-    static ArrayProgram::_matmult matmult;
     struct _mult {
         inline ArrayProgram::Int32 operator()(const ArrayProgram::Int32& a, const ArrayProgram::Int32& b) {
             return __int32_utils.mult(a, b);
@@ -166,7 +245,7 @@ public:
     static ArrayProgram::_mult mult;
     struct _mult_elementwise {
         inline void operator()(const ArrayProgram::Matrix& a, const ArrayProgram::Matrix& b, ArrayProgram::Matrix& res, ArrayProgram::Int32& counter) {
-            ArrayProgram::Index current_index = ArrayProgram::create_singleton_index(counter);
+            ArrayProgram::Index current_index = ArrayProgram::single_I(counter);
             ArrayProgram::Int32 new_value = ArrayProgram::mult(ArrayProgram::unwrap_scalar(ArrayProgram::get(a, current_index)), ArrayProgram::unwrap_scalar(ArrayProgram::get(b, current_index)));
             ArrayProgram::set(res, ArrayProgram::zero(), counter, new_value);
             counter = ArrayProgram::add(counter, ArrayProgram::one());
@@ -189,7 +268,7 @@ public:
 
     static ArrayProgram::_print_number print_number;
     struct _set {
-        inline void operator()(const ArrayProgram::Matrix& m, const ArrayProgram::Int32& i, const ArrayProgram::Int32& j, const ArrayProgram::Int32& e) {
+        inline void operator()(ArrayProgram::Matrix& m, const ArrayProgram::Int32& i, const ArrayProgram::Int32& j, const ArrayProgram::Int32& e) {
             return __matrix.set(m, i, j, e);
         };
     };
@@ -202,9 +281,16 @@ public:
     };
 
     static ArrayProgram::_sizeToInteger sizeToInteger;
+    struct _sub {
+        inline ArrayProgram::Int32 operator()(const ArrayProgram::Int32& a, const ArrayProgram::Int32& b) {
+            return __int32_utils.sub(a, b);
+        };
+    };
+
+    static ArrayProgram::_sub sub;
     struct _sum_vector {
         inline void operator()(const ArrayProgram::Matrix& a, ArrayProgram::Int32& res, ArrayProgram::Int32& counter) {
-            ArrayProgram::Index current_index = ArrayProgram::create_singleton_index(counter);
+            ArrayProgram::Index current_index = ArrayProgram::single_I(counter);
             res = ArrayProgram::add(res, ArrayProgram::unwrap_scalar(ArrayProgram::get(a, current_index)));
             counter = ArrayProgram::add(counter, ArrayProgram::one());
         };
@@ -227,7 +313,7 @@ public:
     };
 
 private:
-    static while_loop2_3<ArrayProgram::Matrix, ArrayProgram::Matrix, ArrayProgram::Matrix, ArrayProgram::Int32, ArrayProgram::Int32, ArrayProgram::_doMatMult, ArrayProgram::_upperBoundMatMult> __while_loop2_3;
+    static while_loop2_3<ArrayProgram::Matrix, ArrayProgram::Matrix, ArrayProgram::Matrix, ArrayProgram::Int32, ArrayProgram::Int32, ArrayProgram::_iterMatMult, ArrayProgram::_upperBoundMatMult> __while_loop2_30;
 public:
     static ArrayProgram::_upperBoundMatMult upperBoundMatMult;
     struct _upperBoundMulElem {
@@ -265,13 +351,13 @@ public:
 
     static ArrayProgram::_zero zero;
     typedef matrix<ArrayProgram::Int32>::Index Index;
-    struct _create_singleton_index {
-        inline ArrayProgram::Index operator()(const ArrayProgram::Int32& i) {
-            return __matrix.create_singleton_index(i);
+    struct _create_index {
+        inline ArrayProgram::Index operator()(const ArrayProgram::Int32& i, const ArrayProgram::Int32& j) {
+            return __matrix.create_index(i, j);
         };
     };
 
-    static ArrayProgram::_create_singleton_index create_singleton_index;
+    static ArrayProgram::_create_index create_index;
     struct _get {
         inline ArrayProgram::Matrix operator()(const ArrayProgram::Matrix& m, const ArrayProgram::Index& i) {
             return __matrix.get(m, i);
@@ -279,6 +365,13 @@ public:
     };
 
     static ArrayProgram::_get get;
+    struct _single_I {
+        inline ArrayProgram::Index operator()(const ArrayProgram::Int32& i) {
+            return __matrix.single_I(i);
+        };
+    };
+
+    static ArrayProgram::_single_I single_I;
     struct _test_partial_index {
         inline ArrayProgram::Index operator()() {
             return __matrix.test_partial_index();

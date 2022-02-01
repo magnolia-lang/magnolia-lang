@@ -22,7 +22,22 @@ signature forall_ops = {
     function forall_ix_action(ctx: ContextContainer, a: A): B;
 }
 
-implementation BasicOps = external C++ base.matrix {
+signature IntegerOps = {
+    type Integer;
+
+    function zero(): Integer;
+    function one(): Integer;
+    function add(a: Integer, b: Integer): Integer;
+    function sub(a: Integer, b: Integer): Integer;
+
+    function mult(a: Integer, b: Integer): Integer;
+
+    predicate equals(a: Integer, b: Integer);
+    predicate isLowerThan(a: Integer, b: Integer);
+}
+
+
+implementation ExtOps = external C++ base.matrix {
 
     require type Integer;
 
@@ -31,8 +46,8 @@ implementation BasicOps = external C++ base.matrix {
     type Shape;
     type Size;
 
-    // access
-    procedure set(obs m: Matrix, obs i: Integer, obs j: Integer, obs e: Integer);
+    // Access
+    procedure set(upd m: Matrix, obs i: Integer, obs j: Integer, obs e: Integer);
     function get(m: Matrix, i: Index): Matrix;
     function shape(m: Matrix): Shape;
     function size(m: Matrix): Size;
@@ -40,12 +55,8 @@ implementation BasicOps = external C++ base.matrix {
 
     // Matrix creation
     function create_matrix(i: Size, j: Size): Matrix;
-    function test_vector(): Matrix;
-    function test_matrix(): Matrix;
-    function test_matrix2(): Matrix;
-    function test_partial_index(): Index;
-    function test_total_index(): Index;
-    function create_singleton_index(i: Integer): Index;
+    function single_I(i: Integer): Index;
+    function create_index(i: Integer, j: Integer): Index;
     function zeros(i: Size, j: Size): Matrix;
 
     // IO
@@ -61,14 +72,111 @@ implementation BasicOps = external C++ base.matrix {
     function sizeToInteger(s: Size): Integer;
     function integerToSize(i: Integer): Size;
 
+    // Tests
+    function test_vector(): Matrix;
+    function test_matrix(): Matrix;
+    function test_matrix2(): Matrix;
+    function test_partial_index(): Index;
+    function test_total_index(): Index;
+}
+
+implementation MoaOps = {
+
+    use ExtOps;
+    use IntegerOps;
+
+
+
+}
+
+implementation CatImpl = {
+    use MoaOps;
+
+    predicate catUpperBound(m1: Matrix, m2: Matrix, res: Matrix, c1: Integer, c2: Integer) = {
+
+        var row_upper = sizeToInteger(access_shape(res, integerToSize(zero())));
+        value isLowerThan(c1, row_upper);
+    }
+
+    procedure catBody(obs m1: Matrix, obs m2: Matrix, upd res: Matrix, upd c1: Integer, upd c2: Integer) = {
+
+        var m1_row_bound = sizeToInteger(access_shape(m1, integerToSize(one())));
+        var res_row_bound = sizeToInteger(access_shape(res, integerToSize(one())));
+        if isLowerThan(c2, m1_row_bound) then {
+
+            var ix = create_index(c1, c2);
+            call set(res, c1, c2, unwrap_scalar(get(m1, ix)));
+
+            c2 = add(c2, one());
+        } else {
+            var ix = create_index(c1,sub(c2, m1_row_bound));
+            call set(res, c1, c2, unwrap_scalar(get(m2, ix)));
+
+            if isLowerThan(c2, res_row_bound) then {
+                c2 = add(c2, one());
+            } else {
+
+                c1 = add(c1, one());
+                c2 = zero();
+
+            };
+
+
+        };
+
+    }
+
+    use WhileLoop2_3[Context1 => Matrix,
+                     Context2 => Matrix,
+                     State1 => Matrix,
+                     State2 => Integer,
+                     State3 => Integer,
+                     body => catBody,
+                     cond => catUpperBound,
+                     repeat => doMatMult];
+
+
+    function cat(m1: Matrix, m2: Matrix): Matrix = {
+
+        var x_dim = access_shape(m1, integerToSize(zero()));
+        var y_dim = integerToSize(add(sizeToInteger(access_shape(m1, integerToSize(one()))),
+                        sizeToInteger(access_shape(m2, integerToSize(one())))));
+        var res = zeros(x_dim, y_dim);
+
+        var c1 = zero();
+        var c2 = zero();
+
+        call doMatMult(m1, m2, res, c1, c2);
+
+        value res;
+    }
+}
+
+implementation Padding = {
+
+    use MoaOps;
+
+
+
+    // guard equals(access_shape(m1, one()), access_shape(m2, one()))
+
+    /*
+    circular padding on axis i
+
+    */
+    //function cPadr(m: Matrix, i: Integer): PMatrix;
+    //function cPadl(m: Matrix, i: Integer): PMatrix;
+
+
 
 }
 
 implementation MatMult = {
 
-    use BasicOps;
+    use MoaOps;
 
     require function add(a: Integer, b: Integer): Integer;
+    require function sub(a: Integer, b: Integer): Integer;
     require function mult(a: Integer, b: Integer): Integer;
     require function zero(): Integer;
     require function one(): Integer;
@@ -78,8 +186,12 @@ implementation MatMult = {
         value isLowerThan(counter, sizeToInteger(size(m1)));
     }
 
-    procedure mult_elementwise(obs a: Matrix, obs b: Matrix, upd res: Matrix, upd counter: Integer) = {
-        var current_index = create_singleton_index(counter);
+    procedure mult_elementwise(obs a: Matrix,
+                               obs b: Matrix,
+                               upd res: Matrix,
+                               upd counter: Integer) = {
+
+        var current_index = single_I(counter);
         var new_value = mult(unwrap_scalar(get(a, current_index)),
                              unwrap_scalar(get(b, current_index)));
         call set(res, zero(), counter, new_value);
@@ -95,8 +207,11 @@ implementation MatMult = {
                      repeat => vecmult];
 
 
-    procedure sum_vector(obs a: Matrix, upd res: Integer, upd counter: Integer) = {
-        var current_index = create_singleton_index(counter);
+    procedure sum_vector(obs a: Matrix,
+                         upd res: Integer,
+                         upd counter: Integer) = {
+
+        var current_index = single_I(counter);
         res = add(res, unwrap_scalar(get(a, current_index)));
         counter = add(counter, one());
     }
@@ -122,10 +237,14 @@ implementation MatMult = {
 
     }
 
-    procedure doMatMult(obs m1: Matrix, obs m2: Matrix, upd resM: Matrix, upd i: Integer, upd k: Integer) {
+    procedure iterMatMult(obs m1: Matrix,
+                        obs m2: Matrix,
+                        upd resM: Matrix,
+                        upd i: Integer,
+                        upd k: Integer) {
 
-        var slice1 = get(m1, create_singleton_index(i));
-        var slice2 = get(m2, create_singleton_index(k));
+        var slice1 = get(m1, single_I(i));
+        var slice2 = get(m2, single_I(k));
 
         var i_dim = sizeToInteger(access_shape(resM, integerToSize(zero())));
         var k_dim = sizeToInteger(access_shape(resM, integerToSize(one())));
@@ -159,20 +278,23 @@ implementation MatMultImpl = {
                       State2 => Integer,
                       State3 => Integer,
                       cond => upperBoundMatMult,
-                      body => doMatMult,
-                      repeat => matmult];
+                      body => iterMatMult,
+                      repeat => doMatmult];
 
-}
+    function matmult(m1: Matrix, m2: Matrix): Matrix = {
 
-signature IntegerOps = {
-    type Integer;
+        var x_dim = access_shape(m1, integerToSize(zero()));
+        var y_dim = access_shape(m2, integerToSize(one()));
+        var res = zeros(x_dim, y_dim);
 
-    function zero(): Integer;
-    function one(): Integer;
-    function add(a: Integer, b: Integer): Integer;
-    function mult(a: Integer, b: Integer): Integer;
+        var c1 = zero();
+        var c2 = zero();
 
-    predicate isLowerThan(a: Integer, b: Integer);
+        call doMatmult(m1, transpose(m2), res, c1, c2);
+
+        value res;
+    }
+
 }
 
 implementation Int32Utils = external C++ base.int32_utils
@@ -182,5 +304,6 @@ program ArrayProgram = {
 
     use Int32Utils;
     use MatMultImpl[Integer => Int32];
+    use CatImpl[Integer => Int32];
 
 }

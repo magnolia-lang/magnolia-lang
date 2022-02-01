@@ -119,6 +119,20 @@ struct matrix {
         return m;
     }
 
+    inline matrix::Index single_I(const size_t i) {
+        Index ix;
+        ix.push_back(i);
+        return ix;
+    }
+
+    inline matrix::Index create_index(const size_t i, const size_t j) {
+        Index ix;
+        ix.push_back(i);
+        ix.push_back(j);
+        return ix;
+    }
+
+
     inline Integer unwrap_scalar(Matrix m) {
         return m._get(0,0);
     }
@@ -131,6 +145,35 @@ struct matrix {
         return (Size) i;
     }
 
+    /*
+    IO print functions
+    */
+
+    inline void print_number(Integer a) {
+        std::cout << a << std::endl;
+    }
+
+    inline void print_matrix(Matrix a) {
+        for (auto i = 0; i < a._row; i++) {
+            for (auto j = 0; j < a._col; j++) {
+                std::cout << a._get(i,j) << " ";
+            }
+            std::cout << std::endl;
+        }
+    }
+
+    inline void print_shape(Matrix a) {
+        Shape sh = shape(a);
+        for (auto i = 0; i < sh.size(); i++) {
+            std::cout << sh.at(i) << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    /*
+    Test indices and patrices
+    */
+
     inline matrix::Index test_partial_index() {
         Index ix;
         ix.push_back(0);
@@ -141,11 +184,6 @@ struct matrix {
         Index ix;
         ix.push_back(1);
         ix.push_back(2);
-        return ix;
-    }
-    inline matrix::Index create_singleton_index(const size_t i) {
-        Index ix;
-        ix.push_back(i);
         return ix;
     }
 
@@ -183,31 +221,6 @@ struct matrix {
         return m;
     }
 
-    /*
-    IO print functions
-    */
-
-    inline void print_number(Integer a) {
-        std::cout << a << std::endl;
-    }
-
-    inline void print_matrix(Matrix a) {
-        for (auto i = 0; i < a._row; i++) {
-            for (auto j = 0; j < a._col; j++) {
-                std::cout << a._get(i,j) << " ";
-            }
-            std::cout << std::endl;
-        }
-    }
-
-    inline void print_shape(Matrix a) {
-        Shape sh = shape(a);
-        for (auto i = 0; i < sh.size(); i++) {
-            std::cout << sh.at(i) << " ";
-        }
-        std::cout << std::endl;
-    }
-
 };
 
 struct int32_utils {
@@ -218,8 +231,14 @@ struct int32_utils {
     inline Int32 add(const Int32 a, const Int32 b) {
         return a + b;
     }
+    inline Int32 sub(const Int32 a, const Int32 b) {
+        return a - b;
+    }
     inline Int32 mult(const Int32 a, const Int32 b) {
         return a * b;
+    }
+    inline bool equals(const Int32 a, const Int32 b) {
+        return a == b;
     }
     inline bool isLowerThan(const Int32 a, const Int32 b) {
         return a < b;

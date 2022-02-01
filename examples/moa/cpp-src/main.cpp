@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
     P.print_number(sumres1);
 
     std::cout << "Slice access at <2>:" << std::endl;
-    auto getslice = P.get(s2, P.create_singleton_index(2));
+    auto getslice = P.get(s2, P.single_I(2));
     P.print_matrix(getslice);
 
     std::cout << "TEST MATMULT" << std::endl;
@@ -52,13 +52,7 @@ int main(int argc, char **argv) {
     auto m1 = P.test_matrix();
     auto m2 = P.transpose(P.test_matrix());
 
-    auto res = P.zeros(5,5);
-
-    int32_utils::Int32 i, k;
-    i = 0;
-    k = 0;
-
-    P.matmult(m1, m2, res, i, k);
+    auto res = P.matmult(m1, m2);
     P.print_matrix(res);
 
     std::cout <<"MATMULT TEST 2" << std::endl;
@@ -70,16 +64,13 @@ int main(int argc, char **argv) {
     std::cout << "x" << std::endl;
     P.print_matrix(test2);
 
-    int32_utils::Int32 a, b;
-    a = 0;
-    b = 0;
-
-    auto res2 = P.zeros(5,3);
-    P.matmult(test1,P.transpose(test2),res2,a,b);
+    auto res2 = P.matmult(test1,test2);
 
     std::cout << "=" << std::endl;
     P.print_matrix(res2);
 
+
+    P.print_matrix(P.cat(test1, test2));
 
     // TODO: add a base build path to compiler args to avoid having so many
     // nested useless folders when compiling from somewhere else.
