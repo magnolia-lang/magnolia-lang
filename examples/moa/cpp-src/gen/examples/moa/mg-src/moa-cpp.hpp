@@ -129,6 +129,24 @@ public:
     };
 
     static ArrayProgram::_add add;
+    struct _cPadl {
+        inline ArrayProgram::Matrix operator()(const ArrayProgram::Matrix& m, const ArrayProgram::Int32& i) {
+            ArrayProgram::Matrix slice = ArrayProgram::get(m, ArrayProgram::single_I(i));
+            ArrayProgram::Matrix pRes = ArrayProgram::transpose(ArrayProgram::cat(ArrayProgram::transpose(slice), ArrayProgram::transpose(m)));
+            return pRes;
+        };
+    };
+
+    static ArrayProgram::_cPadl cPadl;
+    struct _cPadr {
+        inline ArrayProgram::Matrix operator()(const ArrayProgram::Matrix& m, const ArrayProgram::Int32& i) {
+            ArrayProgram::Matrix slice = ArrayProgram::get(m, ArrayProgram::single_I(i));
+            ArrayProgram::Matrix pRes = ArrayProgram::transpose(ArrayProgram::cat(ArrayProgram::transpose(m), ArrayProgram::transpose(slice)));
+            return pRes;
+        };
+    };
+
+    static ArrayProgram::_cPadr cPadr;
     struct _catBody {
         inline void operator()(const ArrayProgram::Matrix& m1, const ArrayProgram::Matrix& m2, ArrayProgram::Matrix& res, ArrayProgram::Int32& c1, ArrayProgram::Int32& c2) {
             ArrayProgram::Int32 m1_row_bound = ArrayProgram::sizeToInteger(ArrayProgram::access_shape(m1, ArrayProgram::integerToSize(ArrayProgram::one())));

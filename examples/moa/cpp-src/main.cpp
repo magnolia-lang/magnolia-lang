@@ -72,6 +72,24 @@ int main(int argc, char **argv) {
 
     P.print_matrix(P.cat(test1, test2));
 
+    std::cout << "PADDING TESTS" << std::endl;
+
+    std::cout << "Original:" << std::endl;
+    auto padr = P.test_matrix2();
+    P.print_matrix(padr);
+
+    std::cout << std::endl;
+    std::cout << "Padr:" << std::endl;
+
+    P.print_matrix(P.cPadr(padr, 1));
+
+    auto padl = P.test_matrix2();
+
+    std::cout << std::endl;
+    std::cout << "Padl:" << std::endl;
+
+    P.print_matrix(P.cPadl(padl, 1));
+
     // TODO: add a base build path to compiler args to avoid having so many
     // nested useless folders when compiling from somewhere else.
 

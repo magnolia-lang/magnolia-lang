@@ -90,6 +90,7 @@ implementation MoaOps = {
 }
 
 implementation CatImpl = {
+
     use MoaOps;
 
     predicate catUpperBound(m1: Matrix, m2: Matrix, res: Matrix, c1: Integer, c2: Integer) = {
@@ -120,7 +121,6 @@ implementation CatImpl = {
                 c2 = zero();
 
             };
-
 
         };
 
@@ -154,7 +154,10 @@ implementation CatImpl = {
 
 implementation Padding = {
 
-    use MoaOps;
+    use CatImpl;
+
+
+
 
 
 
@@ -164,8 +167,23 @@ implementation Padding = {
     circular padding on axis i
 
     */
-    //function cPadr(m: Matrix, i: Integer): PMatrix;
-    //function cPadl(m: Matrix, i: Integer): PMatrix;
+    function cPadr(m: Matrix, i: Integer): Matrix = {
+
+        var slice = get(m, single_I(i));
+
+        var pRes = transpose(cat(transpose(m), transpose(slice)));
+
+        value pRes;
+
+    }
+    function cPadl(m: Matrix, i: Integer): Matrix = {
+
+        var slice = get(m, single_I(i));
+
+        var pRes = transpose(cat(transpose(slice), transpose(m)));
+
+        value pRes;
+    }
 
 
 
@@ -304,6 +322,6 @@ program ArrayProgram = {
 
     use Int32Utils;
     use MatMultImpl[Integer => Int32];
-    use CatImpl[Integer => Int32];
+    use Padding[Integer => Int32];
 
 }

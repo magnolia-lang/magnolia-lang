@@ -67,6 +67,14 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_cPadl ArrayProgram::cPadl;
+
+
+
+    ArrayProgram::_cPadr ArrayProgram::cPadr;
+
+
+
     ArrayProgram::_catBody ArrayProgram::catBody;
 
 
