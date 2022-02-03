@@ -21,7 +21,7 @@ public:
             ArrayProgram::Matrix res = ArrayProgram::zeros(x_dim, y_dim);
             ArrayProgram::Int32 c1 = ArrayProgram::zero();
             ArrayProgram::Int32 c2 = ArrayProgram::zero();
-            ArrayProgram::doMatMult(m1, m2, res, c1, c2);
+            ArrayProgram::doCat(m1, m2, res, c1, c2);
             return res;
         };
     };
@@ -186,13 +186,13 @@ private:
     static while_loop2_3<ArrayProgram::Matrix, ArrayProgram::Matrix, ArrayProgram::Matrix, ArrayProgram::Int32, ArrayProgram::Int32, ArrayProgram::_catBody, ArrayProgram::_catUpperBound> __while_loop2_3;
 public:
     static ArrayProgram::_catUpperBound catUpperBound;
-    struct _doMatMult {
+    struct _doCat {
         inline void operator()(const ArrayProgram::Matrix& context1, const ArrayProgram::Matrix& context2, ArrayProgram::Matrix& state1, ArrayProgram::Int32& state2, ArrayProgram::Int32& state3) {
             return __while_loop2_3.repeat(context1, context2, state1, state2, state3);
         };
     };
 
-    static ArrayProgram::_doMatMult doMatMult;
+    static ArrayProgram::_doCat doCat;
     struct _doMatmult {
         inline void operator()(const ArrayProgram::Matrix& context1, const ArrayProgram::Matrix& context2, ArrayProgram::Matrix& state1, ArrayProgram::Int32& state2, ArrayProgram::Int32& state3) {
             return __while_loop2_30.repeat(context1, context2, state1, state2, state3);

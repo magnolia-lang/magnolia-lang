@@ -85,7 +85,7 @@ namespace moa_cpp {
 
 
 
-    ArrayProgram::_doMatMult ArrayProgram::doMatMult;
+    ArrayProgram::_doCat ArrayProgram::doCat;
 
 
 

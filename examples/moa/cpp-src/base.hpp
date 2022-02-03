@@ -22,8 +22,14 @@ struct matrix {
                 _row = row;
                 _col = col;
 
-                shape.push_back(_row);
-                shape.push_back(_col);
+                if (_row == 1) {
+                    shape.push_back(_col);
+                }
+                else {
+                    shape.push_back(_row);
+                    shape.push_back(_col);
+                }
+
 
                 content = (Integer *)calloc(row*col,sizeof(Integer));
             }
@@ -58,6 +64,12 @@ struct matrix {
             std::cout << "Index has to be of length 1-shape(m).size()";
         }
 
+
+        else if (shape(m).size() == 1){
+            auto res = zeros(1,1);
+            set(res, 0, 0, m._get(0, index.at(0)));
+            return res;
+        }
         // TODO generalize
         else if (index.size() == shape(m).size()){
             auto res = zeros(1,1);
@@ -65,15 +77,9 @@ struct matrix {
             return res;
         }
 
-        else if (shape(m).size() == 2 && shape(m).at(0) == 1) {
-            auto res = zeros(1,1);
-            set(res, 0, 0, m._get(0, index.at(0)));
-            return res;
-        }
-
         else {
             auto res = zeros(1, shape(m).at(1));
-            for (auto i = 0; i < shape(res).at(1); i++) {
+            for (auto i = 0; i < shape(res).at(0); i++) {
                 set(res, 0, i, m._get(index.at(0), i));
             }
             return res;

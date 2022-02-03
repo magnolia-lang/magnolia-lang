@@ -85,8 +85,6 @@ implementation MoaOps = {
     use ExtOps;
     use IntegerOps;
 
-
-
 }
 
 implementation CatImpl = {
@@ -133,10 +131,13 @@ implementation CatImpl = {
                      State3 => Integer,
                      body => catBody,
                      cond => catUpperBound,
-                     repeat => doMatMult];
+                     repeat => doCat];
 
 
-    function cat(m1: Matrix, m2: Matrix): Matrix = {
+    function cat(m1: Matrix, m2: Matrix): Matrix
+        guard
+            equals(sizeToInteger(access_shape(m1, integerToSize(one()))),
+                   sizeToInteger(access_shape(m2, integerToSize(one())))) = {
 
         var x_dim = access_shape(m1, integerToSize(zero()));
         var y_dim = integerToSize(add(sizeToInteger(access_shape(m1, integerToSize(one()))),
@@ -146,7 +147,7 @@ implementation CatImpl = {
         var c1 = zero();
         var c2 = zero();
 
-        call doMatMult(m1, m2, res, c1, c2);
+        call doCat(m1, m2, res, c1, c2);
 
         value res;
     }
@@ -155,11 +156,6 @@ implementation CatImpl = {
 implementation Padding = {
 
     use CatImpl;
-
-
-
-
-
 
     // guard equals(access_shape(m1, one()), access_shape(m2, one()))
 
