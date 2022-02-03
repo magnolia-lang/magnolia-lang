@@ -51,6 +51,7 @@ implementation ExtOps = external C++ base.matrix {
     function get(m: Matrix, i: Index): Matrix;
     function shape(m: Matrix): Shape;
     function size(m: Matrix): Size;
+    function size(s: Shape): Size;
     function access_shape(m: Matrix, s: Size): Size;
 
     // Matrix creation
@@ -60,9 +61,11 @@ implementation ExtOps = external C++ base.matrix {
     function zeros(i: Size, j: Size): Matrix;
 
     // IO
+    procedure print_index(obs i: Index);
     procedure print_matrix(obs m: Matrix);
-    procedure print_shape(obs m: Matrix);
     procedure print_number(obs e: Integer);
+    procedure print_shape(obs m: Matrix);
+
 
     // Transformations
     function transpose(m: Matrix): Matrix;
@@ -108,10 +111,21 @@ implementation CatImpl = {
 
             c2 = add(c2, one());
         } else {
-            var ix = create_index(c1,sub(c2, m1_row_bound));
-            call set(res, c1, c2, unwrap_scalar(get(m2, ix)));
 
-            if isLowerThan(c2, res_row_bound) then {
+            var ix: Index;
+
+            if equals(sizeToInteger(size(shape(m2))), one()) then {
+               // call print_number(c1);
+                ix = single_I(sub(c2, m1_row_bound));
+
+                call set(res, c1, c2, unwrap_scalar(get(m2, ix)));
+
+            } else {
+                ix = create_index(c1,sub(c2, m1_row_bound));
+                call set(res, c1, c2, unwrap_scalar(get(m2, ix)));
+            };
+
+            if isLowerThan(c2, sub(res_row_bound, one())) then {
                 c2 = add(c2, one());
             } else {
 
@@ -136,18 +150,29 @@ implementation CatImpl = {
 
     function cat(m1: Matrix, m2: Matrix): Matrix
         guard
-            equals(sizeToInteger(access_shape(m1, integerToSize(one()))),
-                   sizeToInteger(access_shape(m2, integerToSize(one())))) = {
+            equals(sizeToInteger(access_shape(m1, integerToSize(zero()))),
+                   sizeToInteger(access_shape(m2, integerToSize(zero())))) = {
 
         var x_dim = access_shape(m1, integerToSize(zero()));
-        var y_dim = integerToSize(add(sizeToInteger(access_shape(m1, integerToSize(one()))),
+        var y_dim: Size;
+
+        if equals(sizeToInteger(size(shape(m2))), one()) then {
+            y_dim = integerToSize(
+                    add(sizeToInteger(access_shape(m1, integerToSize(one()))),
+                        one()));
+        } else {
+            y_dim = integerToSize(
+                    add(sizeToInteger(access_shape(m1, integerToSize(one()))),
                         sizeToInteger(access_shape(m2, integerToSize(one())))));
+        };
+
         var res = zeros(x_dim, y_dim);
 
         var c1 = zero();
         var c2 = zero();
 
         call doCat(m1, m2, res, c1, c2);
+
 
         value res;
     }
@@ -167,7 +192,10 @@ implementation Padding = {
 
         var slice = get(m, single_I(i));
 
-        var pRes = transpose(cat(transpose(m), transpose(slice)));
+        //call print_shape(slice);
+
+
+        var pRes = transpose(cat(transpose(m), slice));
 
         value pRes;
 
@@ -176,12 +204,10 @@ implementation Padding = {
 
         var slice = get(m, single_I(i));
 
-        var pRes = transpose(cat(transpose(slice), transpose(m)));
+        var pRes = transpose(cat(slice, transpose(m)));
 
         value pRes;
     }
-
-
 
 }
 

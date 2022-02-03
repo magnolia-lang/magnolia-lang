@@ -69,6 +69,7 @@ int main(int argc, char **argv) {
     std::cout << "=" << std::endl;
     P.print_matrix(res2);
 
+    std::cout << "CAT TEST" << std::endl;
 
     P.print_matrix(P.cat(test1, test2));
 
@@ -79,25 +80,24 @@ int main(int argc, char **argv) {
 
     P.print_shape(testslice);
 
-    P.print_matrix(P.cat(P.transpose(P.test_matrix2()), testslice));
+    //P.print_matrix(P.cat(P.transpose(P.test_matrix2()), testslice));
 
     std::cout << "Original:" << std::endl;
     auto padr = P.test_matrix2();
     P.print_matrix(padr);
 
     std::cout << std::endl;
-    std::cout << "Padr:" << std::endl;
+    std::cout << "Padr(A, 1):" << std::endl;
 
     P.print_matrix(P.cPadr(padr, 1));
 
-    /*
     auto padl = P.test_matrix2();
 
     std::cout << std::endl;
-    std::cout << "Padl:" << std::endl;
+    std::cout << "Padl(A, 1):" << std::endl;
 
     P.print_matrix(P.cPadl(padl, 1));
-*/
+
     // TODO: add a base build path to compiler args to avoid having so many
     // nested useless folders when compiling from somewhere else.
 

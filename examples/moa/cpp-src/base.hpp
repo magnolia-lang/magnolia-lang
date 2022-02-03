@@ -97,16 +97,28 @@ struct matrix {
         return m._size();
     }
 
-    inline matrix::Matrix transpose(Matrix m) {
-        auto res = zeros(access_shape(m,1), access_shape(m,0));
+    inline Size size(Shape s) {
+        return s.size();
+    }
 
-        for (auto i = 0; i < shape(m).at(0); i++) {
-            for (auto j = 0; j < shape(m).at(1); j++) {
-                set(res,j,i,m._get(i,j));
+    inline matrix::Matrix transpose(Matrix m) {
+
+        if (shape(m).size() < 2) {
+            std::cout << "size has to be > 1" << std::endl;
+        }
+        else {
+            auto res = zeros(access_shape(m,1), access_shape(m,0));
+
+            for (auto i = 0; i < shape(m).at(0); i++) {
+                for (auto j = 0; j < shape(m).at(1); j++) {
+                    set(res,j,i,m._get(i,j));
+                }
             }
+            return res;
         }
 
-        return res;
+
+
     }
 
     inline matrix::Matrix zeros(const Size row, const Size col) {
@@ -155,6 +167,12 @@ struct matrix {
     IO print functions
     */
 
+    inline void print_index(Index i) {
+        for (auto a = 0; a < i.size(); a++) {
+            std::cout << i.at(a) << " ";
+        }
+        std::cout << std::endl;
+    }
     inline void print_number(Integer a) {
         std::cout << a << std::endl;
     }

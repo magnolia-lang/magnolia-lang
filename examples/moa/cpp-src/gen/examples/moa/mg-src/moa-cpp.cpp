@@ -183,6 +183,10 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_print_index ArrayProgram::print_index;
+
+
+
     ArrayProgram::_single_I ArrayProgram::single_I;
 
 

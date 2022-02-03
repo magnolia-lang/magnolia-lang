@@ -17,7 +17,15 @@ public:
     struct _cat {
         inline ArrayProgram::Matrix operator()(const ArrayProgram::Matrix& m1, const ArrayProgram::Matrix& m2) {
             ArrayProgram::Size x_dim = ArrayProgram::access_shape(m1, ArrayProgram::integerToSize(ArrayProgram::zero()));
-            ArrayProgram::Size y_dim = ArrayProgram::integerToSize(ArrayProgram::add(ArrayProgram::sizeToInteger(ArrayProgram::access_shape(m1, ArrayProgram::integerToSize(ArrayProgram::one()))), ArrayProgram::sizeToInteger(ArrayProgram::access_shape(m2, ArrayProgram::integerToSize(ArrayProgram::one())))));
+            ArrayProgram::Size y_dim;
+            if (ArrayProgram::equals(ArrayProgram::sizeToInteger(ArrayProgram::size(ArrayProgram::shape(m2))), ArrayProgram::one()))
+            {
+                y_dim = ArrayProgram::integerToSize(ArrayProgram::add(ArrayProgram::sizeToInteger(ArrayProgram::access_shape(m1, ArrayProgram::integerToSize(ArrayProgram::one()))), ArrayProgram::one()));
+            }
+            else
+            {
+                y_dim = ArrayProgram::integerToSize(ArrayProgram::add(ArrayProgram::sizeToInteger(ArrayProgram::access_shape(m1, ArrayProgram::integerToSize(ArrayProgram::one()))), ArrayProgram::sizeToInteger(ArrayProgram::access_shape(m2, ArrayProgram::integerToSize(ArrayProgram::one())))));
+            }
             ArrayProgram::Matrix res = ArrayProgram::zeros(x_dim, y_dim);
             ArrayProgram::Int32 c1 = ArrayProgram::zero();
             ArrayProgram::Int32 c2 = ArrayProgram::zero();
@@ -106,6 +114,9 @@ public:
 
     static ArrayProgram::_create_matrix create_matrix;
     struct _size {
+        inline ArrayProgram::Size operator()(const ArrayProgram::Shape& s) {
+            return __matrix.size(s);
+        };
         inline ArrayProgram::Size operator()(const ArrayProgram::Matrix& m) {
             return __matrix.size(m);
         };
@@ -132,7 +143,7 @@ public:
     struct _cPadl {
         inline ArrayProgram::Matrix operator()(const ArrayProgram::Matrix& m, const ArrayProgram::Int32& i) {
             ArrayProgram::Matrix slice = ArrayProgram::get(m, ArrayProgram::single_I(i));
-            ArrayProgram::Matrix pRes = ArrayProgram::transpose(ArrayProgram::cat(ArrayProgram::transpose(slice), ArrayProgram::transpose(m)));
+            ArrayProgram::Matrix pRes = ArrayProgram::transpose(ArrayProgram::cat(slice, ArrayProgram::transpose(m)));
             return pRes;
         };
     };
@@ -141,7 +152,7 @@ public:
     struct _cPadr {
         inline ArrayProgram::Matrix operator()(const ArrayProgram::Matrix& m, const ArrayProgram::Int32& i) {
             ArrayProgram::Matrix slice = ArrayProgram::get(m, ArrayProgram::single_I(i));
-            ArrayProgram::Matrix pRes = ArrayProgram::transpose(ArrayProgram::cat(ArrayProgram::transpose(m), ArrayProgram::transpose(slice)));
+            ArrayProgram::Matrix pRes = ArrayProgram::transpose(ArrayProgram::cat(ArrayProgram::transpose(m), slice));
             return pRes;
         };
     };
@@ -159,9 +170,18 @@ public:
             }
             else
             {
-                ArrayProgram::Index ix = ArrayProgram::create_index(c1, ArrayProgram::sub(c2, m1_row_bound));
-                ArrayProgram::set(res, c1, c2, ArrayProgram::unwrap_scalar(ArrayProgram::get(m2, ix)));
-                if (ArrayProgram::isLowerThan(c2, res_row_bound))
+                ArrayProgram::Index ix;
+                if (ArrayProgram::equals(ArrayProgram::sizeToInteger(ArrayProgram::size(ArrayProgram::shape(m2))), ArrayProgram::one()))
+                {
+                    ix = ArrayProgram::single_I(ArrayProgram::sub(c2, m1_row_bound));
+                    ArrayProgram::set(res, c1, c2, ArrayProgram::unwrap_scalar(ArrayProgram::get(m2, ix)));
+                }
+                else
+                {
+                    ix = ArrayProgram::create_index(c1, ArrayProgram::sub(c2, m1_row_bound));
+                    ArrayProgram::set(res, c1, c2, ArrayProgram::unwrap_scalar(ArrayProgram::get(m2, ix)));
+                }
+                if (ArrayProgram::isLowerThan(c2, ArrayProgram::sub(res_row_bound, ArrayProgram::one())))
                 {
                     c2 = ArrayProgram::add(c2, ArrayProgram::one());
                 }
@@ -383,6 +403,13 @@ public:
     };
 
     static ArrayProgram::_get get;
+    struct _print_index {
+        inline void operator()(const ArrayProgram::Index& i) {
+            return __matrix.print_index(i);
+        };
+    };
+
+    static ArrayProgram::_print_index print_index;
     struct _single_I {
         inline ArrayProgram::Index operator()(const ArrayProgram::Int32& i) {
             return __matrix.single_I(i);
