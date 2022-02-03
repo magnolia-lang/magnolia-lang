@@ -95,7 +95,6 @@ implementation CatImpl = {
     use MoaOps;
 
     predicate catUpperBound(m1: Matrix, m2: Matrix, res: Matrix, c1: Integer, c2: Integer) = {
-
         var row_upper = sizeToInteger(access_shape(res, integerToSize(zero())));
         value isLowerThan(c1, row_upper);
     }
@@ -115,7 +114,7 @@ implementation CatImpl = {
             var ix: Index;
 
             if equals(sizeToInteger(size(shape(m2))), one()) then {
-               // call print_number(c1);
+
                 ix = single_I(sub(c2, m1_row_bound));
 
                 call set(res, c1, c2, unwrap_scalar(get(m2, ix)));
@@ -182,7 +181,7 @@ implementation Padding = {
 
     use CatImpl;
 
-    // guard equals(access_shape(m1, one()), access_shape(m2, one()))
+    type Matrix;
 
     /*
     circular padding on axis i
@@ -191,9 +190,6 @@ implementation Padding = {
     function cPadr(m: Matrix, i: Integer): Matrix = {
 
         var slice = get(m, single_I(i));
-
-        //call print_shape(slice);
-
 
         var pRes = transpose(cat(transpose(m), slice));
 
@@ -208,7 +204,6 @@ implementation Padding = {
 
         value pRes;
     }
-
 }
 
 implementation MatMult = {
@@ -222,10 +217,24 @@ implementation MatMult = {
     require function one(): Integer;
     require predicate isLowerThan(a: Integer, b: Integer);
 
+    /*
+    the condition used in the while-loop for element-wise mult
+    */
     predicate upperBoundMulElem(m1: Matrix, m2: Matrix, res: Matrix, counter: Integer) = {
         value isLowerThan(counter, sizeToInteger(size(m1)));
     }
 
+    /*
+    Element-wise multiplication of two vectors.
+    Takes as input two matrices (assumed to be of dim 1), and performs
+    an element-wise multiplication operation on the elements.
+
+    This procedure is fed as a body to a while-loop, so each call to
+    mult_elementwise performs one mult operation on two elements and
+    iterates the index counter by one.
+
+    The result is stored in a vector.
+    */
     procedure mult_elementwise(obs a: Matrix,
                                obs b: Matrix,
                                upd res: Matrix,
@@ -238,6 +247,9 @@ implementation MatMult = {
         counter = add(counter, one());
     }
 
+    /*
+    The while-loop executing the mult_elementwise procedure.
+    */
     use WhileLoop2_2[Context1 => Matrix,
                      Context2 => Matrix,
                      State1 => Matrix,
@@ -247,6 +259,11 @@ implementation MatMult = {
                      repeat => vecmult];
 
 
+    /*
+    sum_vector performs one iteration of a vector reduction with +.
+    It takes as input an array of dim 1, and stores the result of
+    adding the currently indexed element to the accululator res.
+    */
     procedure sum_vector(obs a: Matrix,
                          upd res: Integer,
                          upd counter: Integer) = {
@@ -256,10 +273,17 @@ implementation MatMult = {
         counter = add(counter, one());
     }
 
+    /*
+    predicate tracking the upper bound of the loop executing the vector
+    reduction
+    */
     predicate upperBoundSum (m: Matrix, res: Integer, counter: Integer) = {
         value isLowerThan(counter, sizeToInteger(size(m)));
     }
 
+    /*
+    while-loop for executing the sum reduction procedure
+    */
     use WhileLoop1_2[Context1 => Matrix,
                      State1 => Integer,
                      State2 => Integer,
@@ -267,6 +291,10 @@ implementation MatMult = {
                      cond => upperBoundSum,
                      repeat => mapsum];
 
+
+    /*
+    predicate for tracking the upper bounds on the main matmult loop
+    */
     predicate upperBoundMatMult (m1: Matrix, m2: Matrix, res: Matrix,
                                  i: Integer, k: Integer) = {
 
@@ -277,28 +305,53 @@ implementation MatMult = {
 
     }
 
+    /*
+    the body of one iteration of matrix multiplication.
+    Takes as input two conformable matrices
+    (i.e. shape(A) = <m n>, shape(B) = <n p>), the result matrix with the correct shape (<m p>), and two iteration variables.
+
+    One call to iterMatMult will describe for indices i, k the element
+    in res[i][k]. It follows the MoA style equation:
+
+    Given two conformable input matrices A and B
+    forall i,k, where 0 <= i < n, 0 <= k < p,
+        res[i][k] = A[i] x transpose(B)[k]
+    */
     procedure iterMatMult(obs m1: Matrix,
                         obs m2: Matrix,
                         upd resM: Matrix,
                         upd i: Integer,
                         upd k: Integer) {
 
+        // partial indexing into m1 and m2
         var slice1 = get(m1, single_I(i));
         var slice2 = get(m2, single_I(k));
 
+        // setup correct dimensions for the vector storing the result
+        // of element-wise multiplication
         var i_dim = sizeToInteger(access_shape(resM, integerToSize(zero())));
         var k_dim = sizeToInteger(access_shape(resM, integerToSize(one())));
 
+        // setup empty result vector, and initialize loop-counter.
         var result_slice = zeros(integerToSize(one()), integerToSize(i_dim));
         var vecmultC = zero();
+
+        // the call to element-wise multiplication of the two slices
         call vecmult(slice1, slice2, result_slice, vecmultC);
 
+        // initialize accumulator and loop-counter for sum reduction
         var reduced = zero();
         var mapsumC = zero();
+
+        // sum reduction call
         call mapsum(result_slice, reduced, mapsumC);
 
+        // set the result of the reduction at current index in the result matrix
         call set(resM, i, k, reduced);
 
+
+        // conditional for looping variables. Wheather to update outer
+        // counter or inner.
         if isLowerThan(add(k, one()), k_dim) then {
             k = add(k, one());
         } else {
@@ -309,6 +362,15 @@ implementation MatMult = {
     }
 }
 
+/*
+The main matmult module. A double while-loop, and a function matmult.
+
+The matmult function takes as input two conformable matrices and then:
+1. Analyzes shapes of inputs, create empty result matrix with correct shape
+2. Initializes loop-counter variables
+3. Calls the main procedure doMatMult with m1 and the transpose of m2
+4. Returns the result matrix
+*/
 implementation MatMultImpl = {
     use MatMult;
 

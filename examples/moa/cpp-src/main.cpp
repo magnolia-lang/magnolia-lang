@@ -55,6 +55,7 @@ int main(int argc, char **argv) {
     auto res = P.matmult(m1, m2);
     P.print_matrix(res);
 
+    std::cout << std::endl;
     std::cout <<"MATMULT TEST 2" << std::endl;
 
     auto test1 = P.test_matrix();
@@ -69,9 +70,13 @@ int main(int argc, char **argv) {
     std::cout << "=" << std::endl;
     P.print_matrix(res2);
 
+    std::cout << std::endl;
+
     std::cout << "CAT TEST" << std::endl;
 
     P.print_matrix(P.cat(test1, test2));
+
+    std::cout << std::endl;
 
     std::cout << "PADDING TESTS" << std::endl;
 
