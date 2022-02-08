@@ -43,20 +43,27 @@ public:
 
     static ArrayProgram::_print_shape print_shape;
     typedef array<ArrayProgram::Int32>::UInt32 UInt32;
-    struct _create_shape_1 {
+    struct _create_shape1 {
         inline ArrayProgram::Shape operator()(const ArrayProgram::UInt32& a) {
-            return __array.create_shape_1(a);
+            return __array.create_shape1(a);
         };
     };
 
-    static ArrayProgram::_create_shape_1 create_shape_1;
-    struct _create_shape_3 {
+    static ArrayProgram::_create_shape1 create_shape1;
+    struct _create_shape2 {
+        inline ArrayProgram::Shape operator()(const ArrayProgram::UInt32& a, const ArrayProgram::UInt32& b) {
+            return __array.create_shape2(a, b);
+        };
+    };
+
+    static ArrayProgram::_create_shape2 create_shape2;
+    struct _create_shape3 {
         inline ArrayProgram::Shape operator()(const ArrayProgram::UInt32& a, const ArrayProgram::UInt32& b, const ArrayProgram::UInt32& c) {
-            return __array.create_shape_3(a, b, c);
+            return __array.create_shape3(a, b, c);
         };
     };
 
-    static ArrayProgram::_create_shape_3 create_shape_3;
+    static ArrayProgram::_create_shape3 create_shape3;
 private:
     static array<ArrayProgram::Int32> __array;
     static inline void one0(ArrayProgram::Int32& o) {
@@ -67,6 +74,27 @@ private:
     };
 public:
     typedef array<ArrayProgram::Int32>::Index Index;
+    struct _create_index1 {
+        inline ArrayProgram::Index operator()(const ArrayProgram::UInt32& a) {
+            return __array.create_index1(a);
+        };
+    };
+
+    static ArrayProgram::_create_index1 create_index1;
+    struct _create_index2 {
+        inline ArrayProgram::Index operator()(const ArrayProgram::UInt32& a, const ArrayProgram::UInt32& b) {
+            return __array.create_index2(a, b);
+        };
+    };
+
+    static ArrayProgram::_create_index2 create_index2;
+    struct _create_index3 {
+        inline ArrayProgram::Index operator()(const ArrayProgram::UInt32& a, const ArrayProgram::UInt32& b, const ArrayProgram::UInt32& c) {
+            return __array.create_index3(a, b, c);
+        };
+    };
+
+    static ArrayProgram::_create_index3 create_index3;
     struct _test_index {
         inline ArrayProgram::Index operator()() {
             return __array.test_index();
@@ -183,13 +211,20 @@ public:
     };
 
     static ArrayProgram::_shape shape;
-    struct _test_array1 {
+    struct _test_array3_2_2 {
         inline ArrayProgram::Array operator()() {
-            return __array.test_array1();
+            return __array.test_array3_2_2();
         };
     };
 
-    static ArrayProgram::_test_array1 test_array1;
+    static ArrayProgram::_test_array3_2_2 test_array3_2_2;
+    struct _test_array3_3 {
+        inline ArrayProgram::Array operator()() {
+            return __array.test_array3_3();
+        };
+    };
+
+    static ArrayProgram::_test_array3_3 test_array3_3;
     struct _total {
         inline ArrayProgram::UInt32 operator()(const ArrayProgram::Array& a) {
             return __array.total(a);

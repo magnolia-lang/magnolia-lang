@@ -67,6 +67,7 @@ struct array {
 
 
     inline Array get(Array a, Index ix) {
+
         // total
         if (ix.size() == dim(a)) {
 
@@ -88,9 +89,7 @@ struct array {
                 accum += ix.at(i) * reduced;
             }
 
-            accum += ix.back();
-
-            Shape res_shape = create_shape_1(1);
+            Shape res_shape = create_shape1(1);
             Array res = Array(res_shape);
 
             res._set(0,a._get(accum));
@@ -99,7 +98,63 @@ struct array {
         }
          // partial
         else if (ix.size() < dim(a)) {
-            std::cout << "not implemented" << std::endl;
+
+            Shape sh = shape(a);
+
+            // calculates the remaining index space not given in the partial ix
+            std::vector<UInt32>::const_iterator first = sh.begin() + (ix.size());
+            std::vector<UInt32>::const_iterator last = sh.begin() + dim(a);
+
+            std::vector<UInt32> subshape(first, last);
+
+            Array sub_array = Array(subshape);
+
+            UInt32 total_elems = total(sub_array);
+
+            std::vector<Index> indices;
+
+            // populates a vector with empty total indices
+            for (auto i = 0; i < total(sub_array); i++) {
+                std::vector<UInt32> total;
+
+                for (auto j = 0; j < ix.size(); j++) {
+                    total.push_back(ix.at(j));
+                }
+
+                indices.push_back(total);
+            }
+
+            // keeps track of how deep down in the subshape we are
+            UInt32 level = 1;
+            // generates all total indices
+            for (auto i = 0; i < subshape.size(); i++) {
+                UInt32 current_sh_ix = subshape.at(i);
+                UInt32 split = total_elems/(current_sh_ix*level);
+                UInt32 current_ix = 0;
+                int counter = 0;
+
+                for (auto j = 0; j < indices.size(); j++) {
+                    if (counter == split) {
+                        counter = 0;
+                        if (current_ix == current_sh_ix - 1) {
+                            current_ix = 0;
+                        }
+                        else {
+                            current_ix++;
+                        }
+
+                    }
+                    indices.at(j).push_back(current_ix);
+                    counter++;
+                }
+                level += level;
+            }
+
+            for (auto i = 0; i < total_elems; i++) {
+                sub_array._set(i, unwrap_scalar(get(a, indices.at(i))));
+            }
+
+            return sub_array;
         }
 
         // invalid index
@@ -135,35 +190,6 @@ struct array {
         return a._get_shape_elem(i);
     }
 
-    inline Array create_array(const Shape &sh) {
-        auto arr = Array(sh);
-        return arr;
-    }
-
-    inline Shape create_shape_1(const UInt32 a) {
-        Shape sh;
-        sh.push_back(a);
-        return sh;
-    }
-    inline Shape create_shape_3(const UInt32 a, const UInt32 b, const UInt32 c) {
-        Shape sh;
-
-        sh.push_back(a);
-        sh.push_back(b);
-        sh.push_back(c);
-
-        return sh;
-    }
-
-    inline Index test_index() {
-        Index ix;
-        ix.push_back(1);
-        ix.push_back(0);
-        ix.push_back(0);
-
-        return ix;
-    }
-
     inline UInt32 dim(Array a) {
         return a._dim();
     }
@@ -177,7 +203,59 @@ struct array {
     }
 
     /*
-    Wrappers/unwrappers
+    array/shape/index creation util
+    */
+
+    inline Array create_array(const Shape &sh) {
+        auto arr = Array(sh);
+        return arr;
+    }
+
+    inline Shape create_shape1(const UInt32 a) {
+        Shape sh;
+        sh.push_back(a);
+        return sh;
+    }
+
+    inline Shape create_shape2(const UInt32 a, const UInt32 b) {
+        Shape sh;
+        sh.push_back(a);
+        sh.push_back(b);
+        return sh;
+    }
+    inline Shape create_shape3(const UInt32 a, const UInt32 b, const UInt32 c) {
+        Shape sh;
+        sh.push_back(a);
+        sh.push_back(b);
+        sh.push_back(c);
+        return sh;
+    }
+
+
+    inline Index create_index1(const UInt32 a) {
+        Index ix;
+        ix.push_back(a);
+        return ix;
+    }
+
+    inline Index create_index2(const UInt32 a, const UInt32 b) {
+        Index ix;
+        ix.push_back(a);
+        ix.push_back(b);
+        return ix;
+    }
+
+    inline Index create_index3(const UInt32 a, const UInt32 b, const UInt32 c) {
+        Index ix;
+        ix.push_back(a);
+        ix.push_back(b);
+        ix.push_back(c);
+
+        return ix;
+    }
+
+    /*
+    Wrappers/unwrappers/util
     */
 
     inline Element unwrap_scalar(Array a) {
@@ -188,9 +266,22 @@ struct array {
     Test arrays
     */
 
-   inline Array test_array1() {
+   inline Array test_array3_3() {
 
-       Array a = Array(create_shape_3(3,2,2));
+       Array a = Array(create_shape2(3,3));
+
+       std::vector<int> v = {6,8,3,8,1,1,4,3,2};
+
+       for (auto i = 0; i < a._total(); i++) {
+           a._set(i, v.at(i));
+       }
+
+       return a;
+   }
+
+   inline Array test_array3_2_2() {
+
+       Array a = Array(create_shape3(3,2,2));
 
        std::vector<int> v = {2,5,7,8,6,1,1,3,5,6,3,5};
 
@@ -201,6 +292,15 @@ struct array {
        return a;
    }
 
+    inline Index test_index() {
+        Index ix;
+        ix.push_back(1);
+        ix.push_back(0);
+        ix.push_back(0);
+
+        return ix;
+    }
+
     /*
     IO functions
     */
@@ -209,6 +309,13 @@ struct array {
 
         for (auto i = 0; i < (int) a._total(); i++) {
             std::cout << a._get(i) << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    inline void print_index(const Index &ix) {
+        for (auto i = 0; i < ix.size(); i++) {
+            std::cout << ix.at(i) << " ";
         }
         std::cout << std::endl;
     }

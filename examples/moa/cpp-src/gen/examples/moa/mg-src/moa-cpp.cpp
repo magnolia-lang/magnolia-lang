@@ -23,13 +23,29 @@ namespace moa_cpp {
 
 
 
-    ArrayProgram::_create_shape_1 ArrayProgram::create_shape_1;
+    ArrayProgram::_create_shape1 ArrayProgram::create_shape1;
 
 
 
-    ArrayProgram::_create_shape_3 ArrayProgram::create_shape_3;
+    ArrayProgram::_create_shape2 ArrayProgram::create_shape2;
+
+
+
+    ArrayProgram::_create_shape3 ArrayProgram::create_shape3;
 
     array<ArrayProgram::Int32> ArrayProgram::__array;
+
+
+
+    ArrayProgram::_create_index1 ArrayProgram::create_index1;
+
+
+
+    ArrayProgram::_create_index2 ArrayProgram::create_index2;
+
+
+
+    ArrayProgram::_create_index3 ArrayProgram::create_index3;
 
 
 
@@ -85,7 +101,11 @@ namespace moa_cpp {
 
 
 
-    ArrayProgram::_test_array1 ArrayProgram::test_array1;
+    ArrayProgram::_test_array3_2_2 ArrayProgram::test_array3_2_2;
+
+
+
+    ArrayProgram::_test_array3_3 ArrayProgram::test_array3_3;
 
 
 

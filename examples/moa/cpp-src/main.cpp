@@ -8,7 +8,7 @@ int main(int argc, char **argv) {
     ArrayProgram P;
 
     std::cout << "Linear representation of array a:" << std::endl;
-    auto a = P.test_array1();
+    auto a = P.test_array3_2_2();
 
     P.print_array(a);
 
@@ -25,4 +25,20 @@ int main(int argc, char **argv) {
     auto test = P.get(a, P.test_index());
 
     std::cout << P.unwrap_scalar(test) << std::endl;
+
+    std::cout << "Total index, access <1 1 1>: expect 3" << std::endl;
+    auto test2 = P.get(a, P.create_index3(1,1,1));
+    std::cout << P.unwrap_scalar(test2) << std::endl;
+
+    std::cout << "TEST PARTIAL INDEX, ACCESS <0>" << std::endl;
+
+    auto subarray = P.get(a, P.create_index1(0));
+
+    P.print_array(subarray);
+
+    std::cout << "TEST PARTIAL INDEX, ACCESS <0 1>" << std::endl;
+
+    auto subarray2 = P.get(a, P.create_index2(0,1));
+
+    P.print_array(subarray2);
 }

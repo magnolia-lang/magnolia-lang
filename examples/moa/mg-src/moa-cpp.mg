@@ -32,8 +32,14 @@ implementation ExtOps = external C++ base.array {
     type UInt32;
 
     function create_array(sh: Shape): Array;
-    function create_shape_1(a: UInt32): Shape;
-    function create_shape_3(a: UInt32, b: UInt32, c: UInt32): Shape;
+    function create_shape1(a: UInt32): Shape;
+    function create_shape2(a: UInt32, b: UInt32): Shape;
+    function create_shape3(a: UInt32, b: UInt32, c: UInt32): Shape;
+
+    function create_index1(a: UInt32): Index;
+    function create_index2(a: UInt32, b: UInt32): Index;
+    function create_index3(a: UInt32, b: UInt32, c: UInt32): Index;
+
     function dim(a: Array): UInt32;
     function total(a: Array): UInt32;
     function shape(a: Array): Shape;
@@ -48,7 +54,8 @@ implementation ExtOps = external C++ base.array {
     function unwrap_scalar(a: Array): Element;
     procedure print_array(obs a: Array);
     procedure print_shape(obs sh: Shape);
-    function test_array1(): Array;
+    function test_array3_2_2(): Array;
+    function test_array3_3(): Array;
     function test_index(): Index;
 }
 
