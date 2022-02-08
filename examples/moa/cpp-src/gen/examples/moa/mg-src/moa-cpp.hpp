@@ -34,16 +34,7 @@ private:
     static float64_utils __float64_utils;
 public:
     typedef int32_utils::Int32 Int32;
-private:
-    static inline void one0(ArrayProgram::Int32& o) {
-        o = __int32_utils.one();
-    };
-    static inline void zero0(ArrayProgram::Int32& o) {
-        o = __int32_utils.zero();
-    };
-public:
-    typedef float64_utils::Float64 Float64;
-    typedef array<ArrayProgram::Float64>::Shape Shape;
+    typedef array<ArrayProgram::Int32>::Shape Shape;
     struct _print_shape {
         inline void operator()(const ArrayProgram::Shape& sh) {
             return __array.print_shape(sh);
@@ -51,7 +42,14 @@ public:
     };
 
     static ArrayProgram::_print_shape print_shape;
-    typedef array<ArrayProgram::Float64>::UInt32 UInt32;
+    typedef array<ArrayProgram::Int32>::UInt32 UInt32;
+    struct _create_shape_1 {
+        inline ArrayProgram::Shape operator()(const ArrayProgram::UInt32& a) {
+            return __array.create_shape_1(a);
+        };
+    };
+
+    static ArrayProgram::_create_shape_1 create_shape_1;
     struct _create_shape_3 {
         inline ArrayProgram::Shape operator()(const ArrayProgram::UInt32& a, const ArrayProgram::UInt32& b, const ArrayProgram::UInt32& c) {
             return __array.create_shape_3(a, b, c);
@@ -60,8 +58,23 @@ public:
 
     static ArrayProgram::_create_shape_3 create_shape_3;
 private:
-    static array<ArrayProgram::Float64> __array;
+    static array<ArrayProgram::Int32> __array;
+    static inline void one0(ArrayProgram::Int32& o) {
+        o = __int32_utils.one();
+    };
+    static inline void zero0(ArrayProgram::Int32& o) {
+        o = __int32_utils.zero();
+    };
 public:
+    typedef array<ArrayProgram::Int32>::Index Index;
+    struct _test_index {
+        inline ArrayProgram::Index operator()() {
+            return __array.test_index();
+        };
+    };
+
+    static ArrayProgram::_test_index test_index;
+    typedef float64_utils::Float64 Float64;
     struct _add {
         inline ArrayProgram::Float64 operator()(const ArrayProgram::Float64& a, const ArrayProgram::Float64& b) {
             return __float64_utils.add(a, b);
@@ -120,7 +133,7 @@ private:
         o = __float64_utils.zero();
     };
 public:
-    typedef array<ArrayProgram::Float64>::Array Array;
+    typedef array<ArrayProgram::Int32>::Array Array;
     struct _create_array {
         inline ArrayProgram::Array operator()(const ArrayProgram::Shape& sh) {
             return __array.create_array(sh);
@@ -135,6 +148,13 @@ public:
     };
 
     static ArrayProgram::_dim dim;
+    struct _get {
+        inline ArrayProgram::Array operator()(const ArrayProgram::Array& a, const ArrayProgram::Index& ix) {
+            return __array.get(a, ix);
+        };
+    };
+
+    static ArrayProgram::_get get;
     struct _get_shape_elem {
         inline ArrayProgram::UInt32 operator()(const ArrayProgram::Array& a, const ArrayProgram::UInt32& i) {
             return __array.get_shape_elem(a, i);
@@ -149,6 +169,27 @@ public:
     };
 
     static ArrayProgram::_print_array print_array;
+    struct _set {
+        inline void operator()(ArrayProgram::Array& a, const ArrayProgram::Index& ix, const ArrayProgram::Int32& e) {
+            return __array.set(a, ix, e);
+        };
+    };
+
+    static ArrayProgram::_set set;
+    struct _shape {
+        inline ArrayProgram::Shape operator()(const ArrayProgram::Array& a) {
+            return __array.shape(a);
+        };
+    };
+
+    static ArrayProgram::_shape shape;
+    struct _test_array1 {
+        inline ArrayProgram::Array operator()() {
+            return __array.test_array1();
+        };
+    };
+
+    static ArrayProgram::_test_array1 test_array1;
     struct _total {
         inline ArrayProgram::UInt32 operator()(const ArrayProgram::Array& a) {
             return __array.total(a);
@@ -156,6 +197,13 @@ public:
     };
 
     static ArrayProgram::_total total;
+    struct _unwrap_scalar {
+        inline ArrayProgram::Int32 operator()(const ArrayProgram::Array& a) {
+            return __array.unwrap_scalar(a);
+        };
+    };
+
+    static ArrayProgram::_unwrap_scalar unwrap_scalar;
 };
 } // examples
 } // moa

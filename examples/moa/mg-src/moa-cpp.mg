@@ -27,18 +27,29 @@ implementation ExtOps = external C++ base.array {
     require type Element;
 
     type Array;
+    type Index;
     type Shape;
     type UInt32;
 
     function create_array(sh: Shape): Array;
+    function create_shape_1(a: UInt32): Shape;
     function create_shape_3(a: UInt32, b: UInt32, c: UInt32): Shape;
     function dim(a: Array): UInt32;
     function total(a: Array): UInt32;
+    function shape(a: Array): Shape;
 
     function get_shape_elem(a: Array, i: UInt32): UInt32;
+    function get(a: Array, ix: Index): Array;
 
+    procedure set(upd a: Array, obs ix: Index, obs e: Element);
+
+
+    // util
+    function unwrap_scalar(a: Array): Element;
     procedure print_array(obs a: Array);
     procedure print_shape(obs sh: Shape);
+    function test_array1(): Array;
+    function test_index(): Index;
 }
 
 
@@ -53,7 +64,7 @@ program ArrayProgram = {
     use Int32Utils;
     use Float64Utils;
 
-   // use ExtOps[Element => Int32];
-    use ExtOps[Element => Float64];
+    use ExtOps[Element => Int32];
+    //use ExtOps[Element => Float64];
 
 }

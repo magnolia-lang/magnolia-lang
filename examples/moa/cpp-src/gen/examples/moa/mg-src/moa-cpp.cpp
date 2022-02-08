@@ -23,9 +23,17 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_create_shape_1 ArrayProgram::create_shape_1;
+
+
+
     ArrayProgram::_create_shape_3 ArrayProgram::create_shape_3;
 
-    array<ArrayProgram::Float64> ArrayProgram::__array;
+    array<ArrayProgram::Int32> ArrayProgram::__array;
+
+
+
+    ArrayProgram::_test_index ArrayProgram::test_index;
 
 
 
@@ -57,6 +65,10 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_get ArrayProgram::get;
+
+
+
     ArrayProgram::_get_shape_elem ArrayProgram::get_shape_elem;
 
 
@@ -65,7 +77,23 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_set ArrayProgram::set;
+
+
+
+    ArrayProgram::_shape ArrayProgram::shape;
+
+
+
+    ArrayProgram::_test_array1 ArrayProgram::test_array1;
+
+
+
     ArrayProgram::_total ArrayProgram::total;
+
+
+
+    ArrayProgram::_unwrap_scalar ArrayProgram::unwrap_scalar;
 
 } // examples
 } // moa

@@ -17,18 +17,18 @@ struct array {
         private:
 
             Element * _content;
-            Shape _shape;
+            Shape _sh;
 
         public:
 
             Array(Shape shape) {
-                _shape = shape;
+                _sh = shape;
 
                 using std::begin;
                 using std::end;
 
-                auto array_size = std::accumulate(begin(_shape),
-                                                  end(_shape), 1,
+                auto array_size = std::accumulate(begin(_sh),
+                                                  end(_sh), 1,
                                                   std::multiplies<UInt32>());
 
                 _content = (Element *)calloc(
@@ -36,49 +36,99 @@ struct array {
             }
 
             inline UInt32 _dim() {
-                return _shape.size();
+                return _sh.size();
+            }
+
+            inline Shape _shape() {
+                return _sh;
             }
 
             inline Element _get(const UInt32 ix) {
                 return _content[ix];
             }
 
+            inline void _set(const UInt32 ix, Element val) {
+                _content[ix] = val;
+            }
+
             inline UInt32 _get_shape_elem(const UInt32 i) {
-                return _shape.at(i);
+                return _sh.at(i);
             }
 
             inline UInt32 _total() {
                 using std::begin;
                 using std::end;
 
-                return std::accumulate(begin(_shape),
-                                                  end(_shape), 1,
+                return std::accumulate(begin(_sh),
+                                                  end(_sh), 1,
                                                   std::multiplies<UInt32>());
             }
     };
 
 
     inline Array get(Array a, Index ix) {
-        UInt32 accum;
-
         // total
         if (ix.size() == dim(a)) {
 
-            UInt32 acc;
+            Shape sh = shape(a);
 
-            for (auto i = dim(a); i > 0; i--) {
-                acc +=
+            UInt32 accum = 0;
+
+            for (int i = 0; i < dim(a); i++) {
+
+                std::vector<UInt32>::const_iterator first = sh.begin() + (i+1);
+                std::vector<UInt32>::const_iterator last = sh.begin() + dim(a);
+
+                std::vector<UInt32> subshape(first, last);
+
+                int reduced = std::accumulate(begin(subshape),
+                                                  end(subshape), 1,
+                                                  std::multiplies<UInt32>());
+
+                accum += ix.at(i) * reduced;
             }
+
+            accum += ix.back();
+
+            Shape res_shape = create_shape_1(1);
+            Array res = Array(res_shape);
+
+            res._set(0,a._get(accum));
+            return res;
+
         }
          // partial
         else if (ix.size() < dim(a)) {
-
+            std::cout << "not implemented" << std::endl;
         }
 
         // invalid index
         else {
             std::cout << "Invalid index, out of bounds" << std::endl;
         }
+    }
+
+    inline void set(Array a, Index ix, const Element val) {
+
+        if (ix.size() == dim(a)) {
+            std::vector<int> multiplier;
+            multiplier.push_back(1);
+
+            UInt32 acc = 0;
+
+            for (auto i = dim(a) - 1; i > 0; i--) {
+                auto mult = std::accumulate(begin(multiplier),end(multiplier),        1, std::multiplies<int>());
+                acc += ix.at(i)*mult;
+                multiplier.push_back(multiplier.back()+1);
+            }
+
+            a._set(acc, val);
+        }
+
+        else {
+            std::cout << "Total index required by set" << std::endl;
+        }
+
     }
 
     inline UInt32 get_shape_elem(Array a, const UInt32 i) {
@@ -90,6 +140,11 @@ struct array {
         return arr;
     }
 
+    inline Shape create_shape_1(const UInt32 a) {
+        Shape sh;
+        sh.push_back(a);
+        return sh;
+    }
     inline Shape create_shape_3(const UInt32 a, const UInt32 b, const UInt32 c) {
         Shape sh;
 
@@ -98,6 +153,15 @@ struct array {
         sh.push_back(c);
 
         return sh;
+    }
+
+    inline Index test_index() {
+        Index ix;
+        ix.push_back(1);
+        ix.push_back(0);
+        ix.push_back(0);
+
+        return ix;
     }
 
     inline UInt32 dim(Array a) {
@@ -111,6 +175,32 @@ struct array {
     inline UInt32 total(Array a) {
         return a._total();
     }
+
+    /*
+    Wrappers/unwrappers
+    */
+
+    inline Element unwrap_scalar(Array a) {
+        return a._get(0);
+    }
+
+    /*
+    Test arrays
+    */
+
+   inline Array test_array1() {
+
+       Array a = Array(create_shape_3(3,2,2));
+
+       std::vector<int> v = {2,5,7,8,6,1,1,3,5,6,3,5};
+
+       for (auto i = 0; i < a._total(); i++) {
+           a._set(i, v.at(i));
+       }
+
+       return a;
+   }
+
     /*
     IO functions
     */
