@@ -73,6 +73,7 @@ implementation WhileLoop2_2 =
 		procedure repeat(obs context1: Context1, obs context2: Context2, upd state1: State1, upd state2: State2);
 };
 
+
 implementation WhileLoop1_2 =
 	external C++ base.while_loop1_2 {
 		require type Context1;

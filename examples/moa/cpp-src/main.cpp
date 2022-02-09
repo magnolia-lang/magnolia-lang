@@ -41,4 +41,26 @@ int main(int argc, char **argv) {
     auto subarray2 = P.get(a, P.create_index2(0,1));
 
     P.print_array(subarray2);
+
+    std::cout << "Cat testing on vectors:" << std::endl;
+
+    auto vec1 = P.test_vector2();
+    std::cout << "Vector vec1: " << std::endl;
+    P.print_array(vec1);
+    std::cout << "Shape: ";
+    P.print_shape(P.shape(vec1));
+
+    auto vec2 = P.test_vector3();
+    std::cout << "Vector vec2: " << std::endl;
+    P.print_array(vec2);
+    std::cout << "Shape: ";
+    P.print_shape(P.shape(vec2));
+
+    std::cout << "cat(vec1, vec2):" << std::endl;
+
+    auto cat_vec = P.cat_vec(vec1, vec2);
+    P.print_array(cat_vec);
+    std::cout << "Shape: ";
+    P.print_shape(P.shape(cat_vec));
+
 }

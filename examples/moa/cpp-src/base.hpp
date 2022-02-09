@@ -77,6 +77,11 @@ struct array {
 
             for (int i = 0; i < dim(a); i++) {
 
+                if(ix.at(i) > sh.at(i)) {
+                    std::cout << "Access out of bounds: " << ix.at(i)
+                              << ". Max is : " << sh.at(i) << std::endl;
+                }
+
                 std::vector<UInt32>::const_iterator first = sh.begin() + (i+1);
                 std::vector<UInt32>::const_iterator last = sh.begin() + dim(a);
 
@@ -190,6 +195,15 @@ struct array {
         return a._get_shape_elem(i);
     }
 
+    inline Shape drop_shape_elem(Array a, const UInt32 i) {
+        Shape res;
+        for (auto j = 0; j < shape(a).size(); j++) {
+            if (i == j) continue;
+            res.push_back(shape(a).at(j));
+        }
+        return res;
+    }
+
     inline UInt32 dim(Array a) {
         return a._dim();
     }
@@ -262,9 +276,58 @@ struct array {
         return a._get(0);
     }
 
+    inline Element uint_elem(const UInt32 a) {
+        return (Element) a;
+    }
+
+    inline UInt32 elem_uint(const Element a) {
+        return (UInt32) a;
+    }
+
     /*
     Test arrays
     */
+
+    inline Array test_vector2() {
+
+       Array a = Array(create_shape1(2));
+
+       std::vector<int> v = {1,2};
+
+       for (auto i = 0; i < a._total(); i++) {
+           a._set(i, v.at(i));
+       }
+
+       return a;
+   }
+
+    inline Array test_vector3() {
+
+       Array a = Array(create_shape1(3));
+
+       std::vector<int> v = {7,7,7};
+
+       for (auto i = 0; i < a._total(); i++) {
+           a._set(i, v.at(i));
+       }
+
+       return a;
+   }
+
+    inline Array test_vector5() {
+
+       Array a = Array(create_shape1(5));
+
+       std::vector<int> v = {1,2,3,4,5};
+
+       for (auto i = 0; i < a._total(); i++) {
+           a._set(i, v.at(i));
+       }
+
+       return a;
+   }
+
+
 
    inline Array test_array3_3() {
 
@@ -302,7 +365,7 @@ struct array {
     }
 
     /*
-    IO functions
+    IO
     */
 
     inline void print_array(Array a) {
@@ -325,6 +388,13 @@ struct array {
             std::cout << sh.at(i) << " ";
         }
         std::cout << std::endl;
+    }
+    inline void print_element(const Element &e) {
+        std::cout << e << std::endl;
+    }
+
+    inline void print_uint(const UInt32 &i) {
+        std::cout << i << std::endl;
     }
 };
 
@@ -373,4 +443,18 @@ struct float64_utils {
     inline bool isLowerThan(const Float64 a, const Float64 b) {
         return a < b;
     }
+};
+
+template <typename _Context1, typename _Context2, typename _State1, typename _State2, class _body, class _cond>
+struct while_loop2_2 {
+	typedef _Context1 Context1;
+	typedef _Context2 Context2;
+	typedef _State1 State1;
+	typedef _State2 State2;
+
+	_body body;
+	_cond cond;
+	void repeat(const Context1 &context1, const Context2 &context2, State1 &state1, State2 &state2) {
+		while (cond(context1, context2, state1, state2)) body(context1, context2, state1, state2);
+	}
 };

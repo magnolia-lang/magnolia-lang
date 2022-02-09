@@ -33,7 +33,23 @@ namespace moa_cpp {
 
     ArrayProgram::_create_shape3 ArrayProgram::create_shape3;
 
+
+
+    ArrayProgram::_print_uint ArrayProgram::print_uint;
+
     array<ArrayProgram::Int32> ArrayProgram::__array;
+
+
+
+    ArrayProgram::_elem_uint ArrayProgram::elem_uint;
+
+
+
+    ArrayProgram::_print_element ArrayProgram::print_element;
+
+
+
+    ArrayProgram::_uint_elem ArrayProgram::uint_elem;
 
 
 
@@ -46,6 +62,10 @@ namespace moa_cpp {
 
 
     ArrayProgram::_create_index3 ArrayProgram::create_index3;
+
+
+
+    ArrayProgram::_print_index ArrayProgram::print_index;
 
 
 
@@ -73,11 +93,37 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_cat ArrayProgram::cat;
+
+
+
+    ArrayProgram::_cat_vec ArrayProgram::cat_vec;
+
+
+
+    ArrayProgram::_cat_vec_body ArrayProgram::cat_vec_body;
+
+
+
+    while_loop2_2<ArrayProgram::Array, ArrayProgram::Array, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_cat_vec_body, ArrayProgram::_cat_vec_cond> ArrayProgram::__while_loop2_2;
+
+    ArrayProgram::_cat_vec_cond ArrayProgram::cat_vec_cond;
+
+
+
+    ArrayProgram::_cat_vec_repeat ArrayProgram::cat_vec_repeat;
+
+
+
     ArrayProgram::_create_array ArrayProgram::create_array;
 
 
 
     ArrayProgram::_dim ArrayProgram::dim;
+
+
+
+    ArrayProgram::_drop_shape_elem ArrayProgram::drop_shape_elem;
 
 
 
@@ -106,6 +152,18 @@ namespace moa_cpp {
 
 
     ArrayProgram::_test_array3_3 ArrayProgram::test_array3_3;
+
+
+
+    ArrayProgram::_test_vector2 ArrayProgram::test_vector2;
+
+
+
+    ArrayProgram::_test_vector3 ArrayProgram::test_vector3;
+
+
+
+    ArrayProgram::_test_vector5 ArrayProgram::test_vector5;
 
 
 
