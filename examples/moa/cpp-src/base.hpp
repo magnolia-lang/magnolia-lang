@@ -14,12 +14,16 @@ struct array {
 
     struct Array {
 
-        private:
-
-            Element * _content;
-            Shape _sh;
-
         public:
+
+            Shape _sh;
+            Element * _content;
+
+            // empty constructor needed when instantiating PaddedArray
+            Array() {
+                _sh.push_back(1);
+                _content = (Element *) calloc(1, sizeof(Element));
+            }
 
             Array(Shape shape) {
                 _sh = shape;
@@ -65,6 +69,79 @@ struct array {
             }
     };
 
+    struct PaddedArray : public Array {
+
+        public:
+
+            Shape _padded_sh;
+            Element * _padded_content;
+
+            PaddedArray(Shape unpadded_sh, Shape padded_sh, Array padded) {
+
+                _padded_sh = padded_sh;
+
+                this -> _sh = unpadded_sh;
+                this -> _content = padded._content;
+
+            }
+
+
+            inline UInt32 _padded_dim() {
+                return _padded_sh.size();
+            }
+
+            inline Shape _padded_shape() {
+                return _padded_sh;
+            }
+
+            inline Element _padded_get(const UInt32 ix) {
+                return this._content[ix];
+            }
+
+            inline void _padded_set(const UInt32 ix, Element val) {
+                _padded_content[ix] = val;
+            }
+
+            inline UInt32 _padded_get_shape_elem(const UInt32 i) {
+                return _padded_sh.at(i);
+            }
+
+            inline UInt32 _padded_total() {
+                using std::begin;
+                using std::end;
+
+                return std::accumulate(begin(_padded_sh),
+                                                  end(_padded_sh), 1,
+                                                  std::multiplies<UInt32>());
+            }
+
+    };
+
+    /*
+    Operations on unpadded arrays
+    */
+
+    inline Array get(Array a, UInt32 ix) {
+        if (ix > total(a)) {
+            std::cout << "get:Index out of bounds: " << ix << std::endl;
+        }
+        else {
+            Shape res_shape = create_shape1(1);
+            Array res = Array(res_shape);
+
+            res._set(0,a._get(ix));
+            return res;
+        }
+    }
+
+    inline void set(Array a, UInt32 ix, const Element e) {
+        if (ix > total(a)) {
+            std::cout << "set:Index out of bounds: " << ix << std::endl;
+        }
+        else {
+            a._set(ix,e);
+        }
+    }
 
     inline Array get(Array a, Index ix) {
 
@@ -109,7 +186,6 @@ struct array {
             // calculates the remaining index space not given in the partial ix
             std::vector<UInt32>::const_iterator first = sh.begin() + (ix.size());
             std::vector<UInt32>::const_iterator last = sh.begin() + dim(a);
-
             std::vector<UInt32> subshape(first, last);
 
             Array sub_array = Array(subshape);
@@ -171,6 +247,7 @@ struct array {
     inline void set(Array a, Index ix, const Element val) {
 
         if (ix.size() == dim(a)) {
+
             std::vector<int> multiplier;
             multiplier.push_back(1);
 
@@ -182,6 +259,8 @@ struct array {
                 multiplier.push_back(multiplier.back()+1);
             }
 
+            acc += ix.back();
+
             a._set(acc, val);
         }
 
@@ -189,19 +268,6 @@ struct array {
             std::cout << "Total index required by set" << std::endl;
         }
 
-    }
-
-    inline UInt32 get_shape_elem(Array a, const UInt32 i) {
-        return a._get_shape_elem(i);
-    }
-
-    inline Shape drop_shape_elem(Array a, const UInt32 i) {
-        Shape res;
-        for (auto j = 0; j < shape(a).size(); j++) {
-            if (i == j) continue;
-            res.push_back(shape(a).at(j));
-        }
-        return res;
     }
 
     inline UInt32 dim(Array a) {
@@ -217,12 +283,30 @@ struct array {
     }
 
     /*
+    operations on padded arrays
+    */
+    inline UInt32 padded_dim(PaddedArray a) {
+        return a._padded_dim();
+    }
+    inline Shape padded_shape(PaddedArray a) {
+        return a._padded_shape();
+    }
+
+    inline UInt32 padded_total(PaddedArray a) {
+        return a._padded_total();
+    }
+
+    /*
     array/shape/index creation util
     */
 
     inline Array create_array(const Shape &sh) {
         auto arr = Array(sh);
         return arr;
+    }
+
+    inline PaddedArray create_padded_array(Shape unpadded_shape, Shape padded_shape, Array padded_array) {
+        return PaddedArray(unpadded_shape, padded_shape, padded_array);
     }
 
     inline Shape create_shape1(const UInt32 a) {
@@ -284,6 +368,44 @@ struct array {
         return (UInt32) a;
     }
 
+    inline UInt32 get_shape_elem(Array a, const UInt32 i) {
+        return a._get_shape_elem(i);
+    }
+
+    inline Shape drop_shape_elem(Array a, const UInt32 i) {
+        Shape res;
+        for (auto j = 0; j < shape(a).size(); j++) {
+            if (i == j) continue;
+            res.push_back(shape(a).at(j));
+        }
+        return res;
+    }
+
+    inline UInt32 padded_get_shape_elem(PaddedArray a, const UInt32 i) {
+        return a._padded_get_shape_elem(i);
+    }
+
+    inline Shape padded_drop_shape_elem(PaddedArray a, const UInt32 i) {
+        Shape res;
+        for (auto j = 0; j < padded_shape(a).size(); j++) {
+            if (i == j) continue;
+            res.push_back(shape(a).at(j));
+        }
+        return res;
+    }
+
+    inline Shape cat_shape(Shape a, Shape b) {
+        Shape res;
+
+        for (const auto &i : a) {
+            res.push_back(i);
+        }
+        for (const auto &i: b) {
+            res.push_back(i);
+        }
+
+        return res;
+    }
     /*
     Test arrays
     */
@@ -456,5 +578,17 @@ struct while_loop2_2 {
 	_cond cond;
 	void repeat(const Context1 &context1, const Context2 &context2, State1 &state1, State2 &state2) {
 		while (cond(context1, context2, state1, state2)) body(context1, context2, state1, state2);
+	}
+};
+
+template <typename _Context1, typename _State1, class _body, class _cond>
+struct while_loop1_1 {
+	typedef _Context1 Context1;
+	typedef _State1 State1;
+
+	_body body;
+	_cond cond;
+	void repeat(const Context1 &context1, State1 &state1) {
+		while (cond(context1, state1)) body(context1, state1);
 	}
 };

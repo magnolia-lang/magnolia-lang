@@ -19,6 +19,14 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_cat_shape ArrayProgram::cat_shape;
+
+
+
+    ArrayProgram::_padded_shape ArrayProgram::padded_shape;
+
+
+
     ArrayProgram::_print_shape ArrayProgram::print_shape;
 
 
@@ -32,6 +40,22 @@ namespace moa_cpp {
 
 
     ArrayProgram::_create_shape3 ArrayProgram::create_shape3;
+
+
+
+    ArrayProgram::_padded_dim ArrayProgram::padded_dim;
+
+
+
+    ArrayProgram::_padded_drop_shape_elem ArrayProgram::padded_drop_shape_elem;
+
+
+
+    ArrayProgram::_padded_get_shape_elem ArrayProgram::padded_get_shape_elem;
+
+
+
+    ArrayProgram::_padded_total ArrayProgram::padded_total;
 
 
 
@@ -97,6 +121,20 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_cat_body ArrayProgram::cat_body;
+
+
+
+    while_loop2_2<ArrayProgram::Array, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::Array, ArrayProgram::_cat_body, ArrayProgram::_cat_cond> ArrayProgram::__while_loop2_20;
+
+    ArrayProgram::_cat_cond ArrayProgram::cat_cond;
+
+
+
+    ArrayProgram::_cat_repeat ArrayProgram::cat_repeat;
+
+
+
     ArrayProgram::_cat_vec ArrayProgram::cat_vec;
 
 
@@ -119,6 +157,10 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_create_padded_array ArrayProgram::create_padded_array;
+
+
+
     ArrayProgram::_dim ArrayProgram::dim;
 
 
@@ -132,6 +174,10 @@ namespace moa_cpp {
 
 
     ArrayProgram::_get_shape_elem ArrayProgram::get_shape_elem;
+
+
+
+    ArrayProgram::_padr ArrayProgram::padr;
 
 
 
