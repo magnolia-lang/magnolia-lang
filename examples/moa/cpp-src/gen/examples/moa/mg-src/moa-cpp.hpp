@@ -175,6 +175,13 @@ public:
     };
 
     static ArrayProgram::_print_index print_index;
+    struct _reverse_index {
+        inline ArrayProgram::Index operator()(const ArrayProgram::Index& ix) {
+            return __array.reverse_index(ix);
+        };
+    };
+
+    static ArrayProgram::_reverse_index reverse_index;
     struct _test_index {
         inline ArrayProgram::Index operator()() {
             return __array.test_index();
@@ -386,10 +393,12 @@ public:
 
     static ArrayProgram::_get_shape_elem get_shape_elem;
     struct _padr {
-        inline ArrayProgram::PaddedArray operator()(const ArrayProgram::Array& a, const ArrayProgram::Array& padding) {
+        inline ArrayProgram::PaddedArray operator()(const ArrayProgram::Array& a, const ArrayProgram::UInt32& ix) {
+            ArrayProgram::Array padding = ArrayProgram::get(a, ArrayProgram::create_index1(ix));
+            ArrayProgram::Array catenated_array = ArrayProgram::cat(a, padding);
             ArrayProgram::Shape unpadded_shape = ArrayProgram::shape(a);
-            ArrayProgram::Shape padded_shape = ArrayProgram::shape(padding);
-            ArrayProgram::PaddedArray res = ArrayProgram::create_padded_array(unpadded_shape, padded_shape, padding);
+            ArrayProgram::Shape padded_shape = ArrayProgram::shape(catenated_array);
+            ArrayProgram::PaddedArray res = ArrayProgram::create_padded_array(unpadded_shape, padded_shape, catenated_array);
             return res;
         };
     };

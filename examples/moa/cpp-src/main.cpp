@@ -36,11 +36,18 @@ int main(int argc, char **argv) {
 
     P.print_array(subarray);
 
+    std::cout << "Shape of subarray: " << std::endl;
+
+    P.print_shape(P.shape(subarray));
+
     std::cout << "TEST PARTIAL INDEX, ACCESS <0 1>: expect 7 8" << std::endl;
 
     auto subarray2 = P.get(a, P.create_index2(0,1));
 
     P.print_array(subarray2);
+
+    std::cout << "Shape of subarray: " << std::endl;
+    P.print_shape(P.shape(subarray2));
 
     std::cout << "Cat testing on vectors:" << std::endl;
 
@@ -80,18 +87,21 @@ int main(int argc, char **argv) {
 
     std::cout << "PADDING TESTS" << std::endl;
 
-    auto up = P.create_shape2(2,2);
-    auto p = P.create_shape3(3,2,2);
-    auto unp = P.test_array3_3();
-    auto pad = P.test_array3_2_2();
+    auto padr_test = P.create_shape3(3,2,2);
 
-    auto padded = P.padr(unp, pad);
+    auto padded = P.padr(padr_test, 0);
 
-    auto ix = P.create_index1(1);
+    std::cout << "Original array:" << std::endl;
+    P.print_array(padr_test);
+    std::cout << "Shape: ";
+    P.print_shape(P.shape(padr_test));
 
-    P.print_array(P.get(padded, ix));
+    std::cout << "padr(A, 0): " << std::endl;
 
+    std::cout << "Padded shape:";
+    P.print_shape(P.padded_shape(padded));
+
+    std::cout << "Can still access unpadded shape: ";
 
     P.print_shape(P.shape(padded));
-    P.print_shape(P.padded_shape(padded));
 }

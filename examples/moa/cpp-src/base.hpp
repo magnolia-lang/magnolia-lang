@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <numeric>
@@ -406,6 +407,12 @@ struct array {
 
         return res;
     }
+
+    inline Index reverse_index(Index ix) {
+        Index res = ix;
+        reverse(res.begin(), res.end());
+        return res;
+    }
     /*
     Test arrays
     */
@@ -499,17 +506,19 @@ struct array {
     }
 
     inline void print_index(const Index &ix) {
+        std::cout << "< ";
         for (auto i = 0; i < ix.size(); i++) {
             std::cout << ix.at(i) << " ";
         }
-        std::cout << std::endl;
+        std::cout << ">" << std::endl;
     }
 
     inline void print_shape(const Shape &sh) {
+        std::cout << "< ";
         for (auto i = 0; i < sh.size(); i++) {
             std::cout << sh.at(i) << " ";
         }
-        std::cout << std::endl;
+        std::cout << ">" << std::endl;
     }
     inline void print_element(const Element &e) {
         std::cout << e << std::endl;

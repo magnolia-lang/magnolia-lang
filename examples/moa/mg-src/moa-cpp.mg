@@ -89,6 +89,7 @@ implementation ExtOps = external C++ base.array {
     function uint_elem(a: UInt32): Element;
     function elem_uint(a: Element): UInt32;
     function cat_shape(a: Shape, b: Shape): Shape;
+    function reverse_index(ix: Index): Index;
 
     // IO
     procedure print_array(obs a: Array);
@@ -254,12 +255,17 @@ implementation Padding = {
 
     use Catenation;
 
-    function padr(a: Array, padding: Array): PaddedArray = {
+    function padr(a: Array, ix: UInt32): PaddedArray = {
 
+        var padding = get(a, create_index1(ix));
+        var catenated_array = cat(a, padding);
         var unpadded_shape = shape(a);
-        var padded_shape = shape(padding);
-        var res = create_padded_array(unpadded_shape, padded_shape, padding);
+        var padded_shape = shape(catenated_array);
+
+        var res = create_padded_array(unpadded_shape, padded_shape, catenated_array);
+
         value res;
+
     }
 }
 

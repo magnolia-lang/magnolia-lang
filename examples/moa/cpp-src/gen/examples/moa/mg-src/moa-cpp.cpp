@@ -93,6 +93,10 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_reverse_index ArrayProgram::reverse_index;
+
+
+
     ArrayProgram::_test_index ArrayProgram::test_index;
 
 
