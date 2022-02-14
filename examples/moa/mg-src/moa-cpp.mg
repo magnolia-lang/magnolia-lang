@@ -59,6 +59,7 @@ implementation ExtOps = external C++ base.array {
     // unpadded moa operations that are convenient to have tied to backend
     function dim(a: Array): UInt32;
     function total(a: Array): UInt32;
+    function total(s: Shape) : UInt32;
     function shape(a: Array): Shape;
 
 
@@ -93,6 +94,7 @@ implementation ExtOps = external C++ base.array {
 
     // IO
     procedure print_array(obs a: Array);
+    procedure print_parray(obs a: PaddedArray);
     procedure print_index(obs i: Index);
     procedure print_shape(obs sh: Shape);
     procedure print_element(obs e: Element);
@@ -107,10 +109,11 @@ implementation ExtOps = external C++ base.array {
     function test_array3_3(): Array;
     function test_index(): Index;
     function create_padded_array(unpadded_shape: Shape, padded_shape: Shape,
-                          padded_array: Array): PaddedArray;
+                          unpadded_array: Array, padded_array: Array): PaddedArray;
 }
 
-implementation Catenation = {
+implementation Reshape = {
+    use ExtOps;
 
     require function zero(): Element;
     require function one(): Element;
@@ -120,7 +123,38 @@ implementation Catenation = {
     require predicate equals(a: Element, b: Element);
     require predicate isLowerThan(a: Element, b: Element);
 
-    use ExtOps;
+    procedure reshape_body(obs old_array: Array, upd new_array: Array, upd counter: UInt32) {
+        call set(new_array, counter, unwrap_scalar(get(old_array, counter)));
+        counter = elem_uint(add(uint_elem(counter), one()));
+    }
+    predicate reshape_cond(old_array: Array, new_array: Array, counter: UInt32) {
+       value isLowerThan(uint_elem(counter), uint_elem(total(new_array)));
+    }
+
+    use WhileLoop1_2[Context1 => Array,
+                     State1 => Array,
+                     State2 => UInt32,
+                     body => reshape_body,
+                     cond => reshape_cond,
+                     repeat => reshape_repeat];
+
+    function reshape(input_array: Array, s: Shape): Array
+        guard total(shape(input_array)) == total(s) {
+
+        var new_array = create_array(s);
+
+        var counter = elem_uint(zero());
+
+        call reshape_repeat(input_array, new_array, counter);
+
+        value new_array;
+    }
+
+}
+
+implementation Catenation = {
+
+    use Reshape;
 
     /*########################################
         Vector catenation, i.e. cat(v1, v2)
@@ -183,6 +217,12 @@ implementation Catenation = {
         value res;
 
     }
+    /*########################################
+        Array and vector catenation, i.e. cat(a, vec)
+      ########################################
+    */
+
+
 
     /*########################################
         Array catenation, i.e. cat(a1, a2)
@@ -255,17 +295,19 @@ implementation Padding = {
 
     use Catenation;
 
-    function padr(a: Array, ix: UInt32): PaddedArray = {
+    function circular_padr(a: Array, ix: UInt32): PaddedArray = {
 
         var padding = get(a, create_index1(ix));
-        var catenated_array = cat(a, padding);
+        var reshape_shape = cat_shape(create_shape1(elem_uint(one())), shape(padding));
+        var reshaped_padding = reshape(padding, reshape_shape);
+
+        var catenated_array = cat(a, reshaped_padding);
         var unpadded_shape = shape(a);
         var padded_shape = shape(catenated_array);
 
-        var res = create_padded_array(unpadded_shape, padded_shape, catenated_array);
+        var res = create_padded_array(unpadded_shape, padded_shape, a, catenated_array);
 
         value res;
-
     }
 }
 

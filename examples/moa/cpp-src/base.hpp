@@ -77,15 +77,15 @@ struct array {
             Shape _padded_sh;
             Element * _padded_content;
 
-            PaddedArray(Shape unpadded_sh, Shape padded_sh, Array padded) {
+            PaddedArray(const Shape unpadded_sh, const Shape padded_sh, const Array unpadded, const Array padded) {
 
                 _padded_sh = padded_sh;
+                _padded_content = padded._content;
 
                 this -> _sh = unpadded_sh;
-                this -> _content = padded._content;
+                this -> _content = unpadded._content;
 
             }
-
 
             inline UInt32 _padded_dim() {
                 return _padded_sh.size();
@@ -283,6 +283,15 @@ struct array {
         return a._total();
     }
 
+    inline UInt32 total(Shape s) {
+        using std::begin;
+        using std::end;
+
+        return std::accumulate(begin(s),
+                                 end(s), 1,
+                                 std::multiplies<UInt32>());
+    }
+
     /*
     operations on padded arrays
     */
@@ -306,8 +315,8 @@ struct array {
         return arr;
     }
 
-    inline PaddedArray create_padded_array(Shape unpadded_shape, Shape padded_shape, Array padded_array) {
-        return PaddedArray(unpadded_shape, padded_shape, padded_array);
+    inline PaddedArray create_padded_array(Shape unpadded_shape, Shape padded_shape, Array unpadded_array, Array padded_array) {
+        return PaddedArray(unpadded_shape, padded_shape, unpadded_array, padded_array);
     }
 
     inline Shape create_shape1(const UInt32 a) {
@@ -505,6 +514,14 @@ struct array {
         std::cout << std::endl;
     }
 
+    inline void print_parray(Array a) {
+
+        for (auto i = 0; i < (int) a._total(); i++) {
+            std::cout << a._get(i) << " ";
+        }
+        std::cout << std::endl;
+    }
+
     inline void print_index(const Index &ix) {
         std::cout << "< ";
         for (auto i = 0; i < ix.size(); i++) {
@@ -587,6 +604,18 @@ struct while_loop2_2 {
 	_cond cond;
 	void repeat(const Context1 &context1, const Context2 &context2, State1 &state1, State2 &state2) {
 		while (cond(context1, context2, state1, state2)) body(context1, context2, state1, state2);
+	}
+};
+template <typename _Context1, typename _State1, typename _State2, class _body, class _cond>
+struct while_loop1_2 {
+	typedef _Context1 Context1;
+	typedef _State1 State1;
+	typedef _State2 State2;
+
+	_body body;
+	_cond cond;
+	void repeat(const Context1 &context1, State1 &state1, State2 &state2) {
+		while (cond(context1, state1, state2)) body(context1, state1, state2);
 	}
 };
 

@@ -19,6 +19,10 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_print_parray ArrayProgram::print_parray;
+
+
+
     ArrayProgram::_cat_shape ArrayProgram::cat_shape;
 
 
@@ -157,6 +161,10 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_circular_padr ArrayProgram::circular_padr;
+
+
+
     ArrayProgram::_create_array ArrayProgram::create_array;
 
 
@@ -181,11 +189,25 @@ namespace moa_cpp {
 
 
 
-    ArrayProgram::_padr ArrayProgram::padr;
-
-
-
     ArrayProgram::_print_array ArrayProgram::print_array;
+
+
+
+    ArrayProgram::_reshape ArrayProgram::reshape;
+
+
+
+    ArrayProgram::_reshape_body ArrayProgram::reshape_body;
+
+
+
+    while_loop1_2<ArrayProgram::Array, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_reshape_body, ArrayProgram::_reshape_cond> ArrayProgram::__while_loop1_2;
+
+    ArrayProgram::_reshape_cond ArrayProgram::reshape_cond;
+
+
+
+    ArrayProgram::_reshape_repeat ArrayProgram::reshape_repeat;
 
 
 

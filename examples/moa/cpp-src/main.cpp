@@ -40,6 +40,7 @@ int main(int argc, char **argv) {
 
     P.print_shape(P.shape(subarray));
 
+    std::cout << std::endl;
     std::cout << "TEST PARTIAL INDEX, ACCESS <0 1>: expect 7 8" << std::endl;
 
     auto subarray2 = P.get(a, P.create_index2(0,1));
@@ -49,8 +50,9 @@ int main(int argc, char **argv) {
     std::cout << "Shape of subarray: " << std::endl;
     P.print_shape(P.shape(subarray2));
 
-    std::cout << "Cat testing on vectors:" << std::endl;
-
+    std::cout << std::endl;
+    std::cout << "CAT ON VECTORS:" << std::endl;
+    std::cout << std::endl;
     auto vec1 = P.test_vector2();
     std::cout << "Vector vec1: " << std::endl;
     P.print_array(vec1);
@@ -70,26 +72,32 @@ int main(int argc, char **argv) {
     std::cout << "Shape: ";
     P.print_shape(P.shape(cat_vec));
 
+    std::cout << std::endl;
 
     std::cout << "CAT ON ARRAYS:" << std::endl;
-
+    std::cout << std::endl;
+    std::cout << "Array a1 = ";
     auto cat1 = P.test_array3_2_2();
     P.print_array(cat1);
+    std::cout << "shape(a1) = ";
+    P.print_shape(P.shape(cat1));
 
     auto cat_res = P.cat(cat1,cat1);
 
     std::cout << "Shape of cat(a1,a1): ";
     P.print_shape(P.shape(cat_res));
 
-    std::cout << "Linear res:" << std::endl;
+    std::cout << std::endl;
+    std::cout << "cat(a1,a1) = " << std::endl;
     P.print_array(cat_res);
 
+    std::cout << std::endl;
 
     std::cout << "PADDING TESTS" << std::endl;
 
-    auto padr_test = P.create_shape3(3,2,2);
+    auto padr_test = P.test_array3_2_2();
 
-    auto padded = P.padr(padr_test, 0);
+    auto padded = P.circular_padr(padr_test, 0);
 
     std::cout << "Original array:" << std::endl;
     P.print_array(padr_test);
@@ -98,6 +106,7 @@ int main(int argc, char **argv) {
 
     std::cout << "padr(A, 0): " << std::endl;
 
+    P.print_parray(padded);
     std::cout << "Padded shape:";
     P.print_shape(P.padded_shape(padded));
 
