@@ -161,6 +161,10 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_circular_padl ArrayProgram::circular_padl;
+
+
+
     ArrayProgram::_circular_padr ArrayProgram::circular_padr;
 
 

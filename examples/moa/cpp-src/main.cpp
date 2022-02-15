@@ -95,23 +95,35 @@ int main(int argc, char **argv) {
 
     std::cout << "PADDING TESTS" << std::endl;
 
-    auto padr_test = P.test_array3_2_2();
-
-    auto padded = P.circular_padr(padr_test, 0);
+    auto pad_test = P.test_array3_2_2();
 
     std::cout << "Original array:" << std::endl;
-    P.print_array(padr_test);
+    P.print_array(pad_test);
     std::cout << "Shape: ";
-    P.print_shape(P.shape(padr_test));
+    P.print_shape(P.shape(pad_test));
 
-    std::cout << "padr(A, 0): " << std::endl;
-
-    P.print_parray(padded);
+    std::cout << "circular_padr(A, 0): " << std::endl;
+    auto padr = P.circular_padr(pad_test, 0);
+    P.print_parray(padr);
 
     std::cout << "Padded shape:";
-    P.print_shape(P.padded_shape(padded));
+    P.print_shape(P.padded_shape(padr));
 
-    std::cout << "Can still access unpadded shape: ";
+    std::cout << "Unpadded shape: ";
 
-    P.print_shape(P.shape(padded));
+    P.print_shape(P.shape(padr));
+
+    std::cout << std::endl;
+    std::cout << "circular_padl(A, 0): " << std::endl;
+
+    auto padl = P.circular_padl(pad_test, 0);
+    P.print_parray(padl);
+
+    std::cout << "Padded shape:";
+    P.print_shape(P.padded_shape(padl));
+
+    std::cout << "Unpadded shape: ";
+
+    P.print_shape(P.shape(padl));
+
 }

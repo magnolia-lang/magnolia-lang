@@ -309,6 +309,22 @@ implementation Padding = {
 
         value res;
     }
+
+    function circular_padl(a: Array, ix: UInt32): PaddedArray = {
+        var padding = get(a, create_index1(ix));
+
+        var reshape_shape = cat_shape(create_shape1(elem_uint(one())), shape(padding));
+        var reshaped_padding = reshape(padding, reshape_shape);
+
+        var catenated_array = cat(reshaped_padding, a);
+
+        var unpadded_shape = shape(a);
+        var padded_shape = shape(catenated_array);
+
+        var res = create_padded_array(unpadded_shape, padded_shape, a, catenated_array);
+
+        value res;
+    }
 }
 
 implementation Int32Utils = external C++ base.int32_utils

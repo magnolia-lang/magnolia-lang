@@ -354,6 +354,20 @@ public:
     };
 
     static ArrayProgram::_cat_vec_repeat cat_vec_repeat;
+    struct _circular_padl {
+        inline ArrayProgram::PaddedArray operator()(const ArrayProgram::Array& a, const ArrayProgram::UInt32& ix) {
+            ArrayProgram::Array padding = ArrayProgram::get(a, ArrayProgram::create_index1(ix));
+            ArrayProgram::Shape reshape_shape = ArrayProgram::cat_shape(ArrayProgram::create_shape1(ArrayProgram::elem_uint(ArrayProgram::one.operator()<Int32>())), ArrayProgram::shape(padding));
+            ArrayProgram::Array reshaped_padding = ArrayProgram::reshape(padding, reshape_shape);
+            ArrayProgram::Array catenated_array = ArrayProgram::cat(reshaped_padding, a);
+            ArrayProgram::Shape unpadded_shape = ArrayProgram::shape(a);
+            ArrayProgram::Shape padded_shape = ArrayProgram::shape(catenated_array);
+            ArrayProgram::PaddedArray res = ArrayProgram::create_padded_array(unpadded_shape, padded_shape, a, catenated_array);
+            return res;
+        };
+    };
+
+    static ArrayProgram::_circular_padl circular_padl;
     struct _circular_padr {
         inline ArrayProgram::PaddedArray operator()(const ArrayProgram::Array& a, const ArrayProgram::UInt32& ix) {
             ArrayProgram::Array padding = ArrayProgram::get(a, ArrayProgram::create_index1(ix));
