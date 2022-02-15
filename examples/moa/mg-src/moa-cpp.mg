@@ -35,7 +35,6 @@ signature NumberOps = {
     predicate isLowerThan(a: NumberType, b: NumberType);
 }
 
-
 implementation ExtOps = external C++ base.array {
 
     require type Element;
@@ -77,6 +76,8 @@ implementation ExtOps = external C++ base.array {
 
     // creation
     function create_array(sh: Shape): Array;
+    function create_padded_array(unpadded_shape: Shape, padded_shape: Shape,
+                          unpadded_array: Array, padded_array: Array): PaddedArray;
     function create_shape1(a: UInt32): Shape;
     function create_shape2(a: UInt32, b: UInt32): Shape;
     function create_shape3(a: UInt32, b: UInt32, c: UInt32): Shape;
@@ -108,8 +109,7 @@ implementation ExtOps = external C++ base.array {
     function test_array3_2_2(): Array;
     function test_array3_3(): Array;
     function test_index(): Index;
-    function create_padded_array(unpadded_shape: Shape, padded_shape: Shape,
-                          unpadded_array: Array, padded_array: Array): PaddedArray;
+
 }
 
 implementation Reshape = {

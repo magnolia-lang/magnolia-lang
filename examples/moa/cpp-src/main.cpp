@@ -107,6 +107,7 @@ int main(int argc, char **argv) {
     std::cout << "padr(A, 0): " << std::endl;
 
     P.print_parray(padded);
+
     std::cout << "Padded shape:";
     P.print_shape(P.padded_shape(padded));
 

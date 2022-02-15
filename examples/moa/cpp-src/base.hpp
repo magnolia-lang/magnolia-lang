@@ -84,7 +84,6 @@ struct array {
 
                 this -> _sh = unpadded_sh;
                 this -> _content = unpadded._content;
-
             }
 
             inline UInt32 _padded_dim() {
@@ -96,7 +95,7 @@ struct array {
             }
 
             inline Element _padded_get(const UInt32 ix) {
-                return this._content[ix];
+                return _padded_content[ix];
             }
 
             inline void _padded_set(const UInt32 ix, Element val) {
@@ -514,10 +513,10 @@ struct array {
         std::cout << std::endl;
     }
 
-    inline void print_parray(Array a) {
+    inline void print_parray(PaddedArray a) {
 
-        for (auto i = 0; i < (int) a._total(); i++) {
-            std::cout << a._get(i) << " ";
+        for (auto i = 0; i < (int) a._padded_total(); i++) {
+            std::cout << a._padded_get(i) << " ";
         }
         std::cout << std::endl;
     }
