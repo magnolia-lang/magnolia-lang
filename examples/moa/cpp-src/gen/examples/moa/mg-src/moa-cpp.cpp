@@ -35,6 +35,10 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_reverse_shape ArrayProgram::reverse_shape;
+
+
+
     ArrayProgram::_create_shape1 ArrayProgram::create_shape1;
 
 
@@ -81,6 +85,24 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_padded_transpose_body ArrayProgram::padded_transpose_body;
+
+
+
+    ArrayProgram::_padded_transpose_repeat ArrayProgram::padded_transpose_repeat;
+
+
+
+    while_loop2_2<ArrayProgram::PaddedArray, ArrayProgram::IndexContainer, ArrayProgram::PaddedArray, ArrayProgram::UInt32, ArrayProgram::_padded_transpose_body, ArrayProgram::_padded_upper_bound> ArrayProgram::__while_loop2_22;
+
+    ArrayProgram::_padded_upper_bound ArrayProgram::padded_upper_bound;
+
+
+
+    ArrayProgram::_print_index_container ArrayProgram::print_index_container;
+
+
+
     ArrayProgram::_create_index1 ArrayProgram::create_index1;
 
 
@@ -90,6 +112,10 @@ namespace moa_cpp {
 
 
     ArrayProgram::_create_index3 ArrayProgram::create_index3;
+
+
+
+    ArrayProgram::_get_index_ixc ArrayProgram::get_index_ixc;
 
 
 
@@ -177,6 +203,10 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_create_valid_indices ArrayProgram::create_valid_indices;
+
+
+
     ArrayProgram::_dim ArrayProgram::dim;
 
 
@@ -190,6 +220,10 @@ namespace moa_cpp {
 
 
     ArrayProgram::_get_shape_elem ArrayProgram::get_shape_elem;
+
+
+
+    ArrayProgram::_padded_to_unpadded ArrayProgram::padded_to_unpadded;
 
 
 
@@ -247,7 +281,25 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_transpose ArrayProgram::transpose;
+
+
+
+    ArrayProgram::_transpose_body ArrayProgram::transpose_body;
+
+
+
+    ArrayProgram::_transpose_repeat ArrayProgram::transpose_repeat;
+
+
+
     ArrayProgram::_unwrap_scalar ArrayProgram::unwrap_scalar;
+
+
+
+    while_loop2_2<ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_transpose_body, ArrayProgram::_upper_bound> ArrayProgram::__while_loop2_21;
+
+    ArrayProgram::_upper_bound ArrayProgram::upper_bound;
 
 } // examples
 } // moa

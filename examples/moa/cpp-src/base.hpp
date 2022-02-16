@@ -11,6 +11,7 @@ struct array {
     typedef _Element Element;
     typedef size_t UInt32;
     typedef std::vector<UInt32> Index;
+    typedef std::vector<Index> IndexContainer;
     typedef std::vector<UInt32> Shape;
 
     struct Array {
@@ -75,15 +76,13 @@ struct array {
         public:
 
             Shape _padded_sh;
-            Element * _padded_content;
 
-            PaddedArray(const Shape unpadded_sh, const Shape padded_sh, const Array unpadded, const Array padded) {
+            PaddedArray(const Shape unpadded_sh, const Shape padded_sh, const Array padded) {
 
                 _padded_sh = padded_sh;
-                _padded_content = padded._content;
 
                 this -> _sh = unpadded_sh;
-                this -> _content = unpadded._content;
+                this -> _content = padded._content;
             }
 
             inline UInt32 _padded_dim() {
@@ -95,11 +94,11 @@ struct array {
             }
 
             inline Element _padded_get(const UInt32 ix) {
-                return _padded_content[ix];
+                return this -> _content[ix];
             }
 
             inline void _padded_set(const UInt32 ix, Element val) {
-                _padded_content[ix] = val;
+                this -> _content[ix] = val;
             }
 
             inline UInt32 _padded_get_shape_elem(const UInt32 i) {
@@ -133,9 +132,30 @@ struct array {
             return res;
         }
     }
+    inline Array get(PaddedArray a, UInt32 ix) {
+        if (ix > padded_total(a)) {
+            std::cout << "get:Index out of bounds: " << ix << std::endl;
+        }
+        else {
+            Shape res_shape = create_shape1(1);
+            Array res = Array(res_shape);
+
+            res._set(0,a._get(ix));
+            return res;
+        }
+    }
 
     inline void set(Array a, UInt32 ix, const Element e) {
         if (ix > total(a)) {
+            std::cout << "set:Index out of bounds: " << ix << std::endl;
+        }
+        else {
+            a._set(ix,e);
+        }
+    }
+
+    inline void set(PaddedArray a, UInt32 ix, const Element e) {
+        if (ix > padded_total(a)) {
             std::cout << "set:Index out of bounds: " << ix << std::endl;
         }
         else {
@@ -205,12 +225,10 @@ struct array {
                 indices.push_back(total);
             }
 
-            // keeps track of how deep down in the subshape we are
-            UInt32 level = 1;
             // generates all total indices
             for (auto i = 0; i < subshape.size(); i++) {
                 UInt32 current_sh_ix = subshape.at(i);
-                UInt32 split = total_elems/(current_sh_ix*level);
+                UInt32 split = (i == subshape.size() - 1) ? 1 : subshape.at(i+1);
                 UInt32 current_ix = 0;
                 int counter = 0;
 
@@ -228,7 +246,6 @@ struct array {
                     indices.at(j).push_back(current_ix);
                     counter++;
                 }
-                level += level;
             }
 
             for (auto i = 0; i < total_elems; i++) {
@@ -248,20 +265,36 @@ struct array {
 
         if (ix.size() == dim(a)) {
 
-            std::vector<int> multiplier;
-            multiplier.push_back(1);
+            // special cases for dim(a) == 1, 2
+            if (dim(a) == 1) {
+                a._set(ix.at(0), val);
+            }
+            else if (dim(a) == 2) {
+                auto i = ix.at(0);
+                auto j = ix.at(1);
 
-            UInt32 acc = 0;
-
-            for (auto i = dim(a) - 1; i > 0; i--) {
-                auto mult = std::accumulate(begin(multiplier),end(multiplier),        1, std::multiplies<int>());
-                acc += ix.at(i)*mult;
-                multiplier.push_back(multiplier.back()+1);
+                a._set(i*shape(a).at(1) + j, val);
             }
 
-            acc += ix.back();
+            else {
+                std::vector<int> multiplier;
+                multiplier.push_back(1);
 
-            a._set(acc, val);
+                UInt32 acc = 0;
+
+                for (auto i = dim(a) - 1; i > 0; i--) {
+                    auto mult = std::accumulate(begin(multiplier),end(multiplier),        1, std::multiplies<int>());
+
+                    acc += ix.at(i)*mult;
+                    multiplier.push_back(multiplier.back()+1);
+                }
+
+                acc += ix.back();
+
+                a._set(acc, val);
+            }
+
+
         }
 
         else {
@@ -291,6 +324,10 @@ struct array {
                                  std::multiplies<UInt32>());
     }
 
+    inline UInt32 total(IndexContainer ix) {
+        return ix.size();
+    }
+
     /*
     operations on padded arrays
     */
@@ -314,8 +351,8 @@ struct array {
         return arr;
     }
 
-    inline PaddedArray create_padded_array(Shape unpadded_shape, Shape padded_shape, Array unpadded_array, Array padded_array) {
-        return PaddedArray(unpadded_shape, padded_shape, unpadded_array, padded_array);
+    inline PaddedArray create_padded_array(Shape unpadded_shape, Shape padded_shape, Array padded_array) {
+        return PaddedArray(unpadded_shape, padded_shape, padded_array);
     }
 
     inline Shape create_shape1(const UInt32 a) {
@@ -336,6 +373,84 @@ struct array {
         sh.push_back(b);
         sh.push_back(c);
         return sh;
+    }
+
+    inline IndexContainer create_valid_indices(Array a) {
+
+        auto sh = shape(a);
+        UInt32 total_elems = total(a);
+
+        IndexContainer indices;
+
+
+        // populates a vector with empty total indices
+        for (auto i = 0; i < total_elems; i++) {
+            std::vector<UInt32> total;
+
+            indices.push_back(total);
+        }
+
+        for (auto i = 0; i < sh.size(); i++) {
+                UInt32 current_sh_ix = sh.at(i);
+                UInt32 split = (i == sh.size() - 1) ? 1 : sh.at(i+1);
+                UInt32 current_ix = 0;
+                int counter = 0;
+
+                for (auto j = 0; j < indices.size(); j++) {
+                    if (counter == split) {
+                        counter = 0;
+                        if (current_ix == current_sh_ix - 1) {
+                            current_ix = 0;
+                        }
+                        else {
+                            current_ix++;
+                        }
+                    }
+                    indices.at(j).push_back(current_ix);
+                    counter++;
+                }
+            }
+
+        return indices;
+    }
+
+    inline IndexContainer create_valid_indices(PaddedArray a) {
+
+        auto sh = padded_shape(a);
+        UInt32 total_elems = padded_total(a);
+
+        IndexContainer indices;
+
+
+        // populates a vector with empty total indices
+        for (auto i = 0; i < total_elems; i++) {
+            std::vector<UInt32> total;
+
+            indices.push_back(total);
+        }
+
+        for (auto i = 0; i < sh.size(); i++) {
+                UInt32 current_sh_ix = sh.at(i);
+                UInt32 split = (i == sh.size() - 1) ? 1 : sh.at(i+1);
+                UInt32 current_ix = 0;
+                int counter = 0;
+
+                for (auto j = 0; j < indices.size(); j++) {
+                    if (counter == split) {
+                        counter = 0;
+                        if (current_ix == current_sh_ix - 1) {
+                            current_ix = 0;
+                        }
+                        else {
+                            current_ix++;
+                        }
+                    }
+                    indices.at(j).push_back(current_ix);
+                    counter++;
+                }
+            }
+
+        return indices;
     }
 
 
@@ -381,6 +496,10 @@ struct array {
         return a._get_shape_elem(i);
     }
 
+    inline Index get_index_ixc(const IndexContainer ixc, const UInt32 ix) {
+        return ixc.at(ix);
+    }
+
     inline Shape drop_shape_elem(Array a, const UInt32 i) {
         Shape res;
         for (auto j = 0; j < shape(a).size(); j++) {
@@ -421,6 +540,23 @@ struct array {
         reverse(res.begin(), res.end());
         return res;
     }
+
+    inline Shape reverse_shape(Shape s) {
+        Shape res = s;
+        reverse(res.begin(), res.end());
+        return res;
+    }
+
+    inline Array padded_to_unpadded(const PaddedArray a) {
+        Array res = create_array(padded_shape(a));
+
+        for (auto i = 0; i < padded_total(a); i++) {
+            set(res, i, unwrap_scalar(get(a,i)));
+        }
+
+        return res;
+    }
+
     /*
     Test arrays
     */
@@ -527,6 +663,12 @@ struct array {
             std::cout << ix.at(i) << " ";
         }
         std::cout << ">" << std::endl;
+    }
+
+    inline void print_index_container(const IndexContainer &ixc) {
+        for (auto i = 0; i < ixc.size(); i++) {
+            print_index(ixc.at(i));
+        }
     }
 
     inline void print_shape(const Shape &sh) {

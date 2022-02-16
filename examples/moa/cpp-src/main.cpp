@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
 
     std::cout << "PADDING TESTS" << std::endl;
 
-    auto pad_test = P.test_array3_2_2();
+    auto pad_test = P.test_array3_3();
 
     std::cout << "Original array:" << std::endl;
     P.print_array(pad_test);
@@ -126,4 +126,29 @@ int main(int argc, char **argv) {
 
     P.print_shape(P.shape(padl));
 
+    std::cout << std::endl;
+    std::cout << "Composition: padl(padr(a,0),0):" << std::endl;
+    auto comp = P.circular_padl(P.circular_padr(padr,0),0);
+    P.print_parray(comp);
+    std::cout << "Shape of composed: ";
+    P.print_shape(P.padded_shape(comp));
+
+    std::cout << std::endl;
+    std::cout<< "TEST INDEX SPACE GENERATOR" << std::endl;
+
+    auto ixc = P.create_valid_indices(pad_test);
+    P.print_index_container(ixc);
+
+    std::cout << "test2" << std::endl;
+    auto ixc2 = P.create_valid_indices(P.test_array3_2_2());
+    P.print_index_container(ixc2);
+
+    std::cout << std::endl;
+    std::cout << "TRANSFORMATIONS" << std::endl;
+    std::cout << "Original array:" << std::endl;
+    auto trans_array = P.test_array3_3();
+    P.print_array(trans_array);
+
+    std::cout << "transpose(a):" << std::endl;
+    P.print_array(P.transpose(trans_array));
 }

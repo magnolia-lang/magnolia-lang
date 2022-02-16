@@ -42,24 +42,30 @@ implementation ExtOps = external C++ base.array {
     type PaddedArray;
     type Array;
     type Index;
+    type IndexContainer;
     type Shape;
     type UInt32;
 
     // unpadded array getters, setters
     function get(a: Array, ix: UInt32): Array;
     function get(a: Array, ix: Index): Array;
+    function get(a: PaddedArray, ix: Index): Array;
 
     procedure set(upd a: Array, obs ix: UInt32, obs e: Element);
     procedure set(upd a: Array, obs ix: Index, obs e: Element);
+    procedure set(upd a: PaddedArray, obs ix: Index, obs e: Element);
 
     function get_shape_elem(a: Array, i: UInt32): UInt32;
     function drop_shape_elem(a: Array, i: UInt32): Shape;
+    function get_index_ixc(ixc: IndexContainer, ix: UInt32): Index;
 
     // unpadded moa operations that are convenient to have tied to backend
     function dim(a: Array): UInt32;
     function total(a: Array): UInt32;
     function total(s: Shape) : UInt32;
+    function total(ixc: IndexContainer): UInt32;
     function shape(a: Array): Shape;
+    function shape(a: PaddedArray): Shape;
 
 
     // padded array getters
@@ -77,11 +83,13 @@ implementation ExtOps = external C++ base.array {
     // creation
     function create_array(sh: Shape): Array;
     function create_padded_array(unpadded_shape: Shape, padded_shape: Shape,
-                          unpadded_array: Array, padded_array: Array): PaddedArray;
+                                padded_array: Array): PaddedArray;
     function create_shape1(a: UInt32): Shape;
     function create_shape2(a: UInt32, b: UInt32): Shape;
     function create_shape3(a: UInt32, b: UInt32, c: UInt32): Shape;
 
+    function create_valid_indices(a: Array): IndexContainer;
+    function create_valid_indices(a: PaddedArray): IndexContainer;
     function create_index1(a: UInt32): Index;
     function create_index2(a: UInt32, b: UInt32): Index;
     function create_index3(a: UInt32, b: UInt32, c: UInt32): Index;
@@ -92,11 +100,14 @@ implementation ExtOps = external C++ base.array {
     function elem_uint(a: Element): UInt32;
     function cat_shape(a: Shape, b: Shape): Shape;
     function reverse_index(ix: Index): Index;
+    function reverse_shape(s: Shape): Shape;
+    function padded_to_unpadded(a: PaddedArray): Array;
 
     // IO
     procedure print_array(obs a: Array);
     procedure print_parray(obs a: PaddedArray);
     procedure print_index(obs i: Index);
+    procedure print_index_container(obs i: IndexContainer);
     procedure print_shape(obs sh: Shape);
     procedure print_element(obs e: Element);
     procedure print_uint(obs u: UInt32);
@@ -112,7 +123,7 @@ implementation ExtOps = external C++ base.array {
 
 }
 
-implementation Reshape = {
+implementation MoaOps = {
     use ExtOps;
 
     require function zero(): Element;
@@ -122,6 +133,11 @@ implementation Reshape = {
     require function mult(a: Element, b: Element): Element;
     require predicate equals(a: Element, b: Element);
     require predicate isLowerThan(a: Element, b: Element);
+}
+
+implementation Reshape = {
+
+    use MoaOps;
 
     procedure reshape_body(obs old_array: Array, upd new_array: Array, upd counter: UInt32) {
         call set(new_array, counter, unwrap_scalar(get(old_array, counter)));
@@ -152,9 +168,101 @@ implementation Reshape = {
 
 }
 
-implementation Catenation = {
+implementation Transformations = {
 
     use Reshape;
+
+
+    /*
+    #####################
+    Unpadded transpose
+    #####################
+    */
+    predicate upper_bound(a: Array, i: IndexContainer, res: Array, c: UInt32) = {
+        value isLowerThan(uint_elem(c), uint_elem(total(i)));
+    }
+
+    procedure transpose_body(obs a: Array,
+                             obs ixc: IndexContainer,
+                             upd res: Array,
+                             upd c: UInt32) {
+
+        var current_ix = get_index_ixc(ixc, c);
+
+        var current_element = unwrap_scalar(get(a, reverse_index(current_ix)));
+        call set(res, current_ix, current_element);
+        c = elem_uint(add(uint_elem(c), one()));
+    }
+
+     use WhileLoop2_2[Context1 => Array,
+                     Context2 => IndexContainer,
+                     State1 => Array,
+                     State2 => UInt32,
+                     body => transpose_body,
+                     cond => upper_bound,
+                     repeat => transpose_repeat];
+
+    function transpose(a: Array): Array = {
+
+        var transposed_array = create_array(reverse_shape(shape(a)));
+
+        var ix_space = create_valid_indices(transposed_array);
+        var counter = elem_uint(zero());
+        call transpose_repeat(a, ix_space, transposed_array, counter);
+
+        value transposed_array;
+    }
+
+    /*
+    #####################
+    Padded transpose
+    #####################
+    */
+
+    predicate padded_upper_bound(a: PaddedArray, i: IndexContainer, res: PaddedArray, c: UInt32) = {
+        value isLowerThan(uint_elem(c), uint_elem(total(i)));
+    }
+
+    procedure padded_transpose_body(obs a: PaddedArray,
+                                    obs ixc: IndexContainer,
+                                    upd res: PaddedArray,
+                                    upd c: UInt32) {
+
+        var current_ix = get_index_ixc(ixc, c);
+
+        var current_element = unwrap_scalar(get(a, reverse_index(current_ix)));
+        call set(res, current_ix, current_element);
+        c = elem_uint(add(uint_elem(c), one()));
+    }
+
+    use WhileLoop2_2[Context1 => PaddedArray,
+                     Context2 => IndexContainer,
+                     State1 => PaddedArray,
+                     State2 => UInt32,
+                     body => padded_transpose_body,
+                     cond => padded_upper_bound,
+                     repeat => padded_transpose_repeat];
+
+    function transpose(a: PaddedArray): PaddedArray = {
+
+        var reshaped_array = create_array(padded_shape(a));
+        var transposed_array = create_padded_array(
+            reverse_shape(shape(a)),                                         reverse_shape(padded_shape(a)), reshaped_array);
+
+        var ix_space = create_valid_indices(transposed_array);
+        var counter = elem_uint(zero());
+        call padded_transpose_repeat(a, ix_space, transposed_array, counter);
+
+        value transposed_array;
+    }
+
+    // procedure rotate(upd a: Array, step: UInt32);
+    // procedure reverse(upd a: Array);
+}
+
+implementation Catenation = {
+
+    use Transformations;
 
     /*########################################
         Vector catenation, i.e. cat(v1, v2)
@@ -294,6 +402,34 @@ implementation Catenation = {
 implementation Padding = {
 
     use Catenation;
+    /*
+    circular padr and padl definition.
+    overloaded to both accept unpadded and padded arrays as arguments,
+    this is to allow composition.
+    */
+    function circular_padr(a: PaddedArray, ix: UInt32): PaddedArray = {
+
+        // store unpadded shape
+        var unpadded_shape = shape(a);
+
+        // extract slice from a
+        var padding = get(a, create_index1(ix));
+
+        // "conform" shape of the padding to match a
+        var reshape_shape = cat_shape(create_shape1(elem_uint(one())), shape(padding));
+        var reshaped_padding = reshape(padding, reshape_shape);
+
+        // cat the slice to a
+        var catenated_array = cat(padded_to_unpadded(a), reshaped_padding);
+
+        var padded_shape = shape(catenated_array);
+
+        var res = create_padded_array(unpadded_shape, padded_shape, catenated_array);
+
+        value res;
+
+    }
+
 
     function circular_padr(a: Array, ix: UInt32): PaddedArray = {
 
@@ -305,7 +441,23 @@ implementation Padding = {
         var unpadded_shape = shape(a);
         var padded_shape = shape(catenated_array);
 
-        var res = create_padded_array(unpadded_shape, padded_shape, a, catenated_array);
+        var res = create_padded_array(unpadded_shape, padded_shape, catenated_array);
+
+        value res;
+    }
+
+    function circular_padl(a: PaddedArray, ix: UInt32): PaddedArray = {
+        var padding = get(a, create_index1(ix));
+
+        var reshape_shape = cat_shape(create_shape1(elem_uint(one())), shape(padding));
+        var reshaped_padding = reshape(padding, reshape_shape);
+
+        var catenated_array = cat(reshaped_padding, padded_to_unpadded(a));
+
+        var unpadded_shape = shape(a);
+        var padded_shape = shape(catenated_array);
+
+        var res = create_padded_array(unpadded_shape, padded_shape, catenated_array);
 
         value res;
     }
@@ -321,10 +473,12 @@ implementation Padding = {
         var unpadded_shape = shape(a);
         var padded_shape = shape(catenated_array);
 
-        var res = create_padded_array(unpadded_shape, padded_shape, a, catenated_array);
+        var res = create_padded_array(unpadded_shape, padded_shape, catenated_array);
 
         value res;
     }
+
+
 }
 
 implementation Int32Utils = external C++ base.int32_utils
