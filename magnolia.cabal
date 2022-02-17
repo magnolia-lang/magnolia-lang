@@ -41,6 +41,7 @@ library
                   , Env
                   , Err
                   , Magnolia.Check
+                  , Magnolia.EquationalRewriting
                   , Magnolia.Parser
                   , Magnolia.PPrint
                   , Magnolia.Syntax
