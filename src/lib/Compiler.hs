@@ -54,11 +54,18 @@ data Config = Config { -- | Up to (and including) what pass the compiler should
                        -- | What the behavior of the compiler should be when
                        -- attempting to write to the file system.
                      , _configWriteToFsBehavior :: WriteToFsBehavior
+                       -- | What concepts contain the rewriting rules to use
+                       -- for the equational rewriting pass.
+                     , _configEquationsLocation :: [Name]
+                       -- | What programs should be rewritten using the
+                       -- rewriting rules.
+                     , _configProgramsToRewrite :: [Name]
                      }
 
 -- | Compiler passes
 data Pass = CheckPass
           | DepAnalPass
+          | EquationalRewritingPass
           | ParsePass
           | SelfContainedProgramCodegenPass
           | StructurePreservingCodegenPass
@@ -67,6 +74,7 @@ instance Show Pass where
   show pass = case pass of
     CheckPass -> "check"
     DepAnalPass -> "dependency analysis"
+    EquationalRewritingPass -> "equational rewriting"
     ParsePass -> "parse"
     SelfContainedProgramCodegenPass -> "self-contained code generation"
     StructurePreservingCodegenPass -> "structure preserving code generation"
@@ -83,6 +91,12 @@ runTestWith filePath config = case _configPass config of
   DepAnalPass -> runAndLogErrs $ depAnalPass filePath
   ParsePass -> runAndLogErrs $ depAnalPass filePath >>= parsePass
   CheckPass -> runAndLogErrs $ depAnalPass filePath >>= parsePass >>= checkPass
+  EquationalRewritingPass ->
+    let equationsLocation = _configEquationsLocation config
+        programsToRewrite = _configProgramsToRewrite config
+    in runAndLogErrs $ depAnalPass filePath >>= parsePass >>= checkPass
+        >>= rewritePass equationsLocation programsToRewrite
+  -- TODO(bchetioui): add rewrite pass in codegen?
   SelfContainedProgramCodegenPass -> case _configBackend config of
     Cxx -> do
       (ecxxPkgs, errs) <- runMgMonad $ compileToCxxPackages filePath
@@ -206,6 +220,8 @@ runCompileWith filePath config = case _configOutputDirectory config of
       writeFile path content
 
 -- === common utils ===
+
+-- TODO(bchetioui): add rewriting step in compilation steps
 
 compileToCxxPackages :: FilePath -> MgMonad [CxxPackage]
 compileToCxxPackages filePath =
