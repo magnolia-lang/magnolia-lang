@@ -316,12 +316,7 @@ struct array {
     }
 
     inline UInt32 total(Shape s) {
-        using std::begin;
-        using std::end;
-
-        return std::accumulate(begin(s),
-                                 end(s), 1,
-                                 std::multiplies<UInt32>());
+        return s.size();
     }
 
     inline UInt32 total(IndexContainer ix) {

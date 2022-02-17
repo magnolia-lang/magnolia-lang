@@ -425,16 +425,6 @@ public:
 
     static ArrayProgram::_cat_vec_repeat cat_vec_repeat;
     struct _circular_padl {
-        inline ArrayProgram::PaddedArray operator()(const ArrayProgram::PaddedArray& a, const ArrayProgram::UInt32& ix) {
-            ArrayProgram::Array padding = ArrayProgram::get(a, ArrayProgram::create_index1(ix));
-            ArrayProgram::Shape reshape_shape = ArrayProgram::cat_shape(ArrayProgram::create_shape1(ArrayProgram::elem_uint(ArrayProgram::one.operator()<Int32>())), ArrayProgram::shape(padding));
-            ArrayProgram::Array reshaped_padding = ArrayProgram::reshape(padding, reshape_shape);
-            ArrayProgram::Array catenated_array = ArrayProgram::cat(reshaped_padding, ArrayProgram::padded_to_unpadded(a));
-            ArrayProgram::Shape unpadded_shape = ArrayProgram::shape(a);
-            ArrayProgram::Shape padded_shape = ArrayProgram::shape(catenated_array);
-            ArrayProgram::PaddedArray res = ArrayProgram::create_padded_array(unpadded_shape, padded_shape, catenated_array);
-            return res;
-        };
         inline ArrayProgram::PaddedArray operator()(const ArrayProgram::Array& a, const ArrayProgram::UInt32& ix) {
             ArrayProgram::Array padding = ArrayProgram::get(a, ArrayProgram::create_index1(ix));
             ArrayProgram::Shape reshape_shape = ArrayProgram::cat_shape(ArrayProgram::create_shape1(ArrayProgram::elem_uint(ArrayProgram::one.operator()<Int32>())), ArrayProgram::shape(padding));
@@ -445,26 +435,36 @@ public:
             ArrayProgram::PaddedArray res = ArrayProgram::create_padded_array(unpadded_shape, padded_shape, catenated_array);
             return res;
         };
-    };
-
-    static ArrayProgram::_circular_padl circular_padl;
-    struct _circular_padr {
         inline ArrayProgram::PaddedArray operator()(const ArrayProgram::PaddedArray& a, const ArrayProgram::UInt32& ix) {
-            ArrayProgram::Shape unpadded_shape = ArrayProgram::shape(a);
             ArrayProgram::Array padding = ArrayProgram::get(a, ArrayProgram::create_index1(ix));
             ArrayProgram::Shape reshape_shape = ArrayProgram::cat_shape(ArrayProgram::create_shape1(ArrayProgram::elem_uint(ArrayProgram::one.operator()<Int32>())), ArrayProgram::shape(padding));
             ArrayProgram::Array reshaped_padding = ArrayProgram::reshape(padding, reshape_shape);
-            ArrayProgram::Array catenated_array = ArrayProgram::cat(ArrayProgram::padded_to_unpadded(a), reshaped_padding);
+            ArrayProgram::Array catenated_array = ArrayProgram::cat(reshaped_padding, ArrayProgram::padded_to_unpadded(a));
+            ArrayProgram::Shape unpadded_shape = ArrayProgram::shape(a);
             ArrayProgram::Shape padded_shape = ArrayProgram::shape(catenated_array);
             ArrayProgram::PaddedArray res = ArrayProgram::create_padded_array(unpadded_shape, padded_shape, catenated_array);
             return res;
         };
+    };
+
+    static ArrayProgram::_circular_padl circular_padl;
+    struct _circular_padr {
         inline ArrayProgram::PaddedArray operator()(const ArrayProgram::Array& a, const ArrayProgram::UInt32& ix) {
             ArrayProgram::Array padding = ArrayProgram::get(a, ArrayProgram::create_index1(ix));
             ArrayProgram::Shape reshape_shape = ArrayProgram::cat_shape(ArrayProgram::create_shape1(ArrayProgram::elem_uint(ArrayProgram::one.operator()<Int32>())), ArrayProgram::shape(padding));
             ArrayProgram::Array reshaped_padding = ArrayProgram::reshape(padding, reshape_shape);
             ArrayProgram::Array catenated_array = ArrayProgram::cat(a, reshaped_padding);
             ArrayProgram::Shape unpadded_shape = ArrayProgram::shape(a);
+            ArrayProgram::Shape padded_shape = ArrayProgram::shape(catenated_array);
+            ArrayProgram::PaddedArray res = ArrayProgram::create_padded_array(unpadded_shape, padded_shape, catenated_array);
+            return res;
+        };
+        inline ArrayProgram::PaddedArray operator()(const ArrayProgram::PaddedArray& a, const ArrayProgram::UInt32& ix) {
+            ArrayProgram::Shape unpadded_shape = ArrayProgram::shape(a);
+            ArrayProgram::Array padding = ArrayProgram::get(a, ArrayProgram::create_index1(ix));
+            ArrayProgram::Shape reshape_shape = ArrayProgram::cat_shape(ArrayProgram::create_shape1(ArrayProgram::elem_uint(ArrayProgram::one.operator()<Int32>())), ArrayProgram::shape(padding));
+            ArrayProgram::Array reshaped_padding = ArrayProgram::reshape(padding, reshape_shape);
+            ArrayProgram::Array catenated_array = ArrayProgram::cat(ArrayProgram::padded_to_unpadded(a), reshaped_padding);
             ArrayProgram::Shape padded_shape = ArrayProgram::shape(catenated_array);
             ArrayProgram::PaddedArray res = ArrayProgram::create_padded_array(unpadded_shape, padded_shape, catenated_array);
             return res;
@@ -487,10 +487,10 @@ public:
 
     static ArrayProgram::_create_padded_array create_padded_array;
     struct _create_valid_indices {
-        inline ArrayProgram::IndexContainer operator()(const ArrayProgram::PaddedArray& a) {
+        inline ArrayProgram::IndexContainer operator()(const ArrayProgram::Array& a) {
             return __array.create_valid_indices(a);
         };
-        inline ArrayProgram::IndexContainer operator()(const ArrayProgram::Array& a) {
+        inline ArrayProgram::IndexContainer operator()(const ArrayProgram::PaddedArray& a) {
             return __array.create_valid_indices(a);
         };
     };
@@ -511,13 +511,13 @@ public:
 
     static ArrayProgram::_drop_shape_elem drop_shape_elem;
     struct _get {
-        inline ArrayProgram::Array operator()(const ArrayProgram::PaddedArray& a, const ArrayProgram::Index& ix) {
+        inline ArrayProgram::Array operator()(const ArrayProgram::Array& a, const ArrayProgram::UInt32& ix) {
             return __array.get(a, ix);
         };
         inline ArrayProgram::Array operator()(const ArrayProgram::Array& a, const ArrayProgram::Index& ix) {
             return __array.get(a, ix);
         };
-        inline ArrayProgram::Array operator()(const ArrayProgram::Array& a, const ArrayProgram::UInt32& ix) {
+        inline ArrayProgram::Array operator()(const ArrayProgram::PaddedArray& a, const ArrayProgram::Index& ix) {
             return __array.get(a, ix);
         };
     };
@@ -530,6 +530,31 @@ public:
     };
 
     static ArrayProgram::_get_shape_elem get_shape_elem;
+    struct _inner_product {
+        inline ArrayProgram::Array operator()(const ArrayProgram::Array& a, const ArrayProgram::Array& b) {
+            ArrayProgram::UInt32 shape_a_last_ix = ArrayProgram::elem_uint(ArrayProgram::sub(ArrayProgram::uint_elem(ArrayProgram::total(ArrayProgram::shape(a))), ArrayProgram::one.operator()<Int32>()));
+            ArrayProgram::Shape sh_a_drop_last = ArrayProgram::drop_shape_elem(a, shape_a_last_ix);
+            ArrayProgram::Shape sh_b_drop_first = ArrayProgram::drop_shape_elem(b, ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>()));
+            ArrayProgram::Shape ip_shape = ArrayProgram::cat_shape(sh_a_drop_last, sh_b_drop_first);
+            ArrayProgram::Array ip_array = ArrayProgram::create_array(ip_shape);
+            ArrayProgram::IndexContainer indices_a = ArrayProgram::create_valid_indices(ArrayProgram::create_array(sh_a_drop_last));
+            ArrayProgram::IndexContainer indices_b = ArrayProgram::create_valid_indices(ArrayProgram::create_array(sh_b_drop_first));
+            ArrayProgram::Shape sh_a_take_last = ArrayProgram::create_shape1(ArrayProgram::get_shape_elem(a, shape_a_last_ix));
+            ArrayProgram::IndexContainer indices_k = ArrayProgram::create_valid_indices(ArrayProgram::create_array(sh_a_take_last));
+            ArrayProgram::print_index_container(indices_a);
+            ArrayProgram::print_index_container(indices_b);
+            return ip_array;
+        };
+    };
+
+    static ArrayProgram::_inner_product inner_product;
+    struct _ip_body {
+        inline void operator()(const ArrayProgram::IndexContainer& i, const ArrayProgram::IndexContainer& j, const ArrayProgram::IndexContainer& k, ArrayProgram::Array& res, ArrayProgram::UInt32& c) {
+            ;
+        };
+    };
+
+    static ArrayProgram::_ip_body ip_body;
     struct _padded_to_unpadded {
         inline ArrayProgram::Array operator()(const ArrayProgram::PaddedArray& a) {
             return __array.padded_to_unpadded(a);
@@ -598,7 +623,6 @@ public:
             ArrayProgram::UInt32 ix_0 = ArrayProgram::get_index_elem(ix, ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>()));
             ArrayProgram::Int32 new_ix_0 = ArrayProgram::sub(ArrayProgram::uint_elem(sh_0), ArrayProgram::add(ArrayProgram::uint_elem(ix_0), ArrayProgram::one.operator()<Int32>()));
             ArrayProgram::Index new_ix = ArrayProgram::cat_index(ArrayProgram::create_index1(ArrayProgram::elem_uint(new_ix_0)), ArrayProgram::drop_index_elem(ix, ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>())));
-            ArrayProgram::print_index(new_ix);
             ArrayProgram::set(res, new_ix, elem);
             c = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
         };
@@ -623,23 +647,23 @@ public:
 
     static ArrayProgram::_reverse_repeat reverse_repeat;
     struct _set {
-        inline void operator()(ArrayProgram::PaddedArray& a, const ArrayProgram::Index& ix, const ArrayProgram::Int32& e) {
+        inline void operator()(ArrayProgram::Array& a, const ArrayProgram::UInt32& ix, const ArrayProgram::Int32& e) {
             return __array.set(a, ix, e);
         };
         inline void operator()(ArrayProgram::Array& a, const ArrayProgram::Index& ix, const ArrayProgram::Int32& e) {
             return __array.set(a, ix, e);
         };
-        inline void operator()(ArrayProgram::Array& a, const ArrayProgram::UInt32& ix, const ArrayProgram::Int32& e) {
+        inline void operator()(ArrayProgram::PaddedArray& a, const ArrayProgram::Index& ix, const ArrayProgram::Int32& e) {
             return __array.set(a, ix, e);
         };
     };
 
     static ArrayProgram::_set set;
     struct _shape {
-        inline ArrayProgram::Shape operator()(const ArrayProgram::PaddedArray& a) {
+        inline ArrayProgram::Shape operator()(const ArrayProgram::Array& a) {
             return __array.shape(a);
         };
-        inline ArrayProgram::Shape operator()(const ArrayProgram::Array& a) {
+        inline ArrayProgram::Shape operator()(const ArrayProgram::PaddedArray& a) {
             return __array.shape(a);
         };
     };
@@ -681,32 +705,32 @@ public:
 
     static ArrayProgram::_test_vector5 test_vector5;
     struct _total {
-        inline ArrayProgram::UInt32 operator()(const ArrayProgram::IndexContainer& ixc) {
-            return __array.total(ixc);
+        inline ArrayProgram::UInt32 operator()(const ArrayProgram::Array& a) {
+            return __array.total(a);
         };
         inline ArrayProgram::UInt32 operator()(const ArrayProgram::Shape& s) {
             return __array.total(s);
         };
-        inline ArrayProgram::UInt32 operator()(const ArrayProgram::Array& a) {
-            return __array.total(a);
+        inline ArrayProgram::UInt32 operator()(const ArrayProgram::IndexContainer& ixc) {
+            return __array.total(ixc);
         };
     };
 
     static ArrayProgram::_total total;
     struct _transpose {
-        inline ArrayProgram::Array operator()(const ArrayProgram::Array& a) {
-            ArrayProgram::Array transposed_array = ArrayProgram::create_array(ArrayProgram::reverse_shape(ArrayProgram::shape(a)));
-            ArrayProgram::IndexContainer ix_space = ArrayProgram::create_valid_indices(transposed_array);
-            ArrayProgram::UInt32 counter = ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>());
-            ArrayProgram::transpose_repeat(a, ix_space, transposed_array, counter);
-            return transposed_array;
-        };
         inline ArrayProgram::PaddedArray operator()(const ArrayProgram::PaddedArray& a) {
             ArrayProgram::Array reshaped_array = ArrayProgram::create_array(ArrayProgram::padded_shape(a));
             ArrayProgram::PaddedArray transposed_array = ArrayProgram::create_padded_array(ArrayProgram::reverse_shape(ArrayProgram::shape(a)), ArrayProgram::reverse_shape(ArrayProgram::padded_shape(a)), reshaped_array);
             ArrayProgram::IndexContainer ix_space = ArrayProgram::create_valid_indices(transposed_array);
             ArrayProgram::UInt32 counter = ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>());
             ArrayProgram::padded_transpose_repeat(a, ix_space, transposed_array, counter);
+            return transposed_array;
+        };
+        inline ArrayProgram::Array operator()(const ArrayProgram::Array& a) {
+            ArrayProgram::Array transposed_array = ArrayProgram::create_array(ArrayProgram::reverse_shape(ArrayProgram::shape(a)));
+            ArrayProgram::IndexContainer ix_space = ArrayProgram::create_valid_indices(transposed_array);
+            ArrayProgram::UInt32 counter = ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>());
+            ArrayProgram::transpose_repeat(a, ix_space, transposed_array, counter);
             return transposed_array;
         };
     };

@@ -155,7 +155,6 @@ implementation Transformations = {
         var new_ix_0 = sub(uint_elem(sh_0), add(uint_elem(ix_0), one()));
 
         var new_ix = cat_index(create_index1(elem_uint(new_ix_0)), drop_index_elem(ix, elem_uint(zero())));
-        call print_index(new_ix);
         call set(res, new_ix, elem);
 
         c = elem_uint(add(uint_elem(c), one()));
@@ -409,12 +408,62 @@ implementation Padding = {
     }
 }
 
+/*
+Implementation for the n-d inner product
+*/
+implementation InnerProduct = {
+
+    use Padding;
+
+    procedure ip_body(obs i: IndexContainer,
+                      obs j: IndexContainer,
+                      obs k: IndexContainer,
+                      upd res: Array,
+                      upd c: UInt32) = {
+
+
+
+    }
+
+    function inner_product(a: Array, b: Array): Array = {
+
+        /*
+        shape(ip(a,b)) = cat(drop(-1,shape(a)), drop(1, shape(b)))
+        */
+
+        var shape_a_last_ix = elem_uint(sub(uint_elem(total(shape(a))), one()));
+
+        var sh_a_drop_last = drop_shape_elem(a, shape_a_last_ix);
+        var sh_b_drop_first = drop_shape_elem(b, elem_uint(zero()));
+
+        var ip_shape = cat_shape(sh_a_drop_last, sh_b_drop_first);
+
+        var ip_array = create_array(ip_shape);
+
+        // valid index vectors for ip
+
+        var indices_a = create_valid_indices(create_array(sh_a_drop_last));
+        var indices_b = create_valid_indices(create_array(sh_b_drop_first));
+
+        // reduction within inner product
+        var sh_a_take_last = create_shape1(get_shape_elem(a, shape_a_last_ix));
+        var indices_k = create_valid_indices(create_array(sh_a_take_last));
+
+        call print_index_container(indices_a);
+        call print_index_container(indices_b);
+        //call print_index_container(indices_k);
+        //call print_index_container(create_valid_indices(ip_array));
+        value ip_array;
+    }
+
+
+}
 program ArrayProgram = {
 
     use Int32Utils;
     use Float64Utils;
 
-    use Padding[Element => Int32];
+    use InnerProduct[Element => Int32];
     //use Padding[Element => Float64];
 
 }

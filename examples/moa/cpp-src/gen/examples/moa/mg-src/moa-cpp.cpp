@@ -235,6 +235,14 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_inner_product ArrayProgram::inner_product;
+
+
+
+    ArrayProgram::_ip_body ArrayProgram::ip_body;
+
+
+
     ArrayProgram::_padded_to_unpadded ArrayProgram::padded_to_unpadded;
 
 

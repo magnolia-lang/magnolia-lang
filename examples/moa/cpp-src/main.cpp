@@ -127,21 +127,11 @@ int main(int argc, char **argv) {
     P.print_shape(P.shape(padl));
 
     std::cout << std::endl;
-    std::cout << "Composition: padl(padr(a,0),0):" << std::endl;
+    std::cout << "Composition: padl(padr(a,0),0): TODO FIX" << std::endl;
     auto comp = P.circular_padl(P.circular_padr(padr,0),0);
     P.print_parray(comp);
     std::cout << "Shape of composed: ";
     P.print_shape(P.padded_shape(comp));
-
-    std::cout << std::endl;
-    std::cout<< "TEST INDEX SPACE GENERATOR" << std::endl;
-
-    auto ixc = P.create_valid_indices(pad_test);
-    P.print_index_container(ixc);
-
-    std::cout << "test2" << std::endl;
-    auto ixc2 = P.create_valid_indices(P.test_array3_2_2());
-    P.print_index_container(ixc2);
 
     std::cout << std::endl;
     std::cout << "TRANSFORMATIONS" << std::endl;
@@ -155,4 +145,17 @@ int main(int argc, char **argv) {
     std::cout << "reverse(a):" << std::endl;
     P.print_array(P.reverse(trans_array));
 
+
+    std::cout << std::endl;
+    std::cout << "INNER PRODUCT" << std::endl;
+    std::cout << "Original arrays:" << std::endl;
+    auto ip_array_input1 = P.test_array3_2_2();
+
+    P.print_array(ip_array_input1);
+    P.print_array(ip_array_input1);
+
+    auto ip_res = P.inner_product(ip_array_input1,ip_array_input1);
+
+    std::cout << "Shape of the inner product:" << std::endl;
+    P.print_shape(P.shape(ip_res));
 }
