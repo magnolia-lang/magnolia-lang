@@ -6,6 +6,8 @@ package examples.moa.mg-src.moa
 * Barebone MoA API with core operations
 * @author Marius kleppe Larnøy
 * @since 2022-01-11
+*
+* DEPRECATED
 */
 
 signature forall_ops = {

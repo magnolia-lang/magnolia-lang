@@ -1,4 +1,4 @@
-package examples.moa.mg-src.while-loops;
+package examples.moa.mg-src.externals.while-loops;
 
 implementation WhileLoop7_2 =
 	external C++ base.while_loop7_2 {
