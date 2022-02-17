@@ -93,13 +93,17 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<ArrayProgram::PaddedArray, ArrayProgram::IndexContainer, ArrayProgram::PaddedArray, ArrayProgram::UInt32, ArrayProgram::_padded_transpose_body, ArrayProgram::_padded_upper_bound> ArrayProgram::__while_loop2_22;
+    while_loop2_2<ArrayProgram::PaddedArray, ArrayProgram::IndexContainer, ArrayProgram::PaddedArray, ArrayProgram::UInt32, ArrayProgram::_padded_transpose_body, ArrayProgram::_padded_upper_bound> ArrayProgram::__while_loop2_23;
 
     ArrayProgram::_padded_upper_bound ArrayProgram::padded_upper_bound;
 
 
 
     ArrayProgram::_print_index_container ArrayProgram::print_index_container;
+
+
+
+    ArrayProgram::_cat_index ArrayProgram::cat_index;
 
 
 
@@ -112,6 +116,14 @@ namespace moa_cpp {
 
 
     ArrayProgram::_create_index3 ArrayProgram::create_index3;
+
+
+
+    ArrayProgram::_drop_index_elem ArrayProgram::drop_index_elem;
+
+
+
+    ArrayProgram::_get_index_elem ArrayProgram::get_index_elem;
 
 
 
@@ -249,6 +261,24 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_reverse ArrayProgram::reverse;
+
+
+
+    ArrayProgram::_reverse_body ArrayProgram::reverse_body;
+
+
+
+    while_loop2_2<ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_reverse_body, ArrayProgram::_reverse_cond> ArrayProgram::__while_loop2_21;
+
+    ArrayProgram::_reverse_cond ArrayProgram::reverse_cond;
+
+
+
+    ArrayProgram::_reverse_repeat ArrayProgram::reverse_repeat;
+
+
+
     ArrayProgram::_set ArrayProgram::set;
 
 
@@ -297,7 +327,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_transpose_body, ArrayProgram::_upper_bound> ArrayProgram::__while_loop2_21;
+    while_loop2_2<ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_transpose_body, ArrayProgram::_upper_bound> ArrayProgram::__while_loop2_22;
 
     ArrayProgram::_upper_bound ArrayProgram::upper_bound;
 

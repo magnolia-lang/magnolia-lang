@@ -496,8 +496,23 @@ struct array {
         return a._get_shape_elem(i);
     }
 
+    inline UInt32 get_index_elem(Index ix, const UInt32 i) {
+        return ix.at(i);
+    }
+
     inline Index get_index_ixc(const IndexContainer ixc, const UInt32 ix) {
         return ixc.at(ix);
+    }
+
+    inline Index drop_index_elem(Index ix, const UInt32 i) {
+        Index res;
+
+        for (auto j = 0; j < ix.size(); j++) {
+            if (i == j) continue;
+            res.push_back(ix.at(j));
+        }
+
+        return res;
     }
 
     inline Shape drop_shape_elem(Array a, const UInt32 i) {
@@ -519,6 +534,18 @@ struct array {
             if (i == j) continue;
             res.push_back(shape(a).at(j));
         }
+        return res;
+    }
+
+    inline Index cat_index(Index a, Index b) {
+        Index res;
+
+        for(const auto &ix : a)
+            res.push_back(ix);
+
+        for (const auto &ix: b)
+            res.push_back(ix);
+
         return res;
     }
 

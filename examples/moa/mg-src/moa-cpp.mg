@@ -10,6 +10,7 @@ package examples.moa.mg-src.moa-cpp
 */
 
 implementation MoaOps = {
+
     use ExtOps;
 
     require function zero(): Element;
@@ -57,8 +58,6 @@ implementation Reshape = {
 implementation Transformations = {
 
     use Reshape;
-
-
     /*
     #####################
     Unpadded transpose
@@ -141,9 +140,54 @@ implementation Transformations = {
 
         value transposed_array;
     }
+    /*
+    #######
+    Unpadded reverse
+    #######
+    */
+    procedure reverse_body(obs input: Array, obs indices: IndexContainer, upd res: Array, upd c: UInt32) = {
+
+        var ix = get_index_ixc(indices, c);
+        var elem = unwrap_scalar(get(input, ix));
+
+        var sh_0 = get_shape_elem(input, elem_uint(zero()));
+        var ix_0 = get_index_elem(ix, elem_uint(zero()));
+        var new_ix_0 = sub(uint_elem(sh_0), add(uint_elem(ix_0), one()));
+
+        var new_ix = cat_index(create_index1(elem_uint(new_ix_0)), drop_index_elem(ix, elem_uint(zero())));
+        call print_index(new_ix);
+        call set(res, new_ix, elem);
+
+        c = elem_uint(add(uint_elem(c), one()));
+    }
+
+    predicate reverse_cond(input: Array, indices: IndexContainer, res: Array, c: UInt32) = {
+
+        value isLowerThan(uint_elem(c), uint_elem(total(indices)));
+    }
+
+    use WhileLoop2_2[Context1 => Array,
+                     Context2 => IndexContainer,
+                     State1 => Array,
+                     State2 => UInt32,
+                     body => reverse_body,
+                     cond => reverse_cond,
+                     repeat => reverse_repeat];
+
+    function reverse(a: Array): Array = {
+
+        var res_array = create_array(shape(a));
+
+        var valid_indices = create_valid_indices(res_array);
+
+        var counter = elem_uint(zero());
+
+        call reverse_repeat(a, valid_indices, res_array, counter);
+
+        value res_array;
+    }
 
     // procedure rotate(upd a: Array, step: UInt32);
-    // procedure reverse(upd a: Array);
 }
 
 implementation Catenation = {
@@ -371,5 +415,6 @@ program ArrayProgram = {
     use Float64Utils;
 
     use Padding[Element => Int32];
+    //use Padding[Element => Float64];
 
 }

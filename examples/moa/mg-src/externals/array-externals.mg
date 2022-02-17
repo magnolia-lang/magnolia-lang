@@ -22,6 +22,8 @@ implementation ExtOps = external C++ base.array {
 
     function get_shape_elem(a: Array, i: UInt32): UInt32;
     function drop_shape_elem(a: Array, i: UInt32): Shape;
+    function get_index_elem(ix: Index, i: UInt32): UInt32;
+    function drop_index_elem(ix: Index, i: UInt32): Index;
     function get_index_ixc(ixc: IndexContainer, ix: UInt32): Index;
 
     // unpadded moa operations that are convenient to have tied to backend
@@ -64,6 +66,7 @@ implementation ExtOps = external C++ base.array {
     function uint_elem(a: UInt32): Element;
     function elem_uint(a: Element): UInt32;
     function cat_shape(a: Shape, b: Shape): Shape;
+    function cat_index(i: Index, j: Index): Index;
     function reverse_index(ix: Index): Index;
     function reverse_shape(s: Shape): Shape;
     function padded_to_unpadded(a: PaddedArray): Array;

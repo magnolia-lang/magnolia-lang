@@ -151,4 +151,8 @@ int main(int argc, char **argv) {
 
     std::cout << "transpose(a):" << std::endl;
     P.print_array(P.transpose(trans_array));
+
+    std::cout << "reverse(a):" << std::endl;
+    P.print_array(P.reverse(trans_array));
+
 }

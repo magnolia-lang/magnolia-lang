@@ -173,7 +173,7 @@ public:
     static ArrayProgram::_padded_transpose_body padded_transpose_body;
     struct _padded_transpose_repeat {
         inline void operator()(const ArrayProgram::PaddedArray& context1, const ArrayProgram::IndexContainer& context2, ArrayProgram::PaddedArray& state1, ArrayProgram::UInt32& state2) {
-            return __while_loop2_22.repeat(context1, context2, state1, state2);
+            return __while_loop2_23.repeat(context1, context2, state1, state2);
         };
     };
 
@@ -185,7 +185,7 @@ public:
     };
 
 private:
-    static while_loop2_2<ArrayProgram::PaddedArray, ArrayProgram::IndexContainer, ArrayProgram::PaddedArray, ArrayProgram::UInt32, ArrayProgram::_padded_transpose_body, ArrayProgram::_padded_upper_bound> __while_loop2_22;
+    static while_loop2_2<ArrayProgram::PaddedArray, ArrayProgram::IndexContainer, ArrayProgram::PaddedArray, ArrayProgram::UInt32, ArrayProgram::_padded_transpose_body, ArrayProgram::_padded_upper_bound> __while_loop2_23;
 public:
     static ArrayProgram::_padded_upper_bound padded_upper_bound;
     struct _print_index_container {
@@ -196,6 +196,13 @@ public:
 
     static ArrayProgram::_print_index_container print_index_container;
     typedef array<ArrayProgram::Int32>::Index Index;
+    struct _cat_index {
+        inline ArrayProgram::Index operator()(const ArrayProgram::Index& i, const ArrayProgram::Index& j) {
+            return __array.cat_index(i, j);
+        };
+    };
+
+    static ArrayProgram::_cat_index cat_index;
     struct _create_index1 {
         inline ArrayProgram::Index operator()(const ArrayProgram::UInt32& a) {
             return __array.create_index1(a);
@@ -217,6 +224,20 @@ public:
     };
 
     static ArrayProgram::_create_index3 create_index3;
+    struct _drop_index_elem {
+        inline ArrayProgram::Index operator()(const ArrayProgram::Index& ix, const ArrayProgram::UInt32& i) {
+            return __array.drop_index_elem(ix, i);
+        };
+    };
+
+    static ArrayProgram::_drop_index_elem drop_index_elem;
+    struct _get_index_elem {
+        inline ArrayProgram::UInt32 operator()(const ArrayProgram::Index& ix, const ArrayProgram::UInt32& i) {
+            return __array.get_index_elem(ix, i);
+        };
+    };
+
+    static ArrayProgram::_get_index_elem get_index_elem;
     struct _get_index_ixc {
         inline ArrayProgram::Index operator()(const ArrayProgram::IndexContainer& ixc, const ArrayProgram::UInt32& ix) {
             return __array.get_index_ixc(ixc, ix);
@@ -558,6 +579,49 @@ public:
     };
 
     static ArrayProgram::_reshape_repeat reshape_repeat;
+    struct _reverse {
+        inline ArrayProgram::Array operator()(const ArrayProgram::Array& a) {
+            ArrayProgram::Array res_array = ArrayProgram::create_array(ArrayProgram::shape(a));
+            ArrayProgram::IndexContainer valid_indices = ArrayProgram::create_valid_indices(res_array);
+            ArrayProgram::UInt32 counter = ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>());
+            ArrayProgram::reverse_repeat(a, valid_indices, res_array, counter);
+            return res_array;
+        };
+    };
+
+    static ArrayProgram::_reverse reverse;
+    struct _reverse_body {
+        inline void operator()(const ArrayProgram::Array& input, const ArrayProgram::IndexContainer& indices, ArrayProgram::Array& res, ArrayProgram::UInt32& c) {
+            ArrayProgram::Index ix = ArrayProgram::get_index_ixc(indices, c);
+            ArrayProgram::Int32 elem = ArrayProgram::unwrap_scalar(ArrayProgram::get(input, ix));
+            ArrayProgram::UInt32 sh_0 = ArrayProgram::get_shape_elem(input, ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>()));
+            ArrayProgram::UInt32 ix_0 = ArrayProgram::get_index_elem(ix, ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>()));
+            ArrayProgram::Int32 new_ix_0 = ArrayProgram::sub(ArrayProgram::uint_elem(sh_0), ArrayProgram::add(ArrayProgram::uint_elem(ix_0), ArrayProgram::one.operator()<Int32>()));
+            ArrayProgram::Index new_ix = ArrayProgram::cat_index(ArrayProgram::create_index1(ArrayProgram::elem_uint(new_ix_0)), ArrayProgram::drop_index_elem(ix, ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>())));
+            ArrayProgram::print_index(new_ix);
+            ArrayProgram::set(res, new_ix, elem);
+            c = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
+        };
+    };
+
+    static ArrayProgram::_reverse_body reverse_body;
+    struct _reverse_cond {
+        inline bool operator()(const ArrayProgram::Array& input, const ArrayProgram::IndexContainer& indices, const ArrayProgram::Array& res, const ArrayProgram::UInt32& c) {
+            return ArrayProgram::isLowerThan(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(indices)));
+        };
+    };
+
+private:
+    static while_loop2_2<ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_reverse_body, ArrayProgram::_reverse_cond> __while_loop2_21;
+public:
+    static ArrayProgram::_reverse_cond reverse_cond;
+    struct _reverse_repeat {
+        inline void operator()(const ArrayProgram::Array& context1, const ArrayProgram::IndexContainer& context2, ArrayProgram::Array& state1, ArrayProgram::UInt32& state2) {
+            return __while_loop2_21.repeat(context1, context2, state1, state2);
+        };
+    };
+
+    static ArrayProgram::_reverse_repeat reverse_repeat;
     struct _set {
         inline void operator()(ArrayProgram::PaddedArray& a, const ArrayProgram::Index& ix, const ArrayProgram::Int32& e) {
             return __array.set(a, ix, e);
@@ -660,7 +724,7 @@ public:
     static ArrayProgram::_transpose_body transpose_body;
     struct _transpose_repeat {
         inline void operator()(const ArrayProgram::Array& context1, const ArrayProgram::IndexContainer& context2, ArrayProgram::Array& state1, ArrayProgram::UInt32& state2) {
-            return __while_loop2_21.repeat(context1, context2, state1, state2);
+            return __while_loop2_22.repeat(context1, context2, state1, state2);
         };
     };
 
@@ -679,7 +743,7 @@ public:
     };
 
 private:
-    static while_loop2_2<ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_transpose_body, ArrayProgram::_upper_bound> __while_loop2_21;
+    static while_loop2_2<ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_transpose_body, ArrayProgram::_upper_bound> __while_loop2_22;
 public:
     static ArrayProgram::_upper_bound upper_bound;
 };
