@@ -56,7 +56,9 @@ parseCompilerMode = mkInfo compilerMode
       optImportDir <*>
       flag WriteIfDoesNotExist OverwriteTargetFiles
            (long "allow-overwrite" <>
-            help "Allow overwriting target files in the output directory")
+            help "Allow overwriting target files in the output directory") <*>
+      optEquationsLocation <*>
+      optProgramsToRewrite
 
     testConfig = Config <$>
       option (oneOf passOpts)
@@ -68,7 +70,9 @@ parseCompilerMode = mkInfo compilerMode
               short 'o' <>
               help "Output directory for code generation") <*>
       optImportDir <*>
-      pure WriteIfDoesNotExist
+      pure WriteIfDoesNotExist <*>
+      optEquationsLocation <*>
+      optProgramsToRewrite
 
     optBackend =
       option (oneOf backendOpts)
@@ -82,11 +86,33 @@ parseCompilerMode = mkInfo compilerMode
               help ("Base import directory for the generated code " <>
                     "(defaults to the output directory)"))
 
+    optEquationsLocation =
+      option (map ModName . splitOn ',' <$> str)
+             (long "equations-location" <> value [] <>
+              short 'e' <>
+              help ("Comma-separated list of concept names in which to " <>
+                    "look for rewriting rules"))
+
+    optProgramsToRewrite =
+      option (map ModName . splitOn ',' <$> str)
+             (long "programs-to-rewrite" <> value [] <>
+              short 'r' <>
+              help ("Comma-separated list of program names on which to " <>
+                    "apply rewriting rules"))
+
+    splitOn :: Eq a => a -> [a] -> [[a]]
+    splitOn sep list = case list of
+      [] -> [[]]
+      (a:as) -> if a == sep
+        then []:splitOn sep as
+        else let (as':ass) = splitOn sep as in (a:as'):ass
+
     passOpts = [ ("check", CheckPass)
                , ("self-contained-codegen", SelfContainedProgramCodegenPass)
                , ("depanal", DepAnalPass)
                , ("parse", ParsePass)
                , ("structured-codegen", StructurePreservingCodegenPass)
+               , ("rewrite", EquationalRewritingPass)
                ]
     backendOpts = [ ("cpp", Cxx)
                   , ("javascript", JavaScript)

@@ -8,6 +8,7 @@ module Make (
   , parsePass
   , programCodegenCxxPass
   , programCodegenPyPass
+  , rewritePass
   )
   where
 
@@ -65,6 +66,12 @@ programCodegenCxxPass = foldMAccumErrorsAndFail
 programCodegenPyPass :: Env TcPackage -> MgMonad [PyPackage]
 programCodegenPyPass = foldMAccumErrorsAndFail
   (\acc -> ((:acc) <$>) . mgPackageToPySelfContainedProgramPackage) []
+
+-- | This function takes in a list of concept names containing rewriting rules
+-- (in the forms of equational assertions, in axioms), a list of program
+-- names on which to apply them, TODO: complete
+rewritePass :: [Name] -> [Name] -> Env TcPackage -> MgMonad (Env TcPackage)
+rewritePass = undefined
 
 -- | Checks if a list of strongly connected components contains cycles.
 -- Does not fail, but logs an error for each detected cycle. The resulting
