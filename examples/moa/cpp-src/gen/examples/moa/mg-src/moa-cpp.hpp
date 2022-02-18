@@ -326,6 +326,65 @@ private:
     };
 public:
     typedef array<ArrayProgram::Int32>::Array Array;
+    struct _bmapvector_body {
+        inline void operator()(const ArrayProgram::Int32& e, ArrayProgram::Array& v, ArrayProgram::UInt32& c) {
+            ArrayProgram::Int32 new_value = ArrayProgram::mult(e, ArrayProgram::unwrap_scalar(ArrayProgram::get(v, c)));
+            ArrayProgram::set(v, c, new_value);
+            c = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
+        };
+    };
+
+    static ArrayProgram::_bmapvector_body bmapvector_body;
+    struct _bmapvector_body_add {
+        inline void operator()(const ArrayProgram::Int32& e, ArrayProgram::Array& v, ArrayProgram::UInt32& c) {
+            ArrayProgram::Int32 new_value = ArrayProgram::add(e, ArrayProgram::unwrap_scalar(ArrayProgram::get(v, c)));
+            ArrayProgram::set(v, c, new_value);
+            c = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
+        };
+    };
+
+    static ArrayProgram::_bmapvector_body_add bmapvector_body_add;
+    struct _bmapvector_cond {
+        inline bool operator()(const ArrayProgram::Int32& e, const ArrayProgram::Array& v, const ArrayProgram::UInt32& c) {
+            return ArrayProgram::isLowerThan(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(v)));
+        };
+    };
+
+private:
+    static while_loop1_2<ArrayProgram::Int32, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_bmapvector_body, ArrayProgram::_bmapvector_cond> __while_loop1_23;
+    static while_loop1_2<ArrayProgram::Int32, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_bmapvector_body_add, ArrayProgram::_bmapvector_cond> __while_loop1_24;
+public:
+    static ArrayProgram::_bmapvector_cond bmapvector_cond;
+    struct _bmapvector_repeat {
+        inline void operator()(const ArrayProgram::Int32& context1, ArrayProgram::Array& state1, ArrayProgram::UInt32& state2) {
+            return __while_loop1_23.repeat(context1, state1, state2);
+        };
+    };
+
+    static ArrayProgram::_bmapvector_repeat bmapvector_repeat;
+    struct _bmapvector_repeat_add {
+        inline void operator()(const ArrayProgram::Int32& context1, ArrayProgram::Array& state1, ArrayProgram::UInt32& state2) {
+            return __while_loop1_24.repeat(context1, state1, state2);
+        };
+    };
+
+    static ArrayProgram::_bmapvector_repeat_add bmapvector_repeat_add;
+    struct _bopmap_vec_add {
+        inline void operator()(const ArrayProgram::Int32& e, ArrayProgram::Array& a) {
+            ArrayProgram::UInt32 counter = ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>());
+            ArrayProgram::bmapvector_repeat_add(e, a, counter);
+        };
+    };
+
+    static ArrayProgram::_bopmap_vec_add bopmap_vec_add;
+    struct _bopmap_vec_mult {
+        inline void operator()(const ArrayProgram::Int32& e, ArrayProgram::Array& a) {
+            ArrayProgram::UInt32 counter = ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>());
+            ArrayProgram::bmapvector_repeat(e, a, counter);
+        };
+    };
+
+    static ArrayProgram::_bopmap_vec_mult bopmap_vec_mult;
     struct _cat {
         inline ArrayProgram::Array operator()(const ArrayProgram::Array& array1, const ArrayProgram::Array& array2) {
             ArrayProgram::Int32 take_a1 = ArrayProgram::uint_elem(ArrayProgram::get_shape_elem(array1, ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>())));
@@ -487,10 +546,10 @@ public:
 
     static ArrayProgram::_create_padded_array create_padded_array;
     struct _create_valid_indices {
-        inline ArrayProgram::IndexContainer operator()(const ArrayProgram::Array& a) {
+        inline ArrayProgram::IndexContainer operator()(const ArrayProgram::PaddedArray& a) {
             return __array.create_valid_indices(a);
         };
-        inline ArrayProgram::IndexContainer operator()(const ArrayProgram::PaddedArray& a) {
+        inline ArrayProgram::IndexContainer operator()(const ArrayProgram::Array& a) {
             return __array.create_valid_indices(a);
         };
     };
@@ -511,13 +570,13 @@ public:
 
     static ArrayProgram::_drop_shape_elem drop_shape_elem;
     struct _get {
-        inline ArrayProgram::Array operator()(const ArrayProgram::Array& a, const ArrayProgram::UInt32& ix) {
+        inline ArrayProgram::Array operator()(const ArrayProgram::PaddedArray& a, const ArrayProgram::Index& ix) {
             return __array.get(a, ix);
         };
         inline ArrayProgram::Array operator()(const ArrayProgram::Array& a, const ArrayProgram::Index& ix) {
             return __array.get(a, ix);
         };
-        inline ArrayProgram::Array operator()(const ArrayProgram::PaddedArray& a, const ArrayProgram::Index& ix) {
+        inline ArrayProgram::Array operator()(const ArrayProgram::Array& a, const ArrayProgram::UInt32& ix) {
             return __array.get(a, ix);
         };
     };
@@ -530,31 +589,113 @@ public:
     };
 
     static ArrayProgram::_get_shape_elem get_shape_elem;
-    struct _inner_product {
-        inline ArrayProgram::Array operator()(const ArrayProgram::Array& a, const ArrayProgram::Array& b) {
-            ArrayProgram::UInt32 shape_a_last_ix = ArrayProgram::elem_uint(ArrayProgram::sub(ArrayProgram::uint_elem(ArrayProgram::total(ArrayProgram::shape(a))), ArrayProgram::one.operator()<Int32>()));
-            ArrayProgram::Shape sh_a_drop_last = ArrayProgram::drop_shape_elem(a, shape_a_last_ix);
-            ArrayProgram::Shape sh_b_drop_first = ArrayProgram::drop_shape_elem(b, ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>()));
-            ArrayProgram::Shape ip_shape = ArrayProgram::cat_shape(sh_a_drop_last, sh_b_drop_first);
+    struct _inner_matmult_body {
+        inline void operator()(const ArrayProgram::Array& a1, const ArrayProgram::Array& a2, const ArrayProgram::Index& ix_i, const ArrayProgram::Index& ix_j, const ArrayProgram::IndexContainer& ixc_k, ArrayProgram::Array& res, ArrayProgram::UInt32& counter) {
+            ArrayProgram::Index ix_k = ArrayProgram::get_index_ixc(ixc_k, counter);
+            ArrayProgram::Index i_cat_k = ArrayProgram::cat_index(ix_i, ix_k);
+            ArrayProgram::Array ik_from_a1 = ArrayProgram::get(a1, i_cat_k);
+            ArrayProgram::Array k_from_a2 = ArrayProgram::get(a2, ix_k);
+            ArrayProgram::bopmap_vec_mult(ArrayProgram::unwrap_scalar(ik_from_a1), k_from_a2);
+            ArrayProgram::print_array(k_from_a2);
+            res = ArrayProgram::pointwise_add(res, k_from_a2);
+            counter = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(counter), ArrayProgram::one.operator()<Int32>()));
+        };
+    };
+
+    static ArrayProgram::_inner_matmult_body inner_matmult_body;
+    struct _inner_matmult_cond {
+        inline bool operator()(const ArrayProgram::Array& a1, const ArrayProgram::Array& a2, const ArrayProgram::Index& ix_i, const ArrayProgram::Index& ix_j, const ArrayProgram::IndexContainer& ixc_k, const ArrayProgram::Array& res, const ArrayProgram::UInt32& c) {
+            return ArrayProgram::isLowerThan(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(ixc_k)));
+        };
+    };
+
+private:
+    static while_loop5_2<ArrayProgram::Array, ArrayProgram::Array, ArrayProgram::Index, ArrayProgram::Index, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_inner_matmult_body, ArrayProgram::_inner_matmult_cond> __while_loop5_2;
+public:
+    static ArrayProgram::_inner_matmult_cond inner_matmult_cond;
+    struct _inner_matmult_repeat {
+        inline void operator()(const ArrayProgram::Array& context1, const ArrayProgram::Array& context2, const ArrayProgram::Index& context3, const ArrayProgram::Index& context4, const ArrayProgram::IndexContainer& context5, ArrayProgram::Array& state1, ArrayProgram::UInt32& state2) {
+            return __while_loop5_2.repeat(context1, context2, context3, context4, context5, state1, state2);
+        };
+    };
+
+    static ArrayProgram::_inner_matmult_repeat inner_matmult_repeat;
+    struct _matmult2d {
+        inline ArrayProgram::Array operator()(const ArrayProgram::Array& a1, const ArrayProgram::Array& a2) {
+            ArrayProgram::UInt32 shape_a1_last_ix = ArrayProgram::elem_uint(ArrayProgram::sub(ArrayProgram::uint_elem(ArrayProgram::total(ArrayProgram::shape(a1))), ArrayProgram::one.operator()<Int32>()));
+            ArrayProgram::Shape sh_a1_drop_last = ArrayProgram::drop_shape_elem(a1, shape_a1_last_ix);
+            ArrayProgram::Shape sh_a2_drop_first = ArrayProgram::drop_shape_elem(a2, ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>()));
+            ArrayProgram::Shape ip_shape = ArrayProgram::cat_shape(sh_a1_drop_last, sh_a2_drop_first);
             ArrayProgram::Array ip_array = ArrayProgram::create_array(ip_shape);
-            ArrayProgram::IndexContainer indices_a = ArrayProgram::create_valid_indices(ArrayProgram::create_array(sh_a_drop_last));
-            ArrayProgram::IndexContainer indices_b = ArrayProgram::create_valid_indices(ArrayProgram::create_array(sh_b_drop_first));
-            ArrayProgram::Shape sh_a_take_last = ArrayProgram::create_shape1(ArrayProgram::get_shape_elem(a, shape_a_last_ix));
-            ArrayProgram::IndexContainer indices_k = ArrayProgram::create_valid_indices(ArrayProgram::create_array(sh_a_take_last));
-            ArrayProgram::print_index_container(indices_a);
-            ArrayProgram::print_index_container(indices_b);
+            ArrayProgram::IndexContainer indices_a1 = ArrayProgram::create_valid_indices(ArrayProgram::create_array(sh_a1_drop_last));
+            ArrayProgram::IndexContainer indices_a2 = ArrayProgram::create_valid_indices(ArrayProgram::create_array(sh_a2_drop_first));
+            ArrayProgram::Shape sh_a1_take_last = ArrayProgram::create_shape1(ArrayProgram::get_shape_elem(a1, shape_a1_last_ix));
+            ArrayProgram::IndexContainer indices_k = ArrayProgram::create_valid_indices(ArrayProgram::create_array(sh_a1_take_last));
+            ArrayProgram::UInt32 counter = ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>());
+            ArrayProgram::matmult2d_repeat(a1, a2, indices_a1, indices_a2, indices_k, ip_array, counter);
             return ip_array;
         };
     };
 
-    static ArrayProgram::_inner_product inner_product;
-    struct _ip_body {
-        inline void operator()(const ArrayProgram::IndexContainer& i, const ArrayProgram::IndexContainer& j, const ArrayProgram::IndexContainer& k, ArrayProgram::Array& res, ArrayProgram::UInt32& c) {
-            ;
+    static ArrayProgram::_matmult2d matmult2d;
+    struct _matmult2d_body {
+        inline void operator()(const ArrayProgram::Array& a1, const ArrayProgram::Array& a2, const ArrayProgram::IndexContainer& ixc_i, const ArrayProgram::IndexContainer& ixc_j, const ArrayProgram::IndexContainer& ixc_k, ArrayProgram::Array& res, ArrayProgram::UInt32& counter) {
+            ArrayProgram::Index ix_i = ArrayProgram::get_index_ixc(ixc_i, counter);
+            ArrayProgram::UInt32 middle_counter = ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>());
+            ArrayProgram::middle_matmult_repeat(a1, a2, ix_i, ixc_j, ixc_k, res, middle_counter);
+            counter = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(counter), ArrayProgram::one.operator()<Int32>()));
         };
     };
 
-    static ArrayProgram::_ip_body ip_body;
+    static ArrayProgram::_matmult2d_body matmult2d_body;
+    struct _matmult2d_cond {
+        inline bool operator()(const ArrayProgram::Array& a1, const ArrayProgram::Array& a2, const ArrayProgram::IndexContainer& ixc_i, const ArrayProgram::IndexContainer& ixc_j, const ArrayProgram::IndexContainer& ixc_k, const ArrayProgram::Array& res, const ArrayProgram::UInt32& c) {
+            return ArrayProgram::isLowerThan(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(ixc_i)));
+        };
+    };
+
+private:
+    static while_loop5_2<ArrayProgram::Array, ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::IndexContainer, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_matmult2d_body, ArrayProgram::_matmult2d_cond> __while_loop5_21;
+public:
+    static ArrayProgram::_matmult2d_cond matmult2d_cond;
+    struct _matmult2d_repeat {
+        inline void operator()(const ArrayProgram::Array& context1, const ArrayProgram::Array& context2, const ArrayProgram::IndexContainer& context3, const ArrayProgram::IndexContainer& context4, const ArrayProgram::IndexContainer& context5, ArrayProgram::Array& state1, ArrayProgram::UInt32& state2) {
+            return __while_loop5_21.repeat(context1, context2, context3, context4, context5, state1, state2);
+        };
+    };
+
+    static ArrayProgram::_matmult2d_repeat matmult2d_repeat;
+    struct _middle_matmult_body {
+        inline void operator()(const ArrayProgram::Array& a1, const ArrayProgram::Array& a2, const ArrayProgram::Index& ix_i, const ArrayProgram::IndexContainer& ixc_j, const ArrayProgram::IndexContainer& ixc_k, ArrayProgram::Array& res, ArrayProgram::UInt32& counter) {
+            ArrayProgram::Index ix_j = ArrayProgram::get_index_ixc(ixc_j, counter);
+            ArrayProgram::UInt32 inner_counter = ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>());
+            ArrayProgram::Array res_vec = ArrayProgram::create_array(ArrayProgram::shape(ArrayProgram::get(a1, ix_j)));
+            ArrayProgram::inner_matmult_repeat(a1, a2, ix_i, ix_j, ixc_k, res_vec, inner_counter);
+            ArrayProgram::Int32 reduced = ArrayProgram::reduce_vec_add(res_vec);
+            ArrayProgram::print_index(ArrayProgram::cat_index(ix_i, ix_j));
+            ArrayProgram::set(res, ArrayProgram::cat_index(ix_i, ix_j), reduced);
+            counter = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(counter), ArrayProgram::one.operator()<Int32>()));
+        };
+    };
+
+    static ArrayProgram::_middle_matmult_body middle_matmult_body;
+    struct _middle_matmult_cond {
+        inline bool operator()(const ArrayProgram::Array& a1, const ArrayProgram::Array& a2, const ArrayProgram::Index& ix_i, const ArrayProgram::IndexContainer& ixc_j, const ArrayProgram::IndexContainer& ixc_k, const ArrayProgram::Array& res, const ArrayProgram::UInt32& c) {
+            return ArrayProgram::isLowerThan(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(ixc_j)));
+        };
+    };
+
+private:
+    static while_loop5_2<ArrayProgram::Array, ArrayProgram::Array, ArrayProgram::Index, ArrayProgram::IndexContainer, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_middle_matmult_body, ArrayProgram::_middle_matmult_cond> __while_loop5_20;
+public:
+    static ArrayProgram::_middle_matmult_cond middle_matmult_cond;
+    struct _middle_matmult_repeat {
+        inline void operator()(const ArrayProgram::Array& context1, const ArrayProgram::Array& context2, const ArrayProgram::Index& context3, const ArrayProgram::IndexContainer& context4, const ArrayProgram::IndexContainer& context5, ArrayProgram::Array& state1, ArrayProgram::UInt32& state2) {
+            return __while_loop5_20.repeat(context1, context2, context3, context4, context5, state1, state2);
+        };
+    };
+
+    static ArrayProgram::_middle_matmult_repeat middle_matmult_repeat;
     struct _padded_to_unpadded {
         inline ArrayProgram::Array operator()(const ArrayProgram::PaddedArray& a) {
             return __array.padded_to_unpadded(a);
@@ -562,6 +703,44 @@ public:
     };
 
     static ArrayProgram::_padded_to_unpadded padded_to_unpadded;
+    struct _pointwise_add {
+        inline ArrayProgram::Array operator()(const ArrayProgram::Array& a1, const ArrayProgram::Array& a2) {
+            ArrayProgram::Array res = ArrayProgram::create_array(ArrayProgram::shape(a1));
+            ArrayProgram::UInt32 c = ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>());
+            ArrayProgram::pointwise_repeat(a1, res, c);
+            c = ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>());
+            ArrayProgram::pointwise_repeat(a2, res, c);
+            return res;
+        };
+    };
+
+    static ArrayProgram::_pointwise_add pointwise_add;
+    struct _pointwise_add_vector_body {
+        inline void operator()(const ArrayProgram::Array& v, ArrayProgram::Array& res, ArrayProgram::UInt32& c) {
+            ArrayProgram::Int32 elem = ArrayProgram::unwrap_scalar(ArrayProgram::get(v, c));
+            ArrayProgram::set(res, c, ArrayProgram::add(ArrayProgram::unwrap_scalar(ArrayProgram::get(res, c)), elem));
+            c = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
+        };
+    };
+
+    static ArrayProgram::_pointwise_add_vector_body pointwise_add_vector_body;
+    struct _pointwise_cond {
+        inline bool operator()(const ArrayProgram::Array& v, const ArrayProgram::Array& res, const ArrayProgram::UInt32& c) {
+            return ArrayProgram::isLowerThan(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(res)));
+        };
+    };
+
+private:
+    static while_loop1_2<ArrayProgram::Array, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_pointwise_add_vector_body, ArrayProgram::_pointwise_cond> __while_loop1_2;
+public:
+    static ArrayProgram::_pointwise_cond pointwise_cond;
+    struct _pointwise_repeat {
+        inline void operator()(const ArrayProgram::Array& context1, ArrayProgram::Array& state1, ArrayProgram::UInt32& state2) {
+            return __while_loop1_2.repeat(context1, state1, state2);
+        };
+    };
+
+    static ArrayProgram::_pointwise_repeat pointwise_repeat;
     struct _print_array {
         inline void operator()(const ArrayProgram::Array& a) {
             return __array.print_array(a);
@@ -569,6 +748,69 @@ public:
     };
 
     static ArrayProgram::_print_array print_array;
+    struct _reduce_body {
+        inline void operator()(const ArrayProgram::Array& input, ArrayProgram::Int32& res, ArrayProgram::UInt32& c) {
+            ArrayProgram::Int32 current_element = ArrayProgram::unwrap_scalar(ArrayProgram::get(input, c));
+            res = ArrayProgram::mult(res, current_element);
+            c = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
+        };
+    };
+
+    static ArrayProgram::_reduce_body reduce_body;
+    struct _reduce_body_add {
+        inline void operator()(const ArrayProgram::Array& input, ArrayProgram::Int32& res, ArrayProgram::UInt32& c) {
+            ArrayProgram::Int32 current_element = ArrayProgram::unwrap_scalar(ArrayProgram::get(input, c));
+            res = ArrayProgram::add(res, current_element);
+            c = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
+        };
+    };
+
+    static ArrayProgram::_reduce_body_add reduce_body_add;
+    struct _reduce_cond {
+        inline bool operator()(const ArrayProgram::Array& input, const ArrayProgram::Int32& res, const ArrayProgram::UInt32& c) {
+            return ArrayProgram::isLowerThan(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(input)));
+        };
+    };
+
+private:
+    static while_loop1_2<ArrayProgram::Array, ArrayProgram::Int32, ArrayProgram::UInt32, ArrayProgram::_reduce_body, ArrayProgram::_reduce_cond> __while_loop1_21;
+    static while_loop1_2<ArrayProgram::Array, ArrayProgram::Int32, ArrayProgram::UInt32, ArrayProgram::_reduce_body_add, ArrayProgram::_reduce_cond> __while_loop1_22;
+public:
+    static ArrayProgram::_reduce_cond reduce_cond;
+    struct _reduce_vec_add {
+        inline ArrayProgram::Int32 operator()(const ArrayProgram::Array& a) {
+            ArrayProgram::Int32 result = ArrayProgram::zero.operator()<Int32>();
+            ArrayProgram::UInt32 counter = ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>());
+            ArrayProgram::repeat_reduce_vec_add(a, result, counter);
+            return result;
+        };
+    };
+
+    static ArrayProgram::_reduce_vec_add reduce_vec_add;
+    struct _reduce_vec_mult {
+        inline ArrayProgram::Int32 operator()(const ArrayProgram::Array& a) {
+            ArrayProgram::Int32 result = ArrayProgram::one.operator()<Int32>();
+            ArrayProgram::UInt32 counter = ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>());
+            ArrayProgram::repeat_reduce_vec_mult(a, result, counter);
+            return result;
+        };
+    };
+
+    static ArrayProgram::_reduce_vec_mult reduce_vec_mult;
+    struct _repeat_reduce_vec_add {
+        inline void operator()(const ArrayProgram::Array& context1, ArrayProgram::Int32& state1, ArrayProgram::UInt32& state2) {
+            return __while_loop1_22.repeat(context1, state1, state2);
+        };
+    };
+
+    static ArrayProgram::_repeat_reduce_vec_add repeat_reduce_vec_add;
+    struct _repeat_reduce_vec_mult {
+        inline void operator()(const ArrayProgram::Array& context1, ArrayProgram::Int32& state1, ArrayProgram::UInt32& state2) {
+            return __while_loop1_21.repeat(context1, state1, state2);
+        };
+    };
+
+    static ArrayProgram::_repeat_reduce_vec_mult repeat_reduce_vec_mult;
     struct _reshape {
         inline ArrayProgram::Array operator()(const ArrayProgram::Array& input_array, const ArrayProgram::Shape& s) {
             ArrayProgram::Array new_array = ArrayProgram::create_array(s);
@@ -594,12 +836,12 @@ public:
     };
 
 private:
-    static while_loop1_2<ArrayProgram::Array, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_reshape_body, ArrayProgram::_reshape_cond> __while_loop1_2;
+    static while_loop1_2<ArrayProgram::Array, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_reshape_body, ArrayProgram::_reshape_cond> __while_loop1_20;
 public:
     static ArrayProgram::_reshape_cond reshape_cond;
     struct _reshape_repeat {
         inline void operator()(const ArrayProgram::Array& context1, ArrayProgram::Array& state1, ArrayProgram::UInt32& state2) {
-            return __while_loop1_2.repeat(context1, state1, state2);
+            return __while_loop1_20.repeat(context1, state1, state2);
         };
     };
 
@@ -647,23 +889,23 @@ public:
 
     static ArrayProgram::_reverse_repeat reverse_repeat;
     struct _set {
-        inline void operator()(ArrayProgram::Array& a, const ArrayProgram::UInt32& ix, const ArrayProgram::Int32& e) {
+        inline void operator()(ArrayProgram::PaddedArray& a, const ArrayProgram::Index& ix, const ArrayProgram::Int32& e) {
             return __array.set(a, ix, e);
         };
         inline void operator()(ArrayProgram::Array& a, const ArrayProgram::Index& ix, const ArrayProgram::Int32& e) {
             return __array.set(a, ix, e);
         };
-        inline void operator()(ArrayProgram::PaddedArray& a, const ArrayProgram::Index& ix, const ArrayProgram::Int32& e) {
+        inline void operator()(ArrayProgram::Array& a, const ArrayProgram::UInt32& ix, const ArrayProgram::Int32& e) {
             return __array.set(a, ix, e);
         };
     };
 
     static ArrayProgram::_set set;
     struct _shape {
-        inline ArrayProgram::Shape operator()(const ArrayProgram::Array& a) {
+        inline ArrayProgram::Shape operator()(const ArrayProgram::PaddedArray& a) {
             return __array.shape(a);
         };
-        inline ArrayProgram::Shape operator()(const ArrayProgram::PaddedArray& a) {
+        inline ArrayProgram::Shape operator()(const ArrayProgram::Array& a) {
             return __array.shape(a);
         };
     };
@@ -705,14 +947,14 @@ public:
 
     static ArrayProgram::_test_vector5 test_vector5;
     struct _total {
-        inline ArrayProgram::UInt32 operator()(const ArrayProgram::Array& a) {
-            return __array.total(a);
+        inline ArrayProgram::UInt32 operator()(const ArrayProgram::IndexContainer& ixc) {
+            return __array.total(ixc);
         };
         inline ArrayProgram::UInt32 operator()(const ArrayProgram::Shape& s) {
             return __array.total(s);
         };
-        inline ArrayProgram::UInt32 operator()(const ArrayProgram::IndexContainer& ixc) {
-            return __array.total(ixc);
+        inline ArrayProgram::UInt32 operator()(const ArrayProgram::Array& a) {
+            return __array.total(a);
         };
     };
 

@@ -163,6 +163,38 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_bmapvector_body ArrayProgram::bmapvector_body;
+
+
+
+    ArrayProgram::_bmapvector_body_add ArrayProgram::bmapvector_body_add;
+
+
+
+    while_loop1_2<ArrayProgram::Int32, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_bmapvector_body, ArrayProgram::_bmapvector_cond> ArrayProgram::__while_loop1_23;
+
+    while_loop1_2<ArrayProgram::Int32, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_bmapvector_body_add, ArrayProgram::_bmapvector_cond> ArrayProgram::__while_loop1_24;
+
+    ArrayProgram::_bmapvector_cond ArrayProgram::bmapvector_cond;
+
+
+
+    ArrayProgram::_bmapvector_repeat ArrayProgram::bmapvector_repeat;
+
+
+
+    ArrayProgram::_bmapvector_repeat_add ArrayProgram::bmapvector_repeat_add;
+
+
+
+    ArrayProgram::_bopmap_vec_add ArrayProgram::bopmap_vec_add;
+
+
+
+    ArrayProgram::_bopmap_vec_mult ArrayProgram::bopmap_vec_mult;
+
+
+
     ArrayProgram::_cat ArrayProgram::cat;
 
 
@@ -235,11 +267,49 @@ namespace moa_cpp {
 
 
 
-    ArrayProgram::_inner_product ArrayProgram::inner_product;
+    ArrayProgram::_inner_matmult_body ArrayProgram::inner_matmult_body;
 
 
 
-    ArrayProgram::_ip_body ArrayProgram::ip_body;
+    while_loop5_2<ArrayProgram::Array, ArrayProgram::Array, ArrayProgram::Index, ArrayProgram::Index, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_inner_matmult_body, ArrayProgram::_inner_matmult_cond> ArrayProgram::__while_loop5_2;
+
+    ArrayProgram::_inner_matmult_cond ArrayProgram::inner_matmult_cond;
+
+
+
+    ArrayProgram::_inner_matmult_repeat ArrayProgram::inner_matmult_repeat;
+
+
+
+    ArrayProgram::_matmult2d ArrayProgram::matmult2d;
+
+
+
+    ArrayProgram::_matmult2d_body ArrayProgram::matmult2d_body;
+
+
+
+    while_loop5_2<ArrayProgram::Array, ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::IndexContainer, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_matmult2d_body, ArrayProgram::_matmult2d_cond> ArrayProgram::__while_loop5_21;
+
+    ArrayProgram::_matmult2d_cond ArrayProgram::matmult2d_cond;
+
+
+
+    ArrayProgram::_matmult2d_repeat ArrayProgram::matmult2d_repeat;
+
+
+
+    ArrayProgram::_middle_matmult_body ArrayProgram::middle_matmult_body;
+
+
+
+    while_loop5_2<ArrayProgram::Array, ArrayProgram::Array, ArrayProgram::Index, ArrayProgram::IndexContainer, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_middle_matmult_body, ArrayProgram::_middle_matmult_cond> ArrayProgram::__while_loop5_20;
+
+    ArrayProgram::_middle_matmult_cond ArrayProgram::middle_matmult_cond;
+
+
+
+    ArrayProgram::_middle_matmult_repeat ArrayProgram::middle_matmult_repeat;
 
 
 
@@ -247,7 +317,57 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_pointwise_add ArrayProgram::pointwise_add;
+
+
+
+    ArrayProgram::_pointwise_add_vector_body ArrayProgram::pointwise_add_vector_body;
+
+
+
+    while_loop1_2<ArrayProgram::Array, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_pointwise_add_vector_body, ArrayProgram::_pointwise_cond> ArrayProgram::__while_loop1_2;
+
+    ArrayProgram::_pointwise_cond ArrayProgram::pointwise_cond;
+
+
+
+    ArrayProgram::_pointwise_repeat ArrayProgram::pointwise_repeat;
+
+
+
     ArrayProgram::_print_array ArrayProgram::print_array;
+
+
+
+    ArrayProgram::_reduce_body ArrayProgram::reduce_body;
+
+
+
+    ArrayProgram::_reduce_body_add ArrayProgram::reduce_body_add;
+
+
+
+    while_loop1_2<ArrayProgram::Array, ArrayProgram::Int32, ArrayProgram::UInt32, ArrayProgram::_reduce_body, ArrayProgram::_reduce_cond> ArrayProgram::__while_loop1_21;
+
+    while_loop1_2<ArrayProgram::Array, ArrayProgram::Int32, ArrayProgram::UInt32, ArrayProgram::_reduce_body_add, ArrayProgram::_reduce_cond> ArrayProgram::__while_loop1_22;
+
+    ArrayProgram::_reduce_cond ArrayProgram::reduce_cond;
+
+
+
+    ArrayProgram::_reduce_vec_add ArrayProgram::reduce_vec_add;
+
+
+
+    ArrayProgram::_reduce_vec_mult ArrayProgram::reduce_vec_mult;
+
+
+
+    ArrayProgram::_repeat_reduce_vec_add ArrayProgram::repeat_reduce_vec_add;
+
+
+
+    ArrayProgram::_repeat_reduce_vec_mult ArrayProgram::repeat_reduce_vec_mult;
 
 
 
@@ -259,7 +379,7 @@ namespace moa_cpp {
 
 
 
-    while_loop1_2<ArrayProgram::Array, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_reshape_body, ArrayProgram::_reshape_cond> ArrayProgram::__while_loop1_2;
+    while_loop1_2<ArrayProgram::Array, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_reshape_body, ArrayProgram::_reshape_cond> ArrayProgram::__while_loop1_20;
 
     ArrayProgram::_reshape_cond ArrayProgram::reshape_cond;
 

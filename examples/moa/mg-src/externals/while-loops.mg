@@ -48,6 +48,33 @@ implementation WhileLoop5_2 =
 		procedure repeat(obs context1: Context1, obs context2: Context2, obs context3: Context3, obs context4: Context4, obs context5: Context5, upd state1: State1, upd state2: State2);
 };
 
+implementation WhileLoop4_2 =
+	external C++ base.while_loop4_2 {
+		require type Context1;
+		require type Context2;
+		require type Context3;
+		require type Context4;
+		require type State1;
+		require type State2;
+
+		require predicate cond(context1: Context1, context2: Context2, context3: Context3, context4: Context4, state1: State1, state2: State2);
+		require procedure body(obs context1: Context1, obs context2: Context2, obs context3: Context3, obs context4: Context4, upd state1: State1, upd state2: State2);
+		procedure repeat(obs context1: Context1, obs context2: Context2, obs context3: Context3, obs context4: Context4, upd state1: State1, upd state2: State2);
+};
+
+implementation WhileLoop3_2 =
+	external C++ base.while_loop3_2 {
+		require type Context1;
+		require type Context2;
+		require type Context3;
+		require type State1;
+		require type State2;
+
+		require predicate cond(context1: Context1, context2: Context2, context3: Context3, state1: State1, state2: State2);
+		require procedure body(obs context1: Context1, obs context2: Context2, obs context3: Context3, upd state1: State1, upd state2: State2);
+		procedure repeat(obs context1: Context1, obs context2: Context2, obs context3: Context3, upd state1: State1, upd state2: State2);
+};
+
 implementation WhileLoop2_3 =
 	external C++ base.while_loop2_3 {
 		require type Context1;

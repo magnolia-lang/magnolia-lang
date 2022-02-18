@@ -300,7 +300,6 @@ struct array {
         else {
             std::cout << "Total index required by set" << std::endl;
         }
-
     }
 
     inline UInt32 dim(Array a) {
@@ -754,6 +753,54 @@ struct float64_utils {
     inline bool isLowerThan(const Float64 a, const Float64 b) {
         return a < b;
     }
+};
+
+template <typename _Context1, typename _Context2, typename _Context3, typename _Context4, typename _Context5, typename _State1, typename _State2, class _body, class _cond>
+struct while_loop5_2 {
+	typedef _Context1 Context1;
+	typedef _Context2 Context2;
+	typedef _Context3 Context3;
+	typedef _Context4 Context4;
+	typedef _Context5 Context5;
+	typedef _State1 State1;
+	typedef _State2 State2;
+
+	_body body;
+	_cond cond;
+	void repeat(const Context1 &context1, const Context2 &context2, const Context3 &context3, const Context4 &context4, const Context5 &context5, State1 &state1, State2 &state2) {
+		while (cond(context1, context2, context3, context4, context5, state1, state2)) body(context1, context2, context3, context4, context5, state1, state2);
+	}
+};
+
+template <typename _Context1, typename _Context2, typename _Context3, typename _Context4, typename _State1, typename _State2, class _body, class _cond>
+struct while_loop4_2 {
+	typedef _Context1 Context1;
+	typedef _Context2 Context2;
+	typedef _Context3 Context3;
+	typedef _Context4 Context4;
+	typedef _State1 State1;
+	typedef _State2 State2;
+
+	_body body;
+	_cond cond;
+	void repeat(const Context1 &context1, const Context2 &context2, const Context3 &context3, const Context4 &context4, State1 &state1, State2 &state2) {
+		while (cond(context1, context2, context3, context4, state1, state2)) body(context1, context2, context3, context4, state1, state2);
+	}
+};
+
+template <typename _Context1, typename _Context2, typename _Context3, typename _State1, typename _State2, class _body, class _cond>
+struct while_loop3_2 {
+	typedef _Context1 Context1;
+	typedef _Context2 Context2;
+	typedef _Context3 Context3;
+	typedef _State1 State1;
+	typedef _State2 State2;
+
+	_body body;
+	_cond cond;
+	void repeat(const Context1 &context1, const Context2 &context2, const Context3 &context3, State1 &state1, State2 &state2) {
+		while (cond(context1, context2, context3, state1, state2)) body(context1, context2, context3, state1, state2);
+	}
 };
 
 template <typename _Context1, typename _Context2, typename _State1, typename _State2, class _body, class _cond>

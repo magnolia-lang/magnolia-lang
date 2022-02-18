@@ -149,13 +149,19 @@ int main(int argc, char **argv) {
     std::cout << std::endl;
     std::cout << "INNER PRODUCT" << std::endl;
     std::cout << "Original arrays:" << std::endl;
-    auto ip_array_input1 = P.test_array3_2_2();
+    auto ip_array_input1 = P.test_array3_3();
 
     P.print_array(ip_array_input1);
     P.print_array(ip_array_input1);
 
-    auto ip_res = P.inner_product(ip_array_input1,ip_array_input1);
+    //auto ip_res = P.inner_product(ip_array_input1,ip_array_input1);
 
     std::cout << "Shape of the inner product:" << std::endl;
-    P.print_shape(P.shape(ip_res));
+    //P.print_shape(P.shape(ip_res));
+
+    std::cout << "matmult(a1,a1):" << std::endl;
+
+    auto matmult_res = P.matmult2d(ip_array_input1,ip_array_input1);
+
+    P.print_array(matmult_res);
 }
