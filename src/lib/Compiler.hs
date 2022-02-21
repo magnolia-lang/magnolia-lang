@@ -56,10 +56,10 @@ data Config = Config { -- | Up to (and including) what pass the compiler should
                      , _configWriteToFsBehavior :: WriteToFsBehavior
                        -- | What concepts contain the rewriting rules to use
                        -- for the equational rewriting pass.
-                     , _configEquationsLocation :: [Name]
+                     , _configEquationsLocation :: [FullyQualifiedName ]
                        -- | What programs should be rewritten using the
                        -- rewriting rules.
-                     , _configProgramsToRewrite :: [Name]
+                     , _configProgramsToRewrite :: [FullyQualifiedName]
                      }
 
 -- | Compiler passes
