@@ -1,8 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Magnolia.EquationalRewriting
-
-where
+module Magnolia.EquationalRewriting (
+    runOptimizer
+  )
+  where
 
 import Control.Monad (foldM, join)
 import qualified Data.List.NonEmpty as NE
@@ -30,22 +31,109 @@ runOptimizer (Ann _ optimizer) (Ann tgtDeclO tgtModule) = case optimizer of
     axioms <- gatherAxioms optimizerModuleExpr
     -- 2. inline expressions within axioms (TODO)
     -- 3. gather assertions (directed rewrite rules)
-    equations <- join <$> mapM gatherEquations axioms
+    constraints <- join <$> mapM gatherConstraints axioms
     -- 4. build some kind of assertion scope
     equationalScope <- undefined
     -- 5. traverse each expression in the target module to rewrite it
     let ~(MModule tgtModuleTy tgtModuleName tgtModuleExpr) = tgtModule
     resultModuleExpr <- undefined
     -- 6: wrap it up
-    pure $ Ann tgtDeclO (MModule tgtModuleTy tgtModuleName resultModuleExpr)
+    -- comment out to avoid IDE suggestion
+    --pure $ Ann tgtDeclO (MModule tgtModuleTy tgtModuleName resultModuleExpr)
+    undefined
   _ -> undefined
 
 data AnonymousAxiom = AnonymousAxiom { axiomVariables :: S.Set Name
                                      , axiomBody :: TcExpr
                                      }
 
-gatherEquations :: AnonymousAxiom -> MgMonad [Equation]
-gatherEquations (AnonymousAxiom variables body) = undefined
+-- | Extracts a list of constraints from an axiom. Every assertion involving an
+-- equation found within the body of the axiom produces a (possibly conditional)
+-- constraint. To ensure that this operation works correctly, the parameter's
+-- expression must have been inlined beforehand.
+gatherConstraints :: AnonymousAxiom -> MgMonad [Constraint]
+gatherConstraints (AnonymousAxiom variables bodyExpr) = go bodyExpr
+  where
+    go :: TcExpr -> MgMonad [Constraint]
+    go expr = case _elem expr of
+      MVar _ -> noConstraint
+      MCall {} -> noConstraint
+      MBlockExpr _ statements -> join <$> traverse go (NE.toList statements)
+      MValue valueExpr -> go valueExpr
+      -- TODO(bchetioui): we do not ignore the right hand side block here, but
+      -- I am not sure if this is correct.
+      MLet {} -> noConstraint -- Do we have to do something here?
+      MIf condExpr trueExpr falseExpr -> do
+        undefined -- Conditional equations with condition
+      MAssert assertExpr -> undefined -- Equation logic
+      MSkip -> noConstraint
+
+
+    noConstraint = pure []
+
+-- | Transforms a predicate expression into a 'PredicateAtom'. 'toPredicateAtom'
+-- expects its expression parameter to have been fully inlined.
+-- TODO: right now, we also assume it does not contain "&&", "||", "=>", and
+-- "<=>". Is this a reasonable assumption to make?
+toPredicateAtom :: TcExpr -> MgMonad PredicateAtom
+-- Ensure tcExpr is a predicate
+toPredicateAtom tcExpr | exprTy tcExpr /= Pred =
+  throwNonLocatedE CompilerErr $ "expected predicate when " <>
+    "building predicate atom, but " <> pshow tcExpr <> " has type " <>
+    pshow (exprTy tcExpr)
+toPredicateAtom tcExpr = case _elem tcExpr of
+  MVar {} -> throwNonLocatedE CompilerErr $ "expected fully inlined " <>
+    "expression when building predicate atom, but got variable " <> pshow tcExpr
+  MCall name args _ -> case (name, map exprTy args) of
+    (FuncName "_==_", [Pred, Pred]) -> let ~[lhsExpr, rhsExpr] = args in
+      pure $ PredicateAtom'Equation lhsExpr rhsExpr
+    (FuncName "_!=_", [Pred, Pred]) -> let ~[lhsExpr, rhsExpr] = args in
+      pure $ PredicateAtom'Negation (PredicateAtom'Equation lhsExpr rhsExpr)
+    (FuncName "!_", [Pred]) -> let negExpr = head args in
+      PredicateAtom'Negation <$> toPredicateAtom negExpr
+    -- TODO(bchetioui): what happens here with implication, equivalence, or, and?
+    _ -> pure $ PredicateAtom'Call name args
+  MBlockExpr {} -> unimplemented "block expressions"
+  MValue valueExpr -> toPredicateAtom valueExpr
+  MLet {} -> unexpected $ "let binding " <> pshow tcExpr
+  MIf {} -> unimplemented "if expressions"
+  MAssert {} -> unexpected $ "assertion " <> pshow tcExpr
+  MSkip -> unexpected "skip expression"
+  where
+    unexpected unexpectedSourceInfo = throwNonLocatedE CompilerErr $
+      "unexpected " <> unexpectedSourceInfo <> " when building predicate atom"
+    unimplemented exprKind = throwNonLocatedE NotImplementedErr $
+      "building predicate atoms from " <> exprKind <> " is not implemented"
+
+
+
+
+-- An intersection gives one rewriting rule with two atomic constraints; a
+-- disjunction gives two rewriting rules with an atomic constraint.
+
+-- -- | 'PredicateAtom's represent the subset of Magnolia expressions corresponding
+-- -- to atomic predicates, that is to say equations, calls to custom predicates,
+-- -- or the negation of a predicate.
+-- data PredicateAtom = PredicateAtom'Call Name [TcExpr]
+--                    | PredicateAtom'Equation TcExpr TcExpr
+--                    | PredicateAtom'Negation PredicateAtom
+
+
+--PredicateAtom'Implication PredicateAtom PredicateAtom
+
+
+-- data Equation = Equation { eqnVariables :: S.Set Name
+--                          , eqnSourceExpr :: TcExpr
+--                          , eqnTargetExpr :: TcExpr
+--                          }
+
+-- -- | We represent a condition as the intersection of a set of predicate
+-- -- expressions.
+-- type Condition = S.Set TcExpr
+
+-- data Constraint = Constraint'Equational Equation
+--                 | Constraint'ConditionalEquational Condition Equation
+
 
 -- | Gathers the axioms within a type checked module expression.
 gatherAxioms :: TcModuleExpr -> MgMonad [AnonymousAxiom]
@@ -110,16 +198,20 @@ data Equation = Equation { eqnVariables :: S.Set Name
                          , eqnTargetExpr :: TcExpr
                          }
 
--- Example "Expr" data type
-data Expr = Atom String | Pair Expr Expr
-            deriving (Eq, Show)
+-- | 'PredicateAtom's represent the subset of Magnolia expressions corresponding
+-- to atomic predicates, that is to say equations, calls to custom predicates,
+-- or the negation of a predicate.
+data PredicateAtom = PredicateAtom'Call Name [TcExpr]
+                   | PredicateAtom'Equation TcExpr TcExpr
+                   | PredicateAtom'Negation PredicateAtom
 
-type Condition = Expr
+-- | We represent a condition as the intersection of a set of predicate
+-- expressions.
+type Condition = S.Set PredicateAtom
 
---data Equation = Equation { sourceExpr :: TcExpr, targetExpr :: TcExpr }
-
-data Axiom = Axiom'Equational Equation
-           | Axiom'Conditional Condition Equation
+-- TODO: how to deal with variables in predicates?
+data Constraint = Constraint'Equational Equation
+                | Constraint'ConditionalEquational Condition Equation
 
 -- Note: Strategy for rewriting
 -- We have two kinds of rewritings: rewritings based on conditional equational
