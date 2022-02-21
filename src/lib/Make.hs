@@ -12,7 +12,7 @@ module Make (
   )
   where
 
-import Control.Monad (foldM, unless)
+import Control.Monad (foldM, join, unless)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.Graph as G
 import qualified Data.List as L
@@ -21,6 +21,7 @@ import qualified Data.Map as M
 import Cxx.Syntax
 import Env
 import Magnolia.Check
+import Magnolia.EquationalRewriting
 import Magnolia.Parser
 import Magnolia.PPrint
 import Magnolia.Syntax
@@ -70,8 +71,57 @@ programCodegenPyPass = foldMAccumErrorsAndFail
 -- | This function takes in a list of concept names containing rewriting rules
 -- (in the forms of equational assertions, in axioms), a list of program
 -- names on which to apply them, TODO: complete
-rewritePass :: [Name] -> [Name] -> Env TcPackage -> MgMonad (Env TcPackage)
-rewritePass = undefined
+rewritePass :: [FullyQualifiedName]
+            -> [FullyQualifiedName]
+            -> Env TcPackage
+            -> MgMonad (Env TcPackage)
+rewritePass rewritingRulesLocations programsToRewriteLocations env = do
+  liftIO $ pprint rewritingRulesLocations
+  rewritingModules <- mapM findModule rewritingRulesLocations
+  programsToRewrite <- mapM findModule programsToRewriteLocations
+  let rewriteAll tgts rewModule = mapM (applyRewritingModule rewModule) tgts
+  rewrittenProgramsWithNames <- zip programsToRewriteLocations <$>
+    foldM rewriteAll programsToRewrite rewritingModules
+  foldM (\env' (fqn, program) -> insertModule program env' fqn) env
+        rewrittenProgramsWithNames
+  where
+    applyRewritingModule :: TcModule -> TcModule -> MgMonad TcModule
+    applyRewritingModule = runOptimizer
+
+    findModule :: FullyQualifiedName -> MgMonad TcModule
+    findModule fqn = case fqn of
+      FullyQualifiedName Nothing n -> invalidFullyQualifiedName n
+      FullyQualifiedName (Just packageName) _ -> enter packageName $
+        case M.lookup packageName env of
+          Nothing -> throwNonLocatedE MiscErr $ "module " <> pshow fqn <>
+            " does not exist, because package name does not exist"
+          Just (Ann src package) -> lookupTopLevelRef src
+            (M.map getModules (_packageDecls package)) fqn
+
+    insertModule :: TcModule
+                 -> Env TcPackage
+                 -> FullyQualifiedName
+                 -> MgMonad (Env TcPackage)
+    insertModule newModule env' fqn = do
+      oldModule <- findModule fqn
+      -- 'findModule fqn' ensures that the fully qualified name contains a
+      -- package name as expected. We can hence pattern match lazily below.
+      let ~(FullyQualifiedName (Just packageName) moduleName) = fqn
+      (Ann src oldPackage) <- case M.lookup packageName env' of
+        Nothing -> throwNonLocatedE MiscErr $ "module " <> pshow fqn <>
+          " does not exist, because package name does not exist"
+        Just tcPackage -> pure tcPackage
+      let oldDecls = _packageDecls oldPackage
+          edit new old = new <> filter (MModuleDecl oldModule /=) old
+          newDecls = M.insertWith edit moduleName
+            [MModuleDecl newModule] oldDecls
+          newPackage = Ann src $ oldPackage { _packageDecls = newDecls }
+      pure $ M.insert packageName newPackage env'
+
+    invalidFullyQualifiedName :: Name -> MgMonad a
+    invalidFullyQualifiedName moduleName =
+      throwNonLocatedE CompilerErr $ "expected fully qualified name in " <>
+        "rewrite pass but got module name " <> pshow moduleName
 
 -- | Checks if a list of strongly connected components contains cycles.
 -- Does not fail, but logs an error for each detected cycle. The resulting

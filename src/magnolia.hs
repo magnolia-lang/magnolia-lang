@@ -87,18 +87,18 @@ parseCompilerMode = mkInfo compilerMode
                     "(defaults to the output directory)"))
 
     optEquationsLocation =
-      option (map ModName . splitOn ',' <$> str)
+      option (map toFullyQualifiedModuleName . splitOn ',' <$> str)
              (long "equations-location" <> value [] <>
               short 'e' <>
-              help ("Comma-separated list of concept names in which to " <>
-                    "look for rewriting rules"))
+              help ("Comma-separated list of fully qualified concept names " <>
+                    "in which to look for rewriting rules"))
 
     optProgramsToRewrite =
-      option (map ModName . splitOn ',' <$> str)
+      option (map toFullyQualifiedModuleName . splitOn ',' <$> str)
              (long "programs-to-rewrite" <> value [] <>
               short 'r' <>
-              help ("Comma-separated list of program names on which to " <>
-                    "apply rewriting rules"))
+              help ("Comma-separated list of fully qualified program names " <>
+                    "on which to apply rewriting rules"))
 
     splitOn :: Eq a => a -> [a] -> [[a]]
     splitOn sep list = case list of
@@ -106,6 +106,14 @@ parseCompilerMode = mkInfo compilerMode
       (a:as) -> if a == sep
         then []:splitOn sep as
         else let (as':ass) = splitOn sep as in (a:as'):ass
+
+    toFullyQualifiedModuleName :: String -> FullyQualifiedName
+    toFullyQualifiedModuleName s = case splitOn '.' s of
+      [] -> error "unreachable code" -- can not happen?
+      [moduleString] -> FullyQualifiedName Nothing (ModName moduleString)
+      fullyQualifiedString -> FullyQualifiedName
+        (Just $ PkgName (L.intercalate "." (init fullyQualifiedString)))
+        (ModName $ last fullyQualifiedString)
 
     passOpts = [ ("check", CheckPass)
                , ("self-contained-codegen", SelfContainedProgramCodegenPass)
