@@ -267,15 +267,23 @@ data MTopLevelDecl p = MNamedRenamingDecl (MNamedRenaming p)
                      | MModuleDecl (MModule p)
                      | MSatisfactionDecl (MSatisfaction p)
 
+deriving instance Eq (MTopLevelDecl PhCheck)
+
 type MNamedRenaming p = Ann p MNamedRenaming'
 data MNamedRenaming' p = MNamedRenaming Name (MRenamingBlock p)
+
+deriving instance Eq (MNamedRenaming' PhCheck)
 
 type MSatisfaction p = Ann p MSatisfaction'
 data MSatisfaction' p =
   MSatisfaction Name (MModuleExpr p) (Maybe (MModuleExpr p)) (MModuleExpr p)
 
+deriving instance Eq (MSatisfaction' PhCheck)
+
 type MModule p = Ann p MModule'
 data MModule' p = MModule MModuleType Name (MModuleExpr p)
+
+deriving instance Eq (MModule' PhCheck)
 
 type MModuleExpr p = Ann p MModuleExpr'
 data MModuleExpr' p =
@@ -285,6 +293,8 @@ data MModuleExpr' p =
   | MModuleAsSignature (XRef p) [MRenamingBlock p]
   | MModuleExternal Backend FullyQualifiedName (XExternalModule p)
 
+deriving instance Eq (MModuleExpr' PhCheck)
+
 -- Expose out for DAG building
 type MModuleDep p = Ann p MModuleDep'
 -- Represents a dependency to a module with an associated list of renaming
@@ -293,6 +303,8 @@ data MModuleDep' p =
   MModuleDep { _mmoduleDepType :: MModuleDepType
              , _mmoduleDepModuleExpr :: MModuleExpr p
              }
+
+deriving instance Eq (MModuleDep' PhCheck)
 
 data MModuleDepType = MModuleDepRequire | MModuleDepUse
                       deriving (Eq, Show)
@@ -305,12 +317,16 @@ data MModuleDepType = MModuleDepRequire | MModuleDepUse
 type MRenamingBlock p = Ann p MRenamingBlock'
 data MRenamingBlock' p = MRenamingBlock MRenamingBlockType [MRenaming p]
 
+deriving instance Eq (MRenamingBlock' PhCheck)
+
 data MRenamingBlockType = PartialRenamingBlock | TotalRenamingBlock
                           deriving (Eq, Show)
 
 type MRenaming p = Ann p MRenaming'
 data MRenaming' p = InlineRenaming InlineRenaming
                   | RefRenaming (XRef p)
+
+deriving instance Eq (MRenaming' PhCheck)
 
 type InlineRenaming = (Name, Name)
 
