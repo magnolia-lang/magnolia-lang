@@ -143,23 +143,31 @@ namespace moa_cpp {
 
 
 
-    ArrayProgram::_add ArrayProgram::add;
+    ArrayProgram::_binary_add ArrayProgram::binary_add;
 
 
 
-    ArrayProgram::_equals ArrayProgram::equals;
+    ArrayProgram::_binary_sub ArrayProgram::binary_sub;
 
 
 
-    ArrayProgram::_isLowerThan ArrayProgram::isLowerThan;
+    ArrayProgram::_div ArrayProgram::div;
 
 
 
-    ArrayProgram::_mult ArrayProgram::mult;
+    ArrayProgram::_eq ArrayProgram::eq;
 
 
 
-    ArrayProgram::_sub ArrayProgram::sub;
+    ArrayProgram::_lt ArrayProgram::lt;
+
+
+
+    ArrayProgram::_mul ArrayProgram::mul;
+
+
+
+    ArrayProgram::_unary_sub ArrayProgram::unary_sub;
 
 
 

@@ -13,13 +13,17 @@ implementation MoaOps = {
 
     use ExtOps;
 
+    require type Element;
     require function zero(): Element;
     require function one(): Element;
-    require function add(a: Element, b: Element): Element;
-    require function sub(a: Element, b: Element): Element;
-    require function mult(a: Element, b: Element): Element;
-    require predicate equals(a: Element, b: Element);
-    require predicate isLowerThan(a: Element, b: Element);
+    require function _+_(a: Element, b: Element): Element;
+    require function _*_(a: Element, b: Element): Element;
+    require function _-_(a: Element, b: Element): Element;
+    require function _/_(a: Element, b: Element): Element;
+    require function -_(a: Element): Element;
+    require predicate _==_(a: Element, b: Element);
+    require predicate _<_(a: Element, b: Element);
+
 }
 
 signature VectorReductionSig = {
@@ -35,20 +39,20 @@ signature VectorReductionSig = {
 
 }
 
-implementation VectorReduction = {
+implementation VectorReductionImpl = {
 
     use MoaOps;
     use VectorReductionSig;
 
     predicate reduce_cond(input: Array, res: Element, c: UInt32) = {
-        value isLowerThan(uint_elem(c), uint_elem(total(input)));
+        value uint_elem(c) < uint_elem(total(input));
     }
 
     procedure reduce_body(obs input: Array, upd res: Element, upd c: UInt32) {
 
         var current_element = unwrap_scalar(get(input, c));
         res = bop(res, current_element);
-        c = elem_uint(add(uint_elem(c), one()));
+        c = elem_uint(uint_elem(c) + one());
 
     }
 
@@ -76,10 +80,10 @@ implementation Reshape = {
 
     procedure reshape_body(obs old_array: Array, upd new_array: Array, upd counter: UInt32) {
         call set(new_array, counter, unwrap_scalar(get(old_array, counter)));
-        counter = elem_uint(add(uint_elem(counter), one()));
+        counter = elem_uint(uint_elem(counter) + one());
     }
     predicate reshape_cond(old_array: Array, new_array: Array, counter: UInt32) {
-       value isLowerThan(uint_elem(counter), uint_elem(total(new_array)));
+       value uint_elem(counter) < uint_elem(total(new_array));
     }
 
     use WhileLoop1_2[Context1 => Array,
@@ -112,7 +116,7 @@ implementation Transformations = {
     #####################
     */
     predicate upper_bound(a: Array, i: IndexContainer, res: Array, c: UInt32) = {
-        value isLowerThan(uint_elem(c), uint_elem(total(i)));
+        value uint_elem(c) < uint_elem(total(i));
     }
 
     procedure transpose_body(obs a: Array,
@@ -124,7 +128,7 @@ implementation Transformations = {
 
         var current_element = unwrap_scalar(get(a, reverse_index(current_ix)));
         call set(res, current_ix, current_element);
-        c = elem_uint(add(uint_elem(c), one()));
+        c = elem_uint(uint_elem(c) + one());
     }
 
      use WhileLoop2_2[Context1 => Array,
@@ -153,7 +157,7 @@ implementation Transformations = {
     */
 
     predicate padded_upper_bound(a: PaddedArray, i: IndexContainer, res: PaddedArray, c: UInt32) = {
-        value isLowerThan(uint_elem(c), uint_elem(total(i)));
+        value uint_elem(c) < uint_elem(total(i));
     }
 
     procedure padded_transpose_body(obs a: PaddedArray,
@@ -165,7 +169,7 @@ implementation Transformations = {
 
         var current_element = unwrap_scalar(get(a, reverse_index(current_ix)));
         call set(res, current_ix, current_element);
-        c = elem_uint(add(uint_elem(c), one()));
+        c = elem_uint(uint_elem(c) + one());
     }
 
     use WhileLoop2_2[Context1 => PaddedArray,
@@ -200,17 +204,17 @@ implementation Transformations = {
 
         var sh_0 = get_shape_elem(input, elem_uint(zero()));
         var ix_0 = get_index_elem(ix, elem_uint(zero()));
-        var new_ix_0 = sub(uint_elem(sh_0), add(uint_elem(ix_0), one()));
+        var new_ix_0 = uint_elem(sh_0) - (uint_elem(ix_0) + one());
 
         var new_ix = cat_index(create_index1(elem_uint(new_ix_0)), drop_index_elem(ix, elem_uint(zero())));
         call set(res, new_ix, elem);
 
-        c = elem_uint(add(uint_elem(c), one()));
+        c = elem_uint(uint_elem(c) + one());
     }
 
     predicate reverse_cond(input: Array, indices: IndexContainer, res: Array, c: UInt32) = {
 
-        value isLowerThan(uint_elem(c), uint_elem(total(indices)));
+        value uint_elem(c) < uint_elem(total(indices));
     }
 
     use WhileLoop2_2[Context1 => Array,
@@ -259,21 +263,21 @@ implementation Catenation = {
         var ix: Index;
 
         // conditional determining if we should access v1 or v2
-        if isLowerThan(uint_elem(counter), uint_elem(total(v1))) then {
+        if uint_elem(counter) < uint_elem(total(v1)) then {
             ix = create_index1(counter);
             call set(res, ix, unwrap_scalar(get(v1, ix)));
         } else {
-            ix = create_index1(elem_uint(sub(uint_elem(counter), v1_bound)));
+            ix = create_index1(elem_uint(uint_elem(counter) - v1_bound));
             var res_ix = create_index1(counter);
             call set(res, res_ix, unwrap_scalar(get(v2, ix)));
         };
 
-        counter = elem_uint(add(uint_elem(counter), one()));
+        counter = elem_uint(uint_elem(counter) + one());
     }
 
     // determines upper bound for the iterator
     predicate cat_vec_cond(v1: Array, v2: Array, res: Array, counter: UInt32) {
-        value isLowerThan(uint_elem(counter), uint_elem(total(res)));
+        value uint_elem(counter) < uint_elem(total(res));
     }
 
     use WhileLoop2_2[Context1 => Array,
@@ -291,9 +295,9 @@ implementation Catenation = {
     function cat_vec(vector1: Array, vector2: Array): Array
         guard dim(vector1) == elem_uint(one()) && dim(vector2) == elem_uint(one()) {
 
-        var res_shape = create_shape1(elem_uint(add(
-                                          uint_elem(total(vector1)),
-                                          uint_elem(total(vector2)))));
+        var res_shape = create_shape1(elem_uint(
+                                          uint_elem(total(vector1)) +
+                                          uint_elem(total(vector2))));
 
         var res = create_array(res_shape);
         var counter = elem_uint(zero());
@@ -320,21 +324,21 @@ implementation Catenation = {
 
         var s_0 = uint_elem(total(array1));
 
-        if isLowerThan(uint_elem(counter), s_0) then {
+        if uint_elem(counter) < s_0 then {
             call set(res, counter,
                     unwrap_scalar(get(array1,counter)));
-            counter = elem_uint(add(uint_elem(counter), one()));
+            counter = elem_uint(uint_elem(counter) + one());
         } else {
-            var ix = elem_uint(sub(uint_elem(counter), s_0));
+            var ix = elem_uint(uint_elem(counter) - s_0);
             call set(res, counter,
                 unwrap_scalar(get(array2, ix)));
-            counter = elem_uint(add(uint_elem(counter), one()));
+            counter = elem_uint(uint_elem(counter) + one());
         };
     }
 
     predicate cat_cond(array1: Array, array2: Array, counter: UInt32, res: Array) {
         var upper_bound = uint_elem(total(res));
-        value isLowerThan(uint_elem(counter), upper_bound);
+        value uint_elem(counter) < upper_bound;
     }
     use WhileLoop2_2[Context1 => Array,
                      Context2 => Array,
@@ -365,7 +369,7 @@ implementation Catenation = {
         var take_a2 = uint_elem(get_shape_elem(array2, elem_uint(zero())));
         var drop_a1 = drop_shape_elem(array1, elem_uint(zero()));
 
-        var result_shape = cat_shape(create_shape1(elem_uint(add(take_a1, take_a2))), drop_a1);
+        var result_shape = cat_shape(create_shape1(elem_uint(take_a1 + take_a2)), drop_a1);
 
         var res = create_array(result_shape);
 
@@ -479,7 +483,7 @@ implementation InnerProduct = {
         shape(ip(a,b)) = cat(drop(-1,shape(a)), drop(1, shape(b)))
         */
 
-        var shape_a_last_ix = elem_uint(sub(uint_elem(total(shape(a))), one()));
+        var shape_a_last_ix = elem_uint(uint_elem(total(shape(a))) - one());
 
         var sh_a_drop_last = drop_shape_elem(a, shape_a_last_ix);
         var sh_b_drop_first = drop_shape_elem(b, elem_uint(zero()));
@@ -529,11 +533,11 @@ implementation BMapVectorImpl = {
 
         call set(v, c, new_value);
 
-        c = elem_uint(add(uint_elem(c), one()));
+        c = elem_uint(uint_elem(c) + one());
     }
 
     predicate bmapvector_cond(e: Element, v: Array, c: UInt32) {
-        value isLowerThan(uint_elem(c), uint_elem(total(v)));
+        value uint_elem(c) < uint_elem(total(v));
     }
 
     use WhileLoop1_2[Context1 => Element,
@@ -554,19 +558,19 @@ implementation MatMult2D = {
 
     use Padding;
 
-    use VectorReduction[bop => add, id => zero,
-                        reduce => reduce_vec_add,
-                        reduce_body => reduce_body_add,
-                        repeat => repeat_reduce_vec_add];
+    use VectorReductionImpl[bop => _+_, id => zero,
+                            reduce => reduce_vec_add,
+                            reduce_body => reduce_body_add,
+                            repeat => repeat_reduce_vec_add];
 
-    use VectorReduction[bop => mult, id => one,
-                        repeat => repeat_reduce_vec_mult,
-                        reduce => reduce_vec_mult];
+    use VectorReductionImpl[bop => _*_, id => one,
+                            repeat => repeat_reduce_vec_mult,
+                            reduce => reduce_vec_mult];
 
-    use BMapVectorImpl[bop => add, bopmap_vec => bopmap_vec_add,
+    use BMapVectorImpl[bop => _+_, bopmap_vec => bopmap_vec_add,
                        bmapvector_body => bmapvector_body_add,
                        bmapvector_repeat => bmapvector_repeat_add];
-    use BMapVectorImpl[bop => mult, bopmap_vec => bopmap_vec_mult];
+    use BMapVectorImpl[bop => _*_, bopmap_vec => bopmap_vec_mult];
 
 
 
@@ -576,13 +580,13 @@ implementation MatMult2D = {
 
         var elem = unwrap_scalar(get(v, c));
 
-        call set(res, c, add(unwrap_scalar(get(res,c)),elem));
+        call set(res, c, unwrap_scalar(get(res,c)) + elem);
 
-        c = elem_uint(add(uint_elem(c), one()));
+        c = elem_uint(uint_elem(c) + one());
     }
 
     predicate pointwise_cond(v: Array, res: Array, c: UInt32) {
-        value isLowerThan(uint_elem(c), uint_elem(total(res)));
+        value uint_elem(c) < uint_elem(total(res));
     }
 
     use WhileLoop1_2[Context1 => Array,
@@ -629,7 +633,7 @@ implementation MatMult2D = {
 
         res = pointwise_add(res, k_from_a2);
 
-        counter = elem_uint(add(uint_elem(counter), one()));
+        counter = elem_uint(uint_elem(counter) + one());
 
     }
 
@@ -638,7 +642,7 @@ implementation MatMult2D = {
                                  ixc_k: IndexContainer, res: Array,
                                  c: UInt32) {
 
-        value isLowerThan(uint_elem(c), uint_elem(total(ixc_k)));
+        value uint_elem(c) < uint_elem(total(ixc_k));
     }
 
     use WhileLoop5_2[Context1 => Array,
@@ -673,7 +677,7 @@ implementation MatMult2D = {
 
         call set(res, cat_index(ix_i, ix_j), reduced);
 
-        counter = elem_uint(add(uint_elem(counter), one()));
+        counter = elem_uint(uint_elem(counter) + one());
     }
 
     predicate middle_matmult_cond(a1: Array, a2: Array,
@@ -681,7 +685,7 @@ implementation MatMult2D = {
                                  ixc_k: IndexContainer, res: Array,
                                  c: UInt32) {
 
-        value isLowerThan(uint_elem(c), uint_elem(total(ixc_j)));
+        value uint_elem(c) < uint_elem(total(ixc_j));
     }
 
     use WhileLoop5_2[Context1 => Array,
@@ -708,7 +712,7 @@ implementation MatMult2D = {
 
         call middle_matmult_repeat(a1,a2,ix_i,ixc_j,ixc_k,res,middle_counter);
 
-        counter = elem_uint(add(uint_elem(counter), one()));
+        counter = elem_uint(uint_elem(counter) + one());
     }
 
     predicate matmult2d_cond(a1: Array, a2: Array,
@@ -716,7 +720,7 @@ implementation MatMult2D = {
                                  ixc_k: IndexContainer, res: Array,
                                  c: UInt32) {
 
-      value isLowerThan(uint_elem(c), uint_elem(total(ixc_i)));
+      value uint_elem(c) < uint_elem(total(ixc_i));
     }
 
     use WhileLoop5_2[Context1 => Array,
@@ -733,7 +737,7 @@ implementation MatMult2D = {
 
     function matmult2d(a1: Array, a2: Array): Array = {
 
-        var shape_a1_last_ix = elem_uint(sub(uint_elem(total(shape(a1))), one()));
+        var shape_a1_last_ix = elem_uint(uint_elem(total(shape(a1))) - one());
 
         var sh_a1_drop_last = drop_shape_elem(a1, shape_a1_last_ix);
         var sh_a2_drop_first = drop_shape_elem(a2, elem_uint(zero()));
@@ -761,7 +765,13 @@ program ArrayProgram = {
     use Int32Utils;
     use Float64Utils;
 
-    use MatMult2D[Element => Int32];
+    use MatMult2D[Element => Int32,
+                  _+_ => binary_add,
+                  _-_ => binary_sub,
+                  -_ => unary_sub,
+                  _*_ => mul,
+                  _/_ => div,
+                  _<_ => lt];
     //use Padding[Element => Float64];
 
 }

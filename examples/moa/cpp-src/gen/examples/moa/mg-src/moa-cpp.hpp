@@ -166,7 +166,7 @@ public:
             ArrayProgram::Index current_ix = ArrayProgram::get_index_ixc(ixc, c);
             ArrayProgram::Int32 current_element = ArrayProgram::unwrap_scalar(ArrayProgram::get(a, ArrayProgram::reverse_index(current_ix)));
             ArrayProgram::set(res, current_ix, current_element);
-            c = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
+            c = ArrayProgram::elem_uint(ArrayProgram::binary_add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
         };
     };
 
@@ -180,7 +180,7 @@ public:
     static ArrayProgram::_padded_transpose_repeat padded_transpose_repeat;
     struct _padded_upper_bound {
         inline bool operator()(const ArrayProgram::PaddedArray& a, const ArrayProgram::IndexContainer& i, const ArrayProgram::PaddedArray& res, const ArrayProgram::UInt32& c) {
-            return ArrayProgram::isLowerThan(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(i)));
+            return ArrayProgram::lt(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(i)));
         };
     };
 
@@ -267,56 +267,76 @@ public:
 
     static ArrayProgram::_test_index test_index;
     typedef float64_utils::Float64 Float64;
-    struct _add {
+    struct _binary_add {
         inline ArrayProgram::Int32 operator()(const ArrayProgram::Int32& a, const ArrayProgram::Int32& b) {
-            return __int32_utils.add(a, b);
+            return __int32_utils.binary_add(a, b);
         };
         inline ArrayProgram::Float64 operator()(const ArrayProgram::Float64& a, const ArrayProgram::Float64& b) {
-            return __float64_utils.add(a, b);
+            return __float64_utils.binary_add(a, b);
         };
     };
 
-    static ArrayProgram::_add add;
-    struct _equals {
+    static ArrayProgram::_binary_add binary_add;
+    struct _binary_sub {
+        inline ArrayProgram::Int32 operator()(const ArrayProgram::Int32& a, const ArrayProgram::Int32& b) {
+            return __int32_utils.binary_sub(a, b);
+        };
+        inline ArrayProgram::Float64 operator()(const ArrayProgram::Float64& a, const ArrayProgram::Float64& b) {
+            return __float64_utils.binary_sub(a, b);
+        };
+    };
+
+    static ArrayProgram::_binary_sub binary_sub;
+    struct _div {
+        inline ArrayProgram::Int32 operator()(const ArrayProgram::Int32& a, const ArrayProgram::Int32& b) {
+            return __int32_utils.div(a, b);
+        };
+        inline ArrayProgram::Float64 operator()(const ArrayProgram::Float64& a, const ArrayProgram::Float64& b) {
+            return __float64_utils.div(a, b);
+        };
+    };
+
+    static ArrayProgram::_div div;
+    struct _eq {
+        inline bool operator()(const ArrayProgram::Float64& a, const ArrayProgram::Float64& b) {
+            return __float64_utils.eq(a, b);
+        };
         inline bool operator()(const ArrayProgram::Int32& a, const ArrayProgram::Int32& b) {
-            return __int32_utils.equals(a, b);
+            return __int32_utils.eq(a, b);
+        };
+    };
+
+    static ArrayProgram::_eq eq;
+    struct _lt {
+        inline bool operator()(const ArrayProgram::Int32& a, const ArrayProgram::Int32& b) {
+            return __int32_utils.lt(a, b);
         };
         inline bool operator()(const ArrayProgram::Float64& a, const ArrayProgram::Float64& b) {
-            return __float64_utils.equals(a, b);
+            return __float64_utils.lt(a, b);
         };
     };
 
-    static ArrayProgram::_equals equals;
-    struct _isLowerThan {
-        inline bool operator()(const ArrayProgram::Int32& a, const ArrayProgram::Int32& b) {
-            return __int32_utils.isLowerThan(a, b);
-        };
-        inline bool operator()(const ArrayProgram::Float64& a, const ArrayProgram::Float64& b) {
-            return __float64_utils.isLowerThan(a, b);
-        };
-    };
-
-    static ArrayProgram::_isLowerThan isLowerThan;
-    struct _mult {
+    static ArrayProgram::_lt lt;
+    struct _mul {
         inline ArrayProgram::Int32 operator()(const ArrayProgram::Int32& a, const ArrayProgram::Int32& b) {
-            return __int32_utils.mult(a, b);
+            return __int32_utils.mul(a, b);
         };
         inline ArrayProgram::Float64 operator()(const ArrayProgram::Float64& a, const ArrayProgram::Float64& b) {
-            return __float64_utils.mult(a, b);
+            return __float64_utils.mul(a, b);
         };
     };
 
-    static ArrayProgram::_mult mult;
-    struct _sub {
-        inline ArrayProgram::Int32 operator()(const ArrayProgram::Int32& a, const ArrayProgram::Int32& b) {
-            return __int32_utils.sub(a, b);
+    static ArrayProgram::_mul mul;
+    struct _unary_sub {
+        inline ArrayProgram::Int32 operator()(const ArrayProgram::Int32& a) {
+            return __int32_utils.unary_sub(a);
         };
-        inline ArrayProgram::Float64 operator()(const ArrayProgram::Float64& a, const ArrayProgram::Float64& b) {
-            return __float64_utils.sub(a, b);
+        inline ArrayProgram::Float64 operator()(const ArrayProgram::Float64& a) {
+            return __float64_utils.unary_sub(a);
         };
     };
 
-    static ArrayProgram::_sub sub;
+    static ArrayProgram::_unary_sub unary_sub;
 private:
     static inline void one0(ArrayProgram::Float64& o) {
         o = __float64_utils.one();
@@ -328,25 +348,25 @@ public:
     typedef array<ArrayProgram::Int32>::Array Array;
     struct _bmapvector_body {
         inline void operator()(const ArrayProgram::Int32& e, ArrayProgram::Array& v, ArrayProgram::UInt32& c) {
-            ArrayProgram::Int32 new_value = ArrayProgram::mult(e, ArrayProgram::unwrap_scalar(ArrayProgram::get(v, c)));
+            ArrayProgram::Int32 new_value = ArrayProgram::mul(e, ArrayProgram::unwrap_scalar(ArrayProgram::get(v, c)));
             ArrayProgram::set(v, c, new_value);
-            c = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
+            c = ArrayProgram::elem_uint(ArrayProgram::binary_add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
         };
     };
 
     static ArrayProgram::_bmapvector_body bmapvector_body;
     struct _bmapvector_body_add {
         inline void operator()(const ArrayProgram::Int32& e, ArrayProgram::Array& v, ArrayProgram::UInt32& c) {
-            ArrayProgram::Int32 new_value = ArrayProgram::add(e, ArrayProgram::unwrap_scalar(ArrayProgram::get(v, c)));
+            ArrayProgram::Int32 new_value = ArrayProgram::binary_add(e, ArrayProgram::unwrap_scalar(ArrayProgram::get(v, c)));
             ArrayProgram::set(v, c, new_value);
-            c = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
+            c = ArrayProgram::elem_uint(ArrayProgram::binary_add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
         };
     };
 
     static ArrayProgram::_bmapvector_body_add bmapvector_body_add;
     struct _bmapvector_cond {
         inline bool operator()(const ArrayProgram::Int32& e, const ArrayProgram::Array& v, const ArrayProgram::UInt32& c) {
-            return ArrayProgram::isLowerThan(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(v)));
+            return ArrayProgram::lt(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(v)));
         };
     };
 
@@ -390,7 +410,7 @@ public:
             ArrayProgram::Int32 take_a1 = ArrayProgram::uint_elem(ArrayProgram::get_shape_elem(array1, ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>())));
             ArrayProgram::Int32 take_a2 = ArrayProgram::uint_elem(ArrayProgram::get_shape_elem(array2, ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>())));
             ArrayProgram::Shape drop_a1 = ArrayProgram::drop_shape_elem(array1, ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>()));
-            ArrayProgram::Shape result_shape = ArrayProgram::cat_shape(ArrayProgram::create_shape1(ArrayProgram::elem_uint(ArrayProgram::add(take_a1, take_a2))), drop_a1);
+            ArrayProgram::Shape result_shape = ArrayProgram::cat_shape(ArrayProgram::create_shape1(ArrayProgram::elem_uint(ArrayProgram::binary_add(take_a1, take_a2))), drop_a1);
             ArrayProgram::Array res = ArrayProgram::create_array(result_shape);
             ArrayProgram::UInt32 counter = ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>());
             ArrayProgram::cat_repeat(array1, array2, counter, res);
@@ -402,16 +422,16 @@ public:
     struct _cat_body {
         inline void operator()(const ArrayProgram::Array& array1, const ArrayProgram::Array& array2, ArrayProgram::UInt32& counter, ArrayProgram::Array& res) {
             ArrayProgram::Int32 s_0 = ArrayProgram::uint_elem(ArrayProgram::total(array1));
-            if (ArrayProgram::isLowerThan(ArrayProgram::uint_elem(counter), s_0))
+            if (ArrayProgram::lt(ArrayProgram::uint_elem(counter), s_0))
             {
                 ArrayProgram::set(res, counter, ArrayProgram::unwrap_scalar(ArrayProgram::get(array1, counter)));
-                counter = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(counter), ArrayProgram::one.operator()<Int32>()));
+                counter = ArrayProgram::elem_uint(ArrayProgram::binary_add(ArrayProgram::uint_elem(counter), ArrayProgram::one.operator()<Int32>()));
             }
             else
             {
-                ArrayProgram::UInt32 ix = ArrayProgram::elem_uint(ArrayProgram::sub(ArrayProgram::uint_elem(counter), s_0));
+                ArrayProgram::UInt32 ix = ArrayProgram::elem_uint(ArrayProgram::binary_sub(ArrayProgram::uint_elem(counter), s_0));
                 ArrayProgram::set(res, counter, ArrayProgram::unwrap_scalar(ArrayProgram::get(array2, ix)));
-                counter = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(counter), ArrayProgram::one.operator()<Int32>()));
+                counter = ArrayProgram::elem_uint(ArrayProgram::binary_add(ArrayProgram::uint_elem(counter), ArrayProgram::one.operator()<Int32>()));
             }
         };
     };
@@ -420,7 +440,7 @@ public:
     struct _cat_cond {
         inline bool operator()(const ArrayProgram::Array& array1, const ArrayProgram::Array& array2, const ArrayProgram::UInt32& counter, const ArrayProgram::Array& res) {
             ArrayProgram::Int32 upper_bound = ArrayProgram::uint_elem(ArrayProgram::total(res));
-            return ArrayProgram::isLowerThan(ArrayProgram::uint_elem(counter), upper_bound);
+            return ArrayProgram::lt(ArrayProgram::uint_elem(counter), upper_bound);
         };
     };
 
@@ -437,7 +457,7 @@ public:
     static ArrayProgram::_cat_repeat cat_repeat;
     struct _cat_vec {
         inline ArrayProgram::Array operator()(const ArrayProgram::Array& vector1, const ArrayProgram::Array& vector2) {
-            ArrayProgram::Shape res_shape = ArrayProgram::create_shape1(ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(ArrayProgram::total(vector1)), ArrayProgram::uint_elem(ArrayProgram::total(vector2)))));
+            ArrayProgram::Shape res_shape = ArrayProgram::create_shape1(ArrayProgram::elem_uint(ArrayProgram::binary_add(ArrayProgram::uint_elem(ArrayProgram::total(vector1)), ArrayProgram::uint_elem(ArrayProgram::total(vector2)))));
             ArrayProgram::Array res = ArrayProgram::create_array(res_shape);
             ArrayProgram::UInt32 counter = ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>());
             ArrayProgram::cat_vec_repeat(vector1, vector2, res, counter);
@@ -450,25 +470,25 @@ public:
         inline void operator()(const ArrayProgram::Array& v1, const ArrayProgram::Array& v2, ArrayProgram::Array& res, ArrayProgram::UInt32& counter) {
             ArrayProgram::Int32 v1_bound = ArrayProgram::uint_elem(ArrayProgram::total(v1));
             ArrayProgram::Index ix;
-            if (ArrayProgram::isLowerThan(ArrayProgram::uint_elem(counter), ArrayProgram::uint_elem(ArrayProgram::total(v1))))
+            if (ArrayProgram::lt(ArrayProgram::uint_elem(counter), ArrayProgram::uint_elem(ArrayProgram::total(v1))))
             {
                 ix = ArrayProgram::create_index1(counter);
                 ArrayProgram::set(res, ix, ArrayProgram::unwrap_scalar(ArrayProgram::get(v1, ix)));
             }
             else
             {
-                ix = ArrayProgram::create_index1(ArrayProgram::elem_uint(ArrayProgram::sub(ArrayProgram::uint_elem(counter), v1_bound)));
+                ix = ArrayProgram::create_index1(ArrayProgram::elem_uint(ArrayProgram::binary_sub(ArrayProgram::uint_elem(counter), v1_bound)));
                 ArrayProgram::Index res_ix = ArrayProgram::create_index1(counter);
                 ArrayProgram::set(res, res_ix, ArrayProgram::unwrap_scalar(ArrayProgram::get(v2, ix)));
             }
-            counter = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(counter), ArrayProgram::one.operator()<Int32>()));
+            counter = ArrayProgram::elem_uint(ArrayProgram::binary_add(ArrayProgram::uint_elem(counter), ArrayProgram::one.operator()<Int32>()));
         };
     };
 
     static ArrayProgram::_cat_vec_body cat_vec_body;
     struct _cat_vec_cond {
         inline bool operator()(const ArrayProgram::Array& v1, const ArrayProgram::Array& v2, const ArrayProgram::Array& res, const ArrayProgram::UInt32& counter) {
-            return ArrayProgram::isLowerThan(ArrayProgram::uint_elem(counter), ArrayProgram::uint_elem(ArrayProgram::total(res)));
+            return ArrayProgram::lt(ArrayProgram::uint_elem(counter), ArrayProgram::uint_elem(ArrayProgram::total(res)));
         };
     };
 
@@ -598,14 +618,14 @@ public:
             ArrayProgram::bopmap_vec_mult(ArrayProgram::unwrap_scalar(ik_from_a1), k_from_a2);
             ArrayProgram::print_array(k_from_a2);
             res = ArrayProgram::pointwise_add(res, k_from_a2);
-            counter = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(counter), ArrayProgram::one.operator()<Int32>()));
+            counter = ArrayProgram::elem_uint(ArrayProgram::binary_add(ArrayProgram::uint_elem(counter), ArrayProgram::one.operator()<Int32>()));
         };
     };
 
     static ArrayProgram::_inner_matmult_body inner_matmult_body;
     struct _inner_matmult_cond {
         inline bool operator()(const ArrayProgram::Array& a1, const ArrayProgram::Array& a2, const ArrayProgram::Index& ix_i, const ArrayProgram::Index& ix_j, const ArrayProgram::IndexContainer& ixc_k, const ArrayProgram::Array& res, const ArrayProgram::UInt32& c) {
-            return ArrayProgram::isLowerThan(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(ixc_k)));
+            return ArrayProgram::lt(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(ixc_k)));
         };
     };
 
@@ -622,7 +642,7 @@ public:
     static ArrayProgram::_inner_matmult_repeat inner_matmult_repeat;
     struct _matmult2d {
         inline ArrayProgram::Array operator()(const ArrayProgram::Array& a1, const ArrayProgram::Array& a2) {
-            ArrayProgram::UInt32 shape_a1_last_ix = ArrayProgram::elem_uint(ArrayProgram::sub(ArrayProgram::uint_elem(ArrayProgram::total(ArrayProgram::shape(a1))), ArrayProgram::one.operator()<Int32>()));
+            ArrayProgram::UInt32 shape_a1_last_ix = ArrayProgram::elem_uint(ArrayProgram::binary_sub(ArrayProgram::uint_elem(ArrayProgram::total(ArrayProgram::shape(a1))), ArrayProgram::one.operator()<Int32>()));
             ArrayProgram::Shape sh_a1_drop_last = ArrayProgram::drop_shape_elem(a1, shape_a1_last_ix);
             ArrayProgram::Shape sh_a2_drop_first = ArrayProgram::drop_shape_elem(a2, ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>()));
             ArrayProgram::Shape ip_shape = ArrayProgram::cat_shape(sh_a1_drop_last, sh_a2_drop_first);
@@ -643,14 +663,14 @@ public:
             ArrayProgram::Index ix_i = ArrayProgram::get_index_ixc(ixc_i, counter);
             ArrayProgram::UInt32 middle_counter = ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>());
             ArrayProgram::middle_matmult_repeat(a1, a2, ix_i, ixc_j, ixc_k, res, middle_counter);
-            counter = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(counter), ArrayProgram::one.operator()<Int32>()));
+            counter = ArrayProgram::elem_uint(ArrayProgram::binary_add(ArrayProgram::uint_elem(counter), ArrayProgram::one.operator()<Int32>()));
         };
     };
 
     static ArrayProgram::_matmult2d_body matmult2d_body;
     struct _matmult2d_cond {
         inline bool operator()(const ArrayProgram::Array& a1, const ArrayProgram::Array& a2, const ArrayProgram::IndexContainer& ixc_i, const ArrayProgram::IndexContainer& ixc_j, const ArrayProgram::IndexContainer& ixc_k, const ArrayProgram::Array& res, const ArrayProgram::UInt32& c) {
-            return ArrayProgram::isLowerThan(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(ixc_i)));
+            return ArrayProgram::lt(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(ixc_i)));
         };
     };
 
@@ -674,14 +694,14 @@ public:
             ArrayProgram::Int32 reduced = ArrayProgram::reduce_vec_add(res_vec);
             ArrayProgram::print_index(ArrayProgram::cat_index(ix_i, ix_j));
             ArrayProgram::set(res, ArrayProgram::cat_index(ix_i, ix_j), reduced);
-            counter = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(counter), ArrayProgram::one.operator()<Int32>()));
+            counter = ArrayProgram::elem_uint(ArrayProgram::binary_add(ArrayProgram::uint_elem(counter), ArrayProgram::one.operator()<Int32>()));
         };
     };
 
     static ArrayProgram::_middle_matmult_body middle_matmult_body;
     struct _middle_matmult_cond {
         inline bool operator()(const ArrayProgram::Array& a1, const ArrayProgram::Array& a2, const ArrayProgram::Index& ix_i, const ArrayProgram::IndexContainer& ixc_j, const ArrayProgram::IndexContainer& ixc_k, const ArrayProgram::Array& res, const ArrayProgram::UInt32& c) {
-            return ArrayProgram::isLowerThan(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(ixc_j)));
+            return ArrayProgram::lt(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(ixc_j)));
         };
     };
 
@@ -718,15 +738,15 @@ public:
     struct _pointwise_add_vector_body {
         inline void operator()(const ArrayProgram::Array& v, ArrayProgram::Array& res, ArrayProgram::UInt32& c) {
             ArrayProgram::Int32 elem = ArrayProgram::unwrap_scalar(ArrayProgram::get(v, c));
-            ArrayProgram::set(res, c, ArrayProgram::add(ArrayProgram::unwrap_scalar(ArrayProgram::get(res, c)), elem));
-            c = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
+            ArrayProgram::set(res, c, ArrayProgram::binary_add(ArrayProgram::unwrap_scalar(ArrayProgram::get(res, c)), elem));
+            c = ArrayProgram::elem_uint(ArrayProgram::binary_add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
         };
     };
 
     static ArrayProgram::_pointwise_add_vector_body pointwise_add_vector_body;
     struct _pointwise_cond {
         inline bool operator()(const ArrayProgram::Array& v, const ArrayProgram::Array& res, const ArrayProgram::UInt32& c) {
-            return ArrayProgram::isLowerThan(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(res)));
+            return ArrayProgram::lt(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(res)));
         };
     };
 
@@ -751,8 +771,8 @@ public:
     struct _reduce_body {
         inline void operator()(const ArrayProgram::Array& input, ArrayProgram::Int32& res, ArrayProgram::UInt32& c) {
             ArrayProgram::Int32 current_element = ArrayProgram::unwrap_scalar(ArrayProgram::get(input, c));
-            res = ArrayProgram::mult(res, current_element);
-            c = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
+            res = ArrayProgram::mul(res, current_element);
+            c = ArrayProgram::elem_uint(ArrayProgram::binary_add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
         };
     };
 
@@ -760,15 +780,15 @@ public:
     struct _reduce_body_add {
         inline void operator()(const ArrayProgram::Array& input, ArrayProgram::Int32& res, ArrayProgram::UInt32& c) {
             ArrayProgram::Int32 current_element = ArrayProgram::unwrap_scalar(ArrayProgram::get(input, c));
-            res = ArrayProgram::add(res, current_element);
-            c = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
+            res = ArrayProgram::binary_add(res, current_element);
+            c = ArrayProgram::elem_uint(ArrayProgram::binary_add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
         };
     };
 
     static ArrayProgram::_reduce_body_add reduce_body_add;
     struct _reduce_cond {
         inline bool operator()(const ArrayProgram::Array& input, const ArrayProgram::Int32& res, const ArrayProgram::UInt32& c) {
-            return ArrayProgram::isLowerThan(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(input)));
+            return ArrayProgram::lt(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(input)));
         };
     };
 
@@ -824,14 +844,14 @@ public:
     struct _reshape_body {
         inline void operator()(const ArrayProgram::Array& old_array, ArrayProgram::Array& new_array, ArrayProgram::UInt32& counter) {
             ArrayProgram::set(new_array, counter, ArrayProgram::unwrap_scalar(ArrayProgram::get(old_array, counter)));
-            counter = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(counter), ArrayProgram::one.operator()<Int32>()));
+            counter = ArrayProgram::elem_uint(ArrayProgram::binary_add(ArrayProgram::uint_elem(counter), ArrayProgram::one.operator()<Int32>()));
         };
     };
 
     static ArrayProgram::_reshape_body reshape_body;
     struct _reshape_cond {
         inline bool operator()(const ArrayProgram::Array& old_array, const ArrayProgram::Array& new_array, const ArrayProgram::UInt32& counter) {
-            return ArrayProgram::isLowerThan(ArrayProgram::uint_elem(counter), ArrayProgram::uint_elem(ArrayProgram::total(new_array)));
+            return ArrayProgram::lt(ArrayProgram::uint_elem(counter), ArrayProgram::uint_elem(ArrayProgram::total(new_array)));
         };
     };
 
@@ -863,17 +883,17 @@ public:
             ArrayProgram::Int32 elem = ArrayProgram::unwrap_scalar(ArrayProgram::get(input, ix));
             ArrayProgram::UInt32 sh_0 = ArrayProgram::get_shape_elem(input, ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>()));
             ArrayProgram::UInt32 ix_0 = ArrayProgram::get_index_elem(ix, ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>()));
-            ArrayProgram::Int32 new_ix_0 = ArrayProgram::sub(ArrayProgram::uint_elem(sh_0), ArrayProgram::add(ArrayProgram::uint_elem(ix_0), ArrayProgram::one.operator()<Int32>()));
+            ArrayProgram::Int32 new_ix_0 = ArrayProgram::binary_sub(ArrayProgram::uint_elem(sh_0), ArrayProgram::binary_add(ArrayProgram::uint_elem(ix_0), ArrayProgram::one.operator()<Int32>()));
             ArrayProgram::Index new_ix = ArrayProgram::cat_index(ArrayProgram::create_index1(ArrayProgram::elem_uint(new_ix_0)), ArrayProgram::drop_index_elem(ix, ArrayProgram::elem_uint(ArrayProgram::zero.operator()<Int32>())));
             ArrayProgram::set(res, new_ix, elem);
-            c = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
+            c = ArrayProgram::elem_uint(ArrayProgram::binary_add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
         };
     };
 
     static ArrayProgram::_reverse_body reverse_body;
     struct _reverse_cond {
         inline bool operator()(const ArrayProgram::Array& input, const ArrayProgram::IndexContainer& indices, const ArrayProgram::Array& res, const ArrayProgram::UInt32& c) {
-            return ArrayProgram::isLowerThan(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(indices)));
+            return ArrayProgram::lt(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(indices)));
         };
     };
 
@@ -983,7 +1003,7 @@ public:
             ArrayProgram::Index current_ix = ArrayProgram::get_index_ixc(ixc, c);
             ArrayProgram::Int32 current_element = ArrayProgram::unwrap_scalar(ArrayProgram::get(a, ArrayProgram::reverse_index(current_ix)));
             ArrayProgram::set(res, current_ix, current_element);
-            c = ArrayProgram::elem_uint(ArrayProgram::add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
+            c = ArrayProgram::elem_uint(ArrayProgram::binary_add(ArrayProgram::uint_elem(c), ArrayProgram::one.operator()<Int32>()));
         };
     };
 
@@ -1004,7 +1024,7 @@ public:
     static ArrayProgram::_unwrap_scalar unwrap_scalar;
     struct _upper_bound {
         inline bool operator()(const ArrayProgram::Array& a, const ArrayProgram::IndexContainer& i, const ArrayProgram::Array& res, const ArrayProgram::UInt32& c) {
-            return ArrayProgram::isLowerThan(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(i)));
+            return ArrayProgram::lt(ArrayProgram::uint_elem(c), ArrayProgram::uint_elem(ArrayProgram::total(i)));
         };
     };
 

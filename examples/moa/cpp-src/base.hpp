@@ -714,19 +714,25 @@ struct int32_utils {
     inline Int32 zero() {return 0; }
     inline Int32 one() {return 1;}
 
-    inline Int32 add(const Int32 a, const Int32 b) {
+    inline Int32 binary_add(const Int32 a, const Int32 b) {
         return a + b;
     }
-    inline Int32 sub(const Int32 a, const Int32 b) {
+    inline Int32 binary_sub(const Int32 a, const Int32 b) {
         return a - b;
     }
-    inline Int32 mult(const Int32 a, const Int32 b) {
+    inline Int32 mul(const Int32 a, const Int32 b) {
         return a * b;
     }
-    inline bool equals(const Int32 a, const Int32 b) {
+    inline Int32 div(const Int32 a, const Int32 b) {
+        return a / b;
+    }
+    inline Int32 unary_sub(const Int32 a) {
+        return -a;
+    }
+    inline bool eq(const Int32 a, const Int32 b) {
         return a == b;
     }
-    inline bool isLowerThan(const Int32 a, const Int32 b) {
+    inline bool lt(const Int32 a, const Int32 b) {
         return a < b;
     }
 };
@@ -738,19 +744,25 @@ struct float64_utils {
     inline Float64 zero() {return 0.0; }
     inline Float64 one() {return 1.0;}
 
-    inline Float64 add(const Float64 a, const Float64 b) {
+    inline Float64 binary_add(const Float64 a, const Float64 b) {
         return a + b;
     }
-    inline Float64 sub(const Float64 a, const Float64 b) {
+    inline Float64 binary_sub(const Float64 a, const Float64 b) {
         return a - b;
     }
-    inline Float64 mult(const Float64 a, const Float64 b) {
+    inline Float64 mul(const Float64 a, const Float64 b) {
         return a * b;
     }
-    inline bool equals(const Float64 a, const Float64 b) {
+    inline Float64 div(const Float64 a, const Float64 b) {
+        return a / b;
+    }
+    inline Float64 unary_sub(const Float64 a) {
+        return -a;
+    }
+    inline bool eq(const Float64 a, const Float64 b) {
         return a == b;
     }
-    inline bool isLowerThan(const Float64 a, const Float64 b) {
+    inline bool lt(const Float64 a, const Float64 b) {
         return a < b;
     }
 };
