@@ -18,13 +18,19 @@ module Magnolia.Util (
   , isLocalDecl
   -- * Expression manipulations utils
   , isValueExpr
+  -- * Generic utils
+  , mapAccumM
   )
   where
 
 import Control.Monad
+import Control.Monad.Except (lift)
+import qualified Control.Monad.Trans.State as ST
 import qualified Data.Graph as G
 import qualified Data.List as L
 import qualified Data.Map as M
+import Data.Tuple (swap)
+
 import Prettyprinter (Pretty)
 import qualified Data.Text.Lazy as T
 import Data.Void (absurd)
@@ -152,3 +158,13 @@ isValueExpr (Ann _ e) = case e of
   MValue _ -> True
   MIf _ eTrue eFalse -> isValueExpr eTrue || isValueExpr eFalse
   _ -> False
+
+-- === generic utils ===
+
+mapAccumM :: (Traversable t, Monad m)
+          => (a -> b -> m (a, c)) -> a -> t b -> m (a, t c)
+mapAccumM f a tb = swap <$> mapM go tb `ST.runStateT` a
+  where go b = do s <- ST.get
+                  (s', r) <- lift $ f s b
+                  ST.put s'
+                  return r
