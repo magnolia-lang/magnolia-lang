@@ -8,14 +8,12 @@ module Magnolia.Check (
   ) where
 
 import Control.Applicative
-import Control.Monad.Except (foldM, join, lift, unless, when)
+import Control.Monad.Except (foldM, join, unless, when)
 --import Control.Monad.IO.Class (liftIO)
-import qualified Control.Monad.Trans.State as ST
 --import Debug.Trace (trace)
 import Data.Foldable (traverse_)
 import Data.Maybe (fromJust, isJust, isNothing)
 import Data.Traversable (for)
-import Data.Tuple (swap)
 import Data.Void (absurd)
 
 import qualified Data.List as L
@@ -1320,14 +1318,3 @@ applyRenaming tcDecl renaming =
         (applyRenamingInExpr trueExpr) (applyRenamingInExpr falseExpr)
       MAssert cond -> MAssert (applyRenamingInExpr cond)
       MSkip -> MSkip
-
-
--- === utils ===
-
-mapAccumM :: (Traversable t, Monad m)
-          => (a -> b -> m (a, c)) -> a -> t b -> m (a, t c)
-mapAccumM f a tb = swap <$> mapM go tb `ST.runStateT` a
-  where go b = do s <- ST.get
-                  (s', r) <- lift $ f s b
-                  ST.put s'
-                  return r
