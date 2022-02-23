@@ -5,17 +5,7 @@ namespace examples {
 namespace moa {
 namespace mg_src {
 namespace moa_cpp {
-
-
-    ArrayProgram::_zero ArrayProgram::zero;
-
-
-
-    ArrayProgram::_one ArrayProgram::one;
-
     int32_utils ArrayProgram::__int32_utils;
-
-    float64_utils ArrayProgram::__float64_utils;
 
 
 
@@ -77,11 +67,23 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_lt ArrayProgram::lt;
+
+
+
+    ArrayProgram::_one ArrayProgram::one;
+
+
+
     ArrayProgram::_print_element ArrayProgram::print_element;
 
 
 
     ArrayProgram::_uint_elem ArrayProgram::uint_elem;
+
+
+
+    ArrayProgram::_zero ArrayProgram::zero;
 
 
 
@@ -93,7 +95,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<ArrayProgram::PaddedArray, ArrayProgram::IndexContainer, ArrayProgram::PaddedArray, ArrayProgram::UInt32, ArrayProgram::_padded_transpose_body, ArrayProgram::_padded_upper_bound> ArrayProgram::__while_loop2_23;
+    while_loop2_2<ArrayProgram::PaddedArray, ArrayProgram::IndexContainer, ArrayProgram::PaddedArray, ArrayProgram::UInt32, ArrayProgram::_padded_transpose_body, ArrayProgram::_padded_upper_bound> ArrayProgram::__while_loop2_27;
 
     ArrayProgram::_padded_upper_bound ArrayProgram::padded_upper_bound;
 
@@ -143,6 +145,10 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_binaryMap ArrayProgram::binaryMap;
+
+
+
     ArrayProgram::_binary_add ArrayProgram::binary_add;
 
 
@@ -151,23 +157,35 @@ namespace moa_cpp {
 
 
 
-    ArrayProgram::_div ArrayProgram::div;
+    ArrayProgram::_bmb_div ArrayProgram::bmb_div;
 
 
 
-    ArrayProgram::_eq ArrayProgram::eq;
+    ArrayProgram::_bmb_div_rep ArrayProgram::bmb_div_rep;
 
 
 
-    ArrayProgram::_lt ArrayProgram::lt;
+    ArrayProgram::_bmb_mul ArrayProgram::bmb_mul;
 
 
 
-    ArrayProgram::_mul ArrayProgram::mul;
+    ArrayProgram::_bmb_mul_rep ArrayProgram::bmb_mul_rep;
 
 
 
-    ArrayProgram::_unary_sub ArrayProgram::unary_sub;
+    ArrayProgram::_bmb_plus ArrayProgram::bmb_plus;
+
+
+
+    ArrayProgram::_bmb_plus_rep ArrayProgram::bmb_plus_rep;
+
+
+
+    ArrayProgram::_bmb_sub ArrayProgram::bmb_sub;
+
+
+
+    ArrayProgram::_bmb_sub_rep ArrayProgram::bmb_sub_rep;
 
 
 
@@ -231,6 +249,10 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_div ArrayProgram::div;
+
+
+
     ArrayProgram::_drop_shape_elem ArrayProgram::drop_shape_elem;
 
 
@@ -240,6 +262,22 @@ namespace moa_cpp {
 
 
     ArrayProgram::_get_shape_elem ArrayProgram::get_shape_elem;
+
+
+
+    while_loop2_2<ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_bmb_div, ArrayProgram::_mapped_ops_cond> ArrayProgram::__while_loop2_21;
+
+    while_loop2_2<ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_bmb_mul, ArrayProgram::_mapped_ops_cond> ArrayProgram::__while_loop2_22;
+
+    while_loop2_2<ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_bmb_plus, ArrayProgram::_mapped_ops_cond> ArrayProgram::__while_loop2_23;
+
+    while_loop2_2<ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_bmb_sub, ArrayProgram::_mapped_ops_cond> ArrayProgram::__while_loop2_24;
+
+    ArrayProgram::_mapped_ops_cond ArrayProgram::mapped_ops_cond;
+
+
+
+    ArrayProgram::_mul ArrayProgram::mul;
 
 
 
@@ -277,7 +315,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_reverse_body, ArrayProgram::_reverse_cond> ArrayProgram::__while_loop2_21;
+    while_loop2_2<ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_reverse_body, ArrayProgram::_reverse_cond> ArrayProgram::__while_loop2_25;
 
     ArrayProgram::_reverse_cond ArrayProgram::reverse_cond;
 
@@ -331,11 +369,33 @@ namespace moa_cpp {
 
 
 
+    ArrayProgram::_unaryMap ArrayProgram::unaryMap;
+
+
+
+    ArrayProgram::_unary_sub ArrayProgram::unary_sub;
+
+
+
+    ArrayProgram::_unary_sub_body ArrayProgram::unary_sub_body;
+
+
+
+    while_loop1_2<ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_unary_sub_body, ArrayProgram::_unary_sub_cond> ArrayProgram::__while_loop1_20;
+
+    ArrayProgram::_unary_sub_cond ArrayProgram::unary_sub_cond;
+
+
+
+    ArrayProgram::_unary_sub_repeat ArrayProgram::unary_sub_repeat;
+
+
+
     ArrayProgram::_unwrap_scalar ArrayProgram::unwrap_scalar;
 
 
 
-    while_loop2_2<ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_transpose_body, ArrayProgram::_upper_bound> ArrayProgram::__while_loop2_22;
+    while_loop2_2<ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_transpose_body, ArrayProgram::_upper_bound> ArrayProgram::__while_loop2_26;
 
     ArrayProgram::_upper_bound ArrayProgram::upper_bound;
 
@@ -348,17 +408,298 @@ namespace examples {
 namespace moa {
 namespace mg_src {
 namespace moa_cpp {
-
-
-    TestingSuite::_zero TestingSuite::zero;
+    int32_utils BurgerProgram::__int32_utils;
 
 
 
-    TestingSuite::_one TestingSuite::one;
+    BurgerProgram::_print_parray BurgerProgram::print_parray;
 
+
+
+    BurgerProgram::_cat_shape BurgerProgram::cat_shape;
+
+
+
+    BurgerProgram::_padded_shape BurgerProgram::padded_shape;
+
+
+
+    BurgerProgram::_print_shape BurgerProgram::print_shape;
+
+
+
+    BurgerProgram::_reverse_shape BurgerProgram::reverse_shape;
+
+
+
+    BurgerProgram::_create_shape1 BurgerProgram::create_shape1;
+
+
+
+    BurgerProgram::_create_shape2 BurgerProgram::create_shape2;
+
+
+
+    BurgerProgram::_create_shape3 BurgerProgram::create_shape3;
+
+
+
+    BurgerProgram::_padded_dim BurgerProgram::padded_dim;
+
+
+
+    BurgerProgram::_padded_drop_shape_elem BurgerProgram::padded_drop_shape_elem;
+
+
+
+    BurgerProgram::_padded_get_shape_elem BurgerProgram::padded_get_shape_elem;
+
+
+
+    BurgerProgram::_padded_total BurgerProgram::padded_total;
+
+
+
+    BurgerProgram::_print_uint BurgerProgram::print_uint;
+
+    array<BurgerProgram::Int32> BurgerProgram::__array;
+
+
+
+    BurgerProgram::_elem_uint BurgerProgram::elem_uint;
+
+
+
+    BurgerProgram::_lt BurgerProgram::lt;
+
+
+
+    BurgerProgram::_one BurgerProgram::one;
+
+
+
+    BurgerProgram::_print_element BurgerProgram::print_element;
+
+
+
+    BurgerProgram::_uint_elem BurgerProgram::uint_elem;
+
+
+
+    BurgerProgram::_zero BurgerProgram::zero;
+
+
+
+    BurgerProgram::_print_index_container BurgerProgram::print_index_container;
+
+
+
+    BurgerProgram::_cat_index BurgerProgram::cat_index;
+
+
+
+    BurgerProgram::_create_index1 BurgerProgram::create_index1;
+
+
+
+    BurgerProgram::_create_index2 BurgerProgram::create_index2;
+
+
+
+    BurgerProgram::_create_index3 BurgerProgram::create_index3;
+
+
+
+    BurgerProgram::_drop_index_elem BurgerProgram::drop_index_elem;
+
+
+
+    BurgerProgram::_get_index_elem BurgerProgram::get_index_elem;
+
+
+
+    BurgerProgram::_get_index_ixc BurgerProgram::get_index_ixc;
+
+
+
+    BurgerProgram::_print_index BurgerProgram::print_index;
+
+
+
+    BurgerProgram::_reverse_index BurgerProgram::reverse_index;
+
+
+
+    BurgerProgram::_test_index BurgerProgram::test_index;
+
+
+
+    BurgerProgram::_binaryMap BurgerProgram::binaryMap;
+
+
+
+    BurgerProgram::_binary_add BurgerProgram::binary_add;
+
+
+
+    BurgerProgram::_binary_sub BurgerProgram::binary_sub;
+
+
+
+    BurgerProgram::_bmb_div BurgerProgram::bmb_div;
+
+
+
+    BurgerProgram::_bmb_div_rep BurgerProgram::bmb_div_rep;
+
+
+
+    BurgerProgram::_bmb_mul BurgerProgram::bmb_mul;
+
+
+
+    BurgerProgram::_bmb_mul_rep BurgerProgram::bmb_mul_rep;
+
+
+
+    BurgerProgram::_bmb_plus BurgerProgram::bmb_plus;
+
+
+
+    BurgerProgram::_bmb_plus_rep BurgerProgram::bmb_plus_rep;
+
+
+
+    BurgerProgram::_bmb_sub BurgerProgram::bmb_sub;
+
+
+
+    BurgerProgram::_bmb_sub_rep BurgerProgram::bmb_sub_rep;
+
+
+
+    BurgerProgram::_create_array BurgerProgram::create_array;
+
+
+
+    BurgerProgram::_create_padded_array BurgerProgram::create_padded_array;
+
+
+
+    BurgerProgram::_create_valid_indices BurgerProgram::create_valid_indices;
+
+
+
+    BurgerProgram::_dim BurgerProgram::dim;
+
+
+
+    BurgerProgram::_div BurgerProgram::div;
+
+
+
+    BurgerProgram::_drop_shape_elem BurgerProgram::drop_shape_elem;
+
+
+
+    BurgerProgram::_get BurgerProgram::get;
+
+
+
+    BurgerProgram::_get_shape_elem BurgerProgram::get_shape_elem;
+
+
+
+    while_loop2_2<BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::UInt32, BurgerProgram::_bmb_div, BurgerProgram::_mapped_ops_cond> BurgerProgram::__while_loop2_2;
+
+    while_loop2_2<BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::UInt32, BurgerProgram::_bmb_mul, BurgerProgram::_mapped_ops_cond> BurgerProgram::__while_loop2_20;
+
+    while_loop2_2<BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::UInt32, BurgerProgram::_bmb_plus, BurgerProgram::_mapped_ops_cond> BurgerProgram::__while_loop2_21;
+
+    while_loop2_2<BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::UInt32, BurgerProgram::_bmb_sub, BurgerProgram::_mapped_ops_cond> BurgerProgram::__while_loop2_22;
+
+    BurgerProgram::_mapped_ops_cond BurgerProgram::mapped_ops_cond;
+
+
+
+    BurgerProgram::_mul BurgerProgram::mul;
+
+
+
+    BurgerProgram::_padded_to_unpadded BurgerProgram::padded_to_unpadded;
+
+
+
+    BurgerProgram::_print_array BurgerProgram::print_array;
+
+
+
+    BurgerProgram::_set BurgerProgram::set;
+
+
+
+    BurgerProgram::_shape BurgerProgram::shape;
+
+
+
+    BurgerProgram::_test_array3_2_2 BurgerProgram::test_array3_2_2;
+
+
+
+    BurgerProgram::_test_array3_3 BurgerProgram::test_array3_3;
+
+
+
+    BurgerProgram::_test_vector2 BurgerProgram::test_vector2;
+
+
+
+    BurgerProgram::_test_vector3 BurgerProgram::test_vector3;
+
+
+
+    BurgerProgram::_test_vector5 BurgerProgram::test_vector5;
+
+
+
+    BurgerProgram::_total BurgerProgram::total;
+
+
+
+    BurgerProgram::_unaryMap BurgerProgram::unaryMap;
+
+
+
+    BurgerProgram::_unary_sub BurgerProgram::unary_sub;
+
+
+
+    BurgerProgram::_unary_sub_body BurgerProgram::unary_sub_body;
+
+
+
+    while_loop1_2<BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::UInt32, BurgerProgram::_unary_sub_body, BurgerProgram::_unary_sub_cond> BurgerProgram::__while_loop1_2;
+
+    BurgerProgram::_unary_sub_cond BurgerProgram::unary_sub_cond;
+
+
+
+    BurgerProgram::_unary_sub_repeat BurgerProgram::unary_sub_repeat;
+
+
+
+    BurgerProgram::_unwrap_scalar BurgerProgram::unwrap_scalar;
+
+} // examples
+} // moa
+} // mg_src
+} // moa_cpp
+
+namespace examples {
+namespace moa {
+namespace mg_src {
+namespace moa_cpp {
     int32_utils TestingSuite::__int32_utils;
-
-    float64_utils TestingSuite::__float64_utils;
 
 
 
@@ -420,11 +761,23 @@ namespace moa_cpp {
 
 
 
+    TestingSuite::_lt TestingSuite::lt;
+
+
+
+    TestingSuite::_one TestingSuite::one;
+
+
+
     TestingSuite::_print_element TestingSuite::print_element;
 
 
 
     TestingSuite::_uint_elem TestingSuite::uint_elem;
+
+
+
+    TestingSuite::_zero TestingSuite::zero;
 
 
 
@@ -472,6 +825,10 @@ namespace moa_cpp {
 
 
 
+    TestingSuite::_binaryMap TestingSuite::binaryMap;
+
+
+
     TestingSuite::_binary_add TestingSuite::binary_add;
 
 
@@ -480,23 +837,35 @@ namespace moa_cpp {
 
 
 
-    TestingSuite::_div TestingSuite::div;
+    TestingSuite::_bmb_div TestingSuite::bmb_div;
 
 
 
-    TestingSuite::_eq TestingSuite::eq;
+    TestingSuite::_bmb_div_rep TestingSuite::bmb_div_rep;
 
 
 
-    TestingSuite::_lt TestingSuite::lt;
+    TestingSuite::_bmb_mul TestingSuite::bmb_mul;
 
 
 
-    TestingSuite::_mul TestingSuite::mul;
+    TestingSuite::_bmb_mul_rep TestingSuite::bmb_mul_rep;
 
 
 
-    TestingSuite::_unary_sub TestingSuite::unary_sub;
+    TestingSuite::_bmb_plus TestingSuite::bmb_plus;
+
+
+
+    TestingSuite::_bmb_plus_rep TestingSuite::bmb_plus_rep;
+
+
+
+    TestingSuite::_bmb_sub TestingSuite::bmb_sub;
+
+
+
+    TestingSuite::_bmb_sub_rep TestingSuite::bmb_sub_rep;
 
 
 
@@ -516,6 +885,10 @@ namespace moa_cpp {
 
 
 
+    TestingSuite::_div TestingSuite::div;
+
+
+
     TestingSuite::_drop_shape_elem TestingSuite::drop_shape_elem;
 
 
@@ -525,6 +898,22 @@ namespace moa_cpp {
 
 
     TestingSuite::_get_shape_elem TestingSuite::get_shape_elem;
+
+
+
+    while_loop2_2<TestingSuite::Array, TestingSuite::IndexContainer, TestingSuite::Array, TestingSuite::UInt32, TestingSuite::_bmb_div, TestingSuite::_mapped_ops_cond> TestingSuite::__while_loop2_2;
+
+    while_loop2_2<TestingSuite::Array, TestingSuite::IndexContainer, TestingSuite::Array, TestingSuite::UInt32, TestingSuite::_bmb_mul, TestingSuite::_mapped_ops_cond> TestingSuite::__while_loop2_20;
+
+    while_loop2_2<TestingSuite::Array, TestingSuite::IndexContainer, TestingSuite::Array, TestingSuite::UInt32, TestingSuite::_bmb_plus, TestingSuite::_mapped_ops_cond> TestingSuite::__while_loop2_21;
+
+    while_loop2_2<TestingSuite::Array, TestingSuite::IndexContainer, TestingSuite::Array, TestingSuite::UInt32, TestingSuite::_bmb_sub, TestingSuite::_mapped_ops_cond> TestingSuite::__while_loop2_22;
+
+    TestingSuite::_mapped_ops_cond TestingSuite::mapped_ops_cond;
+
+
+
+    TestingSuite::_mul TestingSuite::mul;
 
 
 
@@ -548,7 +937,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<TestingSuite::Array, TestingSuite::IndexContainer, TestingSuite::Array, TestingSuite::UInt32, TestingSuite::_ravel_body, TestingSuite::_ravel_cond> TestingSuite::__while_loop2_2;
+    while_loop1_2<TestingSuite::Array, TestingSuite::Array, TestingSuite::UInt32, TestingSuite::_ravel_body, TestingSuite::_ravel_cond> TestingSuite::__while_loop1_2;
 
     TestingSuite::_ravel_cond TestingSuite::ravel_cond;
 
@@ -583,6 +972,28 @@ namespace moa_cpp {
 
 
     TestingSuite::_total TestingSuite::total;
+
+
+
+    TestingSuite::_unaryMap TestingSuite::unaryMap;
+
+
+
+    TestingSuite::_unary_sub TestingSuite::unary_sub;
+
+
+
+    TestingSuite::_unary_sub_body TestingSuite::unary_sub_body;
+
+
+
+    while_loop1_2<TestingSuite::IndexContainer, TestingSuite::Array, TestingSuite::UInt32, TestingSuite::_unary_sub_body, TestingSuite::_unary_sub_cond> TestingSuite::__while_loop1_20;
+
+    TestingSuite::_unary_sub_cond TestingSuite::unary_sub_cond;
+
+
+
+    TestingSuite::_unary_sub_repeat TestingSuite::unary_sub_repeat;
 
 
 

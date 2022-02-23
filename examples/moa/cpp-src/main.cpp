@@ -162,4 +162,6 @@ int main(int argc, char **argv) {
     P.print_array(res_rav);
     std::cout << "Shape:";
     P.print_shape(P.shape(res_rav));
+
+
 }
