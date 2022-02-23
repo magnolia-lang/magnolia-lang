@@ -1,12 +1,13 @@
 #include <iostream>
 #include "gen/examples/moa/mg-src/moa-cpp.hpp"
 
-using examples::moa::mg_src::moa_cpp::ArrayProgram;
-using examples::moa::mg_src::moa_cpp::TestingSuite;
+using examples::moa::mg_src::moa_cpp::Int32Arrays;
+using examples::moa::mg_src::moa_cpp::Float64Arrays;
 
 int main(int argc, char **argv) {
 
-    ArrayProgram P;
+    Int32Arrays P;
+    Float64Arrays F;
 
     std::cout << "Linear representation of array a:" << std::endl;
     auto a = P.test_array3_2_2();
@@ -146,22 +147,93 @@ int main(int argc, char **argv) {
     std::cout << "reverse(a):" << std::endl;
     P.print_array(P.reverse(trans_array));
 
-    TestingSuite T;
-
-    std::cout << "RAVEL:" << std::endl;
+    std::cout << "Arithmetic operations on arrays: Int32" << std::endl;
     std::cout << "Original array:" << std::endl;
-    auto rav_array = P.test_array3_2_2();
-    P.print_array(rav_array);
-    std::cout << "Shape:";
-    P.print_shape(P.shape(rav_array));
+
+    auto arith_array = P.test_array3_2_2();
+    P.print_array(arith_array);
+
+    std::cout << std::endl;
+    arith_array = P.test_array3_2_2();
+    auto arit_plus = P.binary_add(arith_array, arith_array);
+    std::cout << "a + a:" << std::endl;
+    P.print_array(arit_plus);
+    P.print_shape(P.shape(arit_plus));
 
     std::cout << std::endl;
 
-    std::cout << "rav(a):" << std::endl;
-    auto res_rav = T.ravel(rav_array);
-    P.print_array(res_rav);
-    std::cout << "Shape:";
-    P.print_shape(P.shape(res_rav));
+    arith_array = P.test_array3_2_2();
+    auto arit_sub = P.binary_sub(arith_array, arith_array);
+    std::cout << "a - a:" << std::endl;
+    P.print_array(arit_sub);
+    P.print_shape(P.shape(arit_sub));
+
+    std::cout << std::endl;
+
+    arith_array = P.test_array3_2_2();
+    auto arit_mul = P.mul(arith_array, arith_array);
+    std::cout << "a * a:" << std::endl;
+    P.print_array(arit_mul);
+    P.print_shape(P.shape(arit_mul));
+
+    std::cout << std::endl;
+
+    arith_array = P.test_array3_2_2();
+    auto arit_div = P.div(arith_array, arith_array);
+    std::cout << "a / a:" << std::endl;
+    P.print_array(arit_div);
+    P.print_shape(P.shape(arit_div));
+
+
+    arith_array = P.test_array3_2_2();
+    auto arit_usub = P.unary_sub(arith_array);
+    std::cout << "-a:" << std::endl;
+    P.print_array(arit_usub);
+    P.print_shape(P.shape(arit_usub));
+
+    std::cout << "Arithmetic operations on arrays: Float64" << std::endl;
+    std::cout << "Original array:" << std::endl;
+
+    auto arith_arrayF = F.test_array3_2_2F();
+    F.print_array(arith_arrayF);
+
+    std::cout << std::endl;
+    arith_arrayF = F.test_array3_2_2F();
+    auto arit_plusF = F.binary_add(arith_arrayF, arith_arrayF);
+    std::cout << "a + a:" << std::endl;
+    F.print_array(arit_plusF);
+    F.print_shape(F.shape(arit_plusF));
+
+    std::cout << std::endl;
+
+    arith_arrayF = F.test_array3_2_2F();
+    auto arit_subF = F.binary_sub(arith_arrayF, arith_arrayF);
+    std::cout << "a - a:" << std::endl;
+    F.print_array(arit_subF);
+    F.print_shape(F.shape(arit_subF));
+
+    std::cout << std::endl;
+
+    arith_arrayF = F.test_array3_2_2F();
+    auto arit_mulF = F.mul(arith_arrayF, arith_arrayF);
+    std::cout << "a * a:" << std::endl;
+    F.print_array(arit_mulF);
+    F.print_shape(F.shape(arit_mulF));
+
+    std::cout << std::endl;
+
+    arith_arrayF = F.test_array3_2_2F();
+    auto arit_divF = F.div(arith_arrayF, arith_arrayF);
+    std::cout << "a / a:" << std::endl;
+    F.print_array(arit_divF);
+    F.print_shape(F.shape(arit_divF));
+
+
+    arith_arrayF = F.test_array3_2_2F();
+    auto arit_usubF = F.unary_sub(arith_arrayF);
+    std::cout << "-a:" << std::endl;
+    F.print_array(arit_usubF);
+    F.print_shape(F.shape(arit_usubF));
 
 
 }

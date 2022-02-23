@@ -8,9 +8,14 @@ package examples.moa.mg-src.moa-cpp
 implementation Int32Utils = external C++ base.int32_utils
     NumOps[NumberType => Int32];
 
-program ArrayProgram = {
+
+implementation Float64Utils = external C++ base.float64_utils
+    NumOps[NumberType => Float64];
+
+program Int32Arrays = {
 
    use Int32Utils;
+
    use Padding[Element => Int32,
               _+_ => binary_add,
               _-_ => binary_sub,
@@ -21,10 +26,11 @@ program ArrayProgram = {
 
 }
 
-program TestingSuite = {
+program Float64Arrays = {
 
-   use Int32Utils;
-   use Ravel[Element => Int32,
+   use Float64Utils;
+
+   use Padding[Element => Float64,
               _+_ => binary_add,
               _-_ => binary_sub,
               _*_ => mul,

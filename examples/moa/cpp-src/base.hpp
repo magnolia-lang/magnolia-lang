@@ -279,17 +279,28 @@ struct array {
             else {
                 std::vector<int> multiplier;
                 multiplier.push_back(1);
-
                 UInt32 acc = 0;
 
-                for (auto i = dim(a) - 1; i > 0; i--) {
-                    auto mult = std::accumulate(begin(multiplier),end(multiplier),        1, std::multiplies<int>());
+                Shape sh = shape(a);
 
-                    acc += ix.at(i)*mult;
-                    multiplier.push_back(multiplier.back()+1);
+                for (int i = 0; i < dim(a); i++) {
+
+                if(ix.at(i) > sh.at(i)) {
+                    std::cout << "Access out of bounds: " << ix.at(i)
+                              << ". Max is : " << sh.at(i) << std::endl;
                 }
 
-                acc += ix.back();
+                std::vector<UInt32>::const_iterator first = sh.begin() + (i+1);
+                std::vector<UInt32>::const_iterator last = sh.begin() + dim(a);
+
+                std::vector<UInt32> subshape(first, last);
+
+                int reduced = std::accumulate(begin(subshape),
+                                                  end(subshape), 1,
+                                                  std::multiplies<UInt32>());
+
+                acc += ix.at(i) * reduced;
+            }
 
                 a._set(acc, val);
             }
@@ -641,6 +652,19 @@ struct array {
        Array a = Array(create_shape3(3,2,2));
 
        std::vector<int> v = {2,5,7,8,6,1,1,3,5,6,3,5};
+
+       for (auto i = 0; i < a._total(); i++) {
+           a._set(i, v.at(i));
+       }
+
+       return a;
+   }
+
+   inline Array test_array3_2_2F() {
+
+       Array a = Array(create_shape3(3,2,2));
+
+       std::vector<double> v = {3.0,5.0,7.0,8.0,5.0,1.0,1.0,3.0,5.0,6.0,3.0,5.0};
 
        for (auto i = 0; i < a._total(); i++) {
            a._set(i, v.at(i));

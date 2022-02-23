@@ -5,409 +5,6 @@ namespace examples {
 namespace moa {
 namespace mg_src {
 namespace moa_cpp {
-    int32_utils ArrayProgram::__int32_utils;
-
-
-
-    ArrayProgram::_print_parray ArrayProgram::print_parray;
-
-
-
-    ArrayProgram::_cat_shape ArrayProgram::cat_shape;
-
-
-
-    ArrayProgram::_padded_shape ArrayProgram::padded_shape;
-
-
-
-    ArrayProgram::_print_shape ArrayProgram::print_shape;
-
-
-
-    ArrayProgram::_reverse_shape ArrayProgram::reverse_shape;
-
-
-
-    ArrayProgram::_create_shape1 ArrayProgram::create_shape1;
-
-
-
-    ArrayProgram::_create_shape2 ArrayProgram::create_shape2;
-
-
-
-    ArrayProgram::_create_shape3 ArrayProgram::create_shape3;
-
-
-
-    ArrayProgram::_padded_dim ArrayProgram::padded_dim;
-
-
-
-    ArrayProgram::_padded_drop_shape_elem ArrayProgram::padded_drop_shape_elem;
-
-
-
-    ArrayProgram::_padded_get_shape_elem ArrayProgram::padded_get_shape_elem;
-
-
-
-    ArrayProgram::_padded_total ArrayProgram::padded_total;
-
-
-
-    ArrayProgram::_print_uint ArrayProgram::print_uint;
-
-    array<ArrayProgram::Int32> ArrayProgram::__array;
-
-
-
-    ArrayProgram::_elem_uint ArrayProgram::elem_uint;
-
-
-
-    ArrayProgram::_lt ArrayProgram::lt;
-
-
-
-    ArrayProgram::_one ArrayProgram::one;
-
-
-
-    ArrayProgram::_print_element ArrayProgram::print_element;
-
-
-
-    ArrayProgram::_uint_elem ArrayProgram::uint_elem;
-
-
-
-    ArrayProgram::_zero ArrayProgram::zero;
-
-
-
-    ArrayProgram::_padded_transpose_body ArrayProgram::padded_transpose_body;
-
-
-
-    ArrayProgram::_padded_transpose_repeat ArrayProgram::padded_transpose_repeat;
-
-
-
-    while_loop2_2<ArrayProgram::PaddedArray, ArrayProgram::IndexContainer, ArrayProgram::PaddedArray, ArrayProgram::UInt32, ArrayProgram::_padded_transpose_body, ArrayProgram::_padded_upper_bound> ArrayProgram::__while_loop2_27;
-
-    ArrayProgram::_padded_upper_bound ArrayProgram::padded_upper_bound;
-
-
-
-    ArrayProgram::_print_index_container ArrayProgram::print_index_container;
-
-
-
-    ArrayProgram::_cat_index ArrayProgram::cat_index;
-
-
-
-    ArrayProgram::_create_index1 ArrayProgram::create_index1;
-
-
-
-    ArrayProgram::_create_index2 ArrayProgram::create_index2;
-
-
-
-    ArrayProgram::_create_index3 ArrayProgram::create_index3;
-
-
-
-    ArrayProgram::_drop_index_elem ArrayProgram::drop_index_elem;
-
-
-
-    ArrayProgram::_get_index_elem ArrayProgram::get_index_elem;
-
-
-
-    ArrayProgram::_get_index_ixc ArrayProgram::get_index_ixc;
-
-
-
-    ArrayProgram::_print_index ArrayProgram::print_index;
-
-
-
-    ArrayProgram::_reverse_index ArrayProgram::reverse_index;
-
-
-
-    ArrayProgram::_test_index ArrayProgram::test_index;
-
-
-
-    ArrayProgram::_binaryMap ArrayProgram::binaryMap;
-
-
-
-    ArrayProgram::_binary_add ArrayProgram::binary_add;
-
-
-
-    ArrayProgram::_binary_sub ArrayProgram::binary_sub;
-
-
-
-    ArrayProgram::_bmb_div ArrayProgram::bmb_div;
-
-
-
-    ArrayProgram::_bmb_div_rep ArrayProgram::bmb_div_rep;
-
-
-
-    ArrayProgram::_bmb_mul ArrayProgram::bmb_mul;
-
-
-
-    ArrayProgram::_bmb_mul_rep ArrayProgram::bmb_mul_rep;
-
-
-
-    ArrayProgram::_bmb_plus ArrayProgram::bmb_plus;
-
-
-
-    ArrayProgram::_bmb_plus_rep ArrayProgram::bmb_plus_rep;
-
-
-
-    ArrayProgram::_bmb_sub ArrayProgram::bmb_sub;
-
-
-
-    ArrayProgram::_bmb_sub_rep ArrayProgram::bmb_sub_rep;
-
-
-
-    ArrayProgram::_cat ArrayProgram::cat;
-
-
-
-    ArrayProgram::_cat_body ArrayProgram::cat_body;
-
-
-
-    while_loop2_2<ArrayProgram::Array, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::Array, ArrayProgram::_cat_body, ArrayProgram::_cat_cond> ArrayProgram::__while_loop2_20;
-
-    ArrayProgram::_cat_cond ArrayProgram::cat_cond;
-
-
-
-    ArrayProgram::_cat_repeat ArrayProgram::cat_repeat;
-
-
-
-    ArrayProgram::_cat_vec ArrayProgram::cat_vec;
-
-
-
-    ArrayProgram::_cat_vec_body ArrayProgram::cat_vec_body;
-
-
-
-    while_loop2_2<ArrayProgram::Array, ArrayProgram::Array, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_cat_vec_body, ArrayProgram::_cat_vec_cond> ArrayProgram::__while_loop2_2;
-
-    ArrayProgram::_cat_vec_cond ArrayProgram::cat_vec_cond;
-
-
-
-    ArrayProgram::_cat_vec_repeat ArrayProgram::cat_vec_repeat;
-
-
-
-    ArrayProgram::_circular_padl ArrayProgram::circular_padl;
-
-
-
-    ArrayProgram::_circular_padr ArrayProgram::circular_padr;
-
-
-
-    ArrayProgram::_create_array ArrayProgram::create_array;
-
-
-
-    ArrayProgram::_create_padded_array ArrayProgram::create_padded_array;
-
-
-
-    ArrayProgram::_create_valid_indices ArrayProgram::create_valid_indices;
-
-
-
-    ArrayProgram::_dim ArrayProgram::dim;
-
-
-
-    ArrayProgram::_div ArrayProgram::div;
-
-
-
-    ArrayProgram::_drop_shape_elem ArrayProgram::drop_shape_elem;
-
-
-
-    ArrayProgram::_get ArrayProgram::get;
-
-
-
-    ArrayProgram::_get_shape_elem ArrayProgram::get_shape_elem;
-
-
-
-    while_loop2_2<ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_bmb_div, ArrayProgram::_mapped_ops_cond> ArrayProgram::__while_loop2_21;
-
-    while_loop2_2<ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_bmb_mul, ArrayProgram::_mapped_ops_cond> ArrayProgram::__while_loop2_22;
-
-    while_loop2_2<ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_bmb_plus, ArrayProgram::_mapped_ops_cond> ArrayProgram::__while_loop2_23;
-
-    while_loop2_2<ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_bmb_sub, ArrayProgram::_mapped_ops_cond> ArrayProgram::__while_loop2_24;
-
-    ArrayProgram::_mapped_ops_cond ArrayProgram::mapped_ops_cond;
-
-
-
-    ArrayProgram::_mul ArrayProgram::mul;
-
-
-
-    ArrayProgram::_padded_to_unpadded ArrayProgram::padded_to_unpadded;
-
-
-
-    ArrayProgram::_print_array ArrayProgram::print_array;
-
-
-
-    ArrayProgram::_reshape ArrayProgram::reshape;
-
-
-
-    ArrayProgram::_reshape_body ArrayProgram::reshape_body;
-
-
-
-    while_loop1_2<ArrayProgram::Array, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_reshape_body, ArrayProgram::_reshape_cond> ArrayProgram::__while_loop1_2;
-
-    ArrayProgram::_reshape_cond ArrayProgram::reshape_cond;
-
-
-
-    ArrayProgram::_reshape_repeat ArrayProgram::reshape_repeat;
-
-
-
-    ArrayProgram::_reverse ArrayProgram::reverse;
-
-
-
-    ArrayProgram::_reverse_body ArrayProgram::reverse_body;
-
-
-
-    while_loop2_2<ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_reverse_body, ArrayProgram::_reverse_cond> ArrayProgram::__while_loop2_25;
-
-    ArrayProgram::_reverse_cond ArrayProgram::reverse_cond;
-
-
-
-    ArrayProgram::_reverse_repeat ArrayProgram::reverse_repeat;
-
-
-
-    ArrayProgram::_set ArrayProgram::set;
-
-
-
-    ArrayProgram::_shape ArrayProgram::shape;
-
-
-
-    ArrayProgram::_test_array3_2_2 ArrayProgram::test_array3_2_2;
-
-
-
-    ArrayProgram::_test_array3_3 ArrayProgram::test_array3_3;
-
-
-
-    ArrayProgram::_test_vector2 ArrayProgram::test_vector2;
-
-
-
-    ArrayProgram::_test_vector3 ArrayProgram::test_vector3;
-
-
-
-    ArrayProgram::_test_vector5 ArrayProgram::test_vector5;
-
-
-
-    ArrayProgram::_total ArrayProgram::total;
-
-
-
-    ArrayProgram::_transpose ArrayProgram::transpose;
-
-
-
-    ArrayProgram::_transpose_body ArrayProgram::transpose_body;
-
-
-
-    ArrayProgram::_transpose_repeat ArrayProgram::transpose_repeat;
-
-
-
-    ArrayProgram::_unaryMap ArrayProgram::unaryMap;
-
-
-
-    ArrayProgram::_unary_sub ArrayProgram::unary_sub;
-
-
-
-    ArrayProgram::_unary_sub_body ArrayProgram::unary_sub_body;
-
-
-
-    while_loop1_2<ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_unary_sub_body, ArrayProgram::_unary_sub_cond> ArrayProgram::__while_loop1_20;
-
-    ArrayProgram::_unary_sub_cond ArrayProgram::unary_sub_cond;
-
-
-
-    ArrayProgram::_unary_sub_repeat ArrayProgram::unary_sub_repeat;
-
-
-
-    ArrayProgram::_unwrap_scalar ArrayProgram::unwrap_scalar;
-
-
-
-    while_loop2_2<ArrayProgram::Array, ArrayProgram::IndexContainer, ArrayProgram::Array, ArrayProgram::UInt32, ArrayProgram::_transpose_body, ArrayProgram::_upper_bound> ArrayProgram::__while_loop2_26;
-
-    ArrayProgram::_upper_bound ArrayProgram::upper_bound;
-
-} // examples
-} // moa
-} // mg_src
-} // moa_cpp
-
-namespace examples {
-namespace moa {
-namespace mg_src {
-namespace moa_cpp {
     int32_utils BurgerProgram::__int32_utils;
 
 
@@ -646,6 +243,10 @@ namespace moa_cpp {
 
 
 
+    BurgerProgram::_test_array3_2_2F BurgerProgram::test_array3_2_2F;
+
+
+
     BurgerProgram::_test_array3_3 BurgerProgram::test_array3_3;
 
 
@@ -699,305 +300,810 @@ namespace examples {
 namespace moa {
 namespace mg_src {
 namespace moa_cpp {
-    int32_utils TestingSuite::__int32_utils;
+    float64_utils Float64Arrays::__float64_utils;
 
 
 
-    TestingSuite::_print_parray TestingSuite::print_parray;
+    Float64Arrays::_cat_index Float64Arrays::cat_index;
 
 
 
-    TestingSuite::_cat_shape TestingSuite::cat_shape;
+    Float64Arrays::_print_index Float64Arrays::print_index;
 
 
 
-    TestingSuite::_padded_shape TestingSuite::padded_shape;
+    Float64Arrays::_reverse_index Float64Arrays::reverse_index;
 
 
 
-    TestingSuite::_print_shape TestingSuite::print_shape;
+    Float64Arrays::_test_index Float64Arrays::test_index;
 
 
 
-    TestingSuite::_reverse_shape TestingSuite::reverse_shape;
+    Float64Arrays::_print_index_container Float64Arrays::print_index_container;
 
 
 
-    TestingSuite::_create_shape1 TestingSuite::create_shape1;
+    Float64Arrays::_print_parray Float64Arrays::print_parray;
 
 
 
-    TestingSuite::_create_shape2 TestingSuite::create_shape2;
+    Float64Arrays::_cat_shape Float64Arrays::cat_shape;
 
 
 
-    TestingSuite::_create_shape3 TestingSuite::create_shape3;
+    Float64Arrays::_padded_shape Float64Arrays::padded_shape;
 
 
 
-    TestingSuite::_padded_dim TestingSuite::padded_dim;
+    Float64Arrays::_print_shape Float64Arrays::print_shape;
 
 
 
-    TestingSuite::_padded_drop_shape_elem TestingSuite::padded_drop_shape_elem;
+    Float64Arrays::_reverse_shape Float64Arrays::reverse_shape;
 
 
 
-    TestingSuite::_padded_get_shape_elem TestingSuite::padded_get_shape_elem;
+    Float64Arrays::_create_index1 Float64Arrays::create_index1;
 
 
 
-    TestingSuite::_padded_total TestingSuite::padded_total;
+    Float64Arrays::_create_index2 Float64Arrays::create_index2;
 
 
 
-    TestingSuite::_print_uint TestingSuite::print_uint;
+    Float64Arrays::_create_index3 Float64Arrays::create_index3;
 
-    array<TestingSuite::Int32> TestingSuite::__array;
 
 
+    Float64Arrays::_create_shape1 Float64Arrays::create_shape1;
 
-    TestingSuite::_elem_uint TestingSuite::elem_uint;
 
 
+    Float64Arrays::_create_shape2 Float64Arrays::create_shape2;
 
-    TestingSuite::_lt TestingSuite::lt;
 
 
+    Float64Arrays::_create_shape3 Float64Arrays::create_shape3;
 
-    TestingSuite::_one TestingSuite::one;
 
 
+    Float64Arrays::_drop_index_elem Float64Arrays::drop_index_elem;
 
-    TestingSuite::_print_element TestingSuite::print_element;
 
 
+    Float64Arrays::_get_index_elem Float64Arrays::get_index_elem;
 
-    TestingSuite::_uint_elem TestingSuite::uint_elem;
 
 
+    Float64Arrays::_get_index_ixc Float64Arrays::get_index_ixc;
 
-    TestingSuite::_zero TestingSuite::zero;
 
 
+    Float64Arrays::_padded_dim Float64Arrays::padded_dim;
 
-    TestingSuite::_print_index_container TestingSuite::print_index_container;
 
 
+    Float64Arrays::_padded_drop_shape_elem Float64Arrays::padded_drop_shape_elem;
 
-    TestingSuite::_cat_index TestingSuite::cat_index;
 
 
+    Float64Arrays::_padded_get_shape_elem Float64Arrays::padded_get_shape_elem;
 
-    TestingSuite::_create_index1 TestingSuite::create_index1;
 
 
+    Float64Arrays::_padded_total Float64Arrays::padded_total;
 
-    TestingSuite::_create_index2 TestingSuite::create_index2;
 
 
+    Float64Arrays::_padded_transpose_body Float64Arrays::padded_transpose_body;
 
-    TestingSuite::_create_index3 TestingSuite::create_index3;
 
 
+    Float64Arrays::_padded_transpose_repeat Float64Arrays::padded_transpose_repeat;
 
-    TestingSuite::_drop_index_elem TestingSuite::drop_index_elem;
 
 
+    while_loop2_2<Float64Arrays::PaddedArray, Float64Arrays::IndexContainer, Float64Arrays::PaddedArray, Float64Arrays::UInt32, Float64Arrays::_padded_transpose_body, Float64Arrays::_padded_upper_bound> Float64Arrays::__while_loop2_27;
 
-    TestingSuite::_get_index_elem TestingSuite::get_index_elem;
+    Float64Arrays::_padded_upper_bound Float64Arrays::padded_upper_bound;
 
 
 
-    TestingSuite::_get_index_ixc TestingSuite::get_index_ixc;
+    Float64Arrays::_print_uint Float64Arrays::print_uint;
 
+    array<Float64Arrays::Float64> Float64Arrays::__array;
 
 
-    TestingSuite::_print_index TestingSuite::print_index;
 
+    Float64Arrays::_elem_uint Float64Arrays::elem_uint;
 
 
-    TestingSuite::_reverse_index TestingSuite::reverse_index;
 
+    Float64Arrays::_lt Float64Arrays::lt;
 
 
-    TestingSuite::_test_index TestingSuite::test_index;
 
+    Float64Arrays::_one Float64Arrays::one;
 
 
-    TestingSuite::_binaryMap TestingSuite::binaryMap;
 
+    Float64Arrays::_print_element Float64Arrays::print_element;
 
 
-    TestingSuite::_binary_add TestingSuite::binary_add;
 
+    Float64Arrays::_uint_elem Float64Arrays::uint_elem;
 
 
-    TestingSuite::_binary_sub TestingSuite::binary_sub;
 
+    Float64Arrays::_zero Float64Arrays::zero;
 
 
-    TestingSuite::_bmb_div TestingSuite::bmb_div;
 
+    Float64Arrays::_binaryMap Float64Arrays::binaryMap;
 
 
-    TestingSuite::_bmb_div_rep TestingSuite::bmb_div_rep;
 
+    Float64Arrays::_binary_add Float64Arrays::binary_add;
 
 
-    TestingSuite::_bmb_mul TestingSuite::bmb_mul;
 
+    Float64Arrays::_binary_sub Float64Arrays::binary_sub;
 
 
-    TestingSuite::_bmb_mul_rep TestingSuite::bmb_mul_rep;
 
+    Float64Arrays::_bmb_div Float64Arrays::bmb_div;
 
 
-    TestingSuite::_bmb_plus TestingSuite::bmb_plus;
 
+    Float64Arrays::_bmb_div_rep Float64Arrays::bmb_div_rep;
 
 
-    TestingSuite::_bmb_plus_rep TestingSuite::bmb_plus_rep;
 
+    Float64Arrays::_bmb_mul Float64Arrays::bmb_mul;
 
 
-    TestingSuite::_bmb_sub TestingSuite::bmb_sub;
 
+    Float64Arrays::_bmb_mul_rep Float64Arrays::bmb_mul_rep;
 
 
-    TestingSuite::_bmb_sub_rep TestingSuite::bmb_sub_rep;
 
+    Float64Arrays::_bmb_plus Float64Arrays::bmb_plus;
 
 
-    TestingSuite::_create_array TestingSuite::create_array;
 
+    Float64Arrays::_bmb_plus_rep Float64Arrays::bmb_plus_rep;
 
 
-    TestingSuite::_create_padded_array TestingSuite::create_padded_array;
 
+    Float64Arrays::_bmb_sub Float64Arrays::bmb_sub;
 
 
-    TestingSuite::_create_valid_indices TestingSuite::create_valid_indices;
 
+    Float64Arrays::_bmb_sub_rep Float64Arrays::bmb_sub_rep;
 
 
-    TestingSuite::_dim TestingSuite::dim;
 
+    Float64Arrays::_cat Float64Arrays::cat;
 
 
-    TestingSuite::_div TestingSuite::div;
 
+    Float64Arrays::_cat_body Float64Arrays::cat_body;
 
 
-    TestingSuite::_drop_shape_elem TestingSuite::drop_shape_elem;
 
+    while_loop2_2<Float64Arrays::Array, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::Array, Float64Arrays::_cat_body, Float64Arrays::_cat_cond> Float64Arrays::__while_loop2_20;
 
+    Float64Arrays::_cat_cond Float64Arrays::cat_cond;
 
-    TestingSuite::_get TestingSuite::get;
 
 
+    Float64Arrays::_cat_repeat Float64Arrays::cat_repeat;
 
-    TestingSuite::_get_shape_elem TestingSuite::get_shape_elem;
 
 
+    Float64Arrays::_cat_vec Float64Arrays::cat_vec;
 
-    while_loop2_2<TestingSuite::Array, TestingSuite::IndexContainer, TestingSuite::Array, TestingSuite::UInt32, TestingSuite::_bmb_div, TestingSuite::_mapped_ops_cond> TestingSuite::__while_loop2_2;
 
-    while_loop2_2<TestingSuite::Array, TestingSuite::IndexContainer, TestingSuite::Array, TestingSuite::UInt32, TestingSuite::_bmb_mul, TestingSuite::_mapped_ops_cond> TestingSuite::__while_loop2_20;
 
-    while_loop2_2<TestingSuite::Array, TestingSuite::IndexContainer, TestingSuite::Array, TestingSuite::UInt32, TestingSuite::_bmb_plus, TestingSuite::_mapped_ops_cond> TestingSuite::__while_loop2_21;
+    Float64Arrays::_cat_vec_body Float64Arrays::cat_vec_body;
 
-    while_loop2_2<TestingSuite::Array, TestingSuite::IndexContainer, TestingSuite::Array, TestingSuite::UInt32, TestingSuite::_bmb_sub, TestingSuite::_mapped_ops_cond> TestingSuite::__while_loop2_22;
 
-    TestingSuite::_mapped_ops_cond TestingSuite::mapped_ops_cond;
 
+    while_loop2_2<Float64Arrays::Array, Float64Arrays::Array, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_cat_vec_body, Float64Arrays::_cat_vec_cond> Float64Arrays::__while_loop2_2;
 
+    Float64Arrays::_cat_vec_cond Float64Arrays::cat_vec_cond;
 
-    TestingSuite::_mul TestingSuite::mul;
 
 
+    Float64Arrays::_cat_vec_repeat Float64Arrays::cat_vec_repeat;
 
-    TestingSuite::_padded_to_unpadded TestingSuite::padded_to_unpadded;
 
 
+    Float64Arrays::_circular_padl Float64Arrays::circular_padl;
 
-    TestingSuite::_print_array TestingSuite::print_array;
 
 
+    Float64Arrays::_circular_padr Float64Arrays::circular_padr;
 
-    TestingSuite::_rav_repeat TestingSuite::rav_repeat;
 
 
+    Float64Arrays::_create_array Float64Arrays::create_array;
 
-    TestingSuite::_ravel TestingSuite::ravel;
 
 
+    Float64Arrays::_create_padded_array Float64Arrays::create_padded_array;
 
-    TestingSuite::_ravel_body TestingSuite::ravel_body;
 
 
+    Float64Arrays::_create_valid_indices Float64Arrays::create_valid_indices;
 
-    while_loop1_2<TestingSuite::Array, TestingSuite::Array, TestingSuite::UInt32, TestingSuite::_ravel_body, TestingSuite::_ravel_cond> TestingSuite::__while_loop1_2;
 
-    TestingSuite::_ravel_cond TestingSuite::ravel_cond;
 
+    Float64Arrays::_dim Float64Arrays::dim;
 
 
-    TestingSuite::_set TestingSuite::set;
 
+    Float64Arrays::_div Float64Arrays::div;
 
 
-    TestingSuite::_shape TestingSuite::shape;
 
+    Float64Arrays::_drop_shape_elem Float64Arrays::drop_shape_elem;
 
 
-    TestingSuite::_test_array3_2_2 TestingSuite::test_array3_2_2;
 
+    Float64Arrays::_get Float64Arrays::get;
 
 
-    TestingSuite::_test_array3_3 TestingSuite::test_array3_3;
 
+    Float64Arrays::_get_shape_elem Float64Arrays::get_shape_elem;
 
 
-    TestingSuite::_test_vector2 TestingSuite::test_vector2;
 
+    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_bmb_div, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop2_21;
 
+    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_bmb_mul, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop2_22;
 
-    TestingSuite::_test_vector3 TestingSuite::test_vector3;
+    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_bmb_plus, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop2_23;
 
+    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_bmb_sub, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop2_24;
 
+    Float64Arrays::_mapped_ops_cond Float64Arrays::mapped_ops_cond;
 
-    TestingSuite::_test_vector5 TestingSuite::test_vector5;
 
 
+    Float64Arrays::_mul Float64Arrays::mul;
 
-    TestingSuite::_total TestingSuite::total;
 
 
+    Float64Arrays::_padded_to_unpadded Float64Arrays::padded_to_unpadded;
 
-    TestingSuite::_unaryMap TestingSuite::unaryMap;
 
 
+    Float64Arrays::_print_array Float64Arrays::print_array;
 
-    TestingSuite::_unary_sub TestingSuite::unary_sub;
 
 
+    Float64Arrays::_reshape Float64Arrays::reshape;
 
-    TestingSuite::_unary_sub_body TestingSuite::unary_sub_body;
 
 
+    Float64Arrays::_reshape_body Float64Arrays::reshape_body;
 
-    while_loop1_2<TestingSuite::IndexContainer, TestingSuite::Array, TestingSuite::UInt32, TestingSuite::_unary_sub_body, TestingSuite::_unary_sub_cond> TestingSuite::__while_loop1_20;
 
-    TestingSuite::_unary_sub_cond TestingSuite::unary_sub_cond;
 
+    while_loop1_2<Float64Arrays::Array, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_reshape_body, Float64Arrays::_reshape_cond> Float64Arrays::__while_loop1_2;
 
+    Float64Arrays::_reshape_cond Float64Arrays::reshape_cond;
 
-    TestingSuite::_unary_sub_repeat TestingSuite::unary_sub_repeat;
 
 
+    Float64Arrays::_reshape_repeat Float64Arrays::reshape_repeat;
 
-    TestingSuite::_unwrap_scalar TestingSuite::unwrap_scalar;
+
+
+    Float64Arrays::_reverse Float64Arrays::reverse;
+
+
+
+    Float64Arrays::_reverse_body Float64Arrays::reverse_body;
+
+
+
+    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_reverse_body, Float64Arrays::_reverse_cond> Float64Arrays::__while_loop2_25;
+
+    Float64Arrays::_reverse_cond Float64Arrays::reverse_cond;
+
+
+
+    Float64Arrays::_reverse_repeat Float64Arrays::reverse_repeat;
+
+
+
+    Float64Arrays::_set Float64Arrays::set;
+
+
+
+    Float64Arrays::_shape Float64Arrays::shape;
+
+
+
+    Float64Arrays::_test_array3_2_2 Float64Arrays::test_array3_2_2;
+
+
+
+    Float64Arrays::_test_array3_2_2F Float64Arrays::test_array3_2_2F;
+
+
+
+    Float64Arrays::_test_array3_3 Float64Arrays::test_array3_3;
+
+
+
+    Float64Arrays::_test_vector2 Float64Arrays::test_vector2;
+
+
+
+    Float64Arrays::_test_vector3 Float64Arrays::test_vector3;
+
+
+
+    Float64Arrays::_test_vector5 Float64Arrays::test_vector5;
+
+
+
+    Float64Arrays::_total Float64Arrays::total;
+
+
+
+    Float64Arrays::_transpose Float64Arrays::transpose;
+
+
+
+    Float64Arrays::_transpose_body Float64Arrays::transpose_body;
+
+
+
+    Float64Arrays::_transpose_repeat Float64Arrays::transpose_repeat;
+
+
+
+    Float64Arrays::_unaryMap Float64Arrays::unaryMap;
+
+
+
+    Float64Arrays::_unary_sub Float64Arrays::unary_sub;
+
+
+
+    Float64Arrays::_unary_sub_body Float64Arrays::unary_sub_body;
+
+
+
+    while_loop1_2<Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_unary_sub_body, Float64Arrays::_unary_sub_cond> Float64Arrays::__while_loop1_20;
+
+    Float64Arrays::_unary_sub_cond Float64Arrays::unary_sub_cond;
+
+
+
+    Float64Arrays::_unary_sub_repeat Float64Arrays::unary_sub_repeat;
+
+
+
+    Float64Arrays::_unwrap_scalar Float64Arrays::unwrap_scalar;
+
+
+
+    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_transpose_body, Float64Arrays::_upper_bound> Float64Arrays::__while_loop2_26;
+
+    Float64Arrays::_upper_bound Float64Arrays::upper_bound;
+
+} // examples
+} // moa
+} // mg_src
+} // moa_cpp
+
+namespace examples {
+namespace moa {
+namespace mg_src {
+namespace moa_cpp {
+    int32_utils Int32Arrays::__int32_utils;
+
+
+
+    Int32Arrays::_print_parray Int32Arrays::print_parray;
+
+
+
+    Int32Arrays::_cat_shape Int32Arrays::cat_shape;
+
+
+
+    Int32Arrays::_padded_shape Int32Arrays::padded_shape;
+
+
+
+    Int32Arrays::_print_shape Int32Arrays::print_shape;
+
+
+
+    Int32Arrays::_reverse_shape Int32Arrays::reverse_shape;
+
+
+
+    Int32Arrays::_create_shape1 Int32Arrays::create_shape1;
+
+
+
+    Int32Arrays::_create_shape2 Int32Arrays::create_shape2;
+
+
+
+    Int32Arrays::_create_shape3 Int32Arrays::create_shape3;
+
+
+
+    Int32Arrays::_padded_dim Int32Arrays::padded_dim;
+
+
+
+    Int32Arrays::_padded_drop_shape_elem Int32Arrays::padded_drop_shape_elem;
+
+
+
+    Int32Arrays::_padded_get_shape_elem Int32Arrays::padded_get_shape_elem;
+
+
+
+    Int32Arrays::_padded_total Int32Arrays::padded_total;
+
+
+
+    Int32Arrays::_print_uint Int32Arrays::print_uint;
+
+    array<Int32Arrays::Int32> Int32Arrays::__array;
+
+
+
+    Int32Arrays::_elem_uint Int32Arrays::elem_uint;
+
+
+
+    Int32Arrays::_lt Int32Arrays::lt;
+
+
+
+    Int32Arrays::_one Int32Arrays::one;
+
+
+
+    Int32Arrays::_print_element Int32Arrays::print_element;
+
+
+
+    Int32Arrays::_uint_elem Int32Arrays::uint_elem;
+
+
+
+    Int32Arrays::_zero Int32Arrays::zero;
+
+
+
+    Int32Arrays::_padded_transpose_body Int32Arrays::padded_transpose_body;
+
+
+
+    Int32Arrays::_padded_transpose_repeat Int32Arrays::padded_transpose_repeat;
+
+
+
+    while_loop2_2<Int32Arrays::PaddedArray, Int32Arrays::IndexContainer, Int32Arrays::PaddedArray, Int32Arrays::UInt32, Int32Arrays::_padded_transpose_body, Int32Arrays::_padded_upper_bound> Int32Arrays::__while_loop2_27;
+
+    Int32Arrays::_padded_upper_bound Int32Arrays::padded_upper_bound;
+
+
+
+    Int32Arrays::_print_index_container Int32Arrays::print_index_container;
+
+
+
+    Int32Arrays::_cat_index Int32Arrays::cat_index;
+
+
+
+    Int32Arrays::_create_index1 Int32Arrays::create_index1;
+
+
+
+    Int32Arrays::_create_index2 Int32Arrays::create_index2;
+
+
+
+    Int32Arrays::_create_index3 Int32Arrays::create_index3;
+
+
+
+    Int32Arrays::_drop_index_elem Int32Arrays::drop_index_elem;
+
+
+
+    Int32Arrays::_get_index_elem Int32Arrays::get_index_elem;
+
+
+
+    Int32Arrays::_get_index_ixc Int32Arrays::get_index_ixc;
+
+
+
+    Int32Arrays::_print_index Int32Arrays::print_index;
+
+
+
+    Int32Arrays::_reverse_index Int32Arrays::reverse_index;
+
+
+
+    Int32Arrays::_test_index Int32Arrays::test_index;
+
+
+
+    Int32Arrays::_binaryMap Int32Arrays::binaryMap;
+
+
+
+    Int32Arrays::_binary_add Int32Arrays::binary_add;
+
+
+
+    Int32Arrays::_binary_sub Int32Arrays::binary_sub;
+
+
+
+    Int32Arrays::_bmb_div Int32Arrays::bmb_div;
+
+
+
+    Int32Arrays::_bmb_div_rep Int32Arrays::bmb_div_rep;
+
+
+
+    Int32Arrays::_bmb_mul Int32Arrays::bmb_mul;
+
+
+
+    Int32Arrays::_bmb_mul_rep Int32Arrays::bmb_mul_rep;
+
+
+
+    Int32Arrays::_bmb_plus Int32Arrays::bmb_plus;
+
+
+
+    Int32Arrays::_bmb_plus_rep Int32Arrays::bmb_plus_rep;
+
+
+
+    Int32Arrays::_bmb_sub Int32Arrays::bmb_sub;
+
+
+
+    Int32Arrays::_bmb_sub_rep Int32Arrays::bmb_sub_rep;
+
+
+
+    Int32Arrays::_cat Int32Arrays::cat;
+
+
+
+    Int32Arrays::_cat_body Int32Arrays::cat_body;
+
+
+
+    while_loop2_2<Int32Arrays::Array, Int32Arrays::Array, Int32Arrays::UInt32, Int32Arrays::Array, Int32Arrays::_cat_body, Int32Arrays::_cat_cond> Int32Arrays::__while_loop2_20;
+
+    Int32Arrays::_cat_cond Int32Arrays::cat_cond;
+
+
+
+    Int32Arrays::_cat_repeat Int32Arrays::cat_repeat;
+
+
+
+    Int32Arrays::_cat_vec Int32Arrays::cat_vec;
+
+
+
+    Int32Arrays::_cat_vec_body Int32Arrays::cat_vec_body;
+
+
+
+    while_loop2_2<Int32Arrays::Array, Int32Arrays::Array, Int32Arrays::Array, Int32Arrays::UInt32, Int32Arrays::_cat_vec_body, Int32Arrays::_cat_vec_cond> Int32Arrays::__while_loop2_2;
+
+    Int32Arrays::_cat_vec_cond Int32Arrays::cat_vec_cond;
+
+
+
+    Int32Arrays::_cat_vec_repeat Int32Arrays::cat_vec_repeat;
+
+
+
+    Int32Arrays::_circular_padl Int32Arrays::circular_padl;
+
+
+
+    Int32Arrays::_circular_padr Int32Arrays::circular_padr;
+
+
+
+    Int32Arrays::_create_array Int32Arrays::create_array;
+
+
+
+    Int32Arrays::_create_padded_array Int32Arrays::create_padded_array;
+
+
+
+    Int32Arrays::_create_valid_indices Int32Arrays::create_valid_indices;
+
+
+
+    Int32Arrays::_dim Int32Arrays::dim;
+
+
+
+    Int32Arrays::_div Int32Arrays::div;
+
+
+
+    Int32Arrays::_drop_shape_elem Int32Arrays::drop_shape_elem;
+
+
+
+    Int32Arrays::_get Int32Arrays::get;
+
+
+
+    Int32Arrays::_get_shape_elem Int32Arrays::get_shape_elem;
+
+
+
+    while_loop2_2<Int32Arrays::Array, Int32Arrays::IndexContainer, Int32Arrays::Array, Int32Arrays::UInt32, Int32Arrays::_bmb_div, Int32Arrays::_mapped_ops_cond> Int32Arrays::__while_loop2_21;
+
+    while_loop2_2<Int32Arrays::Array, Int32Arrays::IndexContainer, Int32Arrays::Array, Int32Arrays::UInt32, Int32Arrays::_bmb_mul, Int32Arrays::_mapped_ops_cond> Int32Arrays::__while_loop2_22;
+
+    while_loop2_2<Int32Arrays::Array, Int32Arrays::IndexContainer, Int32Arrays::Array, Int32Arrays::UInt32, Int32Arrays::_bmb_plus, Int32Arrays::_mapped_ops_cond> Int32Arrays::__while_loop2_23;
+
+    while_loop2_2<Int32Arrays::Array, Int32Arrays::IndexContainer, Int32Arrays::Array, Int32Arrays::UInt32, Int32Arrays::_bmb_sub, Int32Arrays::_mapped_ops_cond> Int32Arrays::__while_loop2_24;
+
+    Int32Arrays::_mapped_ops_cond Int32Arrays::mapped_ops_cond;
+
+
+
+    Int32Arrays::_mul Int32Arrays::mul;
+
+
+
+    Int32Arrays::_padded_to_unpadded Int32Arrays::padded_to_unpadded;
+
+
+
+    Int32Arrays::_print_array Int32Arrays::print_array;
+
+
+
+    Int32Arrays::_reshape Int32Arrays::reshape;
+
+
+
+    Int32Arrays::_reshape_body Int32Arrays::reshape_body;
+
+
+
+    while_loop1_2<Int32Arrays::Array, Int32Arrays::Array, Int32Arrays::UInt32, Int32Arrays::_reshape_body, Int32Arrays::_reshape_cond> Int32Arrays::__while_loop1_2;
+
+    Int32Arrays::_reshape_cond Int32Arrays::reshape_cond;
+
+
+
+    Int32Arrays::_reshape_repeat Int32Arrays::reshape_repeat;
+
+
+
+    Int32Arrays::_reverse Int32Arrays::reverse;
+
+
+
+    Int32Arrays::_reverse_body Int32Arrays::reverse_body;
+
+
+
+    while_loop2_2<Int32Arrays::Array, Int32Arrays::IndexContainer, Int32Arrays::Array, Int32Arrays::UInt32, Int32Arrays::_reverse_body, Int32Arrays::_reverse_cond> Int32Arrays::__while_loop2_25;
+
+    Int32Arrays::_reverse_cond Int32Arrays::reverse_cond;
+
+
+
+    Int32Arrays::_reverse_repeat Int32Arrays::reverse_repeat;
+
+
+
+    Int32Arrays::_set Int32Arrays::set;
+
+
+
+    Int32Arrays::_shape Int32Arrays::shape;
+
+
+
+    Int32Arrays::_test_array3_2_2 Int32Arrays::test_array3_2_2;
+
+
+
+    Int32Arrays::_test_array3_2_2F Int32Arrays::test_array3_2_2F;
+
+
+
+    Int32Arrays::_test_array3_3 Int32Arrays::test_array3_3;
+
+
+
+    Int32Arrays::_test_vector2 Int32Arrays::test_vector2;
+
+
+
+    Int32Arrays::_test_vector3 Int32Arrays::test_vector3;
+
+
+
+    Int32Arrays::_test_vector5 Int32Arrays::test_vector5;
+
+
+
+    Int32Arrays::_total Int32Arrays::total;
+
+
+
+    Int32Arrays::_transpose Int32Arrays::transpose;
+
+
+
+    Int32Arrays::_transpose_body Int32Arrays::transpose_body;
+
+
+
+    Int32Arrays::_transpose_repeat Int32Arrays::transpose_repeat;
+
+
+
+    Int32Arrays::_unaryMap Int32Arrays::unaryMap;
+
+
+
+    Int32Arrays::_unary_sub Int32Arrays::unary_sub;
+
+
+
+    Int32Arrays::_unary_sub_body Int32Arrays::unary_sub_body;
+
+
+
+    while_loop1_2<Int32Arrays::IndexContainer, Int32Arrays::Array, Int32Arrays::UInt32, Int32Arrays::_unary_sub_body, Int32Arrays::_unary_sub_cond> Int32Arrays::__while_loop1_20;
+
+    Int32Arrays::_unary_sub_cond Int32Arrays::unary_sub_cond;
+
+
+
+    Int32Arrays::_unary_sub_repeat Int32Arrays::unary_sub_repeat;
+
+
+
+    Int32Arrays::_unwrap_scalar Int32Arrays::unwrap_scalar;
+
+
+
+    while_loop2_2<Int32Arrays::Array, Int32Arrays::IndexContainer, Int32Arrays::Array, Int32Arrays::UInt32, Int32Arrays::_transpose_body, Int32Arrays::_upper_bound> Int32Arrays::__while_loop2_26;
+
+    Int32Arrays::_upper_bound Int32Arrays::upper_bound;
 
 } // examples
 } // moa

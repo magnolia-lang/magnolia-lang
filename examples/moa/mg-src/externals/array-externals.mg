@@ -86,6 +86,7 @@ implementation ExtOps = external C++ base.array {
     function test_vector5(): Array;
 
     function test_array3_2_2(): Array;
+    function test_array3_2_2F(): Array;
     function test_array3_3(): Array;
     function test_index(): Index;
 

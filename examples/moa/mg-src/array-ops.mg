@@ -85,6 +85,7 @@ implementation BopmapOpsImpl = {
 
         var ix = get_index_ixc(ix_space, c);
         var new_value = bop(unwrap_scalar(get(a, ix)), unwrap_scalar(get(b, ix)));
+
         call set(b, ix, new_value);
 
         c = elem_uint(uint_elem(c) + one());
@@ -134,6 +135,7 @@ implementation UnaryMapImpl = {
                              upd c: UInt32) {
 
         var ix = get_index_ixc(ix_space, c);
+
         var new_value = - unwrap_scalar(get(a, ix));
         call set(a, ix, new_value);
 
