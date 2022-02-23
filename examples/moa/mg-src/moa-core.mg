@@ -234,6 +234,7 @@ implementation Transformations = {
         var new_ix_0 = uint_elem(sh_0) - (uint_elem(ix_0) + one());
 
         var new_ix = cat_index(create_index1(elem_uint(new_ix_0)), drop_index_elem(ix, elem_uint(zero())));
+
         call set(res, new_ix, elem);
 
         c = elem_uint(uint_elem(c) + one());
@@ -257,15 +258,12 @@ implementation Transformations = {
         var res_array = create_array(shape(a));
 
         var valid_indices = create_valid_indices(res_array);
-
         var counter = elem_uint(zero());
 
         call reverse_repeat(a, valid_indices, res_array, counter);
 
         value res_array;
     }
-
-    // procedure rotate(upd a: Array, step: UInt32);
 }
 
 implementation Catenation = {
@@ -405,6 +403,26 @@ implementation Catenation = {
 
         value res;
     }
+}
+
+
+implementation Rotate = {
+
+    use Catenation;
+
+    predicate rotate_cond(a: Array, ix_space: IndexContainer, res: Array, c: UInt32) {
+
+        var primary_axis = uint_elem(get_shape_elem(a, elem_uint(zero())));
+
+        value uint_elem(c) < primary_axis;
+    }
+
+    procedure rotate_body(obs a: Array, obs ix_space: IndexContainer, upd res: Array, upd c: UInt32) {
+
+
+
+    }
+
 }
 
 implementation Padding = {

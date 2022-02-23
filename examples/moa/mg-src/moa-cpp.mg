@@ -1,16 +1,10 @@
 package examples.moa.mg-src.moa-cpp
     imports examples.moa.mg-src.fdm,
             examples.moa.mg-src.moa-core,
-            examples.moa.mg-src.num-ops,
             examples.moa.mg-src.externals.number-types-externals;
 
 
-implementation Int32Utils = external C++ base.int32_utils
-    NumOps[NumberType => Int32];
 
-
-implementation Float64Utils = external C++ base.float64_utils
-    NumOps[NumberType => Float64];
 
 program Int32Arrays = {
 

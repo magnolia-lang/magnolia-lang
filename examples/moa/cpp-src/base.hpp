@@ -380,6 +380,24 @@ struct array {
         return sh;
     }
 
+    static bool compare_indices(Index a, Index b) {
+
+        for (auto i = 0; i < a.size(); i++) {
+
+            if (a.at(i) < b.at(i)) {
+                return true;
+            }
+            else if (a.at(i) == b.at(i))
+                continue;
+
+            else
+                return false;
+        }
+
+        return false;
+
+    }
+
     inline IndexContainer create_valid_indices(Array a) {
 
         auto sh = shape(a);
@@ -416,6 +434,7 @@ struct array {
                 }
             }
 
+        std::sort(indices.begin(), indices.end(), compare_indices);
         return indices;
     }
 

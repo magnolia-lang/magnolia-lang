@@ -67,6 +67,10 @@ namespace moa_cpp {
 
 
 
+    BurgerProgram::_eq BurgerProgram::eq;
+
+
+
     BurgerProgram::_lt BurgerProgram::lt;
 
 
@@ -420,6 +424,10 @@ namespace moa_cpp {
 
 
 
+    Float64Arrays::_eq Float64Arrays::eq;
+
+
+
     Float64Arrays::_lt Float64Arrays::lt;
 
 
@@ -766,6 +774,10 @@ namespace moa_cpp {
 
 
     Int32Arrays::_elem_uint Int32Arrays::elem_uint;
+
+
+
+    Int32Arrays::_eq Int32Arrays::eq;
 
 
 

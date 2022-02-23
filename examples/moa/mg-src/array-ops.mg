@@ -1,6 +1,6 @@
 package examples.moa.mg-src.array-ops
-    imports examples.moa.mg-src.num-ops,
-            examples.moa.mg-src.externals.array-externals,
+    imports examples.moa.mg-src.externals.array-externals,
+            examples.moa.mg-src.externals.number-types-externals,
             examples.moa.mg-src.externals.while-loops;
 
 concept MappedOps = {

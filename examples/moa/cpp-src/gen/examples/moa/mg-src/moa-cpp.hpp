@@ -117,6 +117,13 @@ public:
     };
 
     static BurgerProgram::_elem_uint elem_uint;
+    struct _eq {
+        inline bool operator()(const BurgerProgram::Int32& a, const BurgerProgram::Int32& b) {
+            return __int32_utils.eq(a, b);
+        };
+    };
+
+    static BurgerProgram::_eq eq;
     struct _lt {
         inline bool operator()(const BurgerProgram::Int32& a, const BurgerProgram::Int32& b) {
             return __int32_utils.lt(a, b);
@@ -809,6 +816,13 @@ public:
     };
 
     static Float64Arrays::_elem_uint elem_uint;
+    struct _eq {
+        inline bool operator()(const Float64Arrays::Float64& a, const Float64Arrays::Float64& b) {
+            return __float64_utils.eq(a, b);
+        };
+    };
+
+    static Float64Arrays::_eq eq;
     struct _lt {
         inline bool operator()(const Float64Arrays::Float64& a, const Float64Arrays::Float64& b) {
             return __float64_utils.lt(a, b);
@@ -1585,6 +1599,13 @@ public:
     };
 
     static Int32Arrays::_elem_uint elem_uint;
+    struct _eq {
+        inline bool operator()(const Int32Arrays::Int32& a, const Int32Arrays::Int32& b) {
+            return __int32_utils.eq(a, b);
+        };
+    };
+
+    static Int32Arrays::_eq eq;
     struct _lt {
         inline bool operator()(const Int32Arrays::Int32& a, const Int32Arrays::Int32& b) {
             return __int32_utils.lt(a, b);

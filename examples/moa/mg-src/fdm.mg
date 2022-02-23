@@ -4,7 +4,14 @@ package examples.moa.mg-src.fdm
             examples.moa.mg-src.externals.while-loops;
 
 
+/*
 
+MoA operations needed for FDM: (source: fengshui)
+-shape DONE
+-psi   DONE
+-rotate
+-cat DONE
+*/
 implementation Burger = {
 
     //use MappedOpsImpl[bop => _+_, bopmap => _+_];
