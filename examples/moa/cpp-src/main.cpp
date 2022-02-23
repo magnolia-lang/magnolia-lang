@@ -2,6 +2,7 @@
 #include "gen/examples/moa/mg-src/moa-cpp.hpp"
 
 using examples::moa::mg_src::moa_cpp::ArrayProgram;
+using examples::moa::mg_src::moa_cpp::TestingSuite;
 
 int main(int argc, char **argv) {
 
@@ -145,23 +146,20 @@ int main(int argc, char **argv) {
     std::cout << "reverse(a):" << std::endl;
     P.print_array(P.reverse(trans_array));
 
+    TestingSuite T;
+
+    std::cout << "RAVEL:" << std::endl;
+    std::cout << "Original array:" << std::endl;
+    auto rav_array = P.test_array3_2_2();
+    P.print_array(rav_array);
+    std::cout << "Shape:";
+    P.print_shape(P.shape(rav_array));
 
     std::cout << std::endl;
-    std::cout << "INNER PRODUCT" << std::endl;
-    std::cout << "Original arrays:" << std::endl;
-    auto ip_array_input1 = P.test_array3_3();
 
-    P.print_array(ip_array_input1);
-    P.print_array(ip_array_input1);
-
-    //auto ip_res = P.inner_product(ip_array_input1,ip_array_input1);
-
-    std::cout << "Shape of the inner product:" << std::endl;
-    //P.print_shape(P.shape(ip_res));
-
-    std::cout << "matmult(a1,a1):" << std::endl;
-
-    auto matmult_res = P.matmult2d(ip_array_input1,ip_array_input1);
-
-    P.print_array(matmult_res);
+    std::cout << "rav(a):" << std::endl;
+    auto res_rav = T.ravel(rav_array);
+    P.print_array(res_rav);
+    std::cout << "Shape:";
+    P.print_shape(P.shape(res_rav));
 }
