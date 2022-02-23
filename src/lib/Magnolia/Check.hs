@@ -727,8 +727,8 @@ annotateScopedExprStmt modul = go
       let mboundVar = M.lookup name scope
       unless (isNothing mboundVar) $
         throwLocatedE MiscErr src $ "conflicting definitions for variable " <>
-          pshow name <> ". Attempted to define variable " <> pshow name <>
-          " with type " <> pshow mTy <> ", but a definition with type " <>
+          pshow name <> ". Attempted to declare new variable " <> pshow name <>
+          " but a definition with type " <>
           pshow ( _ann $ fromJust mboundVar) <> " already exists in scope"
       case mExpr of
         Nothing -> do
