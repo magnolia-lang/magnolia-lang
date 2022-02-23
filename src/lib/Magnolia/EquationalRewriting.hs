@@ -8,6 +8,7 @@ module Magnolia.EquationalRewriting (
 
 import Control.Monad (foldM, join)
 import Control.Monad.IO.Class (liftIO)
+import Control.Monad.State
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
 import Data.Maybe (isNothing)
@@ -30,7 +31,7 @@ type Optimizer = TcModule
 
 -- | An IR to represent expressions during this equational rewriting phase. The
 -- representation is introduced to manipulate predicates with more ease.
--- TODO: fix up TcExpr so that it is the opposite: predicate combinatores will
+-- TODO: fix up TcExpr so that it is the opposite: predicate combinators will
 -- not be represented as functions, unless passing through a STF/possibly code
 -- generation. This should simplify some things.
 -- TODO: round-tripping is not the identity right now, since the Checked AST
@@ -220,14 +221,12 @@ runOptimizer (Ann _ optimizer) (Ann tgtDeclO tgtModule) = case optimizer of
     -- 2. inline expressions within axioms (TODO)
     inlinedAxioms <- mapM (\(AnonymousAxiom v typedExprIR) ->
       AnonymousAxiom v <$> inlineTypedExprIR typedExprIR) axioms
-    liftIO $ mapM_ (\(AnonymousAxiom _ e) -> pprint (fromTypedExprIR e)) inlinedAxioms
-    undefined
+    liftIO $ mapM_ (\(AnonymousAxiom _ e) -> pprint (fromTypedExprIR $ canonicalize e)) inlinedAxioms
     -- 3. gather directed rewrite rules
-    constraints <- join <$> mapM gatherConstraints axioms
+    constraints <- join <$> mapM gatherConstraints inlinedAxioms
     -- == debug ==
     let printable = map (\c -> (S.toList $ eqnVariables $ constraintEquation c, fromTypedExprIR . eqnSourceExpr . constraintEquation $ c, fromTypedExprIR . eqnTargetExpr . constraintEquation $ c)) constraints
     liftIO $ mapM_ pprint printable
-    --liftIO $ print constraints
     -- ==/ debug ==
     -- 4. build some kind of assertion scope
     equationalScope <- undefined
@@ -239,6 +238,81 @@ runOptimizer (Ann _ optimizer) (Ann tgtDeclO tgtModule) = case optimizer of
     --pure $ Ann tgtDeclO (MModule tgtModuleTy tgtModuleName resultModuleExpr)
     undefined
   _ -> undefined
+
+  where
+    addRule :: undefined
+    addRule = undefined
+
+-- Note: the strategy for identifying if a rule fits a pattern is to have a
+-- map which contains for each rewrite rule its
+-- see https://www.microsoft.com/en-us/research/uploads/prod/2021/02/hashing-modulo-alpha.pdf
+
+-- | Canonicalize variable names (alpha renaming).
+canonicalize :: TypedExprIR -> TypedExprIR
+canonicalize typedExprIR = canonicalize' typedExprIR `evalState` (M.empty, 0)
+  where
+    canonicalize' :: TypedExprIR -> State (M.Map Name Name, Int) TypedExprIR
+    canonicalize' (inTyExprIR, inExprIR) = (inTyExprIR,) <$> (case inExprIR of
+        ExprIR'Var (VarIR mode name ty) -> do
+          name' <- canonicalizeName name
+          pure $ ExprIR'Var (VarIR mode name' ty)
+        ExprIR'Call name args -> ExprIR'Call name <$> mapM canonicalize' args
+        ExprIR'ValueBlock stmts -> ExprIR'ValueBlock <$>
+          mapM canonicalize' stmts
+        ExprIR'EffectfulBlock stmts -> ExprIR'EffectfulBlock <$>
+          mapM canonicalize' stmts
+        ExprIR'Value exprIR -> ExprIR'Value <$> canonicalize' exprIR
+        ExprIR'Let (VarIR mode name ty) mexprIR -> do
+          newVar <- (\n -> VarIR mode n ty) <$> canonicalizeName name
+          mexprIR' <- case canonicalize' <$> mexprIR of
+            Nothing -> pure Nothing
+            Just stateComp -> Just <$> stateComp
+          pure $ ExprIR'Let newVar mexprIR'
+        ExprIR'If condIR trueExprIR falseExprIR -> do
+          ExprIR'If <$> canonicalizePredicateIR condIR
+                    <*> canonicalize' trueExprIR <*> canonicalize' falseExprIR
+        ExprIR'Assert predicateIR ->
+          ExprIR'Assert <$> canonicalizePredicateIR predicateIR
+        ExprIR'Skip -> pure ExprIR'Skip)
+
+    canonicalizePredicateIR :: PredicateIR
+                            -> State (M.Map Name Name, Int) PredicateIR
+    canonicalizePredicateIR predicateIR = case predicateIR of
+      PredicateIR'And lhs rhs -> predicateCombinator PredicateIR'And lhs rhs
+      PredicateIR'Or lhs rhs -> predicateCombinator PredicateIR'Or lhs rhs
+      PredicateIR'Implies lhs rhs ->
+        predicateCombinator PredicateIR'Implies lhs rhs
+      PredicateIR'Equivalent lhs rhs ->
+        predicateCombinator PredicateIR'Equivalent lhs rhs
+      PredicateIR'PredicateEquation lhs rhs ->
+        predicateCombinator PredicateIR'PredicateEquation lhs rhs
+      PredicateIR'Negation predicateIR' -> PredicateIR'Negation <$>
+        canonicalizePredicateIR predicateIR'
+      PredicateIR'Atom predicateIRAtom -> PredicateIR'Atom <$>
+        canonicalizePredicateIRAtom predicateIRAtom
+
+    canonicalizePredicateIRAtom :: PredicateIRAtom
+                                -> State (M.Map Name Name, Int) PredicateIRAtom
+    canonicalizePredicateIRAtom predicateIRAtom = case predicateIRAtom of
+      PredicateIRAtom'Call name args -> PredicateIRAtom'Call name <$>
+        mapM canonicalize' args
+      PredicateIRAtom'ExprEquation lhs rhs -> PredicateIRAtom'ExprEquation <$>
+        canonicalize' lhs <*> canonicalize' rhs
+
+    predicateCombinator constructor lhsPredicate rhsPredicate =
+      constructor <$> canonicalizePredicateIR lhsPredicate
+                  <*> canonicalizePredicateIR rhsPredicate
+
+    canonicalizeName :: Name -> State (M.Map Name Name, Int) Name
+    canonicalizeName name = do
+      (bindings, nextId) <- get
+      case M.lookup name bindings of
+        Just name' -> pure name'
+        Nothing -> do
+          let name' = GenName ("?" <> show nextId)
+              newBindings = M.insert name name' bindings
+          put (newBindings, nextId + 1)
+          pure name'
 
 data AnonymousAxiom = AnonymousAxiom { axiomVariables :: S.Set Name
                                      , axiomBody :: TypedExprIR
@@ -392,12 +466,21 @@ inlineTypedExprIR inTypedExprIR = snd <$> go M.empty inTypedExprIR
         Nothing -> ret bindings inExprIR
         Just (_, exprIR) -> ret bindings exprIR
       ExprIR'Call name args -> do
-        case name of
-          ProcName _ -> throwNonLocatedE NotImplementedErr
-            "inlining of procedures has not been implemented"
-          _ -> pure ()
         args' <- mapM ((snd <$>) . go bindings) args
-        ret bindings (ExprIR'Call name args')
+        case name of
+          -- If what we are calling is a procedure, then upd and out arguments
+          -- are modified by the call, and we need to produce a valid expression
+          -- for each of them. This could be achieved through functionalization
+          -- (see 'Interfacing Concepts: Why Declaration Style Shouldn't
+          -- Matter').
+          -- However, functionalization requires the procedures to be
+          -- implemented as several functions as well. Such implementations can
+          -- be automatically generated for Magnolia procedures, but not for
+          -- external ones.
+          -- TODO: implement, or explicitly ignore
+          ProcName _ -> throwNonLocatedE NotImplementedErr
+            "inlining involving procedure calls"
+          _ -> ret bindings (ExprIR'Call name args')
       ExprIR'ValueBlock stmts -> do
         -- In principle, bindings can be discarded when exiting value blocks.
         -- They should not be able to modify existing variables.
@@ -488,6 +571,19 @@ inlineTypedExprIR inTypedExprIR = snd <$> go M.empty inTypedExprIR
         pure $ PredicateIRAtom'Call name inlineArgs
       PredicateIRAtom'ExprEquation lhs rhs ->
         PredicateIRAtom'ExprEquation <$> inlineExprIR' lhs <*> inlineExprIR' rhs
+
+    -- TODO: with a proper analysis here, we could know which parameters are
+    -- obs, and which are not. In this case, we are unfortunately creating
+    -- a block for even obs variables (which are not modified).
+    -- Functionalizing can essentially be implemented, for a single variable,
+    -- as an assignment of a value block to the variable such that this value
+    -- block copies each variable, calls the procedure with the copies as
+    -- arguments, and returns the updated value of the component.
+    -- the copy as an argument,
+    functionalize :: S.Set Name -> ExprIR -> ExprIR
+    functionalize bindings (ExprIR'Call (ProcName n) args) =
+      let
+      in undefined
 
 -- | Extracts the type annotation from a 'TcExpr'.
 exprTy :: TcExpr -> MType
