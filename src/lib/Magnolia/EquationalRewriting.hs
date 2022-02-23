@@ -218,6 +218,10 @@ runOptimizer (Ann _ optimizer) (Ann tgtDeclO tgtModule) = case optimizer of
     axioms <- gatherAxioms optimizerModuleExpr
     --liftIO $ print axioms
     -- 2. inline expressions within axioms (TODO)
+    inlinedAxioms <- mapM (\(AnonymousAxiom v typedExprIR) ->
+      AnonymousAxiom v <$> inlineTypedExprIR typedExprIR) axioms
+    liftIO $ mapM_ (\(AnonymousAxiom _ e) -> pprint (fromTypedExprIR e)) inlinedAxioms
+    undefined
     -- 3. gather directed rewrite rules
     constraints <- join <$> mapM gatherConstraints axioms
     -- == debug ==
@@ -264,7 +268,6 @@ gatherConstraints (AnonymousAxiom variables typedExprIR) = go typedExprIR
         throwNonLocatedE CompilerErr
           "can not yet gather constraints in conditionals"
       ExprIR'Assert predicateIR -> unfoldPredicateIR predicateIR
-
       ExprIR'Skip -> noConstraint
 
     unfoldPredicateIR :: PredicateIR
@@ -372,25 +375,29 @@ gatherAxioms tcModuleExpr = do
           pshow (srcCtx $ NE.head absDeclOs) <> ")"
 
 -- | Inlines an expression, i.e. replace all variables by their content as much
--- as possible. TODO: add another type for inlining?
+-- as possible. Note that for our purposes, inlining does *not* unfold function
+-- calls. TODO: add another type for inlining?
 -- TODO: this will not need to be an MgMonad if we can deal with procedures
 -- properly.
 inlineTypedExprIR :: TypedExprIR -> MgMonad TypedExprIR
-inlineTypedExprIR typedExprIR = snd <$> go M.empty typedExprIR
+inlineTypedExprIR inTypedExprIR = snd <$> go M.empty inTypedExprIR
   where
-    go :: M.Map Name ExprIR -> TypedExprIR
-       -> MgMonad (M.Map Name ExprIR, TypedExprIR)
-    go bindings inTypedExprIR@(inTyExprIR, inExprIR) = case inExprIR of
+    go :: M.Map Name TypedExprIR -> TypedExprIR
+       -> MgMonad (M.Map Name TypedExprIR, TypedExprIR)
+    go bindings (inTyExprIR, inExprIR) = case inExprIR of
       ExprIR'Var (VarIR _ name _) -> case M.lookup name bindings of
         -- The only case in which the variable can not be found is when it is
         -- bound outside the expression, i.e. when it is a parameter, and thus
         -- universally quantified.
-        Nothing -> pure (bindings, inTypedExprIR)
-        Just exprIR -> ret bindings exprIR
+        Nothing -> ret bindings inExprIR
+        Just (_, exprIR) -> ret bindings exprIR
       ExprIR'Call name args -> do
+        case name of
+          ProcName _ -> throwNonLocatedE NotImplementedErr
+            "inlining of procedures has not been implemented"
+          _ -> pure ()
         args' <- mapM ((snd <$>) . go bindings) args
         ret bindings (ExprIR'Call name args')
-        --xprIR'Call name <$> mapM (go bindings) args
       ExprIR'ValueBlock stmts -> do
         -- In principle, bindings can be discarded when exiting value blocks.
         -- They should not be able to modify existing variables.
@@ -398,25 +405,89 @@ inlineTypedExprIR typedExprIR = snd <$> go M.empty typedExprIR
         ret bindings (ExprIR'ValueBlock stmts')
       ExprIR'EffectfulBlock stmts -> do
         (bindings', stmts') <- mapAccumM go bindings stmts
-        ret bindings' (ExprIR'ValueBlock stmts')
+        -- Here, bindings' may contain more variables than bindings. We delete
+        -- the variables introduced in the effectful block, as they now ran out
+        -- of scope.
+        let bindings'' = restrictVariables (M.keys bindings) bindings'
+        ret bindings'' (ExprIR'ValueBlock stmts')
       ExprIR'Value exprIR -> do
         exprIR' <- snd <$> go bindings exprIR
         ret bindings (ExprIR'Value exprIR')
       ExprIR'Let (VarIR mode name ty) mexpr -> case mexpr of
         Nothing -> ret bindings inExprIR
         Just exprIR -> do
-          (_, (tyExprIR', exprIR')) <- go bindings exprIR
+          (_, exprIR') <- go bindings exprIR
           let bindings' = M.insert name exprIR' bindings
           ret bindings'
-              (ExprIR'Let (VarIR mode name ty) (Just (tyExprIR', exprIR')))
+              (ExprIR'Let (VarIR mode name ty) (Just exprIR'))
       -- TODO: WIP here
-      ExprIR'If pi x0 x1 -> undefined
-      ExprIR'Assert pi -> undefined
-      ExprIR'Skip -> undefined
+      ExprIR'If condPredIR trueExprIR falseExprIR -> do
+        -- Cond can discard bindings
+        inlineCond <- inlinePredicateIR bindings condPredIR
+        (trueBindings, inlineTrueExprIR) <- go bindings trueExprIR
+        (falseBindings, inlineFalseExprIR) <- go bindings falseExprIR
+
+        let restrictedTrueBindings =
+              restrictVariables (M.keys bindings) trueBindings
+            restrictedFalseBindings =
+              restrictVariables (M.keys bindings) falseBindings
+        finalBindings <- M.fromList <$> mapM (\(k, v1) ->
+          case M.lookup k restrictedFalseBindings of
+            Nothing -> throwNonLocatedE CompilerErr
+              "binding disappeared when inlining false branch"
+            Just v2 -> pure (k, joinBranches inlineCond v1 v2))
+            (M.toList restrictedTrueBindings)
+        ret finalBindings
+            (ExprIR'If inlineCond inlineTrueExprIR inlineFalseExprIR)
+      ExprIR'Assert predicateIR -> do
+        predicateIR' <- inlinePredicateIR bindings predicateIR
+        ret bindings (ExprIR'Assert predicateIR')
+      ExprIR'Skip -> ret bindings ExprIR'Skip
       where
-        ret :: M.Map Name ExprIR -> ExprIR
-            -> MgMonad (M.Map Name ExprIR, TypedExprIR)
+        ret :: M.Map Name TypedExprIR -> ExprIR
+            -> MgMonad (M.Map Name TypedExprIR, TypedExprIR)
         ret bindings' exprIR = pure (bindings', (inTyExprIR, exprIR))
+
+    joinBranches :: PredicateIR -> TypedExprIR -> TypedExprIR -> TypedExprIR
+    joinBranches cond branch1@(ty, _) branch2 =
+      if branch1 == branch2
+      then branch1
+      else (ty, ExprIR'If cond branch1 branch2)
+
+    restrictVariables :: [Name] -> M.Map Name TypedExprIR
+                      -> M.Map Name TypedExprIR
+    restrictVariables variablesToKeep bindings =
+      let foldFn m v = case M.lookup v bindings of Nothing -> m
+                                                   Just e -> M.insert v e m
+      in foldl foldFn M.empty variablesToKeep
+
+    inlinePredicateIR :: M.Map Name TypedExprIR -> PredicateIR
+                      -> MgMonad PredicateIR
+    inlinePredicateIR bindings predicateIR = case predicateIR of
+      PredicateIR'And lhs rhs -> ipc PredicateIR'And lhs rhs
+      PredicateIR'Or lhs rhs -> ipc PredicateIR'Or lhs rhs
+      PredicateIR'Implies lhs rhs -> ipc PredicateIR'Implies lhs rhs
+      PredicateIR'Equivalent lhs rhs -> ipc PredicateIR'Equivalent lhs rhs
+      PredicateIR'PredicateEquation lhs rhs ->
+        ipc PredicateIR'PredicateEquation lhs rhs
+      PredicateIR'Negation predicateIR' ->
+        inlinePredicateIR bindings predicateIR'
+      PredicateIR'Atom predicateIRAtom -> PredicateIR'Atom <$>
+        inlinePredicateAtom bindings predicateIRAtom
+      where ipc = inlinePredicateCombinator bindings
+
+    inlinePredicateCombinator bindings cons lhs rhs = do
+      cons <$> inlinePredicateIR bindings lhs <*> inlinePredicateIR bindings rhs
+
+    inlinePredicateAtom :: M.Map Name TypedExprIR -> PredicateIRAtom
+                        -> MgMonad PredicateIRAtom
+    inlinePredicateAtom bindings predicateIRAtom =
+      let inlineExprIR' = (snd <$>) . go bindings in case predicateIRAtom of
+      PredicateIRAtom'Call name args -> do
+        inlineArgs <- mapM inlineExprIR' args
+        pure $ PredicateIRAtom'Call name inlineArgs
+      PredicateIRAtom'ExprEquation lhs rhs ->
+        PredicateIRAtom'ExprEquation <$> inlineExprIR' lhs <*> inlineExprIR' rhs
 
 -- | Extracts the type annotation from a 'TcExpr'.
 exprTy :: TcExpr -> MType
