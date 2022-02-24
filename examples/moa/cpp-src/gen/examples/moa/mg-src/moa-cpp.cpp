@@ -662,6 +662,10 @@ namespace moa_cpp {
 
 
 
+    Float64Arrays::_rotate Float64Arrays::rotate;
+
+
+
     Float64Arrays::_set Float64Arrays::set;
 
 
@@ -1114,6 +1118,10 @@ namespace moa_cpp {
 
 
     Int32Arrays::_reverse_repeat Int32Arrays::reverse_repeat;
+
+
+
+    Int32Arrays::_rotate Int32Arrays::rotate;
 
 
 

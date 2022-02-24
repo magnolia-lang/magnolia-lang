@@ -1377,6 +1377,22 @@ public:
     };
 
     static Float64Arrays::_reverse_repeat reverse_repeat;
+    struct _rotate {
+        inline Float64Arrays::Array operator()(const Float64Arrays::Float64& i, const Float64Arrays::Array& a) {
+            Float64Arrays::Array res_array;
+            if ((Float64Arrays::lt(Float64Arrays::zero(), i)) && (Float64Arrays::le(i, Float64Arrays::uint_elem(Float64Arrays::get_shape_elem(a, Float64Arrays::elem_uint(Float64Arrays::zero()))))))
+            {
+                res_array = Float64Arrays::cat(Float64Arrays::drop(i, a), Float64Arrays::take(i, a));
+            }
+            else
+            {
+                res_array = Float64Arrays::cat(Float64Arrays::take(i, a), Float64Arrays::drop(i, a));
+            }
+            return res_array;
+        };
+    };
+
+    static Float64Arrays::_rotate rotate;
     struct _set {
         inline void operator()(Float64Arrays::Array& a, const Float64Arrays::UInt32& ix, const Float64Arrays::Float64& e) {
             return __array.set(a, ix, e);
@@ -2377,6 +2393,22 @@ public:
     };
 
     static Int32Arrays::_reverse_repeat reverse_repeat;
+    struct _rotate {
+        inline Int32Arrays::Array operator()(const Int32Arrays::Int32& i, const Int32Arrays::Array& a) {
+            Int32Arrays::Array res_array;
+            if ((Int32Arrays::lt(Int32Arrays::zero(), i)) && (Int32Arrays::le(i, Int32Arrays::uint_elem(Int32Arrays::get_shape_elem(a, Int32Arrays::elem_uint(Int32Arrays::zero()))))))
+            {
+                res_array = Int32Arrays::cat(Int32Arrays::drop(i, a), Int32Arrays::take(i, a));
+            }
+            else
+            {
+                res_array = Int32Arrays::cat(Int32Arrays::take(i, a), Int32Arrays::drop(i, a));
+            }
+            return res_array;
+        };
+    };
+
+    static Int32Arrays::_rotate rotate;
     struct _set {
         inline void operator()(Int32Arrays::Array& a, const Int32Arrays::UInt32& ix, const Int32Arrays::Int32& e) {
             return __array.set(a, ix, e);

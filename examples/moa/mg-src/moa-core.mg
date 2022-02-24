@@ -134,141 +134,10 @@ implementation Reshape = {
 
 }
 
-implementation Transformations = {
-
-    use Reshape;
-    /*
-    #####################
-    Unpadded transpose
-    #####################
-    */
-    predicate upper_bound(a: Array, i: IndexContainer, res: Array, c: UInt32) = {
-        value uint_elem(c) < uint_elem(total(i));
-    }
-
-    procedure transpose_body(obs a: Array,
-                             obs ixc: IndexContainer,
-                             upd res: Array,
-                             upd c: UInt32) {
-
-        var current_ix = get_index_ixc(ixc, c);
-
-        var current_element = unwrap_scalar(get(a, reverse_index(current_ix)));
-        call set(res, current_ix, current_element);
-        c = elem_uint(uint_elem(c) + one());
-    }
-
-     use WhileLoop2_2[Context1 => Array,
-                     Context2 => IndexContainer,
-                     State1 => Array,
-                     State2 => UInt32,
-                     body => transpose_body,
-                     cond => upper_bound,
-                     repeat => transpose_repeat];
-
-    function transpose(a: Array): Array = {
-
-        var transposed_array = create_array(reverse_shape(shape(a)));
-
-        var ix_space = create_valid_indices(transposed_array);
-        var counter = elem_uint(zero());
-        call transpose_repeat(a, ix_space, transposed_array, counter);
-
-        value transposed_array;
-    }
-
-    /*
-    #####################
-    Padded transpose
-    #####################
-    */
-
-    predicate padded_upper_bound(a: PaddedArray, i: IndexContainer, res: PaddedArray, c: UInt32) = {
-        value uint_elem(c) < uint_elem(total(i));
-    }
-
-    procedure padded_transpose_body(obs a: PaddedArray,
-                                    obs ixc: IndexContainer,
-                                    upd res: PaddedArray,
-                                    upd c: UInt32) {
-
-        var current_ix = get_index_ixc(ixc, c);
-
-        var current_element = unwrap_scalar(get(a, reverse_index(current_ix)));
-        call set(res, current_ix, current_element);
-        c = elem_uint(uint_elem(c) + one());
-    }
-
-    use WhileLoop2_2[Context1 => PaddedArray,
-                     Context2 => IndexContainer,
-                     State1 => PaddedArray,
-                     State2 => UInt32,
-                     body => padded_transpose_body,
-                     cond => padded_upper_bound,
-                     repeat => padded_transpose_repeat];
-
-    function transpose(a: PaddedArray): PaddedArray = {
-
-        var reshaped_array = create_array(padded_shape(a));
-        var transposed_array = create_padded_array(
-            reverse_shape(shape(a)),                                         reverse_shape(padded_shape(a)), reshaped_array);
-
-        var ix_space = create_valid_indices(transposed_array);
-        var counter = elem_uint(zero());
-        call padded_transpose_repeat(a, ix_space, transposed_array, counter);
-
-        value transposed_array;
-    }
-    /*
-    #######
-    Unpadded reverse
-    #######
-    */
-    procedure reverse_body(obs input: Array, obs indices: IndexContainer, upd res: Array, upd c: UInt32) = {
-
-        var ix = get_index_ixc(indices, c);
-        var elem = unwrap_scalar(get(input, ix));
-
-        var sh_0 = get_shape_elem(input, elem_uint(zero()));
-        var ix_0 = get_index_elem(ix, elem_uint(zero()));
-        var new_ix_0 = uint_elem(sh_0) - (uint_elem(ix_0) + one());
-
-        var new_ix = cat_index(create_index1(elem_uint(new_ix_0)), drop_index_elem(ix, elem_uint(zero())));
-
-        call set(res, new_ix, elem);
-
-        c = elem_uint(uint_elem(c) + one());
-    }
-
-    predicate reverse_cond(input: Array, indices: IndexContainer, res: Array, c: UInt32) = {
-
-        value uint_elem(c) < uint_elem(total(indices));
-    }
-
-    use WhileLoop2_2[Context1 => Array,
-                     Context2 => IndexContainer,
-                     State1 => Array,
-                     State2 => UInt32,
-                     body => reverse_body,
-                     cond => reverse_cond,
-                     repeat => reverse_repeat];
-
-    function reverse(a: Array): Array = {
-
-        var res_array = create_array(shape(a));
-
-        var valid_indices = create_valid_indices(res_array);
-        var counter = elem_uint(zero());
-
-        call reverse_repeat(a, valid_indices, res_array, counter);
-
-        value res_array;
-    }
-}
 
 implementation Catenation = {
 
-    use Transformations;
+    use Reshape;
 
     /*########################################
         Vector catenation, i.e. cat(v1, v2)
@@ -463,11 +332,6 @@ implementation TakeDrop = {
 
     }
 
-    /*
-    shape(drop(i,a)) = ((shape(a)[0] - abs(i)) `cat` drop(1, shape(a)))
-
-    */
-
     predicate drop_cond(a: Array, i: Element, res: Array, c: UInt32) {
 
         value uint_elem(c) < uint_elem(get_shape_elem(a, elem_uint(zero())));
@@ -519,28 +383,168 @@ implementation TakeDrop = {
     }
 }
 
-implementation Rotate = {
+implementation Transformations = {
 
-    use Catenation;
+    use TakeDrop;
 
-    predicate rotate_cond(a: Array, ix_space: IndexContainer, res: Array, c: UInt32) {
+    /*
+    #######
+    Unpadded rotate
+    #######
+    */
 
-        var primary_axis = uint_elem(get_shape_elem(a, elem_uint(zero())));
+    function rotate(i: Element, a: Array): Array = {
 
-        value uint_elem(c) < primary_axis;
+        var res_array: Array;
+
+        if zero() < i && i <= uint_elem(get_shape_elem(a, elem_uint(zero()))) then {
+
+            res_array = cat(drop(i, a), take(i,a));
+
+        } else {
+
+            res_array = cat(take(i, a), drop(i,a));
+
+        };
+
+        value res_array;
     }
 
-    procedure rotate_body(obs a: Array, obs ix_space: IndexContainer, upd res: Array, upd c: Element) {
 
+    /*
+    #######
+    Unpadded reverse
+    #######
+    */
+    procedure reverse_body(obs input: Array, obs indices: IndexContainer, upd res: Array, upd c: UInt32) = {
 
+        var ix = get_index_ixc(indices, c);
+        var elem = unwrap_scalar(get(input, ix));
 
+        var sh_0 = get_shape_elem(input, elem_uint(zero()));
+        var ix_0 = get_index_elem(ix, elem_uint(zero()));
+        var new_ix_0 = uint_elem(sh_0) - (uint_elem(ix_0) + one());
+
+        var new_ix = cat_index(create_index1(elem_uint(new_ix_0)), drop_index_elem(ix, elem_uint(zero())));
+
+        call set(res, new_ix, elem);
+
+        c = elem_uint(uint_elem(c) + one());
+    }
+
+    predicate reverse_cond(input: Array, indices: IndexContainer, res: Array, c: UInt32) = {
+
+        value uint_elem(c) < uint_elem(total(indices));
+    }
+
+    use WhileLoop2_2[Context1 => Array,
+                     Context2 => IndexContainer,
+                     State1 => Array,
+                     State2 => UInt32,
+                     body => reverse_body,
+                     cond => reverse_cond,
+                     repeat => reverse_repeat];
+
+    function reverse(a: Array): Array = {
+
+        var res_array = create_array(shape(a));
+
+        var valid_indices = create_valid_indices(res_array);
+        var counter = elem_uint(zero());
+
+        call reverse_repeat(a, valid_indices, res_array, counter);
+
+        value res_array;
+    }
+    /*
+    #####################
+    Unpadded transpose
+    #####################
+    */
+    predicate upper_bound(a: Array, i: IndexContainer, res: Array, c: UInt32) = {
+        value uint_elem(c) < uint_elem(total(i));
+    }
+
+    procedure transpose_body(obs a: Array,
+                             obs ixc: IndexContainer,
+                             upd res: Array,
+                             upd c: UInt32) {
+
+        var current_ix = get_index_ixc(ixc, c);
+
+        var current_element = unwrap_scalar(get(a, reverse_index(current_ix)));
+        call set(res, current_ix, current_element);
+        c = elem_uint(uint_elem(c) + one());
+    }
+
+     use WhileLoop2_2[Context1 => Array,
+                     Context2 => IndexContainer,
+                     State1 => Array,
+                     State2 => UInt32,
+                     body => transpose_body,
+                     cond => upper_bound,
+                     repeat => transpose_repeat];
+
+    function transpose(a: Array): Array = {
+
+        var transposed_array = create_array(reverse_shape(shape(a)));
+
+        var ix_space = create_valid_indices(transposed_array);
+        var counter = elem_uint(zero());
+        call transpose_repeat(a, ix_space, transposed_array, counter);
+
+        value transposed_array;
+    }
+
+    /*
+    #####################
+    Padded transpose
+    #####################
+    */
+
+    predicate padded_upper_bound(a: PaddedArray, i: IndexContainer, res: PaddedArray, c: UInt32) = {
+        value uint_elem(c) < uint_elem(total(i));
+    }
+
+    procedure padded_transpose_body(obs a: PaddedArray,
+                                    obs ixc: IndexContainer,
+                                    upd res: PaddedArray,
+                                    upd c: UInt32) {
+
+        var current_ix = get_index_ixc(ixc, c);
+
+        var current_element = unwrap_scalar(get(a, reverse_index(current_ix)));
+        call set(res, current_ix, current_element);
+        c = elem_uint(uint_elem(c) + one());
+    }
+
+    use WhileLoop2_2[Context1 => PaddedArray,
+                     Context2 => IndexContainer,
+                     State1 => PaddedArray,
+                     State2 => UInt32,
+                     body => padded_transpose_body,
+                     cond => padded_upper_bound,
+                     repeat => padded_transpose_repeat];
+
+    function transpose(a: PaddedArray): PaddedArray = {
+
+        var reshaped_array = create_array(padded_shape(a));
+        var transposed_array = create_padded_array(
+            reverse_shape(shape(a)),                                         reverse_shape(padded_shape(a)), reshaped_array);
+
+        var ix_space = create_valid_indices(transposed_array);
+        var counter = elem_uint(zero());
+        call padded_transpose_repeat(a, ix_space, transposed_array, counter);
+
+        value transposed_array;
     }
 
 }
 
+
 implementation Padding = {
 
-    use TakeDrop;
+    use Transformations;
     /*
     circular padr and padl definition.
     overloaded to both accept unpadded and padded arrays as arguments,

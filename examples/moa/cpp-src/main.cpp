@@ -199,8 +199,11 @@ int main(int argc, char **argv) {
     std::cout << "transpose(a):" << std::endl;
     P.print_array(P.transpose(trans_array));
 
-    std::cout << "reverse(a):" << std::endl;
+    std::cout << "reverse(a): TODO FIX" << std::endl;
     P.print_array(P.reverse(trans_array));
+
+    std::cout << "rotate(1,a):" << std::endl;
+    P.print_array(P.rotate(1,trans_array));
 
     std::cout << "Arithmetic operations on arrays: Int32" << std::endl;
     std::cout << "Original array:" << std::endl;
