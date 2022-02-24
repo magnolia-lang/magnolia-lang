@@ -16,7 +16,8 @@ program Int32Arrays = {
               _*_ => mul,
               _/_ => div,
               -_  => unary_sub,
-              _<_ => lt];
+              _<_ => lt,
+              _<=_=> le];
 
 }
 
@@ -30,7 +31,8 @@ program Float64Arrays = {
               _*_ => mul,
               _/_ => div,
               -_ => unary_sub,
-              _<_ => lt];
+              _<_ => lt,
+              _<=_=> le];
 }
 
 program BurgerProgram = {
@@ -42,6 +44,7 @@ program BurgerProgram = {
               _*_ => mul,
               _/_ => div,
               -_  => unary_sub,
-              _<_ => lt];
+              _<_ => lt,
+              _<=_=> le];
 
 }

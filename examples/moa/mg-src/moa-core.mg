@@ -331,6 +331,7 @@ implementation Catenation = {
         value res;
 
     }
+
     /*########################################
         Array and vector catenation, i.e. cat(a, vec)
       ########################################
@@ -405,6 +406,118 @@ implementation Catenation = {
     }
 }
 
+implementation TakeDrop = {
+
+    use Catenation;
+
+    predicate take_cond(a: Array, i: Element, res: Array, c: UInt32) {
+
+        value uint_elem(c) < i;
+
+    }
+
+    procedure take_body(obs a: Array, obs i: Element, upd res: Array, upd c: UInt32) {
+
+        var ix = create_index1(c);
+        var slice = get(a, ix);
+
+        slice = reshape(slice, cat_shape(create_shape1(elem_uint(one())),
+                                          shape(slice)));
+
+        res = cat(res, slice);
+
+        c = elem_uint(uint_elem(c) + one());
+
+    }
+
+    use WhileLoop2_2[Context1 => Array,
+                     Context2 => Element,
+                     State1 => Array,
+                     State2 => UInt32,
+                     body => take_body,
+                     cond => take_cond,
+                     repeat => take_repeat];
+
+    function take(i: Element, a: Array): Array = {
+
+        var drop_sh_0 = drop_shape_elem(a, elem_uint(zero()));
+
+        var res_array: Array;
+
+        if i < zero() then {
+
+            var drop_value = uint_elem(get_shape_elem(a, elem_uint(zero()))) + i;
+            res_array = drop(drop_value, a);
+
+        } else {
+
+            res_array = get(a, create_index1(elem_uint(zero())));
+
+            res_array = reshape(res_array, cat_shape(create_shape1(elem_uint(one())), shape(res_array)));
+            var c = elem_uint(one());
+            call take_repeat(a, i, res_array, c);
+
+        };
+
+        value res_array;
+
+    }
+
+    /*
+    shape(drop(i,a)) = ((shape(a)[0] - abs(i)) `cat` drop(1, shape(a)))
+
+    */
+
+    predicate drop_cond(a: Array, i: Element, res: Array, c: UInt32) {
+
+        value uint_elem(c) < uint_elem(get_shape_elem(a, elem_uint(zero())));
+
+    }
+
+    procedure drop_body(obs a: Array, obs i: Element, upd res: Array, upd c: UInt32) {
+
+        var slice = get(a, create_index1(c));
+        slice = reshape(slice, cat_shape(create_shape1(elem_uint(one())),
+                                          shape(slice)));
+
+        res = cat(res, slice);
+
+        c = elem_uint(uint_elem(c) + one());
+    }
+
+    use WhileLoop2_2[Context1 => Array,
+                     Context2 => Element,
+                     State1 => Array,
+                     State2 => UInt32,
+                     body => drop_body,
+                     cond => drop_cond,
+                     repeat => drop_repeat];
+
+    function drop(i: Element, a: Array): Array {
+
+        var drop_sh_0 = drop_shape_elem(a, elem_uint(zero()));
+
+        var res_array: Array;
+
+        if i < zero() then {
+
+            var take_value = uint_elem(get_shape_elem(a,elem_uint(zero()))) + i;
+
+            res_array = take(take_value, a);
+
+        } else {
+
+            res_array = get(a, create_index1(elem_uint(i)));
+
+            res_array = reshape(res_array, cat_shape(create_shape1(elem_uint(one())), shape(res_array)));
+            var c = elem_uint(i + one());
+            call drop_repeat(a, i, res_array, c);
+
+        };
+
+        value res_array;
+    }
+}
 
 implementation Rotate = {
 
@@ -417,7 +530,7 @@ implementation Rotate = {
         value uint_elem(c) < primary_axis;
     }
 
-    procedure rotate_body(obs a: Array, obs ix_space: IndexContainer, upd res: Array, upd c: UInt32) {
+    procedure rotate_body(obs a: Array, obs ix_space: IndexContainer, upd res: Array, upd c: Element) {
 
 
 
@@ -427,7 +540,7 @@ implementation Rotate = {
 
 implementation Padding = {
 
-    use Catenation;
+    use TakeDrop;
     /*
     circular padr and padl definition.
     overloaded to both accept unpadded and padded arrays as arguments,

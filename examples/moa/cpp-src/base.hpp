@@ -772,11 +772,17 @@ struct int32_utils {
     inline Int32 unary_sub(const Int32 a) {
         return -a;
     }
+    inline Int32 abs(const Int32 a) {
+        return std::abs(a);
+    }
     inline bool eq(const Int32 a, const Int32 b) {
         return a == b;
     }
     inline bool lt(const Int32 a, const Int32 b) {
         return a < b;
+    }
+    inline bool le(const Int32 a, const Int32 b) {
+        return a <= b;
     }
 };
 
@@ -802,11 +808,17 @@ struct float64_utils {
     inline Float64 unary_sub(const Float64 a) {
         return -a;
     }
+    inline Float64 abs(const Float64 a) {
+        return std::abs(a);
+    }
     inline bool eq(const Float64 a, const Float64 b) {
         return a == b;
     }
     inline bool lt(const Float64 a, const Float64 b) {
         return a < b;
+    }
+    inline bool le(const Float64 a, const Float64 b) {
+        return a <= b;
     }
 };
 

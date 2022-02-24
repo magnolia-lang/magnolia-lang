@@ -63,11 +63,19 @@ namespace moa_cpp {
 
 
 
+    BurgerProgram::_abs BurgerProgram::abs;
+
+
+
     BurgerProgram::_elem_uint BurgerProgram::elem_uint;
 
 
 
     BurgerProgram::_eq BurgerProgram::eq;
+
+
+
+    BurgerProgram::_le BurgerProgram::le;
 
 
 
@@ -408,7 +416,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<Float64Arrays::PaddedArray, Float64Arrays::IndexContainer, Float64Arrays::PaddedArray, Float64Arrays::UInt32, Float64Arrays::_padded_transpose_body, Float64Arrays::_padded_upper_bound> Float64Arrays::__while_loop2_27;
+    while_loop2_2<Float64Arrays::PaddedArray, Float64Arrays::IndexContainer, Float64Arrays::PaddedArray, Float64Arrays::UInt32, Float64Arrays::_padded_transpose_body, Float64Arrays::_padded_upper_bound> Float64Arrays::__while_loop2_29;
 
     Float64Arrays::_padded_upper_bound Float64Arrays::padded_upper_bound;
 
@@ -420,11 +428,19 @@ namespace moa_cpp {
 
 
 
+    Float64Arrays::_abs Float64Arrays::abs;
+
+
+
     Float64Arrays::_elem_uint Float64Arrays::elem_uint;
 
 
 
     Float64Arrays::_eq Float64Arrays::eq;
+
+
+
+    Float64Arrays::_le Float64Arrays::le;
 
 
 
@@ -556,6 +572,24 @@ namespace moa_cpp {
 
 
 
+    Float64Arrays::_drop Float64Arrays::drop;
+
+
+
+    Float64Arrays::_drop_body Float64Arrays::drop_body;
+
+
+
+    while_loop2_2<Float64Arrays::Array, Float64Arrays::Float64, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_drop_body, Float64Arrays::_drop_cond> Float64Arrays::__while_loop2_21;
+
+    Float64Arrays::_drop_cond Float64Arrays::drop_cond;
+
+
+
+    Float64Arrays::_drop_repeat Float64Arrays::drop_repeat;
+
+
+
     Float64Arrays::_drop_shape_elem Float64Arrays::drop_shape_elem;
 
 
@@ -568,13 +602,13 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_bmb_div, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop2_21;
+    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_bmb_div, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop2_23;
 
-    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_bmb_mul, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop2_22;
+    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_bmb_mul, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop2_24;
 
-    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_bmb_plus, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop2_23;
+    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_bmb_plus, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop2_25;
 
-    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_bmb_sub, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop2_24;
+    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_bmb_sub, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop2_26;
 
     Float64Arrays::_mapped_ops_cond Float64Arrays::mapped_ops_cond;
 
@@ -618,7 +652,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_reverse_body, Float64Arrays::_reverse_cond> Float64Arrays::__while_loop2_25;
+    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_reverse_body, Float64Arrays::_reverse_cond> Float64Arrays::__while_loop2_27;
 
     Float64Arrays::_reverse_cond Float64Arrays::reverse_cond;
 
@@ -633,6 +667,24 @@ namespace moa_cpp {
 
 
     Float64Arrays::_shape Float64Arrays::shape;
+
+
+
+    Float64Arrays::_take Float64Arrays::take;
+
+
+
+    Float64Arrays::_take_body Float64Arrays::take_body;
+
+
+
+    while_loop2_2<Float64Arrays::Array, Float64Arrays::Float64, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_take_body, Float64Arrays::_take_cond> Float64Arrays::__while_loop2_22;
+
+    Float64Arrays::_take_cond Float64Arrays::take_cond;
+
+
+
+    Float64Arrays::_take_repeat Float64Arrays::take_repeat;
 
 
 
@@ -702,7 +754,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_transpose_body, Float64Arrays::_upper_bound> Float64Arrays::__while_loop2_26;
+    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_transpose_body, Float64Arrays::_upper_bound> Float64Arrays::__while_loop2_28;
 
     Float64Arrays::_upper_bound Float64Arrays::upper_bound;
 
@@ -773,11 +825,19 @@ namespace moa_cpp {
 
 
 
+    Int32Arrays::_abs Int32Arrays::abs;
+
+
+
     Int32Arrays::_elem_uint Int32Arrays::elem_uint;
 
 
 
     Int32Arrays::_eq Int32Arrays::eq;
+
+
+
+    Int32Arrays::_le Int32Arrays::le;
 
 
 
@@ -809,7 +869,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<Int32Arrays::PaddedArray, Int32Arrays::IndexContainer, Int32Arrays::PaddedArray, Int32Arrays::UInt32, Int32Arrays::_padded_transpose_body, Int32Arrays::_padded_upper_bound> Int32Arrays::__while_loop2_27;
+    while_loop2_2<Int32Arrays::PaddedArray, Int32Arrays::IndexContainer, Int32Arrays::PaddedArray, Int32Arrays::UInt32, Int32Arrays::_padded_transpose_body, Int32Arrays::_padded_upper_bound> Int32Arrays::__while_loop2_29;
 
     Int32Arrays::_padded_upper_bound Int32Arrays::padded_upper_bound;
 
@@ -967,6 +1027,24 @@ namespace moa_cpp {
 
 
 
+    Int32Arrays::_drop Int32Arrays::drop;
+
+
+
+    Int32Arrays::_drop_body Int32Arrays::drop_body;
+
+
+
+    while_loop2_2<Int32Arrays::Array, Int32Arrays::Int32, Int32Arrays::Array, Int32Arrays::UInt32, Int32Arrays::_drop_body, Int32Arrays::_drop_cond> Int32Arrays::__while_loop2_27;
+
+    Int32Arrays::_drop_cond Int32Arrays::drop_cond;
+
+
+
+    Int32Arrays::_drop_repeat Int32Arrays::drop_repeat;
+
+
+
     Int32Arrays::_drop_shape_elem Int32Arrays::drop_shape_elem;
 
 
@@ -1044,6 +1122,24 @@ namespace moa_cpp {
 
 
     Int32Arrays::_shape Int32Arrays::shape;
+
+
+
+    Int32Arrays::_take Int32Arrays::take;
+
+
+
+    Int32Arrays::_take_body Int32Arrays::take_body;
+
+
+
+    while_loop2_2<Int32Arrays::Array, Int32Arrays::Int32, Int32Arrays::Array, Int32Arrays::UInt32, Int32Arrays::_take_body, Int32Arrays::_take_cond> Int32Arrays::__while_loop2_28;
+
+    Int32Arrays::_take_cond Int32Arrays::take_cond;
+
+
+
+    Int32Arrays::_take_repeat Int32Arrays::take_repeat;
 
 
 

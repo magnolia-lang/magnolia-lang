@@ -68,7 +68,10 @@ implementation BopmapOpsImpl = {
     require function _/_(a: Element, b: Element): Element;
 
     require predicate _<_(a: Element, b: Element);
+    require predicate _<=_(a: Element, b: Element);
     require predicate _==_(a: Element, b: Element);
+
+    require function abs(e: Element): Element;
 
     require function bop(a: Element, b: Element): Element;
 

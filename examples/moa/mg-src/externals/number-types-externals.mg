@@ -11,8 +11,10 @@ concept NumberOps = {
     function mul(a: NumberType, b: NumberType): NumberType;
     function div(a: NumberType, b: NumberType): NumberType;
     function unary_sub(a: NumberType): NumberType;
+    function abs(a: NumberType): NumberType;
     predicate eq(a: NumberType, b: NumberType);
     predicate lt(a: NumberType, b: NumberType);
+    predicate le(a: NumberType, b: NumberType);
 
 }
 

@@ -95,6 +95,61 @@ int main(int argc, char **argv) {
 
     std::cout << std::endl;
 
+
+    std::cout << "TAKE:" << std::endl;
+    std::cout << std::endl;
+
+    std::cout << "Original array:" << std::endl;
+    auto take_array = P.test_array3_2_2();
+    P.print_array(take_array);
+    std::cout << "Shape: ";
+    P.print_shape(P.shape(take_array));
+
+    auto take_res = P.take(1, take_array);
+    std::cout << "take(1, a):" << std::endl;
+    P.print_array(take_res);
+    std::cout << "Shape: ";
+    P.print_shape(P.shape(take_res));
+
+
+    std::cout << std::endl;
+
+    auto take_res2 = P.take(-1, take_array);
+    std::cout << "take(-1, a):" << std::endl;
+    P.print_array(take_res2);
+    std::cout << "Shape: ";
+    P.print_shape(P.shape(take_res2));
+
+
+    std::cout << std::endl;
+
+
+    std::cout << "DROP:" << std::endl;
+    std::cout << std::endl;
+
+    std::cout << "Original array:" << std::endl;
+    auto drop_array = P.test_array3_2_2();
+    P.print_array(drop_array);
+    std::cout << "Shape: ";
+    P.print_shape(P.shape(drop_array));
+
+    auto drop_res = P.drop(1, drop_array);
+    std::cout << "drop(1, a):" << std::endl;
+    P.print_array(drop_res);
+    std::cout << "Shape: ";
+    P.print_shape(P.shape(drop_res));
+
+    std::cout << std::endl;
+
+
+    auto drop_res2 = P.drop(-1, drop_array);
+    std::cout << "drop(-1, a):" << std::endl;
+    P.print_array(drop_res2);
+    std::cout << "Shape: ";
+    P.print_shape(P.shape(drop_res2));
+
+    std::cout << std::endl;
+
     std::cout << "PADDING TESTS" << std::endl;
 
     auto pad_test = P.test_array3_3();

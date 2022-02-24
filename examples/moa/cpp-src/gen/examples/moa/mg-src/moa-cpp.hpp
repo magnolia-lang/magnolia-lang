@@ -110,6 +110,13 @@ public:
 private:
     static array<BurgerProgram::Int32> __array;
 public:
+    struct _abs {
+        inline BurgerProgram::Int32 operator()(const BurgerProgram::Int32& a) {
+            return __int32_utils.abs(a);
+        };
+    };
+
+    static BurgerProgram::_abs abs;
     struct _elem_uint {
         inline BurgerProgram::UInt32 operator()(const BurgerProgram::Int32& a) {
             return __array.elem_uint(a);
@@ -124,6 +131,13 @@ public:
     };
 
     static BurgerProgram::_eq eq;
+    struct _le {
+        inline bool operator()(const BurgerProgram::Int32& a, const BurgerProgram::Int32& b) {
+            return __int32_utils.le(a, b);
+        };
+    };
+
+    static BurgerProgram::_le le;
     struct _lt {
         inline bool operator()(const BurgerProgram::Int32& a, const BurgerProgram::Int32& b) {
             return __int32_utils.lt(a, b);
@@ -784,7 +798,7 @@ public:
     static Float64Arrays::_padded_transpose_body padded_transpose_body;
     struct _padded_transpose_repeat {
         inline void operator()(const Float64Arrays::PaddedArray& context1, const Float64Arrays::IndexContainer& context2, Float64Arrays::PaddedArray& state1, Float64Arrays::UInt32& state2) {
-            return __while_loop2_27.repeat(context1, context2, state1, state2);
+            return __while_loop2_29.repeat(context1, context2, state1, state2);
         };
     };
 
@@ -796,7 +810,7 @@ public:
     };
 
 private:
-    static while_loop2_2<Float64Arrays::PaddedArray, Float64Arrays::IndexContainer, Float64Arrays::PaddedArray, Float64Arrays::UInt32, Float64Arrays::_padded_transpose_body, Float64Arrays::_padded_upper_bound> __while_loop2_27;
+    static while_loop2_2<Float64Arrays::PaddedArray, Float64Arrays::IndexContainer, Float64Arrays::PaddedArray, Float64Arrays::UInt32, Float64Arrays::_padded_transpose_body, Float64Arrays::_padded_upper_bound> __while_loop2_29;
 public:
     static Float64Arrays::_padded_upper_bound padded_upper_bound;
     struct _print_uint {
@@ -809,6 +823,13 @@ public:
 private:
     static array<Float64Arrays::Float64> __array;
 public:
+    struct _abs {
+        inline Float64Arrays::Float64 operator()(const Float64Arrays::Float64& a) {
+            return __float64_utils.abs(a);
+        };
+    };
+
+    static Float64Arrays::_abs abs;
     struct _elem_uint {
         inline Float64Arrays::UInt32 operator()(const Float64Arrays::Float64& a) {
             return __array.elem_uint(a);
@@ -823,6 +844,13 @@ public:
     };
 
     static Float64Arrays::_eq eq;
+    struct _le {
+        inline bool operator()(const Float64Arrays::Float64& a, const Float64Arrays::Float64& b) {
+            return __float64_utils.le(a, b);
+        };
+    };
+
+    static Float64Arrays::_le le;
     struct _lt {
         inline bool operator()(const Float64Arrays::Float64& a, const Float64Arrays::Float64& b) {
             return __float64_utils.lt(a, b);
@@ -870,9 +898,6 @@ public:
 
     static Float64Arrays::_binaryMap binaryMap;
     struct _binary_add {
-        inline Float64Arrays::Float64 operator()(const Float64Arrays::Float64& a, const Float64Arrays::Float64& b) {
-            return __float64_utils.binary_add(a, b);
-        };
         inline Float64Arrays::Array operator()(const Float64Arrays::Array& a, const Float64Arrays::Array& b) {
             Float64Arrays::IndexContainer ix_space = Float64Arrays::create_valid_indices(a);
             Float64Arrays::Array b_upd = b;
@@ -880,19 +905,22 @@ public:
             Float64Arrays::bmb_plus_rep(a, ix_space, b_upd, counter);
             return b;
         };
+        inline Float64Arrays::Float64 operator()(const Float64Arrays::Float64& a, const Float64Arrays::Float64& b) {
+            return __float64_utils.binary_add(a, b);
+        };
     };
 
     static Float64Arrays::_binary_add binary_add;
     struct _binary_sub {
-        inline Float64Arrays::Float64 operator()(const Float64Arrays::Float64& a, const Float64Arrays::Float64& b) {
-            return __float64_utils.binary_sub(a, b);
-        };
         inline Float64Arrays::Array operator()(const Float64Arrays::Array& a, const Float64Arrays::Array& b) {
             Float64Arrays::IndexContainer ix_space = Float64Arrays::create_valid_indices(a);
             Float64Arrays::Array b_upd = b;
             Float64Arrays::UInt32 counter = Float64Arrays::elem_uint(Float64Arrays::zero());
             Float64Arrays::bmb_sub_rep(a, ix_space, b_upd, counter);
             return b;
+        };
+        inline Float64Arrays::Float64 operator()(const Float64Arrays::Float64& a, const Float64Arrays::Float64& b) {
+            return __float64_utils.binary_sub(a, b);
         };
     };
 
@@ -909,7 +937,7 @@ public:
     static Float64Arrays::_bmb_div bmb_div;
     struct _bmb_div_rep {
         inline void operator()(const Float64Arrays::Array& context1, const Float64Arrays::IndexContainer& context2, Float64Arrays::Array& state1, Float64Arrays::UInt32& state2) {
-            return __while_loop2_21.repeat(context1, context2, state1, state2);
+            return __while_loop2_23.repeat(context1, context2, state1, state2);
         };
     };
 
@@ -926,7 +954,7 @@ public:
     static Float64Arrays::_bmb_mul bmb_mul;
     struct _bmb_mul_rep {
         inline void operator()(const Float64Arrays::Array& context1, const Float64Arrays::IndexContainer& context2, Float64Arrays::Array& state1, Float64Arrays::UInt32& state2) {
-            return __while_loop2_22.repeat(context1, context2, state1, state2);
+            return __while_loop2_24.repeat(context1, context2, state1, state2);
         };
     };
 
@@ -943,7 +971,7 @@ public:
     static Float64Arrays::_bmb_plus bmb_plus;
     struct _bmb_plus_rep {
         inline void operator()(const Float64Arrays::Array& context1, const Float64Arrays::IndexContainer& context2, Float64Arrays::Array& state1, Float64Arrays::UInt32& state2) {
-            return __while_loop2_23.repeat(context1, context2, state1, state2);
+            return __while_loop2_25.repeat(context1, context2, state1, state2);
         };
     };
 
@@ -960,7 +988,7 @@ public:
     static Float64Arrays::_bmb_sub bmb_sub;
     struct _bmb_sub_rep {
         inline void operator()(const Float64Arrays::Array& context1, const Float64Arrays::IndexContainer& context2, Float64Arrays::Array& state1, Float64Arrays::UInt32& state2) {
-            return __while_loop2_24.repeat(context1, context2, state1, state2);
+            return __while_loop2_26.repeat(context1, context2, state1, state2);
         };
     };
 
@@ -1126,10 +1154,10 @@ public:
 
     static Float64Arrays::_create_padded_array create_padded_array;
     struct _create_valid_indices {
-        inline Float64Arrays::IndexContainer operator()(const Float64Arrays::PaddedArray& a) {
+        inline Float64Arrays::IndexContainer operator()(const Float64Arrays::Array& a) {
             return __array.create_valid_indices(a);
         };
-        inline Float64Arrays::IndexContainer operator()(const Float64Arrays::Array& a) {
+        inline Float64Arrays::IndexContainer operator()(const Float64Arrays::PaddedArray& a) {
             return __array.create_valid_indices(a);
         };
     };
@@ -1143,9 +1171,6 @@ public:
 
     static Float64Arrays::_dim dim;
     struct _div {
-        inline Float64Arrays::Float64 operator()(const Float64Arrays::Float64& a, const Float64Arrays::Float64& b) {
-            return __float64_utils.div(a, b);
-        };
         inline Float64Arrays::Array operator()(const Float64Arrays::Array& a, const Float64Arrays::Array& b) {
             Float64Arrays::IndexContainer ix_space = Float64Arrays::create_valid_indices(a);
             Float64Arrays::Array b_upd = b;
@@ -1153,9 +1178,60 @@ public:
             Float64Arrays::bmb_div_rep(a, ix_space, b_upd, counter);
             return b;
         };
+        inline Float64Arrays::Float64 operator()(const Float64Arrays::Float64& a, const Float64Arrays::Float64& b) {
+            return __float64_utils.div(a, b);
+        };
     };
 
     static Float64Arrays::_div div;
+    struct _drop {
+        inline Float64Arrays::Array operator()(const Float64Arrays::Float64& i, const Float64Arrays::Array& a) {
+            Float64Arrays::Shape drop_sh_0 = Float64Arrays::drop_shape_elem(a, Float64Arrays::elem_uint(Float64Arrays::zero()));
+            Float64Arrays::Array res_array;
+            if (Float64Arrays::lt(i, Float64Arrays::zero()))
+            {
+                Float64Arrays::Float64 take_value = Float64Arrays::binary_add(Float64Arrays::uint_elem(Float64Arrays::get_shape_elem(a, Float64Arrays::elem_uint(Float64Arrays::zero()))), i);
+                res_array = Float64Arrays::take(take_value, a);
+            }
+            else
+            {
+                res_array = Float64Arrays::get(a, Float64Arrays::create_index1(Float64Arrays::elem_uint(i)));
+                res_array = Float64Arrays::reshape(res_array, Float64Arrays::cat_shape(Float64Arrays::create_shape1(Float64Arrays::elem_uint(Float64Arrays::one())), Float64Arrays::shape(res_array)));
+                Float64Arrays::UInt32 c = Float64Arrays::elem_uint(Float64Arrays::binary_add(i, Float64Arrays::one()));
+                Float64Arrays::drop_repeat(a, i, res_array, c);
+            }
+            return res_array;
+        };
+    };
+
+    static Float64Arrays::_drop drop;
+    struct _drop_body {
+        inline void operator()(const Float64Arrays::Array& a, const Float64Arrays::Float64& i, Float64Arrays::Array& res, Float64Arrays::UInt32& c) {
+            Float64Arrays::Array slice = Float64Arrays::get(a, Float64Arrays::create_index1(c));
+            slice = Float64Arrays::reshape(slice, Float64Arrays::cat_shape(Float64Arrays::create_shape1(Float64Arrays::elem_uint(Float64Arrays::one())), Float64Arrays::shape(slice)));
+            res = Float64Arrays::cat(res, slice);
+            c = Float64Arrays::elem_uint(Float64Arrays::binary_add(Float64Arrays::uint_elem(c), Float64Arrays::one()));
+        };
+    };
+
+    static Float64Arrays::_drop_body drop_body;
+    struct _drop_cond {
+        inline bool operator()(const Float64Arrays::Array& a, const Float64Arrays::Float64& i, const Float64Arrays::Array& res, const Float64Arrays::UInt32& c) {
+            return Float64Arrays::lt(Float64Arrays::uint_elem(c), Float64Arrays::uint_elem(Float64Arrays::get_shape_elem(a, Float64Arrays::elem_uint(Float64Arrays::zero()))));
+        };
+    };
+
+private:
+    static while_loop2_2<Float64Arrays::Array, Float64Arrays::Float64, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_drop_body, Float64Arrays::_drop_cond> __while_loop2_21;
+public:
+    static Float64Arrays::_drop_cond drop_cond;
+    struct _drop_repeat {
+        inline void operator()(const Float64Arrays::Array& context1, const Float64Arrays::Float64& context2, Float64Arrays::Array& state1, Float64Arrays::UInt32& state2) {
+            return __while_loop2_21.repeat(context1, context2, state1, state2);
+        };
+    };
+
+    static Float64Arrays::_drop_repeat drop_repeat;
     struct _drop_shape_elem {
         inline Float64Arrays::Shape operator()(const Float64Arrays::Array& a, const Float64Arrays::UInt32& i) {
             return __array.drop_shape_elem(a, i);
@@ -1164,13 +1240,13 @@ public:
 
     static Float64Arrays::_drop_shape_elem drop_shape_elem;
     struct _get {
-        inline Float64Arrays::Array operator()(const Float64Arrays::PaddedArray& a, const Float64Arrays::Index& ix) {
+        inline Float64Arrays::Array operator()(const Float64Arrays::Array& a, const Float64Arrays::UInt32& ix) {
             return __array.get(a, ix);
         };
         inline Float64Arrays::Array operator()(const Float64Arrays::Array& a, const Float64Arrays::Index& ix) {
             return __array.get(a, ix);
         };
-        inline Float64Arrays::Array operator()(const Float64Arrays::Array& a, const Float64Arrays::UInt32& ix) {
+        inline Float64Arrays::Array operator()(const Float64Arrays::PaddedArray& a, const Float64Arrays::Index& ix) {
             return __array.get(a, ix);
         };
     };
@@ -1190,22 +1266,22 @@ public:
     };
 
 private:
-    static while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_bmb_div, Float64Arrays::_mapped_ops_cond> __while_loop2_21;
-    static while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_bmb_mul, Float64Arrays::_mapped_ops_cond> __while_loop2_22;
-    static while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_bmb_plus, Float64Arrays::_mapped_ops_cond> __while_loop2_23;
-    static while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_bmb_sub, Float64Arrays::_mapped_ops_cond> __while_loop2_24;
+    static while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_bmb_div, Float64Arrays::_mapped_ops_cond> __while_loop2_23;
+    static while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_bmb_mul, Float64Arrays::_mapped_ops_cond> __while_loop2_24;
+    static while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_bmb_plus, Float64Arrays::_mapped_ops_cond> __while_loop2_25;
+    static while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_bmb_sub, Float64Arrays::_mapped_ops_cond> __while_loop2_26;
 public:
     static Float64Arrays::_mapped_ops_cond mapped_ops_cond;
     struct _mul {
-        inline Float64Arrays::Float64 operator()(const Float64Arrays::Float64& a, const Float64Arrays::Float64& b) {
-            return __float64_utils.mul(a, b);
-        };
         inline Float64Arrays::Array operator()(const Float64Arrays::Array& a, const Float64Arrays::Array& b) {
             Float64Arrays::IndexContainer ix_space = Float64Arrays::create_valid_indices(a);
             Float64Arrays::Array b_upd = b;
             Float64Arrays::UInt32 counter = Float64Arrays::elem_uint(Float64Arrays::zero());
             Float64Arrays::bmb_mul_rep(a, ix_space, b_upd, counter);
             return b;
+        };
+        inline Float64Arrays::Float64 operator()(const Float64Arrays::Float64& a, const Float64Arrays::Float64& b) {
+            return __float64_utils.mul(a, b);
         };
     };
 
@@ -1291,39 +1367,88 @@ public:
     };
 
 private:
-    static while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_reverse_body, Float64Arrays::_reverse_cond> __while_loop2_25;
+    static while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_reverse_body, Float64Arrays::_reverse_cond> __while_loop2_27;
 public:
     static Float64Arrays::_reverse_cond reverse_cond;
     struct _reverse_repeat {
         inline void operator()(const Float64Arrays::Array& context1, const Float64Arrays::IndexContainer& context2, Float64Arrays::Array& state1, Float64Arrays::UInt32& state2) {
-            return __while_loop2_25.repeat(context1, context2, state1, state2);
+            return __while_loop2_27.repeat(context1, context2, state1, state2);
         };
     };
 
     static Float64Arrays::_reverse_repeat reverse_repeat;
     struct _set {
-        inline void operator()(Float64Arrays::PaddedArray& a, const Float64Arrays::Index& ix, const Float64Arrays::Float64& e) {
+        inline void operator()(Float64Arrays::Array& a, const Float64Arrays::UInt32& ix, const Float64Arrays::Float64& e) {
             return __array.set(a, ix, e);
         };
         inline void operator()(Float64Arrays::Array& a, const Float64Arrays::Index& ix, const Float64Arrays::Float64& e) {
             return __array.set(a, ix, e);
         };
-        inline void operator()(Float64Arrays::Array& a, const Float64Arrays::UInt32& ix, const Float64Arrays::Float64& e) {
+        inline void operator()(Float64Arrays::PaddedArray& a, const Float64Arrays::Index& ix, const Float64Arrays::Float64& e) {
             return __array.set(a, ix, e);
         };
     };
 
     static Float64Arrays::_set set;
     struct _shape {
-        inline Float64Arrays::Shape operator()(const Float64Arrays::PaddedArray& a) {
+        inline Float64Arrays::Shape operator()(const Float64Arrays::Array& a) {
             return __array.shape(a);
         };
-        inline Float64Arrays::Shape operator()(const Float64Arrays::Array& a) {
+        inline Float64Arrays::Shape operator()(const Float64Arrays::PaddedArray& a) {
             return __array.shape(a);
         };
     };
 
     static Float64Arrays::_shape shape;
+    struct _take {
+        inline Float64Arrays::Array operator()(const Float64Arrays::Float64& i, const Float64Arrays::Array& a) {
+            Float64Arrays::Shape drop_sh_0 = Float64Arrays::drop_shape_elem(a, Float64Arrays::elem_uint(Float64Arrays::zero()));
+            Float64Arrays::Array res_array;
+            if (Float64Arrays::lt(i, Float64Arrays::zero()))
+            {
+                Float64Arrays::Float64 drop_value = Float64Arrays::binary_add(Float64Arrays::uint_elem(Float64Arrays::get_shape_elem(a, Float64Arrays::elem_uint(Float64Arrays::zero()))), i);
+                res_array = Float64Arrays::drop(drop_value, a);
+            }
+            else
+            {
+                res_array = Float64Arrays::get(a, Float64Arrays::create_index1(Float64Arrays::elem_uint(Float64Arrays::zero())));
+                res_array = Float64Arrays::reshape(res_array, Float64Arrays::cat_shape(Float64Arrays::create_shape1(Float64Arrays::elem_uint(Float64Arrays::one())), Float64Arrays::shape(res_array)));
+                Float64Arrays::UInt32 c = Float64Arrays::elem_uint(Float64Arrays::one());
+                Float64Arrays::take_repeat(a, i, res_array, c);
+            }
+            return res_array;
+        };
+    };
+
+    static Float64Arrays::_take take;
+    struct _take_body {
+        inline void operator()(const Float64Arrays::Array& a, const Float64Arrays::Float64& i, Float64Arrays::Array& res, Float64Arrays::UInt32& c) {
+            Float64Arrays::Index ix = Float64Arrays::create_index1(c);
+            Float64Arrays::Array slice = Float64Arrays::get(a, ix);
+            slice = Float64Arrays::reshape(slice, Float64Arrays::cat_shape(Float64Arrays::create_shape1(Float64Arrays::elem_uint(Float64Arrays::one())), Float64Arrays::shape(slice)));
+            res = Float64Arrays::cat(res, slice);
+            c = Float64Arrays::elem_uint(Float64Arrays::binary_add(Float64Arrays::uint_elem(c), Float64Arrays::one()));
+        };
+    };
+
+    static Float64Arrays::_take_body take_body;
+    struct _take_cond {
+        inline bool operator()(const Float64Arrays::Array& a, const Float64Arrays::Float64& i, const Float64Arrays::Array& res, const Float64Arrays::UInt32& c) {
+            return Float64Arrays::lt(Float64Arrays::uint_elem(c), i);
+        };
+    };
+
+private:
+    static while_loop2_2<Float64Arrays::Array, Float64Arrays::Float64, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_take_body, Float64Arrays::_take_cond> __while_loop2_22;
+public:
+    static Float64Arrays::_take_cond take_cond;
+    struct _take_repeat {
+        inline void operator()(const Float64Arrays::Array& context1, const Float64Arrays::Float64& context2, Float64Arrays::Array& state1, Float64Arrays::UInt32& state2) {
+            return __while_loop2_22.repeat(context1, context2, state1, state2);
+        };
+    };
+
+    static Float64Arrays::_take_repeat take_repeat;
     struct _test_array3_2_2 {
         inline Float64Arrays::Array operator()() {
             return __array.test_array3_2_2();
@@ -1367,32 +1492,32 @@ public:
 
     static Float64Arrays::_test_vector5 test_vector5;
     struct _total {
-        inline Float64Arrays::UInt32 operator()(const Float64Arrays::IndexContainer& ixc) {
-            return __array.total(ixc);
+        inline Float64Arrays::UInt32 operator()(const Float64Arrays::Array& a) {
+            return __array.total(a);
         };
         inline Float64Arrays::UInt32 operator()(const Float64Arrays::Shape& s) {
             return __array.total(s);
         };
-        inline Float64Arrays::UInt32 operator()(const Float64Arrays::Array& a) {
-            return __array.total(a);
+        inline Float64Arrays::UInt32 operator()(const Float64Arrays::IndexContainer& ixc) {
+            return __array.total(ixc);
         };
     };
 
     static Float64Arrays::_total total;
     struct _transpose {
-        inline Float64Arrays::Array operator()(const Float64Arrays::Array& a) {
-            Float64Arrays::Array transposed_array = Float64Arrays::create_array(Float64Arrays::reverse_shape(Float64Arrays::shape(a)));
-            Float64Arrays::IndexContainer ix_space = Float64Arrays::create_valid_indices(transposed_array);
-            Float64Arrays::UInt32 counter = Float64Arrays::elem_uint(Float64Arrays::zero());
-            Float64Arrays::transpose_repeat(a, ix_space, transposed_array, counter);
-            return transposed_array;
-        };
         inline Float64Arrays::PaddedArray operator()(const Float64Arrays::PaddedArray& a) {
             Float64Arrays::Array reshaped_array = Float64Arrays::create_array(Float64Arrays::padded_shape(a));
             Float64Arrays::PaddedArray transposed_array = Float64Arrays::create_padded_array(Float64Arrays::reverse_shape(Float64Arrays::shape(a)), Float64Arrays::reverse_shape(Float64Arrays::padded_shape(a)), reshaped_array);
             Float64Arrays::IndexContainer ix_space = Float64Arrays::create_valid_indices(transposed_array);
             Float64Arrays::UInt32 counter = Float64Arrays::elem_uint(Float64Arrays::zero());
             Float64Arrays::padded_transpose_repeat(a, ix_space, transposed_array, counter);
+            return transposed_array;
+        };
+        inline Float64Arrays::Array operator()(const Float64Arrays::Array& a) {
+            Float64Arrays::Array transposed_array = Float64Arrays::create_array(Float64Arrays::reverse_shape(Float64Arrays::shape(a)));
+            Float64Arrays::IndexContainer ix_space = Float64Arrays::create_valid_indices(transposed_array);
+            Float64Arrays::UInt32 counter = Float64Arrays::elem_uint(Float64Arrays::zero());
+            Float64Arrays::transpose_repeat(a, ix_space, transposed_array, counter);
             return transposed_array;
         };
     };
@@ -1410,7 +1535,7 @@ public:
     static Float64Arrays::_transpose_body transpose_body;
     struct _transpose_repeat {
         inline void operator()(const Float64Arrays::Array& context1, const Float64Arrays::IndexContainer& context2, Float64Arrays::Array& state1, Float64Arrays::UInt32& state2) {
-            return __while_loop2_26.repeat(context1, context2, state1, state2);
+            return __while_loop2_28.repeat(context1, context2, state1, state2);
         };
     };
 
@@ -1423,15 +1548,15 @@ public:
 
     static Float64Arrays::_unaryMap unaryMap;
     struct _unary_sub {
-        inline Float64Arrays::Float64 operator()(const Float64Arrays::Float64& a) {
-            return __float64_utils.unary_sub(a);
-        };
         inline Float64Arrays::Array operator()(const Float64Arrays::Array& a) {
             Float64Arrays::IndexContainer ix_space = Float64Arrays::create_valid_indices(a);
             Float64Arrays::Array a_upd = a;
             Float64Arrays::UInt32 counter = Float64Arrays::elem_uint(Float64Arrays::zero());
             Float64Arrays::unary_sub_repeat(ix_space, a_upd, counter);
             return a_upd;
+        };
+        inline Float64Arrays::Float64 operator()(const Float64Arrays::Float64& a) {
+            return __float64_utils.unary_sub(a);
         };
     };
 
@@ -1477,7 +1602,7 @@ public:
     };
 
 private:
-    static while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_transpose_body, Float64Arrays::_upper_bound> __while_loop2_26;
+    static while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::UInt32, Float64Arrays::_transpose_body, Float64Arrays::_upper_bound> __while_loop2_28;
 public:
     static Float64Arrays::_upper_bound upper_bound;
 };
@@ -1592,6 +1717,13 @@ public:
 private:
     static array<Int32Arrays::Int32> __array;
 public:
+    struct _abs {
+        inline Int32Arrays::Int32 operator()(const Int32Arrays::Int32& a) {
+            return __int32_utils.abs(a);
+        };
+    };
+
+    static Int32Arrays::_abs abs;
     struct _elem_uint {
         inline Int32Arrays::UInt32 operator()(const Int32Arrays::Int32& a) {
             return __array.elem_uint(a);
@@ -1606,6 +1738,13 @@ public:
     };
 
     static Int32Arrays::_eq eq;
+    struct _le {
+        inline bool operator()(const Int32Arrays::Int32& a, const Int32Arrays::Int32& b) {
+            return __int32_utils.le(a, b);
+        };
+    };
+
+    static Int32Arrays::_le le;
     struct _lt {
         inline bool operator()(const Int32Arrays::Int32& a, const Int32Arrays::Int32& b) {
             return __int32_utils.lt(a, b);
@@ -1654,7 +1793,7 @@ public:
     static Int32Arrays::_padded_transpose_body padded_transpose_body;
     struct _padded_transpose_repeat {
         inline void operator()(const Int32Arrays::PaddedArray& context1, const Int32Arrays::IndexContainer& context2, Int32Arrays::PaddedArray& state1, Int32Arrays::UInt32& state2) {
-            return __while_loop2_27.repeat(context1, context2, state1, state2);
+            return __while_loop2_29.repeat(context1, context2, state1, state2);
         };
     };
 
@@ -1666,7 +1805,7 @@ public:
     };
 
 private:
-    static while_loop2_2<Int32Arrays::PaddedArray, Int32Arrays::IndexContainer, Int32Arrays::PaddedArray, Int32Arrays::UInt32, Int32Arrays::_padded_transpose_body, Int32Arrays::_padded_upper_bound> __while_loop2_27;
+    static while_loop2_2<Int32Arrays::PaddedArray, Int32Arrays::IndexContainer, Int32Arrays::PaddedArray, Int32Arrays::UInt32, Int32Arrays::_padded_transpose_body, Int32Arrays::_padded_upper_bound> __while_loop2_29;
 public:
     static Int32Arrays::_padded_upper_bound padded_upper_bound;
     struct _print_index_container {
@@ -1759,9 +1898,6 @@ public:
 
     static Int32Arrays::_binaryMap binaryMap;
     struct _binary_add {
-        inline Int32Arrays::Int32 operator()(const Int32Arrays::Int32& a, const Int32Arrays::Int32& b) {
-            return __int32_utils.binary_add(a, b);
-        };
         inline Int32Arrays::Array operator()(const Int32Arrays::Array& a, const Int32Arrays::Array& b) {
             Int32Arrays::IndexContainer ix_space = Int32Arrays::create_valid_indices(a);
             Int32Arrays::Array b_upd = b;
@@ -1769,19 +1905,22 @@ public:
             Int32Arrays::bmb_plus_rep(a, ix_space, b_upd, counter);
             return b;
         };
+        inline Int32Arrays::Int32 operator()(const Int32Arrays::Int32& a, const Int32Arrays::Int32& b) {
+            return __int32_utils.binary_add(a, b);
+        };
     };
 
     static Int32Arrays::_binary_add binary_add;
     struct _binary_sub {
-        inline Int32Arrays::Int32 operator()(const Int32Arrays::Int32& a, const Int32Arrays::Int32& b) {
-            return __int32_utils.binary_sub(a, b);
-        };
         inline Int32Arrays::Array operator()(const Int32Arrays::Array& a, const Int32Arrays::Array& b) {
             Int32Arrays::IndexContainer ix_space = Int32Arrays::create_valid_indices(a);
             Int32Arrays::Array b_upd = b;
             Int32Arrays::UInt32 counter = Int32Arrays::elem_uint(Int32Arrays::zero());
             Int32Arrays::bmb_sub_rep(a, ix_space, b_upd, counter);
             return b;
+        };
+        inline Int32Arrays::Int32 operator()(const Int32Arrays::Int32& a, const Int32Arrays::Int32& b) {
+            return __int32_utils.binary_sub(a, b);
         };
     };
 
@@ -2015,10 +2154,10 @@ public:
 
     static Int32Arrays::_create_padded_array create_padded_array;
     struct _create_valid_indices {
-        inline Int32Arrays::IndexContainer operator()(const Int32Arrays::PaddedArray& a) {
+        inline Int32Arrays::IndexContainer operator()(const Int32Arrays::Array& a) {
             return __array.create_valid_indices(a);
         };
-        inline Int32Arrays::IndexContainer operator()(const Int32Arrays::Array& a) {
+        inline Int32Arrays::IndexContainer operator()(const Int32Arrays::PaddedArray& a) {
             return __array.create_valid_indices(a);
         };
     };
@@ -2032,9 +2171,6 @@ public:
 
     static Int32Arrays::_dim dim;
     struct _div {
-        inline Int32Arrays::Int32 operator()(const Int32Arrays::Int32& a, const Int32Arrays::Int32& b) {
-            return __int32_utils.div(a, b);
-        };
         inline Int32Arrays::Array operator()(const Int32Arrays::Array& a, const Int32Arrays::Array& b) {
             Int32Arrays::IndexContainer ix_space = Int32Arrays::create_valid_indices(a);
             Int32Arrays::Array b_upd = b;
@@ -2042,9 +2178,60 @@ public:
             Int32Arrays::bmb_div_rep(a, ix_space, b_upd, counter);
             return b;
         };
+        inline Int32Arrays::Int32 operator()(const Int32Arrays::Int32& a, const Int32Arrays::Int32& b) {
+            return __int32_utils.div(a, b);
+        };
     };
 
     static Int32Arrays::_div div;
+    struct _drop {
+        inline Int32Arrays::Array operator()(const Int32Arrays::Int32& i, const Int32Arrays::Array& a) {
+            Int32Arrays::Shape drop_sh_0 = Int32Arrays::drop_shape_elem(a, Int32Arrays::elem_uint(Int32Arrays::zero()));
+            Int32Arrays::Array res_array;
+            if (Int32Arrays::lt(i, Int32Arrays::zero()))
+            {
+                Int32Arrays::Int32 take_value = Int32Arrays::binary_add(Int32Arrays::uint_elem(Int32Arrays::get_shape_elem(a, Int32Arrays::elem_uint(Int32Arrays::zero()))), i);
+                res_array = Int32Arrays::take(take_value, a);
+            }
+            else
+            {
+                res_array = Int32Arrays::get(a, Int32Arrays::create_index1(Int32Arrays::elem_uint(i)));
+                res_array = Int32Arrays::reshape(res_array, Int32Arrays::cat_shape(Int32Arrays::create_shape1(Int32Arrays::elem_uint(Int32Arrays::one())), Int32Arrays::shape(res_array)));
+                Int32Arrays::UInt32 c = Int32Arrays::elem_uint(Int32Arrays::binary_add(i, Int32Arrays::one()));
+                Int32Arrays::drop_repeat(a, i, res_array, c);
+            }
+            return res_array;
+        };
+    };
+
+    static Int32Arrays::_drop drop;
+    struct _drop_body {
+        inline void operator()(const Int32Arrays::Array& a, const Int32Arrays::Int32& i, Int32Arrays::Array& res, Int32Arrays::UInt32& c) {
+            Int32Arrays::Array slice = Int32Arrays::get(a, Int32Arrays::create_index1(c));
+            slice = Int32Arrays::reshape(slice, Int32Arrays::cat_shape(Int32Arrays::create_shape1(Int32Arrays::elem_uint(Int32Arrays::one())), Int32Arrays::shape(slice)));
+            res = Int32Arrays::cat(res, slice);
+            c = Int32Arrays::elem_uint(Int32Arrays::binary_add(Int32Arrays::uint_elem(c), Int32Arrays::one()));
+        };
+    };
+
+    static Int32Arrays::_drop_body drop_body;
+    struct _drop_cond {
+        inline bool operator()(const Int32Arrays::Array& a, const Int32Arrays::Int32& i, const Int32Arrays::Array& res, const Int32Arrays::UInt32& c) {
+            return Int32Arrays::lt(Int32Arrays::uint_elem(c), Int32Arrays::uint_elem(Int32Arrays::get_shape_elem(a, Int32Arrays::elem_uint(Int32Arrays::zero()))));
+        };
+    };
+
+private:
+    static while_loop2_2<Int32Arrays::Array, Int32Arrays::Int32, Int32Arrays::Array, Int32Arrays::UInt32, Int32Arrays::_drop_body, Int32Arrays::_drop_cond> __while_loop2_27;
+public:
+    static Int32Arrays::_drop_cond drop_cond;
+    struct _drop_repeat {
+        inline void operator()(const Int32Arrays::Array& context1, const Int32Arrays::Int32& context2, Int32Arrays::Array& state1, Int32Arrays::UInt32& state2) {
+            return __while_loop2_27.repeat(context1, context2, state1, state2);
+        };
+    };
+
+    static Int32Arrays::_drop_repeat drop_repeat;
     struct _drop_shape_elem {
         inline Int32Arrays::Shape operator()(const Int32Arrays::Array& a, const Int32Arrays::UInt32& i) {
             return __array.drop_shape_elem(a, i);
@@ -2053,13 +2240,13 @@ public:
 
     static Int32Arrays::_drop_shape_elem drop_shape_elem;
     struct _get {
-        inline Int32Arrays::Array operator()(const Int32Arrays::PaddedArray& a, const Int32Arrays::Index& ix) {
+        inline Int32Arrays::Array operator()(const Int32Arrays::Array& a, const Int32Arrays::UInt32& ix) {
             return __array.get(a, ix);
         };
         inline Int32Arrays::Array operator()(const Int32Arrays::Array& a, const Int32Arrays::Index& ix) {
             return __array.get(a, ix);
         };
-        inline Int32Arrays::Array operator()(const Int32Arrays::Array& a, const Int32Arrays::UInt32& ix) {
+        inline Int32Arrays::Array operator()(const Int32Arrays::PaddedArray& a, const Int32Arrays::Index& ix) {
             return __array.get(a, ix);
         };
     };
@@ -2086,15 +2273,15 @@ private:
 public:
     static Int32Arrays::_mapped_ops_cond mapped_ops_cond;
     struct _mul {
-        inline Int32Arrays::Int32 operator()(const Int32Arrays::Int32& a, const Int32Arrays::Int32& b) {
-            return __int32_utils.mul(a, b);
-        };
         inline Int32Arrays::Array operator()(const Int32Arrays::Array& a, const Int32Arrays::Array& b) {
             Int32Arrays::IndexContainer ix_space = Int32Arrays::create_valid_indices(a);
             Int32Arrays::Array b_upd = b;
             Int32Arrays::UInt32 counter = Int32Arrays::elem_uint(Int32Arrays::zero());
             Int32Arrays::bmb_mul_rep(a, ix_space, b_upd, counter);
             return b;
+        };
+        inline Int32Arrays::Int32 operator()(const Int32Arrays::Int32& a, const Int32Arrays::Int32& b) {
+            return __int32_utils.mul(a, b);
         };
     };
 
@@ -2191,28 +2378,77 @@ public:
 
     static Int32Arrays::_reverse_repeat reverse_repeat;
     struct _set {
-        inline void operator()(Int32Arrays::PaddedArray& a, const Int32Arrays::Index& ix, const Int32Arrays::Int32& e) {
+        inline void operator()(Int32Arrays::Array& a, const Int32Arrays::UInt32& ix, const Int32Arrays::Int32& e) {
             return __array.set(a, ix, e);
         };
         inline void operator()(Int32Arrays::Array& a, const Int32Arrays::Index& ix, const Int32Arrays::Int32& e) {
             return __array.set(a, ix, e);
         };
-        inline void operator()(Int32Arrays::Array& a, const Int32Arrays::UInt32& ix, const Int32Arrays::Int32& e) {
+        inline void operator()(Int32Arrays::PaddedArray& a, const Int32Arrays::Index& ix, const Int32Arrays::Int32& e) {
             return __array.set(a, ix, e);
         };
     };
 
     static Int32Arrays::_set set;
     struct _shape {
-        inline Int32Arrays::Shape operator()(const Int32Arrays::PaddedArray& a) {
+        inline Int32Arrays::Shape operator()(const Int32Arrays::Array& a) {
             return __array.shape(a);
         };
-        inline Int32Arrays::Shape operator()(const Int32Arrays::Array& a) {
+        inline Int32Arrays::Shape operator()(const Int32Arrays::PaddedArray& a) {
             return __array.shape(a);
         };
     };
 
     static Int32Arrays::_shape shape;
+    struct _take {
+        inline Int32Arrays::Array operator()(const Int32Arrays::Int32& i, const Int32Arrays::Array& a) {
+            Int32Arrays::Shape drop_sh_0 = Int32Arrays::drop_shape_elem(a, Int32Arrays::elem_uint(Int32Arrays::zero()));
+            Int32Arrays::Array res_array;
+            if (Int32Arrays::lt(i, Int32Arrays::zero()))
+            {
+                Int32Arrays::Int32 drop_value = Int32Arrays::binary_add(Int32Arrays::uint_elem(Int32Arrays::get_shape_elem(a, Int32Arrays::elem_uint(Int32Arrays::zero()))), i);
+                res_array = Int32Arrays::drop(drop_value, a);
+            }
+            else
+            {
+                res_array = Int32Arrays::get(a, Int32Arrays::create_index1(Int32Arrays::elem_uint(Int32Arrays::zero())));
+                res_array = Int32Arrays::reshape(res_array, Int32Arrays::cat_shape(Int32Arrays::create_shape1(Int32Arrays::elem_uint(Int32Arrays::one())), Int32Arrays::shape(res_array)));
+                Int32Arrays::UInt32 c = Int32Arrays::elem_uint(Int32Arrays::one());
+                Int32Arrays::take_repeat(a, i, res_array, c);
+            }
+            return res_array;
+        };
+    };
+
+    static Int32Arrays::_take take;
+    struct _take_body {
+        inline void operator()(const Int32Arrays::Array& a, const Int32Arrays::Int32& i, Int32Arrays::Array& res, Int32Arrays::UInt32& c) {
+            Int32Arrays::Index ix = Int32Arrays::create_index1(c);
+            Int32Arrays::Array slice = Int32Arrays::get(a, ix);
+            slice = Int32Arrays::reshape(slice, Int32Arrays::cat_shape(Int32Arrays::create_shape1(Int32Arrays::elem_uint(Int32Arrays::one())), Int32Arrays::shape(slice)));
+            res = Int32Arrays::cat(res, slice);
+            c = Int32Arrays::elem_uint(Int32Arrays::binary_add(Int32Arrays::uint_elem(c), Int32Arrays::one()));
+        };
+    };
+
+    static Int32Arrays::_take_body take_body;
+    struct _take_cond {
+        inline bool operator()(const Int32Arrays::Array& a, const Int32Arrays::Int32& i, const Int32Arrays::Array& res, const Int32Arrays::UInt32& c) {
+            return Int32Arrays::lt(Int32Arrays::uint_elem(c), i);
+        };
+    };
+
+private:
+    static while_loop2_2<Int32Arrays::Array, Int32Arrays::Int32, Int32Arrays::Array, Int32Arrays::UInt32, Int32Arrays::_take_body, Int32Arrays::_take_cond> __while_loop2_28;
+public:
+    static Int32Arrays::_take_cond take_cond;
+    struct _take_repeat {
+        inline void operator()(const Int32Arrays::Array& context1, const Int32Arrays::Int32& context2, Int32Arrays::Array& state1, Int32Arrays::UInt32& state2) {
+            return __while_loop2_28.repeat(context1, context2, state1, state2);
+        };
+    };
+
+    static Int32Arrays::_take_repeat take_repeat;
     struct _test_array3_2_2 {
         inline Int32Arrays::Array operator()() {
             return __array.test_array3_2_2();
@@ -2256,32 +2492,32 @@ public:
 
     static Int32Arrays::_test_vector5 test_vector5;
     struct _total {
-        inline Int32Arrays::UInt32 operator()(const Int32Arrays::IndexContainer& ixc) {
-            return __array.total(ixc);
+        inline Int32Arrays::UInt32 operator()(const Int32Arrays::Array& a) {
+            return __array.total(a);
         };
         inline Int32Arrays::UInt32 operator()(const Int32Arrays::Shape& s) {
             return __array.total(s);
         };
-        inline Int32Arrays::UInt32 operator()(const Int32Arrays::Array& a) {
-            return __array.total(a);
+        inline Int32Arrays::UInt32 operator()(const Int32Arrays::IndexContainer& ixc) {
+            return __array.total(ixc);
         };
     };
 
     static Int32Arrays::_total total;
     struct _transpose {
-        inline Int32Arrays::Array operator()(const Int32Arrays::Array& a) {
-            Int32Arrays::Array transposed_array = Int32Arrays::create_array(Int32Arrays::reverse_shape(Int32Arrays::shape(a)));
-            Int32Arrays::IndexContainer ix_space = Int32Arrays::create_valid_indices(transposed_array);
-            Int32Arrays::UInt32 counter = Int32Arrays::elem_uint(Int32Arrays::zero());
-            Int32Arrays::transpose_repeat(a, ix_space, transposed_array, counter);
-            return transposed_array;
-        };
         inline Int32Arrays::PaddedArray operator()(const Int32Arrays::PaddedArray& a) {
             Int32Arrays::Array reshaped_array = Int32Arrays::create_array(Int32Arrays::padded_shape(a));
             Int32Arrays::PaddedArray transposed_array = Int32Arrays::create_padded_array(Int32Arrays::reverse_shape(Int32Arrays::shape(a)), Int32Arrays::reverse_shape(Int32Arrays::padded_shape(a)), reshaped_array);
             Int32Arrays::IndexContainer ix_space = Int32Arrays::create_valid_indices(transposed_array);
             Int32Arrays::UInt32 counter = Int32Arrays::elem_uint(Int32Arrays::zero());
             Int32Arrays::padded_transpose_repeat(a, ix_space, transposed_array, counter);
+            return transposed_array;
+        };
+        inline Int32Arrays::Array operator()(const Int32Arrays::Array& a) {
+            Int32Arrays::Array transposed_array = Int32Arrays::create_array(Int32Arrays::reverse_shape(Int32Arrays::shape(a)));
+            Int32Arrays::IndexContainer ix_space = Int32Arrays::create_valid_indices(transposed_array);
+            Int32Arrays::UInt32 counter = Int32Arrays::elem_uint(Int32Arrays::zero());
+            Int32Arrays::transpose_repeat(a, ix_space, transposed_array, counter);
             return transposed_array;
         };
     };
@@ -2312,15 +2548,15 @@ public:
 
     static Int32Arrays::_unaryMap unaryMap;
     struct _unary_sub {
-        inline Int32Arrays::Int32 operator()(const Int32Arrays::Int32& a) {
-            return __int32_utils.unary_sub(a);
-        };
         inline Int32Arrays::Array operator()(const Int32Arrays::Array& a) {
             Int32Arrays::IndexContainer ix_space = Int32Arrays::create_valid_indices(a);
             Int32Arrays::Array a_upd = a;
             Int32Arrays::UInt32 counter = Int32Arrays::elem_uint(Int32Arrays::zero());
             Int32Arrays::unary_sub_repeat(ix_space, a_upd, counter);
             return a_upd;
+        };
+        inline Int32Arrays::Int32 operator()(const Int32Arrays::Int32& a) {
+            return __int32_utils.unary_sub(a);
         };
     };
 
