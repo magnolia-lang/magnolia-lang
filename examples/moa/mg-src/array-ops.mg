@@ -78,37 +78,37 @@ implementation BopmapOpsImpl = {
     predicate mapped_ops_cond(a: Array,
                               ix_space: IndexContainer,
                               b: Array,
-                              c: UInt32) {
+                              c: Int) {
 
-        value uint_elem(c) < uint_elem(total(ix_space));
+        value int_elem(c) < int_elem(total(ix_space));
     }
 
     procedure bopmap_body(obs a: Array,  obs ix_space: IndexContainer,
-                       upd b: Array, upd c: UInt32) {
+                       upd b: Array, upd c: Int) {
 
         var ix = get_index_ixc(ix_space, c);
         var new_value = bop(unwrap_scalar(get(a, ix)), unwrap_scalar(get(b, ix)));
 
         call set(b, ix, new_value);
 
-        c = elem_uint(uint_elem(c) + one());
+        c = elem_int(int_elem(c) + one());
     }
 
     use WhileLoop2_2[Context1 => Array,
                      Context2 => IndexContainer,
                      State1 => Array,
-                     State2 => UInt32,
+                     State2 => Int,
                      body => bopmap_body,
                      cond => mapped_ops_cond,
                      repeat => bopmap_repeat];
 
     function bopmap(a: Array, b: Array): Array guard shape(a) == shape(b) = {
 
-        var ix_space = create_valid_indices(a);
+        var ix_space = create_total_indices(a);
 
         var b_upd = b;
 
-        var counter = elem_uint(zero());
+        var counter = elem_int(zero());
 
         call bopmap_repeat(a,ix_space,b_upd,counter);
 
@@ -129,25 +129,25 @@ implementation UnaryMapImpl = {
     require predicate _<_(a: Element, b: Element);
     require predicate _==_(a: Element, b: Element);
 
-    predicate unary_sub_cond(ix_space: IndexContainer, a: Array, c: UInt32) {
-        value uint_elem(c) < uint_elem(total(ix_space));
+    predicate unary_sub_cond(ix_space: IndexContainer, a: Array, c: Int) {
+        value int_elem(c) < int_elem(total(ix_space));
     }
 
     procedure unary_sub_body(obs ix_space: IndexContainer,
                              upd a: Array,
-                             upd c: UInt32) {
+                             upd c: Int) {
 
         var ix = get_index_ixc(ix_space, c);
 
         var new_value = - unwrap_scalar(get(a, ix));
         call set(a, ix, new_value);
 
-        c = elem_uint(uint_elem(c) + one());
+        c = elem_int(int_elem(c) + one());
     }
 
     use WhileLoop1_2[Context1 => IndexContainer,
                      State1 => Array,
-                     State2 => UInt32,
+                     State2 => Int,
                      body => unary_sub_body,
                      cond => unary_sub_cond,
                      repeat => unary_sub_repeat];
@@ -155,11 +155,11 @@ implementation UnaryMapImpl = {
 
     function unary_sub(a: Array): Array = {
 
-        var ix_space = create_valid_indices(a);
+        var ix_space = create_total_indices(a);
 
         var a_upd = a;
 
-        var counter = elem_uint(zero());
+        var counter = elem_int(zero());
 
         call unary_sub_repeat(ix_space, a_upd, counter);
 

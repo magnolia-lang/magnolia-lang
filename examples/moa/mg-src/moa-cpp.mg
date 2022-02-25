@@ -10,7 +10,7 @@ program Int32Arrays = {
 
    use Int32Utils;
 
-   use Padding[Element => Int32,
+   use Transformations[Element => Int32,
               _+_ => binary_add,
               _-_ => binary_sub,
               _*_ => mul,
@@ -25,7 +25,7 @@ program Float64Arrays = {
 
    use Float64Utils;
 
-   use Padding[Element => Float64,
+   use Transformations[Element => Float64,
               _+_ => binary_add,
               _-_ => binary_sub,
               _*_ => mul,
@@ -38,7 +38,7 @@ program Float64Arrays = {
 program BurgerProgram = {
 
    use Int32Utils;
-   use MoaOps[Element => Int32,
+   use Transformations[Element => Int32,
               _+_ => binary_add,
               _-_ => binary_sub,
               _*_ => mul,

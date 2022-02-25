@@ -205,6 +205,14 @@ int main(int argc, char **argv) {
     std::cout << "rotate(1,a):" << std::endl;
     P.print_array(P.rotate(1,trans_array));
 
+    std::cout << std::endl;
+
+    std::cout << "Calculating sum of elements in adjacent columns: rotate(1,a) + rotate(-1,a)" << std::endl;
+    auto sum_rotate = P.binary_add(P.rotate(1,trans_array), P.rotate(-1,trans_array));
+
+    P.print_array(sum_rotate);
+    P.print_shape(P.shape(sum_rotate));
+
     std::cout << "Arithmetic operations on arrays: Int32" << std::endl;
     std::cout << "Original array:" << std::endl;
 
@@ -293,5 +301,5 @@ int main(int argc, char **argv) {
     F.print_array(arit_usubF);
     F.print_shape(F.shape(arit_usubF));
 
-
+    std::cout << std::endl;
 }

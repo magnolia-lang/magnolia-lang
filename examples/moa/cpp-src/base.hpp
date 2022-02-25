@@ -9,10 +9,10 @@ template <typename _Element>
 struct array {
 
     typedef _Element Element;
-    typedef size_t UInt32;
-    typedef std::vector<UInt32> Index;
+    typedef int Int;
+    typedef std::vector<Int> Index;
     typedef std::vector<Index> IndexContainer;
-    typedef std::vector<UInt32> Shape;
+    typedef std::vector<Int> Shape;
 
     struct Array {
 
@@ -35,13 +35,13 @@ struct array {
 
                 auto array_size = std::accumulate(begin(_sh),
                                                   end(_sh), 1,
-                                                  std::multiplies<UInt32>());
+                                                  std::multiplies<Int>());
 
                 _content = (Element *)calloc(
                     array_size, sizeof(Element));
             }
 
-            inline UInt32 _dim() {
+            inline Int _dim() {
                 return _sh.size();
             }
 
@@ -49,25 +49,25 @@ struct array {
                 return _sh;
             }
 
-            inline Element _get(const UInt32 ix) {
+            inline Element _get(const Int ix) {
                 return _content[ix];
             }
 
-            inline void _set(const UInt32 ix, Element val) {
+            inline void _set(const Int ix, Element val) {
                 _content[ix] = val;
             }
 
-            inline UInt32 _get_shape_elem(const UInt32 i) {
+            inline Int _get_shape_elem(const Int i) {
                 return _sh.at(i);
             }
 
-            inline UInt32 _total() {
+            inline Int _total() {
                 using std::begin;
                 using std::end;
 
                 return std::accumulate(begin(_sh),
                                                   end(_sh), 1,
-                                                  std::multiplies<UInt32>());
+                                                  std::multiplies<Int>());
             }
     };
 
@@ -85,7 +85,7 @@ struct array {
                 this -> _content = padded._content;
             }
 
-            inline UInt32 _padded_dim() {
+            inline Int _padded_dim() {
                 return _padded_sh.size();
             }
 
@@ -93,25 +93,25 @@ struct array {
                 return _padded_sh;
             }
 
-            inline Element _padded_get(const UInt32 ix) {
+            inline Element _padded_get(const Int ix) {
                 return this -> _content[ix];
             }
 
-            inline void _padded_set(const UInt32 ix, Element val) {
+            inline void _padded_set(const Int ix, Element val) {
                 this -> _content[ix] = val;
             }
 
-            inline UInt32 _padded_get_shape_elem(const UInt32 i) {
+            inline Int _padded_get_shape_elem(const Int i) {
                 return _padded_sh.at(i);
             }
 
-            inline UInt32 _padded_total() {
+            inline Int _padded_total() {
                 using std::begin;
                 using std::end;
 
                 return std::accumulate(begin(_padded_sh),
                                                   end(_padded_sh), 1,
-                                                  std::multiplies<UInt32>());
+                                                  std::multiplies<Int>());
             }
 
     };
@@ -120,7 +120,7 @@ struct array {
     Operations on unpadded arrays
     */
 
-    inline Array get(Array a, UInt32 ix) {
+    inline Array get(Array a, Int ix) {
         if (ix > total(a)) {
             std::cout << "get:Index out of bounds: " << ix << std::endl;
         }
@@ -132,7 +132,7 @@ struct array {
             return res;
         }
     }
-    inline Array get(PaddedArray a, UInt32 ix) {
+    inline Array get(PaddedArray a, Int ix) {
         if (ix > padded_total(a)) {
             std::cout << "get:Index out of bounds: " << ix << std::endl;
         }
@@ -145,7 +145,7 @@ struct array {
         }
     }
 
-    inline void set(Array a, UInt32 ix, const Element e) {
+    inline void set(Array a, Int ix, const Element e) {
         if (ix > total(a)) {
             std::cout << "set:Index out of bounds: " << ix << std::endl;
         }
@@ -154,7 +154,7 @@ struct array {
         }
     }
 
-    inline void set(PaddedArray a, UInt32 ix, const Element e) {
+    inline void set(PaddedArray a, Int ix, const Element e) {
         if (ix > padded_total(a)) {
             std::cout << "set:Index out of bounds: " << ix << std::endl;
         }
@@ -170,7 +170,7 @@ struct array {
 
             Shape sh = shape(a);
 
-            UInt32 accum = 0;
+            Int accum = 0;
 
             for (int i = 0; i < dim(a); i++) {
 
@@ -179,14 +179,14 @@ struct array {
                               << ". Max is : " << sh.at(i) << std::endl;
                 }
 
-                std::vector<UInt32>::const_iterator first = sh.begin() + (i+1);
-                std::vector<UInt32>::const_iterator last = sh.begin() + dim(a);
+                std::vector<Int>::const_iterator first = sh.begin() + (i+1);
+                std::vector<Int>::const_iterator last = sh.begin() + dim(a);
 
-                std::vector<UInt32> subshape(first, last);
+                std::vector<Int> subshape(first, last);
 
                 int reduced = std::accumulate(begin(subshape),
                                                   end(subshape), 1,
-                                                  std::multiplies<UInt32>());
+                                                  std::multiplies<Int>());
 
                 accum += ix.at(i) * reduced;
             }
@@ -204,19 +204,19 @@ struct array {
             Shape sh = shape(a);
 
             // calculates the remaining index space not given in the partial ix
-            std::vector<UInt32>::const_iterator first = sh.begin() + (ix.size());
-            std::vector<UInt32>::const_iterator last = sh.begin() + dim(a);
-            std::vector<UInt32> subshape(first, last);
+            std::vector<Int>::const_iterator first = sh.begin() + (ix.size());
+            std::vector<Int>::const_iterator last = sh.begin() + dim(a);
+            std::vector<Int> subshape(first, last);
 
             Array sub_array = Array(subshape);
 
-            UInt32 total_elems = total(sub_array);
+            Int total_elems = total(sub_array);
 
             std::vector<Index> indices;
 
             // populates a vector with empty total indices
             for (auto i = 0; i < total(sub_array); i++) {
-                std::vector<UInt32> total;
+                std::vector<Int> total;
 
                 for (auto j = 0; j < ix.size(); j++) {
                     total.push_back(ix.at(j));
@@ -227,9 +227,9 @@ struct array {
 
             // generates all total indices
             for (auto i = 0; i < subshape.size(); i++) {
-                UInt32 current_sh_ix = subshape.at(i);
-                UInt32 split = (i == subshape.size() - 1) ? 1 : subshape.at(i+1);
-                UInt32 current_ix = 0;
+                Int current_sh_ix = subshape.at(i);
+                Int split = (i == subshape.size() - 1) ? 1 : subshape.at(i+1);
+                Int current_ix = 0;
                 int counter = 0;
 
                 for (auto j = 0; j < indices.size(); j++) {
@@ -279,7 +279,7 @@ struct array {
             else {
                 std::vector<int> multiplier;
                 multiplier.push_back(1);
-                UInt32 acc = 0;
+                Int acc = 0;
 
                 Shape sh = shape(a);
 
@@ -290,14 +290,14 @@ struct array {
                               << ". Max is : " << sh.at(i) << std::endl;
                 }
 
-                std::vector<UInt32>::const_iterator first = sh.begin() + (i+1);
-                std::vector<UInt32>::const_iterator last = sh.begin() + dim(a);
+                std::vector<Int>::const_iterator first = sh.begin() + (i+1);
+                std::vector<Int>::const_iterator last = sh.begin() + dim(a);
 
-                std::vector<UInt32> subshape(first, last);
+                std::vector<Int> subshape(first, last);
 
                 int reduced = std::accumulate(begin(subshape),
                                                   end(subshape), 1,
-                                                  std::multiplies<UInt32>());
+                                                  std::multiplies<Int>());
 
                 acc += ix.at(i) * reduced;
             }
@@ -313,7 +313,7 @@ struct array {
         }
     }
 
-    inline UInt32 dim(Array a) {
+    inline Int dim(Array a) {
         return a._dim();
     }
 
@@ -321,29 +321,29 @@ struct array {
         return a._shape();
     }
 
-    inline UInt32 total(Array a) {
+    inline Int total(Array a) {
         return a._total();
     }
 
-    inline UInt32 total(Shape s) {
+    inline Int total(Shape s) {
         return s.size();
     }
 
-    inline UInt32 total(IndexContainer ix) {
+    inline Int total(IndexContainer ix) {
         return ix.size();
     }
 
     /*
     operations on padded arrays
     */
-    inline UInt32 padded_dim(PaddedArray a) {
+    inline Int padded_dim(PaddedArray a) {
         return a._padded_dim();
     }
     inline Shape padded_shape(PaddedArray a) {
         return a._padded_shape();
     }
 
-    inline UInt32 padded_total(PaddedArray a) {
+    inline Int padded_total(PaddedArray a) {
         return a._padded_total();
     }
 
@@ -360,19 +360,19 @@ struct array {
         return PaddedArray(unpadded_shape, padded_shape, padded_array);
     }
 
-    inline Shape create_shape1(const UInt32 a) {
+    inline Shape create_shape1(const Int a) {
         Shape sh;
         sh.push_back(a);
         return sh;
     }
 
-    inline Shape create_shape2(const UInt32 a, const UInt32 b) {
+    inline Shape create_shape2(const Int a, const Int b) {
         Shape sh;
         sh.push_back(a);
         sh.push_back(b);
         return sh;
     }
-    inline Shape create_shape3(const UInt32 a, const UInt32 b, const UInt32 c) {
+    inline Shape create_shape3(const Int a, const Int b, const Int c) {
         Shape sh;
         sh.push_back(a);
         sh.push_back(b);
@@ -397,26 +397,25 @@ struct array {
         return false;
 
     }
-
-    inline IndexContainer create_valid_indices(Array a) {
+    inline IndexContainer create_total_indices(Array a) {
 
         auto sh = shape(a);
-        UInt32 total_elems = total(a);
+        Int total_elems = total(a);
 
         IndexContainer indices;
 
 
         // populates a vector with empty total indices
         for (auto i = 0; i < total_elems; i++) {
-            std::vector<UInt32> total;
+            std::vector<Int> total;
 
             indices.push_back(total);
         }
 
         for (auto i = 0; i < sh.size(); i++) {
-                UInt32 current_sh_ix = sh.at(i);
-                UInt32 split = (i == sh.size() - 1) ? 1 : sh.at(i+1);
-                UInt32 current_ix = 0;
+                Int current_sh_ix = sh.at(i);
+                Int split = (i == sh.size() - 1) ? 1 : sh.at(i+1);
+                Int current_ix = 0;
                 int counter = 0;
 
                 for (auto j = 0; j < indices.size(); j++) {
@@ -438,25 +437,25 @@ struct array {
         return indices;
     }
 
-    inline IndexContainer create_valid_indices(PaddedArray a) {
+    inline IndexContainer create_total_indices(PaddedArray a) {
 
         auto sh = padded_shape(a);
-        UInt32 total_elems = padded_total(a);
+        Int total_elems = padded_total(a);
 
         IndexContainer indices;
 
 
         // populates a vector with empty total indices
         for (auto i = 0; i < total_elems; i++) {
-            std::vector<UInt32> total;
+            std::vector<Int> total;
 
             indices.push_back(total);
         }
 
         for (auto i = 0; i < sh.size(); i++) {
-                UInt32 current_sh_ix = sh.at(i);
-                UInt32 split = (i == sh.size() - 1) ? 1 : sh.at(i+1);
-                UInt32 current_ix = 0;
+                Int current_sh_ix = sh.at(i);
+                Int split = (i == sh.size() - 1) ? 1 : sh.at(i+1);
+                Int current_ix = 0;
                 int counter = 0;
 
                 for (auto j = 0; j < indices.size(); j++) {
@@ -477,21 +476,82 @@ struct array {
         return indices;
     }
 
+    inline IndexContainer create_partial_indices(Array a, Int level) {
 
-    inline Index create_index1(const UInt32 a) {
+        if (level > total(shape(a))-1) {
+            std::cout << "Level can't be higher than number of dimensions" << std:: endl;
+        } else {
+
+            IndexContainer total_indices = create_total_indices(a);
+            IndexContainer partial_indices;
+
+            for (Index ix : total_indices) {
+
+                auto size = total(ix);
+
+                while(size > level) {
+                    ix.pop_back();
+                    size = total(ix);
+                }
+
+                partial_indices.push_back(ix);
+            }
+
+            // remove duplicates
+            auto last = std::unique(partial_indices.begin(), partial_indices.end());
+            partial_indices.erase(last, partial_indices.end());
+
+            return partial_indices;
+
+        }
+
+    }
+
+    inline IndexContainer create_partial_indices(PaddedArray a, Int level) {
+
+        if (level > total(padded_shape(a))-1) {
+            std::cout << "Level can't be higher than number of dimensions" << std:: endl;
+        } else {
+
+            IndexContainer total_indices = create_total_indices(a);
+            IndexContainer partial_indices;
+
+            for (Index ix : total_indices) {
+
+                auto size = total(ix);
+
+                while(size > level) {
+                    ix.pop_back();
+                    size = total(ix);
+                }
+
+                partial_indices.push_back(ix);
+            }
+
+            // remove duplicates
+            auto last = std::unique(partial_indices.begin(), partial_indices.end());
+            partial_indices.erase(last, partial_indices.end());
+
+            return partial_indices;
+
+        }
+
+    }
+
+    inline Index create_index1(const Int a) {
         Index ix;
         ix.push_back(a);
         return ix;
     }
 
-    inline Index create_index2(const UInt32 a, const UInt32 b) {
+    inline Index create_index2(const Int a, const Int b) {
         Index ix;
         ix.push_back(a);
         ix.push_back(b);
         return ix;
     }
 
-    inline Index create_index3(const UInt32 a, const UInt32 b, const UInt32 c) {
+    inline Index create_index3(const Int a, const Int b, const Int c) {
         Index ix;
         ix.push_back(a);
         ix.push_back(b);
@@ -508,27 +568,27 @@ struct array {
         return a._get(0);
     }
 
-    inline Element uint_elem(const UInt32 a) {
+    inline Element int_elem(const Int a) {
         return (Element) a;
     }
 
-    inline UInt32 elem_uint(const Element a) {
-        return (UInt32) a;
+    inline Int elem_int(const Element a) {
+        return (Int) a;
     }
 
-    inline UInt32 get_shape_elem(Array a, const UInt32 i) {
+    inline Int get_shape_elem(Array a, const Int i) {
         return a._get_shape_elem(i);
     }
 
-    inline UInt32 get_index_elem(Index ix, const UInt32 i) {
+    inline Int get_index_elem(Index ix, const Int i) {
         return ix.at(i);
     }
 
-    inline Index get_index_ixc(const IndexContainer ixc, const UInt32 ix) {
+    inline Index get_index_ixc(const IndexContainer ixc, const Int ix) {
         return ixc.at(ix);
     }
 
-    inline Index drop_index_elem(Index ix, const UInt32 i) {
+    inline Index drop_index_elem(Index ix, const Int i) {
         Index res;
 
         for (auto j = 0; j < ix.size(); j++) {
@@ -539,7 +599,7 @@ struct array {
         return res;
     }
 
-    inline Shape drop_shape_elem(Array a, const UInt32 i) {
+    inline Shape drop_shape_elem(Array a, const Int i) {
         Shape res;
         for (auto j = 0; j < shape(a).size(); j++) {
             if (i == j) continue;
@@ -548,11 +608,11 @@ struct array {
         return res;
     }
 
-    inline UInt32 padded_get_shape_elem(PaddedArray a, const UInt32 i) {
+    inline Int padded_get_shape_elem(PaddedArray a, const Int i) {
         return a._padded_get_shape_elem(i);
     }
 
-    inline Shape padded_drop_shape_elem(PaddedArray a, const UInt32 i) {
+    inline Shape padded_drop_shape_elem(PaddedArray a, const Int i) {
         Shape res;
         for (auto j = 0; j < padded_shape(a).size(); j++) {
             if (i == j) continue;
@@ -746,7 +806,7 @@ struct array {
         std::cout << e << std::endl;
     }
 
-    inline void print_uint(const UInt32 &i) {
+    inline void print_uint(const Int &i) {
         std::cout << i << std::endl;
     }
 };

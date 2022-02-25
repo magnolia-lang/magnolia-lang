@@ -9,28 +9,28 @@ implementation ExtOps = external C++ base.array {
     type Index;
     type IndexContainer;
     type Shape;
-    type UInt32;
+    type Int;
 
     // unpadded array getters, setters
-    function get(a: Array, ix: UInt32): Array;
+    function get(a: Array, ix: Int): Array;
     function get(a: Array, ix: Index): Array;
     function get(a: PaddedArray, ix: Index): Array;
 
-    procedure set(upd a: Array, obs ix: UInt32, obs e: Element);
+    procedure set(upd a: Array, obs ix: Int, obs e: Element);
     procedure set(upd a: Array, obs ix: Index, obs e: Element);
     procedure set(upd a: PaddedArray, obs ix: Index, obs e: Element);
 
-    function get_shape_elem(a: Array, i: UInt32): UInt32;
-    function drop_shape_elem(a: Array, i: UInt32): Shape;
-    function get_index_elem(ix: Index, i: UInt32): UInt32;
-    function drop_index_elem(ix: Index, i: UInt32): Index;
-    function get_index_ixc(ixc: IndexContainer, ix: UInt32): Index;
+    function get_shape_elem(a: Array, i: Int): Int;
+    function drop_shape_elem(a: Array, i: Int): Shape;
+    function get_index_elem(ix: Index, i: Int): Int;
+    function drop_index_elem(ix: Index, i: Int): Index;
+    function get_index_ixc(ixc: IndexContainer, ix: Int): Index;
 
     // unpadded moa operations that are convenient to have tied to backend
-    function dim(a: Array): UInt32;
-    function total(a: Array): UInt32;
-    function total(s: Shape) : UInt32;
-    function total(ixc: IndexContainer): UInt32;
+    function dim(a: Array): Int;
+    function total(a: Array): Int;
+    function total(s: Shape) : Int;
+    function total(ixc: IndexContainer): Int;
     function shape(a: Array): Shape;
     function shape(a: PaddedArray): Shape;
 
@@ -38,33 +38,34 @@ implementation ExtOps = external C++ base.array {
     // padded array getters
     //function padded_get(a: PaddedArray, ix: Index): PaddedArray;
     //procedure padded_set(upd a: PaddedArray, obs ix: Index, obs e: Element);
-    function padded_get_shape_elem(a: PaddedArray, i: UInt32): UInt32;
-    function padded_drop_shape_elem(a: PaddedArray, i: UInt32): Shape;
+    function padded_get_shape_elem(a: PaddedArray, i: Int): Int;
+    function padded_drop_shape_elem(a: PaddedArray, i: Int): Shape;
 
 
     // padded moa operations
-    function padded_dim(a: PaddedArray): UInt32;
-    function padded_total(a: PaddedArray): UInt32;
+    function padded_dim(a: PaddedArray): Int;
+    function padded_total(a: PaddedArray): Int;
     function padded_shape(a: PaddedArray): Shape;
 
     // creation
     function create_array(sh: Shape): Array;
     function create_padded_array(unpadded_shape: Shape, padded_shape: Shape,
                                 padded_array: Array): PaddedArray;
-    function create_shape1(a: UInt32): Shape;
-    function create_shape2(a: UInt32, b: UInt32): Shape;
-    function create_shape3(a: UInt32, b: UInt32, c: UInt32): Shape;
+    function create_shape1(a: Int): Shape;
+    function create_shape2(a: Int, b: Int): Shape;
+    function create_shape3(a: Int, b: Int, c: Int): Shape;
 
-    function create_valid_indices(a: Array): IndexContainer;
-    function create_valid_indices(a: PaddedArray): IndexContainer;
-    function create_index1(a: UInt32): Index;
-    function create_index2(a: UInt32, b: UInt32): Index;
-    function create_index3(a: UInt32, b: UInt32, c: UInt32): Index;
+    function create_partial_indices(a: Array, i: Int): IndexContainer;
+    function create_total_indices(a: Array): IndexContainer;
+    function create_total_indices(a: PaddedArray): IndexContainer;
+    function create_index1(a: Int): Index;
+    function create_index2(a: Int, b: Int): Index;
+    function create_index3(a: Int, b: Int, c: Int): Index;
 
     // util
     function unwrap_scalar(a: Array): Element;
-    function uint_elem(a: UInt32): Element;
-    function elem_uint(a: Element): UInt32;
+    function int_elem(a: Int): Element;
+    function elem_int(a: Element): Int;
     function cat_shape(a: Shape, b: Shape): Shape;
     function cat_index(i: Index, j: Index): Index;
     function reverse_index(ix: Index): Index;
@@ -78,7 +79,7 @@ implementation ExtOps = external C++ base.array {
     procedure print_index_container(obs i: IndexContainer);
     procedure print_shape(obs sh: Shape);
     procedure print_element(obs e: Element);
-    procedure print_uint(obs u: UInt32);
+    procedure print_uint(obs u: Int);
 
     // testing
     function test_vector2(): Array;

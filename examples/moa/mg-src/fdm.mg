@@ -9,12 +9,23 @@ package examples.moa.mg-src.fdm
 MoA operations needed for FDM: (source: fengshui)
 -shape DONE
 -psi   DONE
--rotate
+-rotate DONE
 -cat DONE
 */
+
+/*
+need:
+
+laplacian?
+stencils?
+
+
+*/
+
+
 implementation Burger = {
 
-    //use MappedOpsImpl[bop => _+_, bopmap => _+_];
+
 
     //use Padding;
 
