@@ -474,22 +474,35 @@ implementation Transformations = {
     #######
     */
 
+    function rotate(sigma: Int, ax: Int, a: Array): Array
+        guard int_elem(ax) < int_elem(dim(a)) = {
 
-    function rotate(sigma: Int, a: Array): Array = {
+        // create partial indices of length j
+        var ix_space = create_partial_indices(a, ax);
 
-        var res_array: Array;
+        var c = elem_int(zero());
+        var i = get_index_ixc(ix_space, c);
 
-        if zero() < int_elem(sigma) && int_elem(sigma) <= int_elem(get_shape_elem(a, elem_int(zero()))) then {
+        var res: Array;
 
-            res_array = cat(drop(sigma, a), take(sigma,a));
+        if zero() < int_elem(sigma) then {
+
+            var e1 = drop(sigma, get(a, i));
+            var e2 = take(sigma, get(a, i));
+
+            res = cat(e1,e2);
 
         } else {
 
-            res_array = cat(take(sigma, a), drop(sigma,a));
+            var e1 = take(elem_int(-int_elem(sigma)), get(a, i));
+            var e2 = drop(elem_int(-int_elem(sigma)), get(a, i));
+            call print_array(e1);
+            call print_array(e2);
+            res = cat(e1,e2);
 
         };
 
-        value res_array;
+        value res;
     }
 
 

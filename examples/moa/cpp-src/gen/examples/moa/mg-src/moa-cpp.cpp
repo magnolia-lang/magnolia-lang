@@ -95,7 +95,7 @@ namespace moa_cpp {
 
 
 
-    BurgerProgram::_print_uint BurgerProgram::print_uint;
+    BurgerProgram::_print_int BurgerProgram::print_int;
 
 
 
@@ -516,7 +516,7 @@ namespace moa_cpp {
 
 
 
-    Float64Arrays::_print_uint Float64Arrays::print_uint;
+    Float64Arrays::_print_int Float64Arrays::print_int;
 
 
 
@@ -1021,7 +1021,7 @@ namespace moa_cpp {
 
 
 
-    Int32Arrays::_print_uint Int32Arrays::print_uint;
+    Int32Arrays::_print_int Int32Arrays::print_int;
 
 
 

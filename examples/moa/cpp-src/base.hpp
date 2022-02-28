@@ -806,7 +806,7 @@ struct array {
         std::cout << e << std::endl;
     }
 
-    inline void print_uint(const Int &i) {
+    inline void print_int(const Int &i) {
         std::cout << i << std::endl;
     }
 };

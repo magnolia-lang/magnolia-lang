@@ -79,7 +79,7 @@ implementation ExtOps = external C++ base.array {
     procedure print_index_container(obs i: IndexContainer);
     procedure print_shape(obs sh: Shape);
     procedure print_element(obs e: Element);
-    procedure print_uint(obs u: Int);
+    procedure print_int(obs u: Int);
 
     // testing
     function test_vector2(): Array;

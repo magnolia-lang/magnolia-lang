@@ -202,16 +202,14 @@ int main(int argc, char **argv) {
     std::cout << "reverse(a): TODO FIX" << std::endl;
     P.print_array(P.reverse(trans_array));
 
-    std::cout << "rotate(1,a):" << std::endl;
-    P.print_array(P.rotate(1,trans_array));
+    std::cout << "rotate(2,0,a):, dim(a) = 2" << std::endl;
+    P.print_array(P.rotate(2,0,trans_array));
 
+    auto trans_array2 = P.test_array3_2_2();
+    std::cout << "rotate(2,0,a):, dim(a) = 3" << std::endl;
+    P.print_array(trans_array2);
+    P.print_array(P.rotate(2,0,trans_array2));
     std::cout << std::endl;
-
-    std::cout << "Calculating sum of elements in adjacent columns: rotate(1,a) + rotate(-1,a)" << std::endl;
-    auto sum_rotate = P.binary_add(P.rotate(1,trans_array), P.rotate(-1,trans_array));
-
-    P.print_array(sum_rotate);
-    P.print_shape(P.shape(sum_rotate));
 
     std::cout << "Arithmetic operations on arrays: Int32" << std::endl;
     std::cout << "Original array:" << std::endl;

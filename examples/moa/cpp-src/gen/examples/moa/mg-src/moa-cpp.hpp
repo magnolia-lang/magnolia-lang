@@ -166,13 +166,13 @@ public:
     };
 
     static BurgerProgram::_padded_total padded_total;
-    struct _print_uint {
+    struct _print_int {
         inline void operator()(const BurgerProgram::Int& u) {
-            return __array.print_uint(u);
+            return __array.print_int(u);
         };
     };
 
-    static BurgerProgram::_print_uint print_uint;
+    static BurgerProgram::_print_int print_int;
     typedef array<BurgerProgram::Int32>::IndexContainer IndexContainer;
     struct _padded_transpose_body {
         inline void operator()(const BurgerProgram::PaddedArray& a, const BurgerProgram::IndexContainer& ixc, BurgerProgram::PaddedArray& res, BurgerProgram::Int& c) {
@@ -778,17 +778,26 @@ public:
 
     static BurgerProgram::_reverse_repeat reverse_repeat;
     struct _rotate {
-        inline BurgerProgram::Array operator()(const BurgerProgram::Int& sigma, const BurgerProgram::Array& a) {
-            BurgerProgram::Array res_array;
-            if ((BurgerProgram::lt(BurgerProgram::zero(), BurgerProgram::int_elem(sigma))) && (BurgerProgram::le(BurgerProgram::int_elem(sigma), BurgerProgram::int_elem(BurgerProgram::get_shape_elem(a, BurgerProgram::elem_int(BurgerProgram::zero()))))))
+        inline BurgerProgram::Array operator()(const BurgerProgram::Int& sigma, const BurgerProgram::Int& ax, const BurgerProgram::Array& a) {
+            BurgerProgram::IndexContainer ix_space = BurgerProgram::create_partial_indices(a, ax);
+            BurgerProgram::Int c = BurgerProgram::elem_int(BurgerProgram::zero());
+            BurgerProgram::Index i = BurgerProgram::get_index_ixc(ix_space, c);
+            BurgerProgram::Array res;
+            if (BurgerProgram::lt(BurgerProgram::zero(), BurgerProgram::int_elem(sigma)))
             {
-                res_array = BurgerProgram::cat(BurgerProgram::drop(sigma, a), BurgerProgram::take(sigma, a));
+                BurgerProgram::Array e1 = BurgerProgram::drop(sigma, BurgerProgram::get(a, i));
+                BurgerProgram::Array e2 = BurgerProgram::take(sigma, BurgerProgram::get(a, i));
+                res = BurgerProgram::cat(e1, e2);
             }
             else
             {
-                res_array = BurgerProgram::cat(BurgerProgram::take(sigma, a), BurgerProgram::drop(sigma, a));
+                BurgerProgram::Array e1 = BurgerProgram::take(BurgerProgram::elem_int(BurgerProgram::unary_sub(BurgerProgram::int_elem(sigma))), BurgerProgram::get(a, i));
+                BurgerProgram::Array e2 = BurgerProgram::drop(BurgerProgram::elem_int(BurgerProgram::unary_sub(BurgerProgram::int_elem(sigma))), BurgerProgram::get(a, i));
+                BurgerProgram::print_array(e1);
+                BurgerProgram::print_array(e2);
+                res = BurgerProgram::cat(e1, e2);
             }
-            return res_array;
+            return res;
         };
     };
 
@@ -1116,13 +1125,13 @@ public:
     };
 
     static Float64Arrays::_get_index_ixc get_index_ixc;
-    struct _print_uint {
+    struct _print_int {
         inline void operator()(const Float64Arrays::Int& u) {
-            return __array.print_uint(u);
+            return __array.print_int(u);
         };
     };
 
-    static Float64Arrays::_print_uint print_uint;
+    static Float64Arrays::_print_int print_int;
     typedef array<Float64Arrays::Float64>::PaddedArray PaddedArray;
     struct _padded_dim {
         inline Float64Arrays::Int operator()(const Float64Arrays::PaddedArray& a) {
@@ -1801,17 +1810,26 @@ public:
 
     static Float64Arrays::_reverse_repeat reverse_repeat;
     struct _rotate {
-        inline Float64Arrays::Array operator()(const Float64Arrays::Int& sigma, const Float64Arrays::Array& a) {
-            Float64Arrays::Array res_array;
-            if ((Float64Arrays::lt(Float64Arrays::zero(), Float64Arrays::int_elem(sigma))) && (Float64Arrays::le(Float64Arrays::int_elem(sigma), Float64Arrays::int_elem(Float64Arrays::get_shape_elem(a, Float64Arrays::elem_int(Float64Arrays::zero()))))))
+        inline Float64Arrays::Array operator()(const Float64Arrays::Int& sigma, const Float64Arrays::Int& ax, const Float64Arrays::Array& a) {
+            Float64Arrays::IndexContainer ix_space = Float64Arrays::create_partial_indices(a, ax);
+            Float64Arrays::Int c = Float64Arrays::elem_int(Float64Arrays::zero());
+            Float64Arrays::Index i = Float64Arrays::get_index_ixc(ix_space, c);
+            Float64Arrays::Array res;
+            if (Float64Arrays::lt(Float64Arrays::zero(), Float64Arrays::int_elem(sigma)))
             {
-                res_array = Float64Arrays::cat(Float64Arrays::drop(sigma, a), Float64Arrays::take(sigma, a));
+                Float64Arrays::Array e1 = Float64Arrays::drop(sigma, Float64Arrays::get(a, i));
+                Float64Arrays::Array e2 = Float64Arrays::take(sigma, Float64Arrays::get(a, i));
+                res = Float64Arrays::cat(e1, e2);
             }
             else
             {
-                res_array = Float64Arrays::cat(Float64Arrays::take(sigma, a), Float64Arrays::drop(sigma, a));
+                Float64Arrays::Array e1 = Float64Arrays::take(Float64Arrays::elem_int(Float64Arrays::unary_sub(Float64Arrays::int_elem(sigma))), Float64Arrays::get(a, i));
+                Float64Arrays::Array e2 = Float64Arrays::drop(Float64Arrays::elem_int(Float64Arrays::unary_sub(Float64Arrays::int_elem(sigma))), Float64Arrays::get(a, i));
+                Float64Arrays::print_array(e1);
+                Float64Arrays::print_array(e2);
+                res = Float64Arrays::cat(e1, e2);
             }
-            return res_array;
+            return res;
         };
     };
 
@@ -2212,13 +2230,13 @@ public:
     };
 
     static Int32Arrays::_padded_total padded_total;
-    struct _print_uint {
+    struct _print_int {
         inline void operator()(const Int32Arrays::Int& u) {
-            return __array.print_uint(u);
+            return __array.print_int(u);
         };
     };
 
-    static Int32Arrays::_print_uint print_uint;
+    static Int32Arrays::_print_int print_int;
     typedef array<Int32Arrays::Int32>::IndexContainer IndexContainer;
     struct _padded_transpose_body {
         inline void operator()(const Int32Arrays::PaddedArray& a, const Int32Arrays::IndexContainer& ixc, Int32Arrays::PaddedArray& res, Int32Arrays::Int& c) {
@@ -2824,17 +2842,26 @@ public:
 
     static Int32Arrays::_reverse_repeat reverse_repeat;
     struct _rotate {
-        inline Int32Arrays::Array operator()(const Int32Arrays::Int& sigma, const Int32Arrays::Array& a) {
-            Int32Arrays::Array res_array;
-            if ((Int32Arrays::lt(Int32Arrays::zero(), Int32Arrays::int_elem(sigma))) && (Int32Arrays::le(Int32Arrays::int_elem(sigma), Int32Arrays::int_elem(Int32Arrays::get_shape_elem(a, Int32Arrays::elem_int(Int32Arrays::zero()))))))
+        inline Int32Arrays::Array operator()(const Int32Arrays::Int& sigma, const Int32Arrays::Int& ax, const Int32Arrays::Array& a) {
+            Int32Arrays::IndexContainer ix_space = Int32Arrays::create_partial_indices(a, ax);
+            Int32Arrays::Int c = Int32Arrays::elem_int(Int32Arrays::zero());
+            Int32Arrays::Index i = Int32Arrays::get_index_ixc(ix_space, c);
+            Int32Arrays::Array res;
+            if (Int32Arrays::lt(Int32Arrays::zero(), Int32Arrays::int_elem(sigma)))
             {
-                res_array = Int32Arrays::cat(Int32Arrays::drop(sigma, a), Int32Arrays::take(sigma, a));
+                Int32Arrays::Array e1 = Int32Arrays::drop(sigma, Int32Arrays::get(a, i));
+                Int32Arrays::Array e2 = Int32Arrays::take(sigma, Int32Arrays::get(a, i));
+                res = Int32Arrays::cat(e1, e2);
             }
             else
             {
-                res_array = Int32Arrays::cat(Int32Arrays::take(sigma, a), Int32Arrays::drop(sigma, a));
+                Int32Arrays::Array e1 = Int32Arrays::take(Int32Arrays::elem_int(Int32Arrays::unary_sub(Int32Arrays::int_elem(sigma))), Int32Arrays::get(a, i));
+                Int32Arrays::Array e2 = Int32Arrays::drop(Int32Arrays::elem_int(Int32Arrays::unary_sub(Int32Arrays::int_elem(sigma))), Int32Arrays::get(a, i));
+                Int32Arrays::print_array(e1);
+                Int32Arrays::print_array(e2);
+                res = Int32Arrays::cat(e1, e2);
             }
-            return res_array;
+            return res;
         };
     };
 
