@@ -505,7 +505,6 @@ implementation Transformations = {
         value res;
     }
 
-
     /*
     #######
     Unpadded reverse
@@ -635,7 +634,7 @@ implementation Transformations = {
     }
 
 }
-
+/*
 concept BMap = {
 
     require type Element;
@@ -679,3 +678,5 @@ implementation BMapVectorImpl = {
         call bmapvector_repeat(e, a, counter);
     }
 }
+
+*/
