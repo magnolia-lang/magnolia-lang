@@ -6,11 +6,11 @@ package examples.moa.mg-src.moa-cpp
 
 
 
-program Int32Arrays = {
+program Int64Arrays = {
 
-   use Int32Utils;
+   use Int64Utils;
 
-   use Transformations[Element => Int32,
+   use Transformations[Element => Int64,
               _+_ => binary_add,
               _-_ => binary_sub,
               _*_ => mul,
@@ -37,8 +37,8 @@ program Float64Arrays = {
 
 program BurgerProgram = {
 
-   use Int32Utils;
-   use Transformations[Element => Int32,
+   use Int64Utils;
+   use Transformations[Element => Int64,
               _+_ => binary_add,
               _-_ => binary_sub,
               _*_ => mul,

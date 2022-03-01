@@ -30,6 +30,12 @@ concept MappedOps = {
 
     predicate _==_(a: Array, b: Array);
 
+    // scalar left arguments
+    function _+_(a: Element, b: Array): Array;
+    function _-_(a: Element, b: Array): Array;
+    function _*_(a: Element, b: Array): Array;
+    function _/_(a: Element, b: Array): Array;
+
     function get(a: Array, ix: Index): Array;
     function unwrap_scalar(a: Array): Element;
 
@@ -48,16 +54,35 @@ concept MappedOps = {
         unwrap_scalar(get(a, ix)) / unwrap_scalar(get(b, ix));
     }
 
+    axiom scalarLeftMap(e: Element, a: Array, ix: Index) {
+        assert unwrap_scalar(get(e+a, ix)) ==
+            e + unwrap_scalar(get(a, ix));
+        assert unwrap_scalar(get(e-a, ix)) ==
+            e - unwrap_scalar(get(a, ix));
+        assert unwrap_scalar(get(e*a, ix)) ==
+            e * unwrap_scalar(get(a, ix));
+        assert unwrap_scalar(get(e/a, ix)) ==
+            e / unwrap_scalar(get(a, ix));
+    }
+
     axiom unaryMap(a: Array, ix: Index) {
         assert unwrap_scalar(get(-a, ix)) == - unwrap_scalar(get(a, ix));
     }
 
 }
 
+renaming ArithmeticsRenaming = [binary_add => _+_,
+                                binary_sub => _-_,
+                                mul => _*_,
+                                div => _/_,
+                                unary_sub => -_,
+                                le => _<=_,
+                                lt => _<_];
+
 
 implementation BopmapOpsImpl = {
 
-    use ExtOps;
+    use ExtOps[ArithmeticsRenaming];
 
     require function zero(): Element;
     require function one(): Element;
@@ -80,7 +105,7 @@ implementation BopmapOpsImpl = {
                               b: Array,
                               c: Int) {
 
-        value int_elem(c) < int_elem(total(ix_space));
+        value c < total(ix_space);
     }
 
     procedure bopmap_body(obs a: Array,  obs ix_space: IndexContainer,
@@ -91,7 +116,7 @@ implementation BopmapOpsImpl = {
 
         call set(b, ix, new_value);
 
-        c = elem_int(int_elem(c) + one());
+        c = c + one(): Int;
     }
 
     use WhileLoop2_2[Context1 => Array,
@@ -108,7 +133,7 @@ implementation BopmapOpsImpl = {
 
         var b_upd = b;
 
-        var counter = elem_int(zero());
+        var counter = zero(): Int;
 
         call bopmap_repeat(a,ix_space,b_upd,counter);
 
@@ -116,9 +141,66 @@ implementation BopmapOpsImpl = {
     }
 }
 
+implementation ScalarLeftMapImpl = {
+
+    use ExtOps[ArithmeticsRenaming];
+
+    require function zero(): Element;
+    require function one(): Element;
+
+    require function _+_(a: Element, b: Element): Element;
+    require function _-_(a: Element, b: Element): Element;
+    require function _*_(a: Element, b: Element): Element;
+    require function _/_(a: Element, b: Element): Element;
+
+    require predicate _<_(a: Element, b: Element);
+
+    require function bop(a: Element, b: Element): Element;
+
+    predicate leftmap_cond(e: Element,
+                              ix_space: IndexContainer,
+                              a: Array,
+                              c: Int) {
+
+        value c < total(ix_space);
+    }
+
+    procedure leftmap_body(obs e: Element,  obs ix_space: IndexContainer,
+                       upd a: Array, upd c: Int) {
+
+        var ix = get_index_ixc(ix_space, c);
+        var new_value = bop(e, unwrap_scalar(get(a, ix)));
+
+        call set(a, ix, new_value);
+
+        c = c + one(): Int;
+    }
+
+    use WhileLoop2_2[Context1 => Element,
+                     Context2 => IndexContainer,
+                     State1 => Array,
+                     State2 => Int,
+                     body => leftmap_body,
+                     cond => leftmap_cond,
+                     repeat => leftmap_repeat];
+
+    function leftmap(e: Element, a: Array): Array = {
+
+        var ix_space = create_total_indices(a);
+
+        var upd_a = a;
+
+        var counter = zero(): Int;
+
+        call leftmap_repeat(e,ix_space, upd_a, counter);
+
+        value upd_a;
+    }
+}
+
 implementation UnaryMapImpl = {
 
-    use ExtOps;
+    use ExtOps[ArithmeticsRenaming];
 
     require function zero(): Element;
     require function one(): Element;
@@ -130,7 +212,7 @@ implementation UnaryMapImpl = {
     require predicate _==_(a: Element, b: Element);
 
     predicate unary_sub_cond(ix_space: IndexContainer, a: Array, c: Int) {
-        value int_elem(c) < int_elem(total(ix_space));
+        value c < total(ix_space);
     }
 
     procedure unary_sub_body(obs ix_space: IndexContainer,
@@ -142,7 +224,7 @@ implementation UnaryMapImpl = {
         var new_value = - unwrap_scalar(get(a, ix));
         call set(a, ix, new_value);
 
-        c = elem_int(int_elem(c) + one());
+        c = c + one(): Int;
     }
 
     use WhileLoop1_2[Context1 => IndexContainer,
@@ -159,7 +241,7 @@ implementation UnaryMapImpl = {
 
         var a_upd = a;
 
-        var counter = elem_int(zero());
+        var counter = zero(): Int;
 
         call unary_sub_repeat(ix_space, a_upd, counter);
 
@@ -188,7 +270,18 @@ implementation ArrayOps = {
     use BopmapOpsImpl[bop => _/_, bopmap => _/_,
                       bopmap_body => bmb_div,
                       bopmap_repeat => bmb_div_rep];
-
+    use ScalarLeftMapImpl [bop => _+_, leftmap => _+_,
+                           leftmap_body => lmb_plus,
+                           leftmap_repeat => lm_plus_rep];
+    use ScalarLeftMapImpl [bop => _-_, leftmap => _-_,
+                           leftmap_body => lmb_sub,
+                           leftmap_repeat => lm_sub_rep];
+    use ScalarLeftMapImpl [bop => _*_, leftmap => _*_,
+                           leftmap_body => lmb_mul,
+                           leftmap_repeat => lm_mul_rep];
+    use ScalarLeftMapImpl [bop => _/_, leftmap => _/_,
+                           leftmap_body => lmb_div,
+                           leftmap_repeat => lm_div_rep];
     use UnaryMapImpl[unary_sub => -_];
 
 }

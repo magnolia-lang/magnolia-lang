@@ -10,6 +10,8 @@ implementation ExtOps = external C++ base.array {
     type IndexContainer;
     type Shape;
     type Int;
+    type Float;
+
 
     // unpadded array getters, setters
     function get(a: Array, ix: Int): Array;
@@ -66,6 +68,8 @@ implementation ExtOps = external C++ base.array {
     function unwrap_scalar(a: Array): Element;
     function int_elem(a: Int): Element;
     function elem_int(a: Element): Int;
+    function float_elem(f: Float): Element;
+    function elem_float(e: Element): Float;
     function cat_shape(a: Shape, b: Shape): Shape;
     function cat_index(i: Index, j: Index): Index;
     function reverse_index(ix: Index): Index;
@@ -91,4 +95,32 @@ implementation ExtOps = external C++ base.array {
     function test_array3_3(): Array;
     function test_index(): Index;
 
+    // int/float operations
+
+    function zero(): Int;
+    function one(): Int;
+    function binary_add(a: Int, b: Int): Int;
+    function binary_sub(a: Int, b: Int): Int;
+    function mul(a: Int, b: Int): Int;
+    function div(a: Int, b: Int): Int;
+    function unary_sub(a: Int): Int;
+
+    function abs(a: Int): Int;
+
+    predicate le(a: Int, b: Int);
+    predicate lt(a: Int, b: Int);
+
+
+    function zeroF(): Float;
+    function oneF(): Float;
+    function binary_add(a: Float, b: Float): Float;
+    function binary_sub(a: Float, b: Float): Float;
+    function mul(a: Float, b: Float): Float;
+    function div(a: Float, b: Float): Float;
+    function unary_sub(a: Float): Float;
+
+    function abs(a: Float): Float;
+
+    predicate le(a: Float, b: Float);
+    predicate lt(a: Float, b: Float);
 }

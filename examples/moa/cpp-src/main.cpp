@@ -1,12 +1,12 @@
 #include <iostream>
 #include "gen/examples/moa/mg-src/moa-cpp.hpp"
 
-using examples::moa::mg_src::moa_cpp::Int32Arrays;
+using examples::moa::mg_src::moa_cpp::Int64Arrays;
 using examples::moa::mg_src::moa_cpp::Float64Arrays;
 
 int main(int argc, char **argv) {
 
-    Int32Arrays P;
+    Int64Arrays P;
     Float64Arrays F;
 
     std::cout << "Linear representation of array a:" << std::endl;
@@ -202,16 +202,28 @@ int main(int argc, char **argv) {
     std::cout << "reverse(a): TODO FIX" << std::endl;
     P.print_array(P.reverse(trans_array));
 
-    std::cout << "rotate(2,0,a):, dim(a) = 2" << std::endl;
-    P.print_array(P.rotate(2,0,trans_array));
+    std::cout << "rotate(1,1,a):, dim(a) = 2" << std::endl;
+    P.print_array(P.rotate(1,1,trans_array));
+    std::cout << "rotate(2,1,a):, dim(a) = 2" << std::endl;
+    P.print_array(P.rotate(2,1,trans_array));
+    std::cout << "rotate(-1,1,a):, dim(a) = 2" << std::endl;
+    P.print_array(P.rotate(-1,1,trans_array));
 
     auto trans_array2 = P.test_array3_2_2();
     std::cout << "rotate(2,0,a):, dim(a) = 3" << std::endl;
     P.print_array(trans_array2);
     P.print_array(P.rotate(2,0,trans_array2));
+
+    std::cout << "rotate(2,1,a):, dim(a) = 3" << std::endl;
+    P.print_array(trans_array2);
+    P.print_array(P.rotate(2,1,trans_array2));
+
+    std::cout << "rotate(-1,1,a):, dim(a) = 3" << std::endl;
+    P.print_array(trans_array2);
+    P.print_array(P.rotate(-1,1,trans_array2));
     std::cout << std::endl;
 
-    std::cout << "Arithmetic operations on arrays: Int32" << std::endl;
+    std::cout << "Arithmetic operations on arrays: Int64" << std::endl;
     std::cout << "Original array:" << std::endl;
 
     auto arith_array = P.test_array3_2_2();
@@ -254,6 +266,12 @@ int main(int argc, char **argv) {
     std::cout << "-a:" << std::endl;
     P.print_array(arit_usub);
     P.print_shape(P.shape(arit_usub));
+
+    arith_array = P.test_array3_2_2();
+    auto arit_leftmap = P.binary_add(2, arith_array);
+    std::cout << "2 + a:" << std::endl;
+    P.print_array(arit_leftmap);
+    P.print_shape(P.shape(arit_leftmap));
 
     std::cout << "Arithmetic operations on arrays: Float64" << std::endl;
     std::cout << "Original array:" << std::endl;

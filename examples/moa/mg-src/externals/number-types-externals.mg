@@ -18,8 +18,8 @@ concept NumberOps = {
 
 }
 
-implementation Int32Utils = external C++ base.int32_utils
-    NumberOps[NumberType => Int32];
+implementation Int64Utils = external C++ base.int64_utils
+    NumberOps[NumberType => Int64];
 
 
 implementation Float64Utils = external C++ base.float64_utils

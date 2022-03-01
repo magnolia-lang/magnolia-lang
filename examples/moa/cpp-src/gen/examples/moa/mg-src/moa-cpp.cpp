@@ -5,7 +5,15 @@ namespace examples {
 namespace moa {
 namespace mg_src {
 namespace moa_cpp {
-    int32_utils BurgerProgram::__int32_utils;
+
+
+    BurgerProgram::_zero BurgerProgram::zero;
+
+
+
+    BurgerProgram::_one BurgerProgram::one;
+
+    int64_utils BurgerProgram::__int64_utils;
 
 
 
@@ -27,11 +35,7 @@ namespace moa_cpp {
 
     BurgerProgram::_reverse_shape BurgerProgram::reverse_shape;
 
-    array<BurgerProgram::Int32> BurgerProgram::__array;
-
-
-
-    BurgerProgram::_abs BurgerProgram::abs;
+    array<BurgerProgram::Int64> BurgerProgram::__array;
 
 
 
@@ -39,23 +43,7 @@ namespace moa_cpp {
 
 
 
-    BurgerProgram::_le BurgerProgram::le;
-
-
-
-    BurgerProgram::_lt BurgerProgram::lt;
-
-
-
-    BurgerProgram::_one BurgerProgram::one;
-
-
-
     BurgerProgram::_print_element BurgerProgram::print_element;
-
-
-
-    BurgerProgram::_zero BurgerProgram::zero;
 
 
 
@@ -107,7 +95,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<BurgerProgram::PaddedArray, BurgerProgram::IndexContainer, BurgerProgram::PaddedArray, BurgerProgram::Int, BurgerProgram::_padded_transpose_body, BurgerProgram::_padded_upper_bound> BurgerProgram::__while_loop2_29;
+    while_loop2_2<BurgerProgram::PaddedArray, BurgerProgram::IndexContainer, BurgerProgram::PaddedArray, BurgerProgram::Int, BurgerProgram::_padded_transpose_body, BurgerProgram::_padded_upper_bound> BurgerProgram::__while_loop2_213;
 
     BurgerProgram::_padded_upper_bound BurgerProgram::padded_upper_bound;
 
@@ -154,6 +142,34 @@ namespace moa_cpp {
 
 
     BurgerProgram::_test_index BurgerProgram::test_index;
+
+
+
+    BurgerProgram::_abs BurgerProgram::abs;
+
+
+
+    BurgerProgram::_elem_float BurgerProgram::elem_float;
+
+
+
+    BurgerProgram::_float_elem BurgerProgram::float_elem;
+
+
+
+    BurgerProgram::_le BurgerProgram::le;
+
+
+
+    BurgerProgram::_lt BurgerProgram::lt;
+
+
+
+    BurgerProgram::_oneF BurgerProgram::oneF;
+
+
+
+    BurgerProgram::_zeroF BurgerProgram::zeroF;
 
 
 
@@ -299,6 +315,50 @@ namespace moa_cpp {
 
 
 
+    BurgerProgram::_leftmap_cond BurgerProgram::leftmap_cond;
+
+
+
+    BurgerProgram::_lm_div_rep BurgerProgram::lm_div_rep;
+
+
+
+    BurgerProgram::_lm_mul_rep BurgerProgram::lm_mul_rep;
+
+
+
+    BurgerProgram::_lm_plus_rep BurgerProgram::lm_plus_rep;
+
+
+
+    BurgerProgram::_lm_sub_rep BurgerProgram::lm_sub_rep;
+
+
+
+    while_loop2_2<BurgerProgram::Int64, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_lmb_div, BurgerProgram::_leftmap_cond> BurgerProgram::__while_loop2_29;
+
+    BurgerProgram::_lmb_div BurgerProgram::lmb_div;
+
+
+
+    while_loop2_2<BurgerProgram::Int64, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_lmb_mul, BurgerProgram::_leftmap_cond> BurgerProgram::__while_loop2_210;
+
+    BurgerProgram::_lmb_mul BurgerProgram::lmb_mul;
+
+
+
+    while_loop2_2<BurgerProgram::Int64, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_lmb_plus, BurgerProgram::_leftmap_cond> BurgerProgram::__while_loop2_211;
+
+    BurgerProgram::_lmb_plus BurgerProgram::lmb_plus;
+
+
+
+    while_loop2_2<BurgerProgram::Int64, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_lmb_sub, BurgerProgram::_leftmap_cond> BurgerProgram::__while_loop2_212;
+
+    BurgerProgram::_lmb_sub BurgerProgram::lmb_sub;
+
+
+
     while_loop2_2<BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_bmb_div, BurgerProgram::_mapped_ops_cond> BurgerProgram::__while_loop2_21;
 
     while_loop2_2<BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_bmb_mul, BurgerProgram::_mapped_ops_cond> BurgerProgram::__while_loop2_22;
@@ -360,6 +420,24 @@ namespace moa_cpp {
 
 
     BurgerProgram::_rotate BurgerProgram::rotate;
+
+
+
+    BurgerProgram::_rotate_body BurgerProgram::rotate_body;
+
+
+
+    while_loop3_2<BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Int, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_rotate_body, BurgerProgram::_rotate_cond> BurgerProgram::__while_loop3_2;
+
+    BurgerProgram::_rotate_cond BurgerProgram::rotate_cond;
+
+
+
+    BurgerProgram::_rotate_repeat BurgerProgram::rotate_repeat;
+
+
+
+    BurgerProgram::_scalarLeftMap BurgerProgram::scalarLeftMap;
 
 
 
@@ -468,6 +546,14 @@ namespace examples {
 namespace moa {
 namespace mg_src {
 namespace moa_cpp {
+
+
+    Float64Arrays::_zero Float64Arrays::zero;
+
+
+
+    Float64Arrays::_one Float64Arrays::one;
+
     float64_utils Float64Arrays::__float64_utils;
 
 
@@ -540,7 +626,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<Float64Arrays::PaddedArray, Float64Arrays::IndexContainer, Float64Arrays::PaddedArray, Float64Arrays::Int, Float64Arrays::_padded_transpose_body, Float64Arrays::_padded_upper_bound> Float64Arrays::__while_loop2_29;
+    while_loop2_2<Float64Arrays::PaddedArray, Float64Arrays::IndexContainer, Float64Arrays::PaddedArray, Float64Arrays::Int, Float64Arrays::_padded_transpose_body, Float64Arrays::_padded_upper_bound> Float64Arrays::__while_loop2_213;
 
     Float64Arrays::_padded_upper_bound Float64Arrays::padded_upper_bound;
 
@@ -584,10 +670,6 @@ namespace moa_cpp {
 
 
 
-    Float64Arrays::_abs Float64Arrays::abs;
-
-
-
     Float64Arrays::_elem_int Float64Arrays::elem_int;
 
 
@@ -600,6 +682,22 @@ namespace moa_cpp {
 
 
 
+    Float64Arrays::_print_element Float64Arrays::print_element;
+
+
+
+    Float64Arrays::_abs Float64Arrays::abs;
+
+
+
+    Float64Arrays::_elem_float Float64Arrays::elem_float;
+
+
+
+    Float64Arrays::_float_elem Float64Arrays::float_elem;
+
+
+
     Float64Arrays::_le Float64Arrays::le;
 
 
@@ -608,15 +706,11 @@ namespace moa_cpp {
 
 
 
-    Float64Arrays::_one Float64Arrays::one;
+    Float64Arrays::_oneF Float64Arrays::oneF;
 
 
 
-    Float64Arrays::_print_element Float64Arrays::print_element;
-
-
-
-    Float64Arrays::_zero Float64Arrays::zero;
+    Float64Arrays::_zeroF Float64Arrays::zeroF;
 
 
 
@@ -762,6 +856,50 @@ namespace moa_cpp {
 
 
 
+    Float64Arrays::_leftmap_cond Float64Arrays::leftmap_cond;
+
+
+
+    Float64Arrays::_lm_div_rep Float64Arrays::lm_div_rep;
+
+
+
+    Float64Arrays::_lm_mul_rep Float64Arrays::lm_mul_rep;
+
+
+
+    Float64Arrays::_lm_plus_rep Float64Arrays::lm_plus_rep;
+
+
+
+    Float64Arrays::_lm_sub_rep Float64Arrays::lm_sub_rep;
+
+
+
+    while_loop2_2<Float64Arrays::Float64, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_lmb_div, Float64Arrays::_leftmap_cond> Float64Arrays::__while_loop2_29;
+
+    Float64Arrays::_lmb_div Float64Arrays::lmb_div;
+
+
+
+    while_loop2_2<Float64Arrays::Float64, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_lmb_mul, Float64Arrays::_leftmap_cond> Float64Arrays::__while_loop2_210;
+
+    Float64Arrays::_lmb_mul Float64Arrays::lmb_mul;
+
+
+
+    while_loop2_2<Float64Arrays::Float64, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_lmb_plus, Float64Arrays::_leftmap_cond> Float64Arrays::__while_loop2_211;
+
+    Float64Arrays::_lmb_plus Float64Arrays::lmb_plus;
+
+
+
+    while_loop2_2<Float64Arrays::Float64, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_lmb_sub, Float64Arrays::_leftmap_cond> Float64Arrays::__while_loop2_212;
+
+    Float64Arrays::_lmb_sub Float64Arrays::lmb_sub;
+
+
+
     while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_bmb_div, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop2_21;
 
     while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_bmb_mul, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop2_22;
@@ -823,6 +961,24 @@ namespace moa_cpp {
 
 
     Float64Arrays::_rotate Float64Arrays::rotate;
+
+
+
+    Float64Arrays::_rotate_body Float64Arrays::rotate_body;
+
+
+
+    while_loop3_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Int, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_rotate_body, Float64Arrays::_rotate_cond> Float64Arrays::__while_loop3_2;
+
+    Float64Arrays::_rotate_cond Float64Arrays::rotate_cond;
+
+
+
+    Float64Arrays::_rotate_repeat Float64Arrays::rotate_repeat;
+
+
+
+    Float64Arrays::_scalarLeftMap Float64Arrays::scalarLeftMap;
 
 
 
@@ -931,459 +1087,537 @@ namespace examples {
 namespace moa {
 namespace mg_src {
 namespace moa_cpp {
-    int32_utils Int32Arrays::__int32_utils;
 
 
+    Int64Arrays::_zero Int64Arrays::zero;
 
-    Int32Arrays::_print_parray Int32Arrays::print_parray;
 
 
+    Int64Arrays::_one Int64Arrays::one;
 
-    Int32Arrays::_cat_shape Int32Arrays::cat_shape;
+    int64_utils Int64Arrays::__int64_utils;
 
 
 
-    Int32Arrays::_padded_shape Int32Arrays::padded_shape;
+    Int64Arrays::_print_parray Int64Arrays::print_parray;
 
 
 
-    Int32Arrays::_print_shape Int32Arrays::print_shape;
+    Int64Arrays::_cat_shape Int64Arrays::cat_shape;
 
 
 
-    Int32Arrays::_reverse_shape Int32Arrays::reverse_shape;
+    Int64Arrays::_padded_shape Int64Arrays::padded_shape;
 
-    array<Int32Arrays::Int32> Int32Arrays::__array;
 
 
+    Int64Arrays::_print_shape Int64Arrays::print_shape;
 
-    Int32Arrays::_abs Int32Arrays::abs;
 
 
+    Int64Arrays::_reverse_shape Int64Arrays::reverse_shape;
 
-    Int32Arrays::_eq Int32Arrays::eq;
+    array<Int64Arrays::Int64> Int64Arrays::__array;
 
 
 
-    Int32Arrays::_le Int32Arrays::le;
+    Int64Arrays::_eq Int64Arrays::eq;
 
 
 
-    Int32Arrays::_lt Int32Arrays::lt;
+    Int64Arrays::_print_element Int64Arrays::print_element;
 
 
 
-    Int32Arrays::_one Int32Arrays::one;
+    Int64Arrays::_create_shape1 Int64Arrays::create_shape1;
 
 
 
-    Int32Arrays::_print_element Int32Arrays::print_element;
+    Int64Arrays::_create_shape2 Int64Arrays::create_shape2;
 
 
 
-    Int32Arrays::_zero Int32Arrays::zero;
+    Int64Arrays::_create_shape3 Int64Arrays::create_shape3;
 
 
 
-    Int32Arrays::_create_shape1 Int32Arrays::create_shape1;
+    Int64Arrays::_elem_int Int64Arrays::elem_int;
 
 
 
-    Int32Arrays::_create_shape2 Int32Arrays::create_shape2;
+    Int64Arrays::_int_elem Int64Arrays::int_elem;
 
 
 
-    Int32Arrays::_create_shape3 Int32Arrays::create_shape3;
+    Int64Arrays::_padded_dim Int64Arrays::padded_dim;
 
 
 
-    Int32Arrays::_elem_int Int32Arrays::elem_int;
+    Int64Arrays::_padded_drop_shape_elem Int64Arrays::padded_drop_shape_elem;
 
 
 
-    Int32Arrays::_int_elem Int32Arrays::int_elem;
+    Int64Arrays::_padded_get_shape_elem Int64Arrays::padded_get_shape_elem;
 
 
 
-    Int32Arrays::_padded_dim Int32Arrays::padded_dim;
+    Int64Arrays::_padded_total Int64Arrays::padded_total;
 
 
 
-    Int32Arrays::_padded_drop_shape_elem Int32Arrays::padded_drop_shape_elem;
+    Int64Arrays::_print_int Int64Arrays::print_int;
 
 
 
-    Int32Arrays::_padded_get_shape_elem Int32Arrays::padded_get_shape_elem;
+    Int64Arrays::_padded_transpose_body Int64Arrays::padded_transpose_body;
 
 
 
-    Int32Arrays::_padded_total Int32Arrays::padded_total;
+    Int64Arrays::_padded_transpose_repeat Int64Arrays::padded_transpose_repeat;
 
 
 
-    Int32Arrays::_print_int Int32Arrays::print_int;
+    while_loop2_2<Int64Arrays::PaddedArray, Int64Arrays::IndexContainer, Int64Arrays::PaddedArray, Int64Arrays::Int, Int64Arrays::_padded_transpose_body, Int64Arrays::_padded_upper_bound> Int64Arrays::__while_loop2_213;
 
+    Int64Arrays::_padded_upper_bound Int64Arrays::padded_upper_bound;
 
 
-    Int32Arrays::_padded_transpose_body Int32Arrays::padded_transpose_body;
 
+    Int64Arrays::_print_index_container Int64Arrays::print_index_container;
 
 
-    Int32Arrays::_padded_transpose_repeat Int32Arrays::padded_transpose_repeat;
 
+    Int64Arrays::_cat_index Int64Arrays::cat_index;
 
 
-    while_loop2_2<Int32Arrays::PaddedArray, Int32Arrays::IndexContainer, Int32Arrays::PaddedArray, Int32Arrays::Int, Int32Arrays::_padded_transpose_body, Int32Arrays::_padded_upper_bound> Int32Arrays::__while_loop2_29;
 
-    Int32Arrays::_padded_upper_bound Int32Arrays::padded_upper_bound;
+    Int64Arrays::_create_index1 Int64Arrays::create_index1;
 
 
 
-    Int32Arrays::_print_index_container Int32Arrays::print_index_container;
+    Int64Arrays::_create_index2 Int64Arrays::create_index2;
 
 
 
-    Int32Arrays::_cat_index Int32Arrays::cat_index;
+    Int64Arrays::_create_index3 Int64Arrays::create_index3;
 
 
 
-    Int32Arrays::_create_index1 Int32Arrays::create_index1;
+    Int64Arrays::_drop_index_elem Int64Arrays::drop_index_elem;
 
 
 
-    Int32Arrays::_create_index2 Int32Arrays::create_index2;
+    Int64Arrays::_get_index_elem Int64Arrays::get_index_elem;
 
 
 
-    Int32Arrays::_create_index3 Int32Arrays::create_index3;
+    Int64Arrays::_get_index_ixc Int64Arrays::get_index_ixc;
 
 
 
-    Int32Arrays::_drop_index_elem Int32Arrays::drop_index_elem;
+    Int64Arrays::_print_index Int64Arrays::print_index;
 
 
 
-    Int32Arrays::_get_index_elem Int32Arrays::get_index_elem;
+    Int64Arrays::_reverse_index Int64Arrays::reverse_index;
 
 
 
-    Int32Arrays::_get_index_ixc Int32Arrays::get_index_ixc;
+    Int64Arrays::_test_index Int64Arrays::test_index;
 
 
 
-    Int32Arrays::_print_index Int32Arrays::print_index;
+    Int64Arrays::_abs Int64Arrays::abs;
 
 
 
-    Int32Arrays::_reverse_index Int32Arrays::reverse_index;
+    Int64Arrays::_elem_float Int64Arrays::elem_float;
 
 
 
-    Int32Arrays::_test_index Int32Arrays::test_index;
+    Int64Arrays::_float_elem Int64Arrays::float_elem;
 
 
 
-    Int32Arrays::_binaryMap Int32Arrays::binaryMap;
+    Int64Arrays::_le Int64Arrays::le;
 
 
 
-    Int32Arrays::_binary_add Int32Arrays::binary_add;
+    Int64Arrays::_lt Int64Arrays::lt;
 
 
 
-    Int32Arrays::_binary_sub Int32Arrays::binary_sub;
+    Int64Arrays::_oneF Int64Arrays::oneF;
 
 
 
-    Int32Arrays::_bmb_div Int32Arrays::bmb_div;
+    Int64Arrays::_zeroF Int64Arrays::zeroF;
 
 
 
-    Int32Arrays::_bmb_div_rep Int32Arrays::bmb_div_rep;
+    Int64Arrays::_binaryMap Int64Arrays::binaryMap;
 
 
 
-    Int32Arrays::_bmb_mul Int32Arrays::bmb_mul;
+    Int64Arrays::_binary_add Int64Arrays::binary_add;
 
 
 
-    Int32Arrays::_bmb_mul_rep Int32Arrays::bmb_mul_rep;
+    Int64Arrays::_binary_sub Int64Arrays::binary_sub;
 
 
 
-    Int32Arrays::_bmb_plus Int32Arrays::bmb_plus;
+    Int64Arrays::_bmb_div Int64Arrays::bmb_div;
 
 
 
-    Int32Arrays::_bmb_plus_rep Int32Arrays::bmb_plus_rep;
+    Int64Arrays::_bmb_div_rep Int64Arrays::bmb_div_rep;
 
 
 
-    Int32Arrays::_bmb_sub Int32Arrays::bmb_sub;
+    Int64Arrays::_bmb_mul Int64Arrays::bmb_mul;
 
 
 
-    Int32Arrays::_bmb_sub_rep Int32Arrays::bmb_sub_rep;
+    Int64Arrays::_bmb_mul_rep Int64Arrays::bmb_mul_rep;
 
 
 
-    Int32Arrays::_cat Int32Arrays::cat;
+    Int64Arrays::_bmb_plus Int64Arrays::bmb_plus;
 
 
 
-    Int32Arrays::_cat_body Int32Arrays::cat_body;
+    Int64Arrays::_bmb_plus_rep Int64Arrays::bmb_plus_rep;
 
 
 
-    while_loop2_2<Int32Arrays::Array, Int32Arrays::Array, Int32Arrays::Int, Int32Arrays::Array, Int32Arrays::_cat_body, Int32Arrays::_cat_cond> Int32Arrays::__while_loop2_20;
+    Int64Arrays::_bmb_sub Int64Arrays::bmb_sub;
 
-    Int32Arrays::_cat_cond Int32Arrays::cat_cond;
 
 
+    Int64Arrays::_bmb_sub_rep Int64Arrays::bmb_sub_rep;
 
-    Int32Arrays::_cat_repeat Int32Arrays::cat_repeat;
 
 
+    Int64Arrays::_cat Int64Arrays::cat;
 
-    Int32Arrays::_cat_vec Int32Arrays::cat_vec;
 
 
+    Int64Arrays::_cat_body Int64Arrays::cat_body;
 
-    Int32Arrays::_cat_vec_body Int32Arrays::cat_vec_body;
 
 
+    while_loop2_2<Int64Arrays::Array, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::Array, Int64Arrays::_cat_body, Int64Arrays::_cat_cond> Int64Arrays::__while_loop2_20;
 
-    while_loop2_2<Int32Arrays::Array, Int32Arrays::Array, Int32Arrays::Array, Int32Arrays::Int, Int32Arrays::_cat_vec_body, Int32Arrays::_cat_vec_cond> Int32Arrays::__while_loop2_2;
+    Int64Arrays::_cat_cond Int64Arrays::cat_cond;
 
-    Int32Arrays::_cat_vec_cond Int32Arrays::cat_vec_cond;
 
 
+    Int64Arrays::_cat_repeat Int64Arrays::cat_repeat;
 
-    Int32Arrays::_cat_vec_repeat Int32Arrays::cat_vec_repeat;
 
 
+    Int64Arrays::_cat_vec Int64Arrays::cat_vec;
 
-    Int32Arrays::_circular_padl Int32Arrays::circular_padl;
 
 
+    Int64Arrays::_cat_vec_body Int64Arrays::cat_vec_body;
 
-    Int32Arrays::_circular_padr Int32Arrays::circular_padr;
 
 
+    while_loop2_2<Int64Arrays::Array, Int64Arrays::Array, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_cat_vec_body, Int64Arrays::_cat_vec_cond> Int64Arrays::__while_loop2_2;
 
-    Int32Arrays::_create_array Int32Arrays::create_array;
+    Int64Arrays::_cat_vec_cond Int64Arrays::cat_vec_cond;
 
 
 
-    Int32Arrays::_create_padded_array Int32Arrays::create_padded_array;
+    Int64Arrays::_cat_vec_repeat Int64Arrays::cat_vec_repeat;
 
 
 
-    Int32Arrays::_create_partial_indices Int32Arrays::create_partial_indices;
+    Int64Arrays::_circular_padl Int64Arrays::circular_padl;
 
 
 
-    Int32Arrays::_create_total_indices Int32Arrays::create_total_indices;
+    Int64Arrays::_circular_padr Int64Arrays::circular_padr;
 
 
 
-    Int32Arrays::_dim Int32Arrays::dim;
+    Int64Arrays::_create_array Int64Arrays::create_array;
 
 
 
-    Int32Arrays::_div Int32Arrays::div;
+    Int64Arrays::_create_padded_array Int64Arrays::create_padded_array;
 
 
 
-    Int32Arrays::_drop Int32Arrays::drop;
+    Int64Arrays::_create_partial_indices Int64Arrays::create_partial_indices;
 
 
 
-    Int32Arrays::_drop_body Int32Arrays::drop_body;
+    Int64Arrays::_create_total_indices Int64Arrays::create_total_indices;
 
 
 
-    while_loop2_2<Int32Arrays::Array, Int32Arrays::Int, Int32Arrays::Array, Int32Arrays::Int, Int32Arrays::_drop_body, Int32Arrays::_drop_cond> Int32Arrays::__while_loop2_27;
+    Int64Arrays::_dim Int64Arrays::dim;
 
-    Int32Arrays::_drop_cond Int32Arrays::drop_cond;
 
 
+    Int64Arrays::_div Int64Arrays::div;
 
-    Int32Arrays::_drop_repeat Int32Arrays::drop_repeat;
 
 
+    Int64Arrays::_drop Int64Arrays::drop;
 
-    Int32Arrays::_drop_shape_elem Int32Arrays::drop_shape_elem;
 
 
+    Int64Arrays::_drop_body Int64Arrays::drop_body;
 
-    Int32Arrays::_get Int32Arrays::get;
 
 
+    while_loop2_2<Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_drop_body, Int64Arrays::_drop_cond> Int64Arrays::__while_loop2_27;
 
-    Int32Arrays::_get_shape_elem Int32Arrays::get_shape_elem;
+    Int64Arrays::_drop_cond Int64Arrays::drop_cond;
 
 
 
-    while_loop2_2<Int32Arrays::Array, Int32Arrays::IndexContainer, Int32Arrays::Array, Int32Arrays::Int, Int32Arrays::_bmb_div, Int32Arrays::_mapped_ops_cond> Int32Arrays::__while_loop2_21;
+    Int64Arrays::_drop_repeat Int64Arrays::drop_repeat;
 
-    while_loop2_2<Int32Arrays::Array, Int32Arrays::IndexContainer, Int32Arrays::Array, Int32Arrays::Int, Int32Arrays::_bmb_mul, Int32Arrays::_mapped_ops_cond> Int32Arrays::__while_loop2_22;
 
-    while_loop2_2<Int32Arrays::Array, Int32Arrays::IndexContainer, Int32Arrays::Array, Int32Arrays::Int, Int32Arrays::_bmb_plus, Int32Arrays::_mapped_ops_cond> Int32Arrays::__while_loop2_23;
 
-    while_loop2_2<Int32Arrays::Array, Int32Arrays::IndexContainer, Int32Arrays::Array, Int32Arrays::Int, Int32Arrays::_bmb_sub, Int32Arrays::_mapped_ops_cond> Int32Arrays::__while_loop2_24;
+    Int64Arrays::_drop_shape_elem Int64Arrays::drop_shape_elem;
 
-    Int32Arrays::_mapped_ops_cond Int32Arrays::mapped_ops_cond;
 
 
+    Int64Arrays::_get Int64Arrays::get;
 
-    Int32Arrays::_mul Int32Arrays::mul;
 
 
+    Int64Arrays::_get_shape_elem Int64Arrays::get_shape_elem;
 
-    Int32Arrays::_padded_to_unpadded Int32Arrays::padded_to_unpadded;
 
 
+    Int64Arrays::_leftmap_cond Int64Arrays::leftmap_cond;
 
-    Int32Arrays::_print_array Int32Arrays::print_array;
 
 
+    Int64Arrays::_lm_div_rep Int64Arrays::lm_div_rep;
 
-    Int32Arrays::_reshape Int32Arrays::reshape;
 
 
+    Int64Arrays::_lm_mul_rep Int64Arrays::lm_mul_rep;
 
-    Int32Arrays::_reshape_body Int32Arrays::reshape_body;
 
 
+    Int64Arrays::_lm_plus_rep Int64Arrays::lm_plus_rep;
 
-    while_loop1_2<Int32Arrays::Array, Int32Arrays::Array, Int32Arrays::Int, Int32Arrays::_reshape_body, Int32Arrays::_reshape_cond> Int32Arrays::__while_loop1_2;
 
-    Int32Arrays::_reshape_cond Int32Arrays::reshape_cond;
 
+    Int64Arrays::_lm_sub_rep Int64Arrays::lm_sub_rep;
 
 
-    Int32Arrays::_reshape_repeat Int32Arrays::reshape_repeat;
 
+    while_loop2_2<Int64Arrays::Int64, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_lmb_div, Int64Arrays::_leftmap_cond> Int64Arrays::__while_loop2_29;
 
+    Int64Arrays::_lmb_div Int64Arrays::lmb_div;
 
-    Int32Arrays::_reverse Int32Arrays::reverse;
 
 
+    while_loop2_2<Int64Arrays::Int64, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_lmb_mul, Int64Arrays::_leftmap_cond> Int64Arrays::__while_loop2_210;
 
-    Int32Arrays::_reverse_body Int32Arrays::reverse_body;
+    Int64Arrays::_lmb_mul Int64Arrays::lmb_mul;
 
 
 
-    while_loop2_2<Int32Arrays::Array, Int32Arrays::IndexContainer, Int32Arrays::Array, Int32Arrays::Int, Int32Arrays::_reverse_body, Int32Arrays::_reverse_cond> Int32Arrays::__while_loop2_25;
+    while_loop2_2<Int64Arrays::Int64, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_lmb_plus, Int64Arrays::_leftmap_cond> Int64Arrays::__while_loop2_211;
 
-    Int32Arrays::_reverse_cond Int32Arrays::reverse_cond;
+    Int64Arrays::_lmb_plus Int64Arrays::lmb_plus;
 
 
 
-    Int32Arrays::_reverse_repeat Int32Arrays::reverse_repeat;
+    while_loop2_2<Int64Arrays::Int64, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_lmb_sub, Int64Arrays::_leftmap_cond> Int64Arrays::__while_loop2_212;
 
+    Int64Arrays::_lmb_sub Int64Arrays::lmb_sub;
 
 
-    Int32Arrays::_rotate Int32Arrays::rotate;
 
+    while_loop2_2<Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_bmb_div, Int64Arrays::_mapped_ops_cond> Int64Arrays::__while_loop2_21;
 
+    while_loop2_2<Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_bmb_mul, Int64Arrays::_mapped_ops_cond> Int64Arrays::__while_loop2_22;
 
-    Int32Arrays::_set Int32Arrays::set;
+    while_loop2_2<Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_bmb_plus, Int64Arrays::_mapped_ops_cond> Int64Arrays::__while_loop2_23;
 
+    while_loop2_2<Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_bmb_sub, Int64Arrays::_mapped_ops_cond> Int64Arrays::__while_loop2_24;
 
+    Int64Arrays::_mapped_ops_cond Int64Arrays::mapped_ops_cond;
 
-    Int32Arrays::_shape Int32Arrays::shape;
 
 
+    Int64Arrays::_mul Int64Arrays::mul;
 
-    Int32Arrays::_take Int32Arrays::take;
 
 
+    Int64Arrays::_padded_to_unpadded Int64Arrays::padded_to_unpadded;
 
-    Int32Arrays::_take_body Int32Arrays::take_body;
 
 
+    Int64Arrays::_print_array Int64Arrays::print_array;
 
-    while_loop2_2<Int32Arrays::Array, Int32Arrays::Int, Int32Arrays::Array, Int32Arrays::Int, Int32Arrays::_take_body, Int32Arrays::_take_cond> Int32Arrays::__while_loop2_28;
 
-    Int32Arrays::_take_cond Int32Arrays::take_cond;
 
+    Int64Arrays::_reshape Int64Arrays::reshape;
 
 
-    Int32Arrays::_take_repeat Int32Arrays::take_repeat;
 
+    Int64Arrays::_reshape_body Int64Arrays::reshape_body;
 
 
-    Int32Arrays::_test_array3_2_2 Int32Arrays::test_array3_2_2;
 
+    while_loop1_2<Int64Arrays::Array, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_reshape_body, Int64Arrays::_reshape_cond> Int64Arrays::__while_loop1_2;
 
+    Int64Arrays::_reshape_cond Int64Arrays::reshape_cond;
 
-    Int32Arrays::_test_array3_2_2F Int32Arrays::test_array3_2_2F;
 
 
+    Int64Arrays::_reshape_repeat Int64Arrays::reshape_repeat;
 
-    Int32Arrays::_test_array3_3 Int32Arrays::test_array3_3;
 
 
+    Int64Arrays::_reverse Int64Arrays::reverse;
 
-    Int32Arrays::_test_vector2 Int32Arrays::test_vector2;
 
 
+    Int64Arrays::_reverse_body Int64Arrays::reverse_body;
 
-    Int32Arrays::_test_vector3 Int32Arrays::test_vector3;
 
 
+    while_loop2_2<Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_reverse_body, Int64Arrays::_reverse_cond> Int64Arrays::__while_loop2_25;
 
-    Int32Arrays::_test_vector5 Int32Arrays::test_vector5;
+    Int64Arrays::_reverse_cond Int64Arrays::reverse_cond;
 
 
 
-    Int32Arrays::_total Int32Arrays::total;
+    Int64Arrays::_reverse_repeat Int64Arrays::reverse_repeat;
 
 
 
-    Int32Arrays::_transpose Int32Arrays::transpose;
+    Int64Arrays::_rotate Int64Arrays::rotate;
 
 
 
-    Int32Arrays::_transpose_body Int32Arrays::transpose_body;
+    Int64Arrays::_rotate_body Int64Arrays::rotate_body;
 
 
 
-    Int32Arrays::_transpose_repeat Int32Arrays::transpose_repeat;
+    while_loop3_2<Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Int, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_rotate_body, Int64Arrays::_rotate_cond> Int64Arrays::__while_loop3_2;
 
+    Int64Arrays::_rotate_cond Int64Arrays::rotate_cond;
 
 
-    Int32Arrays::_unaryMap Int32Arrays::unaryMap;
 
+    Int64Arrays::_rotate_repeat Int64Arrays::rotate_repeat;
 
 
-    Int32Arrays::_unary_sub Int32Arrays::unary_sub;
 
+    Int64Arrays::_scalarLeftMap Int64Arrays::scalarLeftMap;
 
 
-    Int32Arrays::_unary_sub_body Int32Arrays::unary_sub_body;
 
+    Int64Arrays::_set Int64Arrays::set;
 
 
-    while_loop1_2<Int32Arrays::IndexContainer, Int32Arrays::Array, Int32Arrays::Int, Int32Arrays::_unary_sub_body, Int32Arrays::_unary_sub_cond> Int32Arrays::__while_loop1_20;
 
-    Int32Arrays::_unary_sub_cond Int32Arrays::unary_sub_cond;
+    Int64Arrays::_shape Int64Arrays::shape;
 
 
 
-    Int32Arrays::_unary_sub_repeat Int32Arrays::unary_sub_repeat;
+    Int64Arrays::_take Int64Arrays::take;
 
 
 
-    Int32Arrays::_unwrap_scalar Int32Arrays::unwrap_scalar;
+    Int64Arrays::_take_body Int64Arrays::take_body;
 
 
 
-    while_loop2_2<Int32Arrays::Array, Int32Arrays::IndexContainer, Int32Arrays::Array, Int32Arrays::Int, Int32Arrays::_transpose_body, Int32Arrays::_upper_bound> Int32Arrays::__while_loop2_26;
+    while_loop2_2<Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_take_body, Int64Arrays::_take_cond> Int64Arrays::__while_loop2_28;
 
-    Int32Arrays::_upper_bound Int32Arrays::upper_bound;
+    Int64Arrays::_take_cond Int64Arrays::take_cond;
+
+
+
+    Int64Arrays::_take_repeat Int64Arrays::take_repeat;
+
+
+
+    Int64Arrays::_test_array3_2_2 Int64Arrays::test_array3_2_2;
+
+
+
+    Int64Arrays::_test_array3_2_2F Int64Arrays::test_array3_2_2F;
+
+
+
+    Int64Arrays::_test_array3_3 Int64Arrays::test_array3_3;
+
+
+
+    Int64Arrays::_test_vector2 Int64Arrays::test_vector2;
+
+
+
+    Int64Arrays::_test_vector3 Int64Arrays::test_vector3;
+
+
+
+    Int64Arrays::_test_vector5 Int64Arrays::test_vector5;
+
+
+
+    Int64Arrays::_total Int64Arrays::total;
+
+
+
+    Int64Arrays::_transpose Int64Arrays::transpose;
+
+
+
+    Int64Arrays::_transpose_body Int64Arrays::transpose_body;
+
+
+
+    Int64Arrays::_transpose_repeat Int64Arrays::transpose_repeat;
+
+
+
+    Int64Arrays::_unaryMap Int64Arrays::unaryMap;
+
+
+
+    Int64Arrays::_unary_sub Int64Arrays::unary_sub;
+
+
+
+    Int64Arrays::_unary_sub_body Int64Arrays::unary_sub_body;
+
+
+
+    while_loop1_2<Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_unary_sub_body, Int64Arrays::_unary_sub_cond> Int64Arrays::__while_loop1_20;
+
+    Int64Arrays::_unary_sub_cond Int64Arrays::unary_sub_cond;
+
+
+
+    Int64Arrays::_unary_sub_repeat Int64Arrays::unary_sub_repeat;
+
+
+
+    Int64Arrays::_unwrap_scalar Int64Arrays::unwrap_scalar;
+
+
+
+    while_loop2_2<Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_transpose_body, Int64Arrays::_upper_bound> Int64Arrays::__while_loop2_26;
+
+    Int64Arrays::_upper_bound Int64Arrays::upper_bound;
 
 } // examples
 } // moa

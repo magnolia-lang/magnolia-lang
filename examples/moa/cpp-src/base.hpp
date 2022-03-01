@@ -10,6 +10,7 @@ struct array {
 
     typedef _Element Element;
     typedef int Int;
+    typedef float Float;
     typedef std::vector<Int> Index;
     typedef std::vector<Index> IndexContainer;
     typedef std::vector<Int> Shape;
@@ -479,7 +480,7 @@ struct array {
     inline IndexContainer create_partial_indices(Array a, Int level) {
 
         if (level > total(shape(a))-1) {
-            std::cout << "Level can't be higher than number of dimensions" << std:: endl;
+            std::cout << "create_partial_indices: Level can't be higher than number of dimensions" << std:: endl;
         } else {
 
             IndexContainer total_indices = create_total_indices(a);
@@ -574,6 +575,12 @@ struct array {
 
     inline Int elem_int(const Element a) {
         return (Int) a;
+    }
+    inline Element float_elem(const Float a) {
+        return (Element) a;
+    }
+    inline Float elem_float(const Element a) {
+        return (Float) a;
     }
 
     inline Int get_shape_elem(Array a, const Int i) {
@@ -771,6 +778,7 @@ struct array {
             std::cout << a._get(i) << " ";
         }
         std::cout << std::endl;
+
     }
 
     inline void print_parray(PaddedArray a) {
@@ -809,39 +817,100 @@ struct array {
     inline void print_int(const Int &i) {
         std::cout << i << std::endl;
     }
-};
 
-struct int32_utils {
-    typedef int Int32;
+    /*
+    internal int/float operations
+    */
+    inline Int zero() {return 0; }
+    inline Int one() {return 1;}
 
-    inline Int32 zero() {return 0; }
-    inline Int32 one() {return 1;}
-
-    inline Int32 binary_add(const Int32 a, const Int32 b) {
+    inline Int binary_add(const Int a, const Int b) {
         return a + b;
     }
-    inline Int32 binary_sub(const Int32 a, const Int32 b) {
+    inline Int binary_sub(const Int a, const Int b) {
         return a - b;
     }
-    inline Int32 mul(const Int32 a, const Int32 b) {
+    inline Int mul(const Int a, const Int b) {
         return a * b;
     }
-    inline Int32 div(const Int32 a, const Int32 b) {
+    inline Int div(const Int a, const Int b) {
         return a / b;
     }
-    inline Int32 unary_sub(const Int32 a) {
+    inline Int unary_sub(const Int a) {
         return -a;
     }
-    inline Int32 abs(const Int32 a) {
+    inline Int abs(const Int a) {
         return std::abs(a);
     }
-    inline bool eq(const Int32 a, const Int32 b) {
-        return a == b;
-    }
-    inline bool lt(const Int32 a, const Int32 b) {
+    inline bool lt(const Int a, const Int b) {
         return a < b;
     }
-    inline bool le(const Int32 a, const Int32 b) {
+    inline bool le(const Int a, const Int b) {
+        return a <= b;
+    }
+
+    inline Float zeroF() {return 0.0; }
+    inline Float oneF() {return 1.0;}
+
+    inline Float binary_add(const Float a, const Float b) {
+        return a + b;
+    }
+    inline Float binary_sub(const Float a, const Float b) {
+        return a - b;
+    }
+    inline Float mul(const Float a, const Float b) {
+        return a * b;
+    }
+    inline Float div(const Float a, const Float b) {
+        return a / b;
+    }
+    inline Float unary_sub(const Float a) {
+        return -a;
+    }
+    inline Float abs(const Float a) {
+        return std::abs(a);
+    }
+    inline bool lt(const Float a, const Float b) {
+        return a < b;
+    }
+    inline bool le(const Float a, const Float b) {
+        return a <= b;
+    }
+
+
+};
+
+struct int64_utils {
+    typedef long int Int64;
+
+    inline Int64 zero() {return 0; }
+    inline Int64 one() {return 1;}
+
+    inline Int64 binary_add(const Int64 a, const Int64 b) {
+        return a + b;
+    }
+    inline Int64 binary_sub(const Int64 a, const Int64 b) {
+        return a - b;
+    }
+    inline Int64 mul(const Int64 a, const Int64 b) {
+        return a * b;
+    }
+    inline Int64 div(const Int64 a, const Int64 b) {
+        return a / b;
+    }
+    inline Int64 unary_sub(const Int64 a) {
+        return -a;
+    }
+    inline Int64 abs(const Int64 a) {
+        return std::abs(a);
+    }
+    inline bool eq(const Int64 a, const Int64 b) {
+        return a == b;
+    }
+    inline bool lt(const Int64 a, const Int64 b) {
+        return a < b;
+    }
+    inline bool le(const Int64 a, const Int64 b) {
         return a <= b;
     }
 };
