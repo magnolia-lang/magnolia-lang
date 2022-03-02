@@ -22,7 +22,20 @@ stencils?
 
 */
 
+implementation Partial = {
 
+    use Transformations;
+
+    function deltax(): Float = oneF() + oneF();
+
+
+    function two(): Int = one(): Int + one(): Int;
+    function twoF(): Float = oneF() + oneF();
+
+    function partial1(a: Array, dir: Int): Array = {
+        value float_elem((twoF() * deltax())) / (rotate(one(): Int, dir, a) - rotate(-one(): Int, dir, a));
+    }
+}
 
 implementation Burger = {
 
@@ -32,6 +45,8 @@ implementation Burger = {
     function twoF(): Float = oneF() + oneF();
 
     // from fengshui
+
+
     procedure snippet(upd u: Array,
                       obs v: Array,
                       obs u0: Array,
@@ -43,24 +58,26 @@ implementation Burger = {
                       obs c3: Float,
                       obs c4: Float) {
 
-        var shift_v = rotate(zero(): Int, -one(): Int, v);
+
+        var shift_v = rotate(-one(): Int, zero(): Int, v);
         var d1a = float_elem(-c0) * shift_v;
         var d2a = float_elem(c1) * shift_v - float_elem(c2) * u0;
-        shift_v = rotate(zero(): Int, one(): Int, v);
+        shift_v = rotate(one(): Int, zero(): Int, v);
         d1a = d1a + float_elem(c0) * shift_v;
         d2a = d2a + float_elem(c1) * shift_v;
 
-        shift_v = rotate(one(): Int, -one(): Int, v);
+
+        shift_v = rotate(-one(): Int, one(): Int, v);
         var d1b = float_elem(-c0) * shift_v;
         var d2b = float_elem(c1) * shift_v - float_elem(c2) * u0;
         shift_v = rotate(one(): Int, one(): Int, v);
         d1b = d1b + float_elem(c0) * shift_v;
         d2b = d2b + float_elem(c1) * shift_v;
 
-        shift_v = rotate(two(), -one(): Int, v);
+        shift_v = rotate(-one(): Int, two(): Int, v);
         var d1c = float_elem(-c0) * shift_v;
         var d2c = float_elem(c1) * shift_v - float_elem(c2) * u0;
-        shift_v = rotate(two(), one(): Int, v);
+        shift_v = rotate(one(): Int, two(): Int, v);
         d1c = d1c + float_elem(c0) * shift_v;
         d2c = d2c + float_elem(c1) * shift_v;
 
@@ -69,14 +86,20 @@ implementation Burger = {
         u = u + float_elem(c4) * (float_elem(c3) * d2a - d1a);
     }
 
-    procedure step(upd u0: Array, upd u1: Array, upd u2: Array,
+    procedure bstep(upd u0: Array, upd u1: Array, upd u2: Array,
                    obs nu: Float, obs dx: Float, obs dt: Float) {
 
         var c0 = (oneF() / twoF()) / dx;
+
+        call print_float(c0);
         var c1 = oneF()/dx/dx;
+        call print_float(c1);
         var c2 = twoF()/dx/dx;
+        call print_float(c2);
         var c3 = nu;
+        call print_float(c3);
         var c4 = dt/twoF();
+        call print_float(c4);
 
         var v0 = u0;
         var v1 = u1;
@@ -90,6 +113,7 @@ implementation Burger = {
         call snippet(u2,v2,v0,v1,v2,c0,c1,c2,c3,c4);
 
     }
+
 }
 
 

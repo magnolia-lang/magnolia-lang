@@ -20,6 +20,7 @@ implementation ExtOps = external C++ base.array {
 
     procedure set(upd a: Array, obs ix: Int, obs e: Element);
     procedure set(upd a: Array, obs ix: Index, obs e: Element);
+    procedure set(upd a: Array, obs ix: Index, obs e: Array);
     procedure set(upd a: PaddedArray, obs ix: Index, obs e: Element);
 
     function get_shape_elem(a: Array, i: Int): Int;
@@ -84,6 +85,7 @@ implementation ExtOps = external C++ base.array {
     procedure print_shape(obs sh: Shape);
     procedure print_element(obs e: Element);
     procedure print_int(obs u: Int);
+    procedure print_float(obs f: Float);
 
     // testing
     function test_vector2(): Array;

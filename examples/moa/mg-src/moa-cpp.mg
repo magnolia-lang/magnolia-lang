@@ -37,8 +37,8 @@ program Float64Arrays = {
 
 program BurgerProgram = {
 
-   use Int64Utils;
-   use Transformations[Element => Int64,
+   use Float64Utils;
+   use Burger[Element => Float64,
               _+_ => binary_add,
               _-_ => binary_sub,
               _*_ => mul,

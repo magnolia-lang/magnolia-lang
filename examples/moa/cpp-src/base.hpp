@@ -124,6 +124,7 @@ struct array {
     inline Array get(Array a, Int ix) {
         if (ix > total(a)) {
             std::cout << "get:Index out of bounds: " << ix << std::endl;
+            exit(1);
         }
         else {
             Shape res_shape = create_shape1(1);
@@ -136,6 +137,7 @@ struct array {
     inline Array get(PaddedArray a, Int ix) {
         if (ix > padded_total(a)) {
             std::cout << "get:Index out of bounds: " << ix << std::endl;
+            exit(1);
         }
         else {
             Shape res_shape = create_shape1(1);
@@ -149,6 +151,7 @@ struct array {
     inline void set(Array a, Int ix, const Element e) {
         if (ix > total(a)) {
             std::cout << "set:Index out of bounds: " << ix << std::endl;
+            exit(1);
         }
         else {
             a._set(ix,e);
@@ -158,6 +161,7 @@ struct array {
     inline void set(PaddedArray a, Int ix, const Element e) {
         if (ix > padded_total(a)) {
             std::cout << "set:Index out of bounds: " << ix << std::endl;
+            exit(1);
         }
         else {
             a._set(ix,e);
@@ -176,8 +180,9 @@ struct array {
             for (int i = 0; i < dim(a); i++) {
 
                 if(ix.at(i) > sh.at(i)) {
-                    std::cout << "Access out of bounds: " << ix.at(i)
+                    std::cout << "get: Access out of bounds: " << ix.at(i)
                               << ". Max is : " << sh.at(i) << std::endl;
+                              exit(1);
                 }
 
                 std::vector<Int>::const_iterator first = sh.begin() + (i+1);
@@ -259,6 +264,7 @@ struct array {
         // invalid index
         else {
             std::cout << "Invalid index, out of bounds" << std::endl;
+            exit(1);
         }
     }
 
@@ -289,6 +295,7 @@ struct array {
                 if(ix.at(i) > sh.at(i)) {
                     std::cout << "Access out of bounds: " << ix.at(i)
                               << ". Max is : " << sh.at(i) << std::endl;
+                    exit(1);
                 }
 
                 std::vector<Int>::const_iterator first = sh.begin() + (i+1);
@@ -310,7 +317,53 @@ struct array {
         }
 
         else {
-            std::cout << "Total index required by set" << std::endl;
+
+            std::cout << "set: Partial index, cannot set subarray to element" << std::endl;
+            exit(1);
+        }
+    }
+
+    inline void set(Array a, Index ix, Array elems) {
+
+        Array subarray = get(a, ix);
+
+        if (shape(subarray) != shape(elems)) {
+            std::cout << "set: shape mismatch between indexed array and new array" << std::endl;
+            exit(1);
+        }
+
+        Index total_ix = ix;
+
+        for (auto i = total(ix)-1; i < total(elems); i++) {
+            total_ix.push_back(0);
+        }
+
+        Shape sh = shape(a);
+
+        Int accum = 0;
+
+        for (int i = 0; i < dim(a); i++) {
+
+            if(total_ix.at(i) > sh.at(i)) {
+                std::cout << "get: Access out of bounds: " << total_ix.at(i)
+                              << ". Max is : " << sh.at(i) << std::endl;
+                              exit(1);
+            }
+
+            std::vector<Int>::const_iterator first = sh.begin() + (i+1);
+            std::vector<Int>::const_iterator last = sh.begin() + dim(a);
+
+            std::vector<Int> subshape(first, last);
+
+            int reduced = std::accumulate(begin(subshape),
+                                                  end(subshape), 1,
+                                                  std::multiplies<Int>());
+
+            accum += total_ix.at(i) * reduced;
+        }
+
+        for (auto i = 0; i < total(elems); i++) {
+            a._set(accum++, elems._get(i));
         }
     }
 
@@ -479,8 +532,9 @@ struct array {
 
     inline IndexContainer create_partial_indices(Array a, Int level) {
 
-        if (level > total(shape(a))-1) {
-            std::cout << "create_partial_indices: Level can't be higher than number of dimensions" << std:: endl;
+        if (level > total(shape(a))) {
+            std::cout << "create_partial_indices: Level can't be higher than number of dimensions: "<< level << std:: endl;
+            exit(1);
         } else {
 
             IndexContainer total_indices = create_total_indices(a);
@@ -512,6 +566,7 @@ struct array {
 
         if (level > total(padded_shape(a))-1) {
             std::cout << "Level can't be higher than number of dimensions" << std:: endl;
+            exit(1);
         } else {
 
             IndexContainer total_indices = create_total_indices(a);
@@ -816,6 +871,10 @@ struct array {
 
     inline void print_int(const Int &i) {
         std::cout << i << std::endl;
+    }
+
+    inline void print_float(const Float &f) {
+        std::cout << f << std::endl;
     }
 
     /*

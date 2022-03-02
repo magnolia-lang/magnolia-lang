@@ -101,26 +101,28 @@ implementation BopmapOpsImpl = {
     require function bop(a: Element, b: Element): Element;
 
     predicate mapped_ops_cond(a: Array,
-                              ix_space: IndexContainer,
                               b: Array,
+                              ix_space: IndexContainer,
+                              res: Array,
                               c: Int) {
 
         value c < total(ix_space);
     }
 
-    procedure bopmap_body(obs a: Array,  obs ix_space: IndexContainer,
-                       upd b: Array, upd c: Int) {
+    procedure bopmap_body(obs a: Array, obs b: Array, obs ix_space: IndexContainer, upd res: Array, upd c: Int) {
 
         var ix = get_index_ixc(ix_space, c);
         var new_value = bop(unwrap_scalar(get(a, ix)), unwrap_scalar(get(b, ix)));
 
-        call set(b, ix, new_value);
+
+        call set(res, ix, new_value);
 
         c = c + one(): Int;
     }
 
-    use WhileLoop2_2[Context1 => Array,
-                     Context2 => IndexContainer,
+    use WhileLoop3_2[Context1 => Array,
+                     Context2 => Array,
+                     Context3 => IndexContainer,
                      State1 => Array,
                      State2 => Int,
                      body => bopmap_body,
@@ -131,13 +133,13 @@ implementation BopmapOpsImpl = {
 
         var ix_space = create_total_indices(a);
 
-        var b_upd = b;
+        var res = create_array(shape(a));
 
         var counter = zero(): Int;
 
-        call bopmap_repeat(a,ix_space,b_upd,counter);
+        call bopmap_repeat(a,b,ix_space,res,counter);
 
-        value b;
+        value res;
     }
 }
 

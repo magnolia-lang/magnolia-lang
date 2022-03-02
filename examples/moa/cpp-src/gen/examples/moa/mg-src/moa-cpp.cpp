@@ -13,99 +13,27 @@ namespace moa_cpp {
 
     BurgerProgram::_one BurgerProgram::one;
 
-    int64_utils BurgerProgram::__int64_utils;
-
-
-
-    BurgerProgram::_print_parray BurgerProgram::print_parray;
-
-
-
-    BurgerProgram::_cat_shape BurgerProgram::cat_shape;
-
-
-
-    BurgerProgram::_padded_shape BurgerProgram::padded_shape;
-
-
-
-    BurgerProgram::_print_shape BurgerProgram::print_shape;
-
-
-
-    BurgerProgram::_reverse_shape BurgerProgram::reverse_shape;
-
-    array<BurgerProgram::Int64> BurgerProgram::__array;
-
-
-
-    BurgerProgram::_eq BurgerProgram::eq;
-
-
-
-    BurgerProgram::_print_element BurgerProgram::print_element;
-
-
-
-    BurgerProgram::_create_shape1 BurgerProgram::create_shape1;
-
-
-
-    BurgerProgram::_create_shape2 BurgerProgram::create_shape2;
-
-
-
-    BurgerProgram::_create_shape3 BurgerProgram::create_shape3;
-
-
-
-    BurgerProgram::_elem_int BurgerProgram::elem_int;
-
-
-
-    BurgerProgram::_int_elem BurgerProgram::int_elem;
-
-
-
-    BurgerProgram::_padded_dim BurgerProgram::padded_dim;
-
-
-
-    BurgerProgram::_padded_drop_shape_elem BurgerProgram::padded_drop_shape_elem;
-
-
-
-    BurgerProgram::_padded_get_shape_elem BurgerProgram::padded_get_shape_elem;
-
-
-
-    BurgerProgram::_padded_total BurgerProgram::padded_total;
-
-
-
-    BurgerProgram::_print_int BurgerProgram::print_int;
-
-
-
-    BurgerProgram::_padded_transpose_body BurgerProgram::padded_transpose_body;
-
-
-
-    BurgerProgram::_padded_transpose_repeat BurgerProgram::padded_transpose_repeat;
-
-
-
-    while_loop2_2<BurgerProgram::PaddedArray, BurgerProgram::IndexContainer, BurgerProgram::PaddedArray, BurgerProgram::Int, BurgerProgram::_padded_transpose_body, BurgerProgram::_padded_upper_bound> BurgerProgram::__while_loop2_213;
-
-    BurgerProgram::_padded_upper_bound BurgerProgram::padded_upper_bound;
-
-
-
-    BurgerProgram::_print_index_container BurgerProgram::print_index_container;
+    float64_utils BurgerProgram::__float64_utils;
 
 
 
     BurgerProgram::_cat_index BurgerProgram::cat_index;
+
+
+
+    BurgerProgram::_print_index BurgerProgram::print_index;
+
+
+
+    BurgerProgram::_reverse_index BurgerProgram::reverse_index;
+
+
+
+    BurgerProgram::_test_index BurgerProgram::test_index;
+
+
+
+    BurgerProgram::_print_index_container BurgerProgram::print_index_container;
 
 
 
@@ -133,15 +61,91 @@ namespace moa_cpp {
 
 
 
-    BurgerProgram::_print_index BurgerProgram::print_index;
+    BurgerProgram::_print_int BurgerProgram::print_int;
 
 
 
-    BurgerProgram::_reverse_index BurgerProgram::reverse_index;
+    BurgerProgram::_two BurgerProgram::two;
 
 
 
-    BurgerProgram::_test_index BurgerProgram::test_index;
+    BurgerProgram::_padded_dim BurgerProgram::padded_dim;
+
+
+
+    BurgerProgram::_padded_get_shape_elem BurgerProgram::padded_get_shape_elem;
+
+
+
+    BurgerProgram::_padded_total BurgerProgram::padded_total;
+
+
+
+    BurgerProgram::_padded_transpose_body BurgerProgram::padded_transpose_body;
+
+
+
+    BurgerProgram::_padded_transpose_repeat BurgerProgram::padded_transpose_repeat;
+
+
+
+    while_loop2_2<BurgerProgram::PaddedArray, BurgerProgram::IndexContainer, BurgerProgram::PaddedArray, BurgerProgram::Int, BurgerProgram::_padded_transpose_body, BurgerProgram::_padded_upper_bound> BurgerProgram::__while_loop2_26;
+
+    BurgerProgram::_padded_upper_bound BurgerProgram::padded_upper_bound;
+
+
+
+    BurgerProgram::_print_parray BurgerProgram::print_parray;
+
+
+
+    BurgerProgram::_cat_shape BurgerProgram::cat_shape;
+
+
+
+    BurgerProgram::_create_shape1 BurgerProgram::create_shape1;
+
+
+
+    BurgerProgram::_create_shape2 BurgerProgram::create_shape2;
+
+
+
+    BurgerProgram::_create_shape3 BurgerProgram::create_shape3;
+
+
+
+    BurgerProgram::_padded_drop_shape_elem BurgerProgram::padded_drop_shape_elem;
+
+
+
+    BurgerProgram::_padded_shape BurgerProgram::padded_shape;
+
+
+
+    BurgerProgram::_print_shape BurgerProgram::print_shape;
+
+
+
+    BurgerProgram::_reverse_shape BurgerProgram::reverse_shape;
+
+    array<BurgerProgram::Float64> BurgerProgram::__array;
+
+
+
+    BurgerProgram::_elem_int BurgerProgram::elem_int;
+
+
+
+    BurgerProgram::_eq BurgerProgram::eq;
+
+
+
+    BurgerProgram::_int_elem BurgerProgram::int_elem;
+
+
+
+    BurgerProgram::_print_element BurgerProgram::print_element;
 
 
 
@@ -166,6 +170,14 @@ namespace moa_cpp {
 
 
     BurgerProgram::_oneF BurgerProgram::oneF;
+
+
+
+    BurgerProgram::_print_float BurgerProgram::print_float;
+
+
+
+    BurgerProgram::_twoF BurgerProgram::twoF;
 
 
 
@@ -217,6 +229,10 @@ namespace moa_cpp {
 
 
 
+    BurgerProgram::_bstep BurgerProgram::bstep;
+
+
+
     BurgerProgram::_cat BurgerProgram::cat;
 
 
@@ -225,7 +241,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<BurgerProgram::Array, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::Array, BurgerProgram::_cat_body, BurgerProgram::_cat_cond> BurgerProgram::__while_loop2_20;
+    while_loop3_2<BurgerProgram::Array, BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_cat_body, BurgerProgram::_cat_cond> BurgerProgram::__while_loop3_23;
 
     BurgerProgram::_cat_cond BurgerProgram::cat_cond;
 
@@ -293,7 +309,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_drop_body, BurgerProgram::_drop_cond> BurgerProgram::__while_loop2_27;
+    while_loop3_2<BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_drop_body, BurgerProgram::_drop_cond> BurgerProgram::__while_loop3_25;
 
     BurgerProgram::_drop_cond BurgerProgram::drop_cond;
 
@@ -335,37 +351,37 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<BurgerProgram::Int64, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_lmb_div, BurgerProgram::_leftmap_cond> BurgerProgram::__while_loop2_29;
+    while_loop2_2<BurgerProgram::Float64, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_lmb_div, BurgerProgram::_leftmap_cond> BurgerProgram::__while_loop2_22;
 
     BurgerProgram::_lmb_div BurgerProgram::lmb_div;
 
 
 
-    while_loop2_2<BurgerProgram::Int64, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_lmb_mul, BurgerProgram::_leftmap_cond> BurgerProgram::__while_loop2_210;
+    while_loop2_2<BurgerProgram::Float64, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_lmb_mul, BurgerProgram::_leftmap_cond> BurgerProgram::__while_loop2_23;
 
     BurgerProgram::_lmb_mul BurgerProgram::lmb_mul;
 
 
 
-    while_loop2_2<BurgerProgram::Int64, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_lmb_plus, BurgerProgram::_leftmap_cond> BurgerProgram::__while_loop2_211;
+    while_loop2_2<BurgerProgram::Float64, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_lmb_plus, BurgerProgram::_leftmap_cond> BurgerProgram::__while_loop2_24;
 
     BurgerProgram::_lmb_plus BurgerProgram::lmb_plus;
 
 
 
-    while_loop2_2<BurgerProgram::Int64, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_lmb_sub, BurgerProgram::_leftmap_cond> BurgerProgram::__while_loop2_212;
+    while_loop2_2<BurgerProgram::Float64, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_lmb_sub, BurgerProgram::_leftmap_cond> BurgerProgram::__while_loop2_25;
 
     BurgerProgram::_lmb_sub BurgerProgram::lmb_sub;
 
 
 
-    while_loop2_2<BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_bmb_div, BurgerProgram::_mapped_ops_cond> BurgerProgram::__while_loop2_21;
+    while_loop3_2<BurgerProgram::Array, BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_bmb_div, BurgerProgram::_mapped_ops_cond> BurgerProgram::__while_loop3_2;
 
-    while_loop2_2<BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_bmb_mul, BurgerProgram::_mapped_ops_cond> BurgerProgram::__while_loop2_22;
+    while_loop3_2<BurgerProgram::Array, BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_bmb_mul, BurgerProgram::_mapped_ops_cond> BurgerProgram::__while_loop3_20;
 
-    while_loop2_2<BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_bmb_plus, BurgerProgram::_mapped_ops_cond> BurgerProgram::__while_loop2_23;
+    while_loop3_2<BurgerProgram::Array, BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_bmb_plus, BurgerProgram::_mapped_ops_cond> BurgerProgram::__while_loop3_21;
 
-    while_loop2_2<BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_bmb_sub, BurgerProgram::_mapped_ops_cond> BurgerProgram::__while_loop2_24;
+    while_loop3_2<BurgerProgram::Array, BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_bmb_sub, BurgerProgram::_mapped_ops_cond> BurgerProgram::__while_loop3_22;
 
     BurgerProgram::_mapped_ops_cond BurgerProgram::mapped_ops_cond;
 
@@ -409,7 +425,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_reverse_body, BurgerProgram::_reverse_cond> BurgerProgram::__while_loop2_25;
+    while_loop2_2<BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_reverse_body, BurgerProgram::_reverse_cond> BurgerProgram::__while_loop2_20;
 
     BurgerProgram::_reverse_cond BurgerProgram::reverse_cond;
 
@@ -427,7 +443,7 @@ namespace moa_cpp {
 
 
 
-    while_loop3_2<BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Int, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_rotate_body, BurgerProgram::_rotate_cond> BurgerProgram::__while_loop3_2;
+    while_loop3_2<BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Int, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_rotate_body, BurgerProgram::_rotate_cond> BurgerProgram::__while_loop3_24;
 
     BurgerProgram::_rotate_cond BurgerProgram::rotate_cond;
 
@@ -449,6 +465,10 @@ namespace moa_cpp {
 
 
 
+    BurgerProgram::_snippet BurgerProgram::snippet;
+
+
+
     BurgerProgram::_take BurgerProgram::take;
 
 
@@ -457,7 +477,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_take_body, BurgerProgram::_take_cond> BurgerProgram::__while_loop2_28;
+    while_loop3_2<BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_take_body, BurgerProgram::_take_cond> BurgerProgram::__while_loop3_26;
 
     BurgerProgram::_take_cond BurgerProgram::take_cond;
 
@@ -533,7 +553,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_transpose_body, BurgerProgram::_upper_bound> BurgerProgram::__while_loop2_26;
+    while_loop2_2<BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_transpose_body, BurgerProgram::_upper_bound> BurgerProgram::__while_loop2_21;
 
     BurgerProgram::_upper_bound BurgerProgram::upper_bound;
 
@@ -626,7 +646,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<Float64Arrays::PaddedArray, Float64Arrays::IndexContainer, Float64Arrays::PaddedArray, Float64Arrays::Int, Float64Arrays::_padded_transpose_body, Float64Arrays::_padded_upper_bound> Float64Arrays::__while_loop2_213;
+    while_loop2_2<Float64Arrays::PaddedArray, Float64Arrays::IndexContainer, Float64Arrays::PaddedArray, Float64Arrays::Int, Float64Arrays::_padded_transpose_body, Float64Arrays::_padded_upper_bound> Float64Arrays::__while_loop2_26;
 
     Float64Arrays::_padded_upper_bound Float64Arrays::padded_upper_bound;
 
@@ -710,6 +730,10 @@ namespace moa_cpp {
 
 
 
+    Float64Arrays::_print_float Float64Arrays::print_float;
+
+
+
     Float64Arrays::_zeroF Float64Arrays::zeroF;
 
 
@@ -766,7 +790,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<Float64Arrays::Array, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::Array, Float64Arrays::_cat_body, Float64Arrays::_cat_cond> Float64Arrays::__while_loop2_20;
+    while_loop3_2<Float64Arrays::Array, Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_cat_body, Float64Arrays::_cat_cond> Float64Arrays::__while_loop3_23;
 
     Float64Arrays::_cat_cond Float64Arrays::cat_cond;
 
@@ -834,7 +858,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_drop_body, Float64Arrays::_drop_cond> Float64Arrays::__while_loop2_27;
+    while_loop3_2<Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_drop_body, Float64Arrays::_drop_cond> Float64Arrays::__while_loop3_25;
 
     Float64Arrays::_drop_cond Float64Arrays::drop_cond;
 
@@ -876,37 +900,37 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<Float64Arrays::Float64, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_lmb_div, Float64Arrays::_leftmap_cond> Float64Arrays::__while_loop2_29;
+    while_loop2_2<Float64Arrays::Float64, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_lmb_div, Float64Arrays::_leftmap_cond> Float64Arrays::__while_loop2_22;
 
     Float64Arrays::_lmb_div Float64Arrays::lmb_div;
 
 
 
-    while_loop2_2<Float64Arrays::Float64, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_lmb_mul, Float64Arrays::_leftmap_cond> Float64Arrays::__while_loop2_210;
+    while_loop2_2<Float64Arrays::Float64, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_lmb_mul, Float64Arrays::_leftmap_cond> Float64Arrays::__while_loop2_23;
 
     Float64Arrays::_lmb_mul Float64Arrays::lmb_mul;
 
 
 
-    while_loop2_2<Float64Arrays::Float64, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_lmb_plus, Float64Arrays::_leftmap_cond> Float64Arrays::__while_loop2_211;
+    while_loop2_2<Float64Arrays::Float64, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_lmb_plus, Float64Arrays::_leftmap_cond> Float64Arrays::__while_loop2_24;
 
     Float64Arrays::_lmb_plus Float64Arrays::lmb_plus;
 
 
 
-    while_loop2_2<Float64Arrays::Float64, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_lmb_sub, Float64Arrays::_leftmap_cond> Float64Arrays::__while_loop2_212;
+    while_loop2_2<Float64Arrays::Float64, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_lmb_sub, Float64Arrays::_leftmap_cond> Float64Arrays::__while_loop2_25;
 
     Float64Arrays::_lmb_sub Float64Arrays::lmb_sub;
 
 
 
-    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_bmb_div, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop2_21;
+    while_loop3_2<Float64Arrays::Array, Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_bmb_div, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop3_2;
 
-    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_bmb_mul, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop2_22;
+    while_loop3_2<Float64Arrays::Array, Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_bmb_mul, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop3_20;
 
-    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_bmb_plus, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop2_23;
+    while_loop3_2<Float64Arrays::Array, Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_bmb_plus, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop3_21;
 
-    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_bmb_sub, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop2_24;
+    while_loop3_2<Float64Arrays::Array, Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_bmb_sub, Float64Arrays::_mapped_ops_cond> Float64Arrays::__while_loop3_22;
 
     Float64Arrays::_mapped_ops_cond Float64Arrays::mapped_ops_cond;
 
@@ -950,7 +974,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_reverse_body, Float64Arrays::_reverse_cond> Float64Arrays::__while_loop2_25;
+    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_reverse_body, Float64Arrays::_reverse_cond> Float64Arrays::__while_loop2_20;
 
     Float64Arrays::_reverse_cond Float64Arrays::reverse_cond;
 
@@ -968,7 +992,7 @@ namespace moa_cpp {
 
 
 
-    while_loop3_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Int, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_rotate_body, Float64Arrays::_rotate_cond> Float64Arrays::__while_loop3_2;
+    while_loop3_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Int, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_rotate_body, Float64Arrays::_rotate_cond> Float64Arrays::__while_loop3_24;
 
     Float64Arrays::_rotate_cond Float64Arrays::rotate_cond;
 
@@ -998,7 +1022,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_take_body, Float64Arrays::_take_cond> Float64Arrays::__while_loop2_28;
+    while_loop3_2<Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_take_body, Float64Arrays::_take_cond> Float64Arrays::__while_loop3_26;
 
     Float64Arrays::_take_cond Float64Arrays::take_cond;
 
@@ -1074,7 +1098,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_transpose_body, Float64Arrays::_upper_bound> Float64Arrays::__while_loop2_26;
+    while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_transpose_body, Float64Arrays::_upper_bound> Float64Arrays::__while_loop2_21;
 
     Float64Arrays::_upper_bound Float64Arrays::upper_bound;
 
@@ -1177,7 +1201,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<Int64Arrays::PaddedArray, Int64Arrays::IndexContainer, Int64Arrays::PaddedArray, Int64Arrays::Int, Int64Arrays::_padded_transpose_body, Int64Arrays::_padded_upper_bound> Int64Arrays::__while_loop2_213;
+    while_loop2_2<Int64Arrays::PaddedArray, Int64Arrays::IndexContainer, Int64Arrays::PaddedArray, Int64Arrays::Int, Int64Arrays::_padded_transpose_body, Int64Arrays::_padded_upper_bound> Int64Arrays::__while_loop2_26;
 
     Int64Arrays::_padded_upper_bound Int64Arrays::padded_upper_bound;
 
@@ -1251,6 +1275,10 @@ namespace moa_cpp {
 
 
 
+    Int64Arrays::_print_float Int64Arrays::print_float;
+
+
+
     Int64Arrays::_zeroF Int64Arrays::zeroF;
 
 
@@ -1307,7 +1335,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<Int64Arrays::Array, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::Array, Int64Arrays::_cat_body, Int64Arrays::_cat_cond> Int64Arrays::__while_loop2_20;
+    while_loop3_2<Int64Arrays::Array, Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_cat_body, Int64Arrays::_cat_cond> Int64Arrays::__while_loop3_23;
 
     Int64Arrays::_cat_cond Int64Arrays::cat_cond;
 
@@ -1375,7 +1403,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_drop_body, Int64Arrays::_drop_cond> Int64Arrays::__while_loop2_27;
+    while_loop3_2<Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_drop_body, Int64Arrays::_drop_cond> Int64Arrays::__while_loop3_25;
 
     Int64Arrays::_drop_cond Int64Arrays::drop_cond;
 
@@ -1417,37 +1445,37 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<Int64Arrays::Int64, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_lmb_div, Int64Arrays::_leftmap_cond> Int64Arrays::__while_loop2_29;
+    while_loop2_2<Int64Arrays::Int64, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_lmb_div, Int64Arrays::_leftmap_cond> Int64Arrays::__while_loop2_22;
 
     Int64Arrays::_lmb_div Int64Arrays::lmb_div;
 
 
 
-    while_loop2_2<Int64Arrays::Int64, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_lmb_mul, Int64Arrays::_leftmap_cond> Int64Arrays::__while_loop2_210;
+    while_loop2_2<Int64Arrays::Int64, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_lmb_mul, Int64Arrays::_leftmap_cond> Int64Arrays::__while_loop2_23;
 
     Int64Arrays::_lmb_mul Int64Arrays::lmb_mul;
 
 
 
-    while_loop2_2<Int64Arrays::Int64, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_lmb_plus, Int64Arrays::_leftmap_cond> Int64Arrays::__while_loop2_211;
+    while_loop2_2<Int64Arrays::Int64, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_lmb_plus, Int64Arrays::_leftmap_cond> Int64Arrays::__while_loop2_24;
 
     Int64Arrays::_lmb_plus Int64Arrays::lmb_plus;
 
 
 
-    while_loop2_2<Int64Arrays::Int64, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_lmb_sub, Int64Arrays::_leftmap_cond> Int64Arrays::__while_loop2_212;
+    while_loop2_2<Int64Arrays::Int64, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_lmb_sub, Int64Arrays::_leftmap_cond> Int64Arrays::__while_loop2_25;
 
     Int64Arrays::_lmb_sub Int64Arrays::lmb_sub;
 
 
 
-    while_loop2_2<Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_bmb_div, Int64Arrays::_mapped_ops_cond> Int64Arrays::__while_loop2_21;
+    while_loop3_2<Int64Arrays::Array, Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_bmb_div, Int64Arrays::_mapped_ops_cond> Int64Arrays::__while_loop3_2;
 
-    while_loop2_2<Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_bmb_mul, Int64Arrays::_mapped_ops_cond> Int64Arrays::__while_loop2_22;
+    while_loop3_2<Int64Arrays::Array, Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_bmb_mul, Int64Arrays::_mapped_ops_cond> Int64Arrays::__while_loop3_20;
 
-    while_loop2_2<Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_bmb_plus, Int64Arrays::_mapped_ops_cond> Int64Arrays::__while_loop2_23;
+    while_loop3_2<Int64Arrays::Array, Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_bmb_plus, Int64Arrays::_mapped_ops_cond> Int64Arrays::__while_loop3_21;
 
-    while_loop2_2<Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_bmb_sub, Int64Arrays::_mapped_ops_cond> Int64Arrays::__while_loop2_24;
+    while_loop3_2<Int64Arrays::Array, Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_bmb_sub, Int64Arrays::_mapped_ops_cond> Int64Arrays::__while_loop3_22;
 
     Int64Arrays::_mapped_ops_cond Int64Arrays::mapped_ops_cond;
 
@@ -1491,7 +1519,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_reverse_body, Int64Arrays::_reverse_cond> Int64Arrays::__while_loop2_25;
+    while_loop2_2<Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_reverse_body, Int64Arrays::_reverse_cond> Int64Arrays::__while_loop2_20;
 
     Int64Arrays::_reverse_cond Int64Arrays::reverse_cond;
 
@@ -1509,7 +1537,7 @@ namespace moa_cpp {
 
 
 
-    while_loop3_2<Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Int, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_rotate_body, Int64Arrays::_rotate_cond> Int64Arrays::__while_loop3_2;
+    while_loop3_2<Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Int, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_rotate_body, Int64Arrays::_rotate_cond> Int64Arrays::__while_loop3_24;
 
     Int64Arrays::_rotate_cond Int64Arrays::rotate_cond;
 
@@ -1539,7 +1567,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_take_body, Int64Arrays::_take_cond> Int64Arrays::__while_loop2_28;
+    while_loop3_2<Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_take_body, Int64Arrays::_take_cond> Int64Arrays::__while_loop3_26;
 
     Int64Arrays::_take_cond Int64Arrays::take_cond;
 
@@ -1615,7 +1643,7 @@ namespace moa_cpp {
 
 
 
-    while_loop2_2<Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_transpose_body, Int64Arrays::_upper_bound> Int64Arrays::__while_loop2_26;
+    while_loop2_2<Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_transpose_body, Int64Arrays::_upper_bound> Int64Arrays::__while_loop2_21;
 
     Int64Arrays::_upper_bound Int64Arrays::upper_bound;
 

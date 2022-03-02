@@ -3,11 +3,13 @@
 
 using examples::moa::mg_src::moa_cpp::Int64Arrays;
 using examples::moa::mg_src::moa_cpp::Float64Arrays;
+using examples::moa::mg_src::moa_cpp::BurgerProgram;
 
 int main(int argc, char **argv) {
 
     Int64Arrays P;
     Float64Arrays F;
+    BurgerProgram B;
 
     std::cout << "Linear representation of array a:" << std::endl;
     auto a = P.test_array3_2_2();
@@ -51,6 +53,26 @@ int main(int argc, char **argv) {
 
     std::cout << "Shape of subarray: " << std::endl;
     P.print_shape(P.shape(subarray2));
+
+
+    std::cout << std::endl;
+    std::cout << "TEST PARTIAL SET: " << std::endl;
+
+    std::cout << "Original array: " << std::endl;
+    auto partial_set_a = P.test_array3_2_2();
+    P.print_array(partial_set_a);
+    P.print_shape(P.shape(partial_set_a));
+
+    std::cout << "New elems: " << std::endl;
+    auto new_elems = P.test_vector2();
+    P.print_array(new_elems);
+    P.print_shape(P.shape(new_elems));
+
+    std::cout << "Set array at ix <1 1> to new elems: " << std::endl;
+    auto partial_ix = P.create_index2(1,1);
+    P.set(partial_set_a, partial_ix, new_elems);
+
+    P.print_array(partial_set_a);
 
     std::cout << std::endl;
     std::cout << "CAT ON VECTORS:" << std::endl;
@@ -199,30 +221,31 @@ int main(int argc, char **argv) {
     std::cout << "transpose(a):" << std::endl;
     P.print_array(P.transpose(trans_array));
 
-    std::cout << "reverse(a): TODO FIX" << std::endl;
+    std::cout << "reverse(a):" << std::endl;
     P.print_array(P.reverse(trans_array));
 
     std::cout << "rotate(1,1,a):, dim(a) = 2" << std::endl;
     P.print_array(P.rotate(1,1,trans_array));
+    std::cout << "rotate(1,2,a):, dim(a) = 2" << std::endl;
+    P.print_array(P.rotate(1,2,trans_array));
     std::cout << "rotate(2,1,a):, dim(a) = 2" << std::endl;
     P.print_array(P.rotate(2,1,trans_array));
     std::cout << "rotate(-1,1,a):, dim(a) = 2" << std::endl;
     P.print_array(P.rotate(-1,1,trans_array));
 
     auto trans_array2 = P.test_array3_2_2();
-    std::cout << "rotate(2,0,a):, dim(a) = 3" << std::endl;
-    P.print_array(trans_array2);
-    P.print_array(P.rotate(2,0,trans_array2));
-
     std::cout << "rotate(2,1,a):, dim(a) = 3" << std::endl;
     P.print_array(trans_array2);
     P.print_array(P.rotate(2,1,trans_array2));
+
+    std::cout << "rotate(2,2,a):, dim(a) = 3" << std::endl;
+    P.print_array(trans_array2);
+    P.print_array(P.rotate(2,2,trans_array2));
 
     std::cout << "rotate(-1,1,a):, dim(a) = 3" << std::endl;
     P.print_array(trans_array2);
     P.print_array(P.rotate(-1,1,trans_array2));
     std::cout << std::endl;
-
     std::cout << "Arithmetic operations on arrays: Int64" << std::endl;
     std::cout << "Original array:" << std::endl;
 
@@ -318,4 +341,19 @@ int main(int argc, char **argv) {
     F.print_shape(F.shape(arit_usubF));
 
     std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+
+    std::cout << "PDE step test" << std::endl;
+    auto a1 = B.test_array3_3();
+    auto a2 = B.test_array3_3();
+    auto a3 = B.test_array3_3();
+    B.bstep(a1,a2,a3,1,1.0,1.0);
+
+    B.print_array(a1);
+    B.print_array(a2);
+    B.print_array(a3);
+
+
+
 }

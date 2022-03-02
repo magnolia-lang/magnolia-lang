@@ -210,32 +210,40 @@ implementation Catenation = {
         Array catenation, i.e. cat(a1, a2)
       ########################################
     */
-    procedure cat_body(obs array1: Array,
-                       obs array2: Array,
-                       upd counter: Int,
-                       upd res: Array) {
+    procedure cat_body(obs a: Array,
+                       obs b: Array,
+                       obs ixc: IndexContainer,
+                       upd res: Array,
+                       upd c: Int) {
 
-        var s_0 = total(array1): Int;
+        var ix = get_index_ixc(ixc, c);
 
-        if counter < s_0 then {
-            call set(res, counter,
-                    unwrap_scalar(get(array1,counter)));
-            counter = counter + one(): Int;
+        var s0 = get_shape_elem(a, zero(): Int);
+        var i0 = get_index_elem(ix, zero(): Int);
+
+        if i0 < s0 then {
+
+            call set(res, ix, get(a,ix));
         } else {
-            var ix = counter - s_0;
-            call set(res, counter, unwrap_scalar(get(array2, ix)));
-            counter = counter + one(): Int;
+
+            var new_ix = create_index1(i0 - s0);
+            call set(res, ix, get(b, new_ix));
         };
+
+        c = c + one(): Int;
+
     }
 
-    predicate cat_cond(array1: Array, array2: Array, counter: Int, res: Array) {
-        var upper_bound = total(res);
-        value counter < upper_bound;
+    predicate cat_cond(a: Array, b: Array, ixc: IndexContainer,
+                       res: Array, c: Int) {
+        value c < total(ixc);
     }
-    use WhileLoop2_2[Context1 => Array,
+
+    use WhileLoop3_2[Context1 => Array,
                      Context2 => Array,
-                     State1 => Int,
-                     State2 => Array,
+                     Context3 => IndexContainer,
+                     State1 => Array,
+                     State2 => Int,
                      body => cat_body,
                      cond => cat_cond,
                      repeat => cat_repeat];
@@ -249,24 +257,23 @@ implementation Catenation = {
     TODO: IN ALL LITERATURE, CAT IS DEFINED IN TERMS OF PARTIAL INDEXING, what
 
     */
-    function cat(array1: Array, array2: Array): Array
-        guard drop_shape_elem(array1, zero(): Int) ==
-              drop_shape_elem(array2, zero(): Int) {
+    function cat(a: Array, b: Array): Array
+        guard drop_shape_elem(a, zero(): Int) ==
+              drop_shape_elem(b, zero(): Int) {
 
-        /*
-        shape of the catenated array is given by:
-        (take(1, a1) + take(1, a2)) 'cat' drop(1, a1)
-        */
-        var take_a1 = get_shape_elem(array1, zero(): Int);
-        var take_a2 = get_shape_elem(array2, zero(): Int);
-        var drop_a1 = drop_shape_elem(array1, zero(): Int);
+        var drop_s0 = drop_shape_elem(a, zero(): Int);
 
-        var result_shape = cat_shape(create_shape1(take_a1 + take_a2), drop_a1);
+        var s0a_s0b = create_shape1(get_shape_elem(a, zero(): Int) +
+                                    get_shape_elem(b, zero(): Int));
 
-        var res = create_array(result_shape);
+        var res_shape = cat_shape(s0a_s0b, drop_s0);
+        var res = create_array(res_shape);
 
-        var counter = zero(): Int;
-        call cat_repeat(array1, array2, counter, res);
+        var ixc = create_partial_indices(res, one(): Int);
+
+        var c = zero(): Int;
+
+        call cat_repeat(a,b,ixc,res,c);
 
         value res;
     }
@@ -357,109 +364,112 @@ implementation TakeDrop = {
 
     use Padding;
 
-    predicate take_cond(a: Array, i: Int, res: Array, c: Int) {
+    predicate take_cond(a: Array, t: Int, ixc: IndexContainer, res: Array, c: Int) {
 
-        value c < i;
+        value c < abs(t);
 
     }
 
-    procedure take_body(obs a: Array, obs i: Int, upd res: Array, upd c: Int) {
+    procedure take_body(obs a: Array, obs t: Int,
+                        obs ixc: IndexContainer,
+                        upd res: Array, upd c: Int) {
 
-        var ix = create_index1(c);
-        var slice = get(a, ix);
+        var ix = get_index_ixc(ixc, c);
 
-        slice = reshape(slice, cat_shape(create_shape1(one(): Int),
-                                          shape(slice)));
+        if zero(): Int <= t then {
 
-        res = cat(res, slice);
+            call set(res, ix, get(a, ix));
+
+        } else {
+
+            var s0 = get_shape_elem(a, zero(): Int);
+            var i0 = get_index_elem(ix, zero(): Int);
+
+            var new_ix = create_index1(s0 - abs(t) + i0);
+
+            call set(res, ix, get(a,new_ix));
+
+        };
 
         c = c + one(): Int;
 
     }
 
-    use WhileLoop2_2[Context1 => Array,
+    use WhileLoop3_2[Context1 => Array,
                      Context2 => Int,
+                     Context3 => IndexContainer,
                      State1 => Array,
                      State2 => Int,
                      body => take_body,
                      cond => take_cond,
                      repeat => take_repeat];
 
-    function take(i: Int, a: Array): Array = {
+    function take(t: Int, a: Array): Array = {
+
+        var ixc = create_partial_indices(a, one(): Int);
 
         var drop_sh_0 = drop_shape_elem(a, zero(): Int);
 
-        var res_array: Array;
+        var res = create_array(cat_shape(create_shape1(abs(t)), drop_sh_0));
 
-        if i < zero(): Int then {
+        var c = zero(): Int;
 
-            call print_int(i);
+        call take_repeat(a,t,ixc,res,c);
 
-            var drop_value = get_shape_elem(a,zero(): Int) + i;
-            res_array = drop(drop_value, a);
+        value res;
+
+    }
+
+    predicate drop_cond(a: Array, t: Int, ixc: IndexContainer, res: Array, c: Int) {
+
+        value c < total(ixc);
+
+    }
+
+    procedure drop_body(obs a: Array, obs t: Int, obs ixc: IndexContainer,
+                        upd res: Array, upd c: Int) {
+
+        var ix = get_index_ixc(ixc, c);
+
+        if zero(): Int <= t then {
+
+            var i0 = get_index_elem(ix, zero(): Int);
+            var new_ix = create_index1(i0 + t);
+
+            call set(res, ix, get(a, new_ix));
 
         } else {
-
-            res_array = get(a, create_index1(zero(): Int));
-
-            res_array = reshape(res_array, cat_shape(create_shape1(one(): Int), shape(res_array)));
-            var c = one(): Int;
-            call take_repeat(a, i, res_array, c);
-
+            call set(res, ix, get(a, ix));
         };
-
-        value res_array;
-
-    }
-
-    predicate drop_cond(a: Array, i: Int, res: Array, c: Int) {
-
-        value c < get_shape_elem(a, zero(): Int);
-
-    }
-
-    procedure drop_body(obs a: Array, obs i: Int, upd res: Array, upd c: Int) {
-
-        var slice = get(a, create_index1(c));
-        slice = reshape(slice, cat_shape(create_shape1(one(): Int),
-                                          shape(slice)));
-
-        res = cat(res, slice);
 
         c = c + one(): Int;
     }
 
-    use WhileLoop2_2[Context1 => Array,
+    use WhileLoop3_2[Context1 => Array,
                      Context2 => Int,
+                     Context3 => IndexContainer,
                      State1 => Array,
                      State2 => Int,
                      body => drop_body,
                      cond => drop_cond,
                      repeat => drop_repeat];
 
-    function drop(i: Int, a: Array): Array {
+    function drop(t: Int, a: Array): Array {
+
+        var ixc = create_partial_indices(a, one(): Int);
+
+        var s0 = get_shape_elem(a, zero(): Int);
 
         var drop_sh_0 = drop_shape_elem(a, zero(): Int);
 
-        var res_array: Array;
+        var res_shape = cat_shape(create_shape1(s0 - abs(t)), drop_sh_0);
+        var res = create_array(res_shape);
 
-        if i < zero(): Int then {
+        var c = zero(): Int;
 
-            var take_value = get_shape_elem(a, zero(): Int) + i;
+        call drop_repeat(a,t,ixc,res,c);
 
-            res_array = take(take_value, a);
-
-        } else {
-
-            res_array = get(a, create_index1(i));
-
-            res_array = reshape(res_array, cat_shape(create_shape1(one(): Int), shape(res_array)));
-            var c = i + one(): Int;
-            call drop_repeat(a, i, res_array, c);
-
-        };
-
-        value res_array;
+        value res;
     }
 }
 
@@ -481,30 +491,25 @@ implementation Transformations = {
     procedure rotate_body(obs a: Array, obs ixc: IndexContainer,
                           obs sigma: Int, upd res: Array, upd c: Int) {
 
-        var i = get_index_ixc(ixc, c);
+        var ix = get_index_ixc(ixc, c);
 
-        var slice: Array;
+        if zero(): Int <= sigma then {
 
-        if zero(): Int < sigma then {
+            var e1 = take(-sigma, get(a, ix));
+            var e2 = drop(-sigma, get(a, ix));
 
-            var e1 = drop(sigma, get(a, i));
-            var e2 = take(sigma, get(a, i));
-
-            slice = cat(e1,e2);
+            call set(res, ix, cat(e1,reshape(e2,shape(get(a,ix)))));
 
         } else {
 
-            var e1 = take(-sigma, get(a, i));
-            var e2 = drop(-sigma, get(a, i));
+            var e1 = drop(sigma, get(a, ix));
+            var e2 = take(sigma, get(a, ix));
 
-            slice = cat(e1,e2);
+            call set(res, ix, cat(e1,e2));
 
         };
 
-        res = cat(res, slice);
-
         c = c + one(): Int;
-
     }
 
     use WhileLoop3_2[Context1 => Array,
@@ -517,37 +522,15 @@ implementation Transformations = {
                      repeat => rotate_repeat];
 
 
-    function rotate(sigma: Int, ax: Int, a: Array): Array
-        guard int_elem(ax) < int_elem(dim(a)) = {
+    function rotate(sigma: Int, j: Int, a: Array): Array
+        guard j < dim(a) = {
 
         // create partial indices of length j
-        var ix_space = create_partial_indices(a, ax);
+        var ix_space = create_partial_indices(a, j);
+
+        var res = create_array(shape(a));
 
         var c = zero(): Int;
-
-        var i = get_index_ixc(ix_space, c);
-
-        var res: Array;
-
-        if zero(): Int < sigma then {
-
-            var e1 = drop(sigma, get(a, i));
-            var e2 = take(sigma, get(a, i));
-
-            res = cat(e1,e2);
-
-        } else {
-
-            var e1 = take(-sigma, get(a, i));
-            var e2 = drop(-sigma, get(a, i));
-
-            res = cat(e1,e2);
-
-        };
-
-        c = c + one(): Int;
-
-        call rotate_repeat(a, ix_space, sigma, res, c);
 
         value res;
     }
