@@ -1636,14 +1636,14 @@ private:
 public:
     typedef array<Float64Arrays::Float64>::Float Float;
     struct _abs {
-        inline Float64Arrays::Float64 operator()(const Float64Arrays::Float64& a) {
-            return __float64_utils.abs(a);
-        };
         inline Float64Arrays::Int operator()(const Float64Arrays::Int& a) {
             return __array.abs(a);
         };
         inline Float64Arrays::Float operator()(const Float64Arrays::Float& a) {
             return __array.abs(a);
+        };
+        inline Float64Arrays::Float64 operator()(const Float64Arrays::Float64& a) {
+            return __float64_utils.abs(a);
         };
     };
 
@@ -1663,14 +1663,14 @@ public:
 
     static Float64Arrays::_float_elem float_elem;
     struct _le {
-        inline bool operator()(const Float64Arrays::Float64& a, const Float64Arrays::Float64& b) {
-            return __float64_utils.le(a, b);
-        };
         inline bool operator()(const Float64Arrays::Int& a, const Float64Arrays::Int& b) {
             return __array.le(a, b);
         };
         inline bool operator()(const Float64Arrays::Float& a, const Float64Arrays::Float& b) {
             return __array.le(a, b);
+        };
+        inline bool operator()(const Float64Arrays::Float64& a, const Float64Arrays::Float64& b) {
+            return __float64_utils.le(a, b);
         };
     };
 
@@ -2924,14 +2924,14 @@ public:
     static Int64Arrays::_test_index test_index;
     typedef array<Int64Arrays::Int64>::Float Float;
     struct _abs {
-        inline Int64Arrays::Int64 operator()(const Int64Arrays::Int64& a) {
-            return __int64_utils.abs(a);
-        };
         inline Int64Arrays::Int operator()(const Int64Arrays::Int& a) {
             return __array.abs(a);
         };
         inline Int64Arrays::Float operator()(const Int64Arrays::Float& a) {
             return __array.abs(a);
+        };
+        inline Int64Arrays::Int64 operator()(const Int64Arrays::Int64& a) {
+            return __int64_utils.abs(a);
         };
     };
 
@@ -2951,14 +2951,14 @@ public:
 
     static Int64Arrays::_float_elem float_elem;
     struct _le {
-        inline bool operator()(const Int64Arrays::Int64& a, const Int64Arrays::Int64& b) {
-            return __int64_utils.le(a, b);
-        };
         inline bool operator()(const Int64Arrays::Int& a, const Int64Arrays::Int& b) {
             return __array.le(a, b);
         };
         inline bool operator()(const Int64Arrays::Float& a, const Int64Arrays::Float& b) {
             return __array.le(a, b);
+        };
+        inline bool operator()(const Int64Arrays::Int64& a, const Int64Arrays::Int64& b) {
+            return __int64_utils.le(a, b);
         };
     };
 

@@ -84,20 +84,6 @@ implementation BopmapOpsImpl = {
 
     use ExtOps[ArithmeticsRenaming];
 
-    require function zero(): Element;
-    require function one(): Element;
-
-    require function _+_(a: Element, b: Element): Element;
-    require function _-_(a: Element, b: Element): Element;
-    require function _*_(a: Element, b: Element): Element;
-    require function _/_(a: Element, b: Element): Element;
-
-    require predicate _<_(a: Element, b: Element);
-    require predicate _<=_(a: Element, b: Element);
-    require predicate _==_(a: Element, b: Element);
-
-    require function abs(e: Element): Element;
-
     require function bop(a: Element, b: Element): Element;
 
     predicate mapped_ops_cond(a: Array,
@@ -147,16 +133,6 @@ implementation ScalarLeftMapImpl = {
 
     use ExtOps[ArithmeticsRenaming];
 
-    require function zero(): Element;
-    require function one(): Element;
-
-    require function _+_(a: Element, b: Element): Element;
-    require function _-_(a: Element, b: Element): Element;
-    require function _*_(a: Element, b: Element): Element;
-    require function _/_(a: Element, b: Element): Element;
-
-    require predicate _<_(a: Element, b: Element);
-
     require function bop(a: Element, b: Element): Element;
 
     predicate leftmap_cond(e: Element,
@@ -204,14 +180,7 @@ implementation UnaryMapImpl = {
 
     use ExtOps[ArithmeticsRenaming];
 
-    require function zero(): Element;
-    require function one(): Element;
-
-    require function _+_(a: Element, b: Element): Element;
     require function -_(a: Element): Element;
-
-    require predicate _<_(a: Element, b: Element);
-    require predicate _==_(a: Element, b: Element);
 
     predicate unary_sub_cond(ix_space: IndexContainer, a: Array, c: Int) {
         value c < total(ix_space);
@@ -252,7 +221,6 @@ implementation UnaryMapImpl = {
     }
 
 }
-
 
 implementation ArrayOps = {
 
