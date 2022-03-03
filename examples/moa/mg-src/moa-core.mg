@@ -13,7 +13,7 @@ implementation MoaOps = {
     use ArrayOps;
 
 }
-
+/*
 signature VectorReductionSig = {
 
     require type Element;
@@ -61,7 +61,13 @@ implementation VectorReductionImpl = {
         value result;
     }
 }
+*/
 
+/*
+    ravel takes an array as input and flattens it to a vector
+
+    i.e. dim(ravel(a)) = 1
+*/
 implementation Ravel = {
 
     use MoaOps;
@@ -101,6 +107,14 @@ implementation Ravel = {
 
 }
 
+/*
+    reshape takes as input an array a1 and a shape s.
+    If the total number of elements in the input array a1 matches
+    exactly the number of elements the shape s can hold then reshape a1 to
+    have shape s.
+
+    total(shape(a)) == total(s)
+*/
 implementation Reshape = {
 
     use MoaOps;
@@ -134,82 +148,18 @@ implementation Reshape = {
 
 }
 
+/*
 
+    Catenation of arrays. Concatenates the input arrays a1 and a2 on the primary axis.
+
+    Precondition: drop(0, shape(a1)) == drop(0, shape(a2))
+
+
+*/
 implementation Catenation = {
 
     use Reshape;
 
-    /*########################################
-        Vector catenation, i.e. cat(v1, v2)
-      ########################################
-    */
-
-    /*
-    cat_vec_body performs one iteration of putting the element currently
-    indexed in its correct position in the catenated vector
-    */
-    procedure cat_vec_body(obs v1: Array,
-                           obs v2: Array,
-                           upd res: Array,
-                           upd counter: Int) {
-
-        var v1_bound = total(v1);
-        var ix: Index;
-
-        // conditional determining if we should access v1 or v2
-        if counter < total(v1) then {
-            ix = create_index1(counter);
-            call set(res, ix, unwrap_scalar(get(v1, ix)));
-        } else {
-            ix = create_index1(counter - v1_bound);
-            var res_ix = create_index1(counter);
-            call set(res, res_ix, unwrap_scalar(get(v2, ix)));
-        };
-
-        counter = counter + one(): Int;
-    }
-
-    // determines upper bound for the iterator
-    predicate cat_vec_cond(v1: Array, v2: Array, res: Array, counter: Int) {
-        value counter < total(res);
-    }
-
-    use WhileLoop2_2[Context1 => Array,
-                     Context2 => Array,
-                     State1 => Array,
-                     State2 => Int,
-                     body => cat_vec_body,
-                     cond => cat_vec_cond,
-                     repeat => cat_vec_repeat];
-
-
-    /*
-    cat_vec takes two vectors as inputs, does a shape analysis, and then calls the cat_vec_repeat procedure with a correctly shaped updatable result vector argument
-    */
-    function cat_vec(vector1: Array, vector2: Array): Array
-        guard dim(vector1) == one(): Int && dim(vector2) == one(): Int {
-
-        var res_shape = create_shape1(total(vector1) + total(vector2));
-
-        var res = create_array(res_shape);
-        var counter = zero(): Int;
-        call cat_vec_repeat(vector1, vector2, res, counter);
-
-        value res;
-
-    }
-
-    /*########################################
-        Array and vector catenation, i.e. cat(a, vec)
-      ########################################
-    */
-
-
-
-    /*########################################
-        Array catenation, i.e. cat(a1, a2)
-      ########################################
-    */
     procedure cat_body(obs a: Array,
                        obs b: Array,
                        obs ixc: IndexContainer,
@@ -248,15 +198,6 @@ implementation Catenation = {
                      cond => cat_cond,
                      repeat => cat_repeat];
 
-
-    /*
-    cat takes two arrays as inputs, does a shape analysis, and then calls the cat_repeat procedure with a correctly shaped updatable result array argument
-    */
-
-    /*
-    TODO: IN ALL LITERATURE, CAT IS DEFINED IN TERMS OF PARTIAL INDEXING, what
-
-    */
     function cat(a: Array, b: Array): Array
         guard drop_shape_elem(a, zero(): Int) ==
               drop_shape_elem(b, zero(): Int) {
@@ -360,6 +301,16 @@ implementation Padding = {
 
 }
 
+/*
+
+    Take and drop.
+
+    For parameters i: Int and a: Array, take(i,a) returns the i first elements
+    of a. If i <= 0, return the |i| last elements of a.
+
+    For parameters i: Int and a: Array, drop(i,a) returns a with the i first elements dropped. If i <= 0, drop the |i| last elements of a.
+
+*/
 implementation TakeDrop = {
 
     use Padding;
@@ -478,9 +429,9 @@ implementation Transformations = {
     use TakeDrop;
 
     /*
-    #######
-    rotate
-    #######
+
+
+
     */
 
     predicate rotate_cond(a: Array, ixc: IndexContainer, sigma: Int, res: Array, c: Int) {
@@ -665,49 +616,3 @@ implementation Transformations = {
     }
 
 }
-/*
-concept BMap = {
-
-    require type Element;
-
-    type Array;
-
-    function bop(e1: Element, e2: Element): Element;
-    function bopmap(e: Element, a: Array): Array;
-}
-
-implementation BMapVectorImpl = {
-
-    use BMap;
-    use MoaOps;
-
-
-
-    procedure bmapvector_body(obs e: Element,
-                              upd v: Array, upd c: Int) {
-
-        var new_value = bop(e, unwrap_scalar(get(v, c)));
-
-        call set(v, c, new_value);
-
-        c = elem_int(int_elem(c) + one());
-    }
-
-    predicate bmapvector_cond(e: Element, v: Array, c: Int) {
-        value int_elem(c) < int_elem(total(v));
-    }
-
-    use WhileLoop1_2[Context1 => Element,
-                     State1 => Array,
-                     State2 => Int,
-                     body => bmapvector_body,
-                     cond => bmapvector_cond,
-                     repeat => bmapvector_repeat];
-
-    procedure bopmap_vec(obs e: Element, upd a: Array) = {
-        var counter = elem_int(zero());
-        call bmapvector_repeat(e, a, counter);
-    }
-}
-
-*/

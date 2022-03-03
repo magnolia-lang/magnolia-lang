@@ -20,19 +20,30 @@ concept Array = {
     type Index;
     type Shape;
 
-    function get(a: Array, ix: Int): Array;
+    // psi
     function get(a: Array, ix: Index): Array;
     function get(a: PaddedArray, ix: Index): Array;
 
-    procedure set(upd a: Array, obs ix: Int, obs e: Element);
     procedure set(upd a: Array, obs ix: Index, obs e: Element);
     procedure set(upd a: PaddedArray, obs ix: Index, obs e: Element);
 
+    // delta
     function dim(a: Array): Int;
+    // rho
+    function shape(a: Array): Int;
+
+    // tau
     function total(a: Array): Int;
     function total(s: Shape) : Int;
     function total(ixc: IndexContainer): Int;
 
+    // theta
+    function rotate(sigma: Int, axis: Int, a: Array): Array;
+
+    axiom rotateShapeAxiom(sigma: Int, axis: Int: a: Array) {
+        var rotated = rotate(sigma, axis, a);
+        assert shape(rotated) == shape(a);
+    }
 
     function reshape(a: Array, s: Shape): Array;
 
@@ -46,12 +57,9 @@ concept Array = {
         assert shape(cat(a1,a2)) == shape(a1) + shape(a2);
     }
 
-    function rotate(sigma: Int, axis: Int, a: Array): Array;
 
-    axiom rotateShapeAxiom(sigma: Int, axis: Int: a: Array) {
-        var rotated = rotate(sigma, axis, a);
-        assert shape(rotated) == shape(a);
-    }
+
+
 
     function take(i: Int, a: Array): Array;
     function drop(i: Int, a: Array): Array;

@@ -169,7 +169,7 @@ public:
     static BurgerProgram::_padded_transpose_body padded_transpose_body;
     struct _padded_transpose_repeat {
         inline void operator()(const BurgerProgram::PaddedArray& context1, const BurgerProgram::IndexContainer& context2, BurgerProgram::PaddedArray& state1, BurgerProgram::Int& state2) {
-            return __while_loop2_26.repeat(context1, context2, state1, state2);
+            return __while_loop2_25.repeat(context1, context2, state1, state2);
         };
     };
 
@@ -181,7 +181,7 @@ public:
     };
 
 private:
-    static while_loop2_2<BurgerProgram::PaddedArray, BurgerProgram::IndexContainer, BurgerProgram::PaddedArray, BurgerProgram::Int, BurgerProgram::_padded_transpose_body, BurgerProgram::_padded_upper_bound> __while_loop2_26;
+    static while_loop2_2<BurgerProgram::PaddedArray, BurgerProgram::IndexContainer, BurgerProgram::PaddedArray, BurgerProgram::Int, BurgerProgram::_padded_transpose_body, BurgerProgram::_padded_upper_bound> __while_loop2_25;
 public:
     static BurgerProgram::_padded_upper_bound padded_upper_bound;
     struct _print_parray {
@@ -577,54 +577,6 @@ public:
     };
 
     static BurgerProgram::_cat_repeat cat_repeat;
-    struct _cat_vec {
-        inline BurgerProgram::Array operator()(const BurgerProgram::Array& vector1, const BurgerProgram::Array& vector2) {
-            BurgerProgram::Shape res_shape = BurgerProgram::create_shape1(BurgerProgram::binary_add(BurgerProgram::total(vector1), BurgerProgram::total(vector2)));
-            BurgerProgram::Array res = BurgerProgram::create_array(res_shape);
-            BurgerProgram::Int counter = BurgerProgram::zero.operator()<Int>();
-            BurgerProgram::cat_vec_repeat(vector1, vector2, res, counter);
-            return res;
-        };
-    };
-
-    static BurgerProgram::_cat_vec cat_vec;
-    struct _cat_vec_body {
-        inline void operator()(const BurgerProgram::Array& v1, const BurgerProgram::Array& v2, BurgerProgram::Array& res, BurgerProgram::Int& counter) {
-            BurgerProgram::Int v1_bound = BurgerProgram::total(v1);
-            BurgerProgram::Index ix;
-            if (BurgerProgram::lt(counter, BurgerProgram::total(v1)))
-            {
-                ix = BurgerProgram::create_index1(counter);
-                BurgerProgram::set(res, ix, BurgerProgram::unwrap_scalar(BurgerProgram::get(v1, ix)));
-            }
-            else
-            {
-                ix = BurgerProgram::create_index1(BurgerProgram::binary_sub(counter, v1_bound));
-                BurgerProgram::Index res_ix = BurgerProgram::create_index1(counter);
-                BurgerProgram::set(res, res_ix, BurgerProgram::unwrap_scalar(BurgerProgram::get(v2, ix)));
-            }
-            counter = BurgerProgram::binary_add(counter, BurgerProgram::one.operator()<Int>());
-        };
-    };
-
-    static BurgerProgram::_cat_vec_body cat_vec_body;
-    struct _cat_vec_cond {
-        inline bool operator()(const BurgerProgram::Array& v1, const BurgerProgram::Array& v2, const BurgerProgram::Array& res, const BurgerProgram::Int& counter) {
-            return BurgerProgram::lt(counter, BurgerProgram::total(res));
-        };
-    };
-
-private:
-    static while_loop2_2<BurgerProgram::Array, BurgerProgram::Array, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_cat_vec_body, BurgerProgram::_cat_vec_cond> __while_loop2_2;
-public:
-    static BurgerProgram::_cat_vec_cond cat_vec_cond;
-    struct _cat_vec_repeat {
-        inline void operator()(const BurgerProgram::Array& context1, const BurgerProgram::Array& context2, BurgerProgram::Array& state1, BurgerProgram::Int& state2) {
-            return __while_loop2_2.repeat(context1, context2, state1, state2);
-        };
-    };
-
-    static BurgerProgram::_cat_vec_repeat cat_vec_repeat;
     struct _circular_padl {
         inline BurgerProgram::PaddedArray operator()(const BurgerProgram::Array& a, const BurgerProgram::Int& ix) {
             BurgerProgram::Array padding = BurgerProgram::get(a, BurgerProgram::create_index1(ix));
@@ -823,28 +775,28 @@ public:
     static BurgerProgram::_leftmap_cond leftmap_cond;
     struct _lm_div_rep {
         inline void operator()(const BurgerProgram::Float64& context1, const BurgerProgram::IndexContainer& context2, BurgerProgram::Array& state1, BurgerProgram::Int& state2) {
-            return __while_loop2_22.repeat(context1, context2, state1, state2);
+            return __while_loop2_21.repeat(context1, context2, state1, state2);
         };
     };
 
     static BurgerProgram::_lm_div_rep lm_div_rep;
     struct _lm_mul_rep {
         inline void operator()(const BurgerProgram::Float64& context1, const BurgerProgram::IndexContainer& context2, BurgerProgram::Array& state1, BurgerProgram::Int& state2) {
-            return __while_loop2_23.repeat(context1, context2, state1, state2);
+            return __while_loop2_22.repeat(context1, context2, state1, state2);
         };
     };
 
     static BurgerProgram::_lm_mul_rep lm_mul_rep;
     struct _lm_plus_rep {
         inline void operator()(const BurgerProgram::Float64& context1, const BurgerProgram::IndexContainer& context2, BurgerProgram::Array& state1, BurgerProgram::Int& state2) {
-            return __while_loop2_24.repeat(context1, context2, state1, state2);
+            return __while_loop2_23.repeat(context1, context2, state1, state2);
         };
     };
 
     static BurgerProgram::_lm_plus_rep lm_plus_rep;
     struct _lm_sub_rep {
         inline void operator()(const BurgerProgram::Float64& context1, const BurgerProgram::IndexContainer& context2, BurgerProgram::Array& state1, BurgerProgram::Int& state2) {
-            return __while_loop2_25.repeat(context1, context2, state1, state2);
+            return __while_loop2_24.repeat(context1, context2, state1, state2);
         };
     };
 
@@ -859,7 +811,7 @@ public:
     };
 
 private:
-    static while_loop2_2<BurgerProgram::Float64, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_lmb_div, BurgerProgram::_leftmap_cond> __while_loop2_22;
+    static while_loop2_2<BurgerProgram::Float64, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_lmb_div, BurgerProgram::_leftmap_cond> __while_loop2_21;
 public:
     static BurgerProgram::_lmb_div lmb_div;
     struct _lmb_mul {
@@ -872,7 +824,7 @@ public:
     };
 
 private:
-    static while_loop2_2<BurgerProgram::Float64, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_lmb_mul, BurgerProgram::_leftmap_cond> __while_loop2_23;
+    static while_loop2_2<BurgerProgram::Float64, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_lmb_mul, BurgerProgram::_leftmap_cond> __while_loop2_22;
 public:
     static BurgerProgram::_lmb_mul lmb_mul;
     struct _lmb_plus {
@@ -885,7 +837,7 @@ public:
     };
 
 private:
-    static while_loop2_2<BurgerProgram::Float64, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_lmb_plus, BurgerProgram::_leftmap_cond> __while_loop2_24;
+    static while_loop2_2<BurgerProgram::Float64, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_lmb_plus, BurgerProgram::_leftmap_cond> __while_loop2_23;
 public:
     static BurgerProgram::_lmb_plus lmb_plus;
     struct _lmb_sub {
@@ -898,7 +850,7 @@ public:
     };
 
 private:
-    static while_loop2_2<BurgerProgram::Float64, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_lmb_sub, BurgerProgram::_leftmap_cond> __while_loop2_25;
+    static while_loop2_2<BurgerProgram::Float64, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_lmb_sub, BurgerProgram::_leftmap_cond> __while_loop2_24;
 public:
     static BurgerProgram::_lmb_sub lmb_sub;
     struct _mapped_ops_cond {
@@ -1022,12 +974,12 @@ public:
     };
 
 private:
-    static while_loop2_2<BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_reverse_body, BurgerProgram::_reverse_cond> __while_loop2_20;
+    static while_loop2_2<BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_reverse_body, BurgerProgram::_reverse_cond> __while_loop2_2;
 public:
     static BurgerProgram::_reverse_cond reverse_cond;
     struct _reverse_repeat {
         inline void operator()(const BurgerProgram::Array& context1, const BurgerProgram::IndexContainer& context2, BurgerProgram::Array& state1, BurgerProgram::Int& state2) {
-            return __while_loop2_20.repeat(context1, context2, state1, state2);
+            return __while_loop2_2.repeat(context1, context2, state1, state2);
         };
     };
 
@@ -1276,7 +1228,7 @@ public:
     static BurgerProgram::_transpose_body transpose_body;
     struct _transpose_repeat {
         inline void operator()(const BurgerProgram::Array& context1, const BurgerProgram::IndexContainer& context2, BurgerProgram::Array& state1, BurgerProgram::Int& state2) {
-            return __while_loop2_21.repeat(context1, context2, state1, state2);
+            return __while_loop2_20.repeat(context1, context2, state1, state2);
         };
     };
 
@@ -1349,7 +1301,7 @@ public:
     };
 
 private:
-    static while_loop2_2<BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_transpose_body, BurgerProgram::_upper_bound> __while_loop2_21;
+    static while_loop2_2<BurgerProgram::Array, BurgerProgram::IndexContainer, BurgerProgram::Array, BurgerProgram::Int, BurgerProgram::_transpose_body, BurgerProgram::_upper_bound> __while_loop2_20;
 public:
     static BurgerProgram::_upper_bound upper_bound;
 };
@@ -1516,7 +1468,7 @@ public:
     static Float64Arrays::_padded_transpose_body padded_transpose_body;
     struct _padded_transpose_repeat {
         inline void operator()(const Float64Arrays::PaddedArray& context1, const Float64Arrays::IndexContainer& context2, Float64Arrays::PaddedArray& state1, Float64Arrays::Int& state2) {
-            return __while_loop2_26.repeat(context1, context2, state1, state2);
+            return __while_loop2_25.repeat(context1, context2, state1, state2);
         };
     };
 
@@ -1528,7 +1480,7 @@ public:
     };
 
 private:
-    static while_loop2_2<Float64Arrays::PaddedArray, Float64Arrays::IndexContainer, Float64Arrays::PaddedArray, Float64Arrays::Int, Float64Arrays::_padded_transpose_body, Float64Arrays::_padded_upper_bound> __while_loop2_26;
+    static while_loop2_2<Float64Arrays::PaddedArray, Float64Arrays::IndexContainer, Float64Arrays::PaddedArray, Float64Arrays::Int, Float64Arrays::_padded_transpose_body, Float64Arrays::_padded_upper_bound> __while_loop2_25;
 public:
     static Float64Arrays::_padded_upper_bound padded_upper_bound;
     struct _print_parray {
@@ -1892,54 +1844,6 @@ public:
     };
 
     static Float64Arrays::_cat_repeat cat_repeat;
-    struct _cat_vec {
-        inline Float64Arrays::Array operator()(const Float64Arrays::Array& vector1, const Float64Arrays::Array& vector2) {
-            Float64Arrays::Shape res_shape = Float64Arrays::create_shape1(Float64Arrays::binary_add(Float64Arrays::total(vector1), Float64Arrays::total(vector2)));
-            Float64Arrays::Array res = Float64Arrays::create_array(res_shape);
-            Float64Arrays::Int counter = Float64Arrays::zero.operator()<Int>();
-            Float64Arrays::cat_vec_repeat(vector1, vector2, res, counter);
-            return res;
-        };
-    };
-
-    static Float64Arrays::_cat_vec cat_vec;
-    struct _cat_vec_body {
-        inline void operator()(const Float64Arrays::Array& v1, const Float64Arrays::Array& v2, Float64Arrays::Array& res, Float64Arrays::Int& counter) {
-            Float64Arrays::Int v1_bound = Float64Arrays::total(v1);
-            Float64Arrays::Index ix;
-            if (Float64Arrays::lt(counter, Float64Arrays::total(v1)))
-            {
-                ix = Float64Arrays::create_index1(counter);
-                Float64Arrays::set(res, ix, Float64Arrays::unwrap_scalar(Float64Arrays::get(v1, ix)));
-            }
-            else
-            {
-                ix = Float64Arrays::create_index1(Float64Arrays::binary_sub(counter, v1_bound));
-                Float64Arrays::Index res_ix = Float64Arrays::create_index1(counter);
-                Float64Arrays::set(res, res_ix, Float64Arrays::unwrap_scalar(Float64Arrays::get(v2, ix)));
-            }
-            counter = Float64Arrays::binary_add(counter, Float64Arrays::one.operator()<Int>());
-        };
-    };
-
-    static Float64Arrays::_cat_vec_body cat_vec_body;
-    struct _cat_vec_cond {
-        inline bool operator()(const Float64Arrays::Array& v1, const Float64Arrays::Array& v2, const Float64Arrays::Array& res, const Float64Arrays::Int& counter) {
-            return Float64Arrays::lt(counter, Float64Arrays::total(res));
-        };
-    };
-
-private:
-    static while_loop2_2<Float64Arrays::Array, Float64Arrays::Array, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_cat_vec_body, Float64Arrays::_cat_vec_cond> __while_loop2_2;
-public:
-    static Float64Arrays::_cat_vec_cond cat_vec_cond;
-    struct _cat_vec_repeat {
-        inline void operator()(const Float64Arrays::Array& context1, const Float64Arrays::Array& context2, Float64Arrays::Array& state1, Float64Arrays::Int& state2) {
-            return __while_loop2_2.repeat(context1, context2, state1, state2);
-        };
-    };
-
-    static Float64Arrays::_cat_vec_repeat cat_vec_repeat;
     struct _circular_padl {
         inline Float64Arrays::PaddedArray operator()(const Float64Arrays::PaddedArray& a, const Float64Arrays::Int& ix) {
             Float64Arrays::Array padding = Float64Arrays::get(a, Float64Arrays::create_index1(ix));
@@ -2138,28 +2042,28 @@ public:
     static Float64Arrays::_leftmap_cond leftmap_cond;
     struct _lm_div_rep {
         inline void operator()(const Float64Arrays::Float64& context1, const Float64Arrays::IndexContainer& context2, Float64Arrays::Array& state1, Float64Arrays::Int& state2) {
-            return __while_loop2_22.repeat(context1, context2, state1, state2);
+            return __while_loop2_21.repeat(context1, context2, state1, state2);
         };
     };
 
     static Float64Arrays::_lm_div_rep lm_div_rep;
     struct _lm_mul_rep {
         inline void operator()(const Float64Arrays::Float64& context1, const Float64Arrays::IndexContainer& context2, Float64Arrays::Array& state1, Float64Arrays::Int& state2) {
-            return __while_loop2_23.repeat(context1, context2, state1, state2);
+            return __while_loop2_22.repeat(context1, context2, state1, state2);
         };
     };
 
     static Float64Arrays::_lm_mul_rep lm_mul_rep;
     struct _lm_plus_rep {
         inline void operator()(const Float64Arrays::Float64& context1, const Float64Arrays::IndexContainer& context2, Float64Arrays::Array& state1, Float64Arrays::Int& state2) {
-            return __while_loop2_24.repeat(context1, context2, state1, state2);
+            return __while_loop2_23.repeat(context1, context2, state1, state2);
         };
     };
 
     static Float64Arrays::_lm_plus_rep lm_plus_rep;
     struct _lm_sub_rep {
         inline void operator()(const Float64Arrays::Float64& context1, const Float64Arrays::IndexContainer& context2, Float64Arrays::Array& state1, Float64Arrays::Int& state2) {
-            return __while_loop2_25.repeat(context1, context2, state1, state2);
+            return __while_loop2_24.repeat(context1, context2, state1, state2);
         };
     };
 
@@ -2174,7 +2078,7 @@ public:
     };
 
 private:
-    static while_loop2_2<Float64Arrays::Float64, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_lmb_div, Float64Arrays::_leftmap_cond> __while_loop2_22;
+    static while_loop2_2<Float64Arrays::Float64, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_lmb_div, Float64Arrays::_leftmap_cond> __while_loop2_21;
 public:
     static Float64Arrays::_lmb_div lmb_div;
     struct _lmb_mul {
@@ -2187,7 +2091,7 @@ public:
     };
 
 private:
-    static while_loop2_2<Float64Arrays::Float64, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_lmb_mul, Float64Arrays::_leftmap_cond> __while_loop2_23;
+    static while_loop2_2<Float64Arrays::Float64, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_lmb_mul, Float64Arrays::_leftmap_cond> __while_loop2_22;
 public:
     static Float64Arrays::_lmb_mul lmb_mul;
     struct _lmb_plus {
@@ -2200,7 +2104,7 @@ public:
     };
 
 private:
-    static while_loop2_2<Float64Arrays::Float64, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_lmb_plus, Float64Arrays::_leftmap_cond> __while_loop2_24;
+    static while_loop2_2<Float64Arrays::Float64, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_lmb_plus, Float64Arrays::_leftmap_cond> __while_loop2_23;
 public:
     static Float64Arrays::_lmb_plus lmb_plus;
     struct _lmb_sub {
@@ -2213,7 +2117,7 @@ public:
     };
 
 private:
-    static while_loop2_2<Float64Arrays::Float64, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_lmb_sub, Float64Arrays::_leftmap_cond> __while_loop2_25;
+    static while_loop2_2<Float64Arrays::Float64, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_lmb_sub, Float64Arrays::_leftmap_cond> __while_loop2_24;
 public:
     static Float64Arrays::_lmb_sub lmb_sub;
     struct _mapped_ops_cond {
@@ -2337,12 +2241,12 @@ public:
     };
 
 private:
-    static while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_reverse_body, Float64Arrays::_reverse_cond> __while_loop2_20;
+    static while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_reverse_body, Float64Arrays::_reverse_cond> __while_loop2_2;
 public:
     static Float64Arrays::_reverse_cond reverse_cond;
     struct _reverse_repeat {
         inline void operator()(const Float64Arrays::Array& context1, const Float64Arrays::IndexContainer& context2, Float64Arrays::Array& state1, Float64Arrays::Int& state2) {
-            return __while_loop2_20.repeat(context1, context2, state1, state2);
+            return __while_loop2_2.repeat(context1, context2, state1, state2);
         };
     };
 
@@ -2564,7 +2468,7 @@ public:
     static Float64Arrays::_transpose_body transpose_body;
     struct _transpose_repeat {
         inline void operator()(const Float64Arrays::Array& context1, const Float64Arrays::IndexContainer& context2, Float64Arrays::Array& state1, Float64Arrays::Int& state2) {
-            return __while_loop2_21.repeat(context1, context2, state1, state2);
+            return __while_loop2_20.repeat(context1, context2, state1, state2);
         };
     };
 
@@ -2637,7 +2541,7 @@ public:
     };
 
 private:
-    static while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_transpose_body, Float64Arrays::_upper_bound> __while_loop2_21;
+    static while_loop2_2<Float64Arrays::Array, Float64Arrays::IndexContainer, Float64Arrays::Array, Float64Arrays::Int, Float64Arrays::_transpose_body, Float64Arrays::_upper_bound> __while_loop2_20;
 public:
     static Float64Arrays::_upper_bound upper_bound;
 };
@@ -2829,7 +2733,7 @@ public:
     static Int64Arrays::_padded_transpose_body padded_transpose_body;
     struct _padded_transpose_repeat {
         inline void operator()(const Int64Arrays::PaddedArray& context1, const Int64Arrays::IndexContainer& context2, Int64Arrays::PaddedArray& state1, Int64Arrays::Int& state2) {
-            return __while_loop2_26.repeat(context1, context2, state1, state2);
+            return __while_loop2_25.repeat(context1, context2, state1, state2);
         };
     };
 
@@ -2841,7 +2745,7 @@ public:
     };
 
 private:
-    static while_loop2_2<Int64Arrays::PaddedArray, Int64Arrays::IndexContainer, Int64Arrays::PaddedArray, Int64Arrays::Int, Int64Arrays::_padded_transpose_body, Int64Arrays::_padded_upper_bound> __while_loop2_26;
+    static while_loop2_2<Int64Arrays::PaddedArray, Int64Arrays::IndexContainer, Int64Arrays::PaddedArray, Int64Arrays::Int, Int64Arrays::_padded_transpose_body, Int64Arrays::_padded_upper_bound> __while_loop2_25;
 public:
     static Int64Arrays::_padded_upper_bound padded_upper_bound;
     struct _print_index_container {
@@ -3180,54 +3084,6 @@ public:
     };
 
     static Int64Arrays::_cat_repeat cat_repeat;
-    struct _cat_vec {
-        inline Int64Arrays::Array operator()(const Int64Arrays::Array& vector1, const Int64Arrays::Array& vector2) {
-            Int64Arrays::Shape res_shape = Int64Arrays::create_shape1(Int64Arrays::binary_add(Int64Arrays::total(vector1), Int64Arrays::total(vector2)));
-            Int64Arrays::Array res = Int64Arrays::create_array(res_shape);
-            Int64Arrays::Int counter = Int64Arrays::zero.operator()<Int>();
-            Int64Arrays::cat_vec_repeat(vector1, vector2, res, counter);
-            return res;
-        };
-    };
-
-    static Int64Arrays::_cat_vec cat_vec;
-    struct _cat_vec_body {
-        inline void operator()(const Int64Arrays::Array& v1, const Int64Arrays::Array& v2, Int64Arrays::Array& res, Int64Arrays::Int& counter) {
-            Int64Arrays::Int v1_bound = Int64Arrays::total(v1);
-            Int64Arrays::Index ix;
-            if (Int64Arrays::lt(counter, Int64Arrays::total(v1)))
-            {
-                ix = Int64Arrays::create_index1(counter);
-                Int64Arrays::set(res, ix, Int64Arrays::unwrap_scalar(Int64Arrays::get(v1, ix)));
-            }
-            else
-            {
-                ix = Int64Arrays::create_index1(Int64Arrays::binary_sub(counter, v1_bound));
-                Int64Arrays::Index res_ix = Int64Arrays::create_index1(counter);
-                Int64Arrays::set(res, res_ix, Int64Arrays::unwrap_scalar(Int64Arrays::get(v2, ix)));
-            }
-            counter = Int64Arrays::binary_add(counter, Int64Arrays::one.operator()<Int>());
-        };
-    };
-
-    static Int64Arrays::_cat_vec_body cat_vec_body;
-    struct _cat_vec_cond {
-        inline bool operator()(const Int64Arrays::Array& v1, const Int64Arrays::Array& v2, const Int64Arrays::Array& res, const Int64Arrays::Int& counter) {
-            return Int64Arrays::lt(counter, Int64Arrays::total(res));
-        };
-    };
-
-private:
-    static while_loop2_2<Int64Arrays::Array, Int64Arrays::Array, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_cat_vec_body, Int64Arrays::_cat_vec_cond> __while_loop2_2;
-public:
-    static Int64Arrays::_cat_vec_cond cat_vec_cond;
-    struct _cat_vec_repeat {
-        inline void operator()(const Int64Arrays::Array& context1, const Int64Arrays::Array& context2, Int64Arrays::Array& state1, Int64Arrays::Int& state2) {
-            return __while_loop2_2.repeat(context1, context2, state1, state2);
-        };
-    };
-
-    static Int64Arrays::_cat_vec_repeat cat_vec_repeat;
     struct _circular_padl {
         inline Int64Arrays::PaddedArray operator()(const Int64Arrays::PaddedArray& a, const Int64Arrays::Int& ix) {
             Int64Arrays::Array padding = Int64Arrays::get(a, Int64Arrays::create_index1(ix));
@@ -3426,28 +3282,28 @@ public:
     static Int64Arrays::_leftmap_cond leftmap_cond;
     struct _lm_div_rep {
         inline void operator()(const Int64Arrays::Int64& context1, const Int64Arrays::IndexContainer& context2, Int64Arrays::Array& state1, Int64Arrays::Int& state2) {
-            return __while_loop2_22.repeat(context1, context2, state1, state2);
+            return __while_loop2_21.repeat(context1, context2, state1, state2);
         };
     };
 
     static Int64Arrays::_lm_div_rep lm_div_rep;
     struct _lm_mul_rep {
         inline void operator()(const Int64Arrays::Int64& context1, const Int64Arrays::IndexContainer& context2, Int64Arrays::Array& state1, Int64Arrays::Int& state2) {
-            return __while_loop2_23.repeat(context1, context2, state1, state2);
+            return __while_loop2_22.repeat(context1, context2, state1, state2);
         };
     };
 
     static Int64Arrays::_lm_mul_rep lm_mul_rep;
     struct _lm_plus_rep {
         inline void operator()(const Int64Arrays::Int64& context1, const Int64Arrays::IndexContainer& context2, Int64Arrays::Array& state1, Int64Arrays::Int& state2) {
-            return __while_loop2_24.repeat(context1, context2, state1, state2);
+            return __while_loop2_23.repeat(context1, context2, state1, state2);
         };
     };
 
     static Int64Arrays::_lm_plus_rep lm_plus_rep;
     struct _lm_sub_rep {
         inline void operator()(const Int64Arrays::Int64& context1, const Int64Arrays::IndexContainer& context2, Int64Arrays::Array& state1, Int64Arrays::Int& state2) {
-            return __while_loop2_25.repeat(context1, context2, state1, state2);
+            return __while_loop2_24.repeat(context1, context2, state1, state2);
         };
     };
 
@@ -3462,7 +3318,7 @@ public:
     };
 
 private:
-    static while_loop2_2<Int64Arrays::Int64, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_lmb_div, Int64Arrays::_leftmap_cond> __while_loop2_22;
+    static while_loop2_2<Int64Arrays::Int64, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_lmb_div, Int64Arrays::_leftmap_cond> __while_loop2_21;
 public:
     static Int64Arrays::_lmb_div lmb_div;
     struct _lmb_mul {
@@ -3475,7 +3331,7 @@ public:
     };
 
 private:
-    static while_loop2_2<Int64Arrays::Int64, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_lmb_mul, Int64Arrays::_leftmap_cond> __while_loop2_23;
+    static while_loop2_2<Int64Arrays::Int64, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_lmb_mul, Int64Arrays::_leftmap_cond> __while_loop2_22;
 public:
     static Int64Arrays::_lmb_mul lmb_mul;
     struct _lmb_plus {
@@ -3488,7 +3344,7 @@ public:
     };
 
 private:
-    static while_loop2_2<Int64Arrays::Int64, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_lmb_plus, Int64Arrays::_leftmap_cond> __while_loop2_24;
+    static while_loop2_2<Int64Arrays::Int64, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_lmb_plus, Int64Arrays::_leftmap_cond> __while_loop2_23;
 public:
     static Int64Arrays::_lmb_plus lmb_plus;
     struct _lmb_sub {
@@ -3501,7 +3357,7 @@ public:
     };
 
 private:
-    static while_loop2_2<Int64Arrays::Int64, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_lmb_sub, Int64Arrays::_leftmap_cond> __while_loop2_25;
+    static while_loop2_2<Int64Arrays::Int64, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_lmb_sub, Int64Arrays::_leftmap_cond> __while_loop2_24;
 public:
     static Int64Arrays::_lmb_sub lmb_sub;
     struct _mapped_ops_cond {
@@ -3625,12 +3481,12 @@ public:
     };
 
 private:
-    static while_loop2_2<Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_reverse_body, Int64Arrays::_reverse_cond> __while_loop2_20;
+    static while_loop2_2<Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_reverse_body, Int64Arrays::_reverse_cond> __while_loop2_2;
 public:
     static Int64Arrays::_reverse_cond reverse_cond;
     struct _reverse_repeat {
         inline void operator()(const Int64Arrays::Array& context1, const Int64Arrays::IndexContainer& context2, Int64Arrays::Array& state1, Int64Arrays::Int& state2) {
-            return __while_loop2_20.repeat(context1, context2, state1, state2);
+            return __while_loop2_2.repeat(context1, context2, state1, state2);
         };
     };
 
@@ -3852,7 +3708,7 @@ public:
     static Int64Arrays::_transpose_body transpose_body;
     struct _transpose_repeat {
         inline void operator()(const Int64Arrays::Array& context1, const Int64Arrays::IndexContainer& context2, Int64Arrays::Array& state1, Int64Arrays::Int& state2) {
-            return __while_loop2_21.repeat(context1, context2, state1, state2);
+            return __while_loop2_20.repeat(context1, context2, state1, state2);
         };
     };
 
@@ -3925,7 +3781,7 @@ public:
     };
 
 private:
-    static while_loop2_2<Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_transpose_body, Int64Arrays::_upper_bound> __while_loop2_21;
+    static while_loop2_2<Int64Arrays::Array, Int64Arrays::IndexContainer, Int64Arrays::Array, Int64Arrays::Int, Int64Arrays::_transpose_body, Int64Arrays::_upper_bound> __while_loop2_20;
 public:
     static Int64Arrays::_upper_bound upper_bound;
 };
