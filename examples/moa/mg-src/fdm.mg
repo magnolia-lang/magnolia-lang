@@ -26,6 +26,8 @@ implementation Partial = {
 
     use Transformations;
 
+
+    //TODO: change
     function deltax(): Float = oneF() + oneF();
 
 
@@ -34,6 +36,10 @@ implementation Partial = {
 
     function partial1(a: Array, dir: Int): Array = {
         value float_elem((twoF() * deltax())) / (rotate(one(): Int, dir, a) - rotate(-one(): Int, dir, a));
+    }
+
+    function partial2(a: Array, dir: Int): Array = {
+        value float_elem((twoF() * deltax())) / (rotate(one(): Int, dir, a) + rotate(-one(): Int, dir, a));
     }
 }
 
@@ -45,8 +51,6 @@ implementation Burger = {
     function twoF(): Float = oneF() + oneF();
 
     // from fengshui
-
-
     procedure snippet(upd u: Array,
                       obs v: Array,
                       obs u0: Array,

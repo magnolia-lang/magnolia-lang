@@ -46,4 +46,13 @@ concept Array = {
         assert shape(cat(a1,a2)) == shape(a1) + shape(a2);
     }
 
+    function rotate(sigma: Int, axis: Int, a: Array): Array;
+
+    axiom rotateShapeAxiom(sigma: Int, axis: Int: a: Array) {
+        var rotated = rotate(sigma, axis, a);
+        assert shape(rotated) == shape(a);
+    }
+
+    function take(i: Int, a: Array): Array;
+    function drop(i: Int, a: Array): Array;
 }

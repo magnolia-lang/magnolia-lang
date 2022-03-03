@@ -521,7 +521,7 @@ implementation Transformations = {
                      cond => rotate_cond,
                      repeat => rotate_repeat];
 
-
+    // rotate array a distance sigma along axis j
     function rotate(sigma: Int, j: Int, a: Array): Array
         guard j < dim(a) = {
 

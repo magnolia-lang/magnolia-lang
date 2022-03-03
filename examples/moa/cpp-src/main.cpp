@@ -355,5 +355,13 @@ int main(int argc, char **argv) {
     B.print_array(a3);
 
 
+    auto b1 = B.test_array3_2_2();
+    auto b2 = B.test_array3_2_2();
+    auto b3 = B.test_array3_2_2();
+    B.bstep(b1,b2,b3,1,1.0,1.0);
+    B.print_array(b1);
+    B.print_array(b2);
+    B.print_array(b3);
+
 
 }
