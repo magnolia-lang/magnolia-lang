@@ -458,7 +458,6 @@ struct array {
 
         IndexContainer indices;
 
-
         // populates a vector with empty total indices
         for (auto i = 0; i < total_elems; i++) {
             std::vector<Int> total;
@@ -498,7 +497,6 @@ struct array {
 
         IndexContainer indices;
 
-
         // populates a vector with empty total indices
         for (auto i = 0; i < total_elems; i++) {
             std::vector<Int> total;
@@ -532,9 +530,13 @@ struct array {
 
     inline IndexContainer create_partial_indices(Array a, Int level) {
 
-        if (level > total(shape(a))) {
+        if (level > dim(a)) {
             std::cout << "create_partial_indices: Level can't be higher than number of dimensions: "<< level << std:: endl;
             exit(1);
+        } else if (level == dim(a)) {
+
+            return create_total_indices(a);
+
         } else {
 
             IndexContainer total_indices = create_total_indices(a);

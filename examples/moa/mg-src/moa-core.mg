@@ -174,6 +174,7 @@ implementation Catenation = {
         if i0 < s0 then {
 
             call set(res, ix, get(a,ix));
+
         } else {
 
             var new_ix = create_index1(i0 - s0);
@@ -357,11 +358,11 @@ implementation TakeDrop = {
 
     function take(t: Int, a: Array): Array = {
 
-        var ixc = create_partial_indices(a, one(): Int);
-
         var drop_sh_0 = drop_shape_elem(a, zero(): Int);
 
         var res = create_array(cat_shape(create_shape1(abs(t)), drop_sh_0));
+
+        var ixc = create_partial_indices(res, one(): Int);
 
         var c = zero(): Int;
 
@@ -407,14 +408,14 @@ implementation TakeDrop = {
 
     function drop(t: Int, a: Array): Array {
 
-        var ixc = create_partial_indices(a, one(): Int);
-
         var s0 = get_shape_elem(a, zero(): Int);
 
         var drop_sh_0 = drop_shape_elem(a, zero(): Int);
 
         var res_shape = cat_shape(create_shape1(s0 - abs(t)), drop_sh_0);
         var res = create_array(res_shape);
+
+        var ixc = create_partial_indices(res, one(): Int);
 
         var c = zero(): Int;
 
@@ -427,12 +428,6 @@ implementation TakeDrop = {
 implementation Transformations = {
 
     use TakeDrop;
-
-    /*
-
-
-
-    */
 
     predicate rotate_cond(a: Array, ixc: IndexContainer, sigma: Int, res: Array, c: Int) {
 
@@ -449,7 +444,7 @@ implementation Transformations = {
             var e1 = take(-sigma, get(a, ix));
             var e2 = drop(-sigma, get(a, ix));
 
-            call set(res, ix, cat(e1,reshape(e2,shape(get(a,ix)))));
+            call set(res, ix, cat(e1,e2));
 
         } else {
 
@@ -482,6 +477,8 @@ implementation Transformations = {
         var res = create_array(shape(a));
 
         var c = zero(): Int;
+
+        call rotate_repeat(a,ix_space,sigma,res,c);
 
         value res;
     }
