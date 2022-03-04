@@ -1,5 +1,7 @@
-package examples.moa.mg-src.moa-core
+package examples.moa.mg-src.moa-core-impl
     imports examples.moa.mg-src.array-ops,
+            examples.moa.mg-src.moa-core-concepts,
+            examples.moa.mg-src.externals.array-externals,
             examples.moa.mg-src.externals.while-loops;
 
 /*
@@ -8,102 +10,41 @@ package examples.moa.mg-src.moa-core
 * @since 2022-01-11
 */
 
-implementation MoaOps = {
 
-    use ArrayOps;
+implementation ArrayImpl = {
 
-}
-/*
-signature VectorReductionSig = {
+    // external operations
+    use ExtOps;
 
-    require type Element;
-
-    type Array;
-    type Int;
-
-    function bop(e1: Element, e2: Element): Element;
-
-    function id(): Element;
-
-}
-
-implementation VectorReductionImpl = {
-
-    use MoaOps;
-    use VectorReductionSig;
-
-    predicate reduce_cond(input: Array, res: Element, c: Int) = {
-        value c < total(input);
-    }
-
-    procedure reduce_body(obs input: Array, upd res: Element, upd c: Int) {
-
-        var current_element = unwrap_scalar(get(input, c));
-        res = bop(res, current_element);
-        c = c + one(): Int;
-
-    }
-
-    use WhileLoop1_2[Context1 => Array,
-                     State1 => Element,
-                     State2 => Int,
-                     body => reduce_body,
-                     cond => reduce_cond];
-
-    function reduce(a: Array): Element = {
-
-        var result = id();
-
-        var counter = zero(): Int;
-
-        call repeat(a, result, counter);
-
-        value result;
-    }
-}
-*/
-
-/*
-    ravel takes an array as input and flattens it to a vector
-
-    i.e. dim(ravel(a)) = 1
-*/
-implementation Ravel = {
-
+    //moa concept
     use MoaOps;
 
-    predicate ravel_cond(input: Array, flat: Array, c: Int) {
-        value c < total(input);
-    }
 
-    procedure ravel_body(obs input: Array, upd flat: Array, upd c: Int) {
-
-        var linear_ix = create_index1(c);
-
-        call set(flat, linear_ix, unwrap_scalar(get(input, c)));
-
-        c = c + one(): Int;
-
-    }
-
-    use WhileLoop1_2[Context1 => Array,
-                     State1 => Array,
-                     State2 => Int,
-                     body => ravel_body,
-                     cond => ravel_cond,
-                     repeat => rav_repeat];
-
-
-    function ravel(a: Array): Array = {
-
-        var c = zero(): Int;
-
-        var flat = create_array(create_shape1(total(a)));
-
-        call rav_repeat(a, flat, c);
-
-        value flat;
-    }
+    use BopmapOpsImpl[bop => _+_, bopmap => _+_,
+                      bopmap_body => bmb_plus,
+                      bopmap_repeat => bmb_plus_rep];
+    use BopmapOpsImpl[bop => _-_, bopmap => _-_,
+                      bopmap_body => bmb_sub,
+                      bopmap_repeat => bmb_sub_rep];
+    use BopmapOpsImpl[bop => _*_, bopmap => _*_,
+                      bopmap_body => bmb_mul,
+                      bopmap_repeat => bmb_mul_rep];
+    use BopmapOpsImpl[bop => _/_, bopmap => _/_,
+                      bopmap_body => bmb_div,
+                      bopmap_repeat => bmb_div_rep];
+    use ScalarLeftMapImpl [bop => _+_, leftmap => _+_,
+                           leftmap_body => lmb_plus,
+                           leftmap_repeat => lm_plus_rep];
+    use ScalarLeftMapImpl [bop => _-_, leftmap => _-_,
+                           leftmap_body => lmb_sub,
+                           leftmap_repeat => lm_sub_rep];
+    use ScalarLeftMapImpl [bop => _*_, leftmap => _*_,
+                           leftmap_body => lmb_mul,
+                           leftmap_repeat => lm_mul_rep];
+    use ScalarLeftMapImpl [bop => _/_, leftmap => _/_,
+                           leftmap_body => lmb_div,
+                           leftmap_repeat => lm_div_rep];
+    use UnaryMapImpl[unary_sub => -_];
 
 }
 
@@ -117,7 +58,7 @@ implementation Ravel = {
 */
 implementation Reshape = {
 
-    use MoaOps;
+    use ArrayImpl;
 
     procedure reshape_body(obs old_array: Array, upd new_array: Array, upd counter: Int) {
         call set(new_array, counter, unwrap_scalar(get(old_array, counter)));
@@ -187,7 +128,7 @@ implementation Catenation = {
 
     predicate cat_cond(a: Array, b: Array, ixc: IndexContainer,
                        res: Array, c: Int) {
-        value c < total(ixc);
+        value c < size(ixc);
     }
 
     use WhileLoop3_2[Context1 => Array,
@@ -374,7 +315,7 @@ implementation TakeDrop = {
 
     predicate drop_cond(a: Array, t: Int, ixc: IndexContainer, res: Array, c: Int) {
 
-        value c < total(ixc);
+        value c < size(ixc);
 
     }
 
@@ -431,7 +372,7 @@ implementation Transformations = {
 
     predicate rotate_cond(a: Array, ixc: IndexContainer, sigma: Int, res: Array, c: Int) {
 
-        value c < total(ixc);
+        value c < size(ixc);
     }
 
     procedure rotate_body(obs a: Array, obs ixc: IndexContainer,
@@ -507,7 +448,7 @@ implementation Transformations = {
 
     predicate reverse_cond(input: Array, indices: IndexContainer, res: Array, c: Int) = {
 
-        value c < total(indices);
+        value c < size(indices);
     }
 
     use WhileLoop2_2[Context1 => Array,
@@ -535,7 +476,7 @@ implementation Transformations = {
     #####################
     */
     predicate upper_bound(a: Array, i: IndexContainer, res: Array, c: Int) = {
-        value c < total(i);
+        value c < size(i);
     }
 
     procedure transpose_body(obs a: Array,
@@ -576,7 +517,7 @@ implementation Transformations = {
     */
 
     predicate padded_upper_bound(a: PaddedArray, i: IndexContainer, res: PaddedArray, c: Int) = {
-        value c < total(i);
+        value c < size(i);
     }
 
     procedure padded_transpose_body(obs a: PaddedArray,
@@ -611,5 +552,25 @@ implementation Transformations = {
 
         value transposed_array;
     }
+
+}
+
+implementation ONF_ops = {
+
+    use Transformations;
+
+
+    function lift(ax: Int, d: Int, q: Int, a: Array): Array guard ax < dim(a) {
+
+        //value reshape(lift_shape, a);
+        value a;
+    }
+
+    function ravel(a: Array): Array {
+        value reshape(a, create_shape1(total(a)));
+    }
+
+    //function gamma(s: Shape, i: Index) guard
+
 
 }

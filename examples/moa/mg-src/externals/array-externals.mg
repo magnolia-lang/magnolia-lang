@@ -32,11 +32,11 @@ implementation ExtOps = external C++ base.array {
     // unpadded moa operations that are convenient to have tied to backend
     function dim(a: Array): Int;
     function total(a: Array): Int;
-    function total(s: Shape) : Int;
-    function total(ixc: IndexContainer): Int;
+    function total(s: Shape): Int;
     function shape(a: Array): Shape;
     function shape(a: PaddedArray): Shape;
-
+    function size(s: Shape): Int;
+    function size(ixc: IndexContainer): Int;
 
     // padded array getters
     //function padded_get(a: PaddedArray, ix: Index): PaddedArray;

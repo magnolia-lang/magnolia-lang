@@ -92,7 +92,7 @@ implementation BopmapOpsImpl = {
                               res: Array,
                               c: Int) {
 
-        value c < total(ix_space);
+        value c < size(ix_space);
     }
 
     procedure bopmap_body(obs a: Array, obs b: Array, obs ix_space: IndexContainer, upd res: Array, upd c: Int) {
@@ -140,7 +140,7 @@ implementation ScalarLeftMapImpl = {
                               a: Array,
                               c: Int) {
 
-        value c < total(ix_space);
+        value c < size(ix_space);
     }
 
     procedure leftmap_body(obs e: Element,  obs ix_space: IndexContainer,
@@ -183,7 +183,7 @@ implementation UnaryMapImpl = {
     require function -_(a: Element): Element;
 
     predicate unary_sub_cond(ix_space: IndexContainer, a: Array, c: Int) {
-        value c < total(ix_space);
+        value c < size(ix_space);
     }
 
     procedure unary_sub_body(obs ix_space: IndexContainer,
@@ -219,39 +219,5 @@ implementation UnaryMapImpl = {
         value a_upd;
 
     }
-
-}
-
-implementation ArrayOps = {
-
-    use ExtOps;
-
-    use MappedOps;
-
-    use BopmapOpsImpl[bop => _+_, bopmap => _+_,
-                      bopmap_body => bmb_plus,
-                      bopmap_repeat => bmb_plus_rep];
-    use BopmapOpsImpl[bop => _-_, bopmap => _-_,
-                      bopmap_body => bmb_sub,
-                      bopmap_repeat => bmb_sub_rep];
-    use BopmapOpsImpl[bop => _*_, bopmap => _*_,
-                      bopmap_body => bmb_mul,
-                      bopmap_repeat => bmb_mul_rep];
-    use BopmapOpsImpl[bop => _/_, bopmap => _/_,
-                      bopmap_body => bmb_div,
-                      bopmap_repeat => bmb_div_rep];
-    use ScalarLeftMapImpl [bop => _+_, leftmap => _+_,
-                           leftmap_body => lmb_plus,
-                           leftmap_repeat => lm_plus_rep];
-    use ScalarLeftMapImpl [bop => _-_, leftmap => _-_,
-                           leftmap_body => lmb_sub,
-                           leftmap_repeat => lm_sub_rep];
-    use ScalarLeftMapImpl [bop => _*_, leftmap => _*_,
-                           leftmap_body => lmb_mul,
-                           leftmap_repeat => lm_mul_rep];
-    use ScalarLeftMapImpl [bop => _/_, leftmap => _/_,
-                           leftmap_body => lmb_div,
-                           leftmap_repeat => lm_div_rep];
-    use UnaryMapImpl[unary_sub => -_];
 
 }

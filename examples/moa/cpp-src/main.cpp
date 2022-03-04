@@ -322,6 +322,17 @@ int main(int argc, char **argv) {
     std::cout << std::endl;
     std::cout << std::endl;
 
+    std::cout << "ONF ops testing" << std::endl;
+
+    auto reshape_a = P.test_array3_2_2();
+    std::cout << "Original array:" << std::endl;
+    P.print_array(reshape_a);
+    P.print_shape(P.shape(reshape_a));
+    std::cout << "ravel(a)" << std::endl;
+    auto reshaped = P.ravel(reshape_a);
+    P.print_array(reshaped);
+    P.print_shape(P.shape(reshaped));
+
     std::cout << "PDE step test" << std::endl;
     auto a1 = B.test_array3_3();
     auto a2 = B.test_array3_3();

@@ -334,7 +334,7 @@ struct array {
 
         Index total_ix = ix;
 
-        for (auto i = total(ix)-1; i < total(elems); i++) {
+        for (auto i = ix.size()-1; i < total(elems); i++) {
             total_ix.push_back(0);
         }
 
@@ -378,12 +378,18 @@ struct array {
     inline Int total(Array a) {
         return a._total();
     }
-
-    inline Int total(Shape s) {
+    inline Int size(Shape s) {
         return s.size();
     }
+    inline Int total(Shape s) {
+        using std::begin;
+        using std::end;
 
-    inline Int total(IndexContainer ix) {
+        return std::accumulate(begin(s), end(s), 1,
+                                    std::multiplies<Int>());
+    }
+
+    inline Int size(IndexContainer ix) {
         return ix.size();
     }
 
@@ -544,11 +550,11 @@ struct array {
 
             for (Index ix : total_indices) {
 
-                auto size = total(ix);
+                auto size = ix.size();
 
                 while(size > level) {
                     ix.pop_back();
-                    size = total(ix);
+                    size = ix.size();
                 }
 
                 partial_indices.push_back(ix);
@@ -566,7 +572,7 @@ struct array {
 
     inline IndexContainer create_partial_indices(PaddedArray a, Int level) {
 
-        if (level > total(padded_shape(a))-1) {
+        if (level > size(padded_shape(a))-1) {
             std::cout << "Level can't be higher than number of dimensions" << std:: endl;
             exit(1);
         } else {
@@ -576,11 +582,11 @@ struct array {
 
             for (Index ix : total_indices) {
 
-                auto size = total(ix);
+                auto size = ix.size();
 
                 while(size > level) {
                     ix.pop_back();
-                    size = total(ix);
+                    size = ix.size();
                 }
 
                 partial_indices.push_back(ix);

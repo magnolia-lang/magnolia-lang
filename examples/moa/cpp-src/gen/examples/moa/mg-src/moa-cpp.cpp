@@ -129,6 +129,10 @@ namespace moa_cpp {
 
     BurgerProgram::_reverse_shape BurgerProgram::reverse_shape;
 
+
+
+    BurgerProgram::_size BurgerProgram::size;
+
     array<BurgerProgram::Float64> BurgerProgram::__array;
 
 
@@ -421,6 +425,10 @@ namespace moa_cpp {
 
 
 
+    BurgerProgram::_rotateShapeAxiom BurgerProgram::rotateShapeAxiom;
+
+
+
     BurgerProgram::_rotate_body BurgerProgram::rotate_body;
 
 
@@ -667,6 +675,10 @@ namespace moa_cpp {
 
 
     Float64Arrays::_reverse_shape Float64Arrays::reverse_shape;
+
+
+
+    Float64Arrays::_size Float64Arrays::size;
 
     array<Float64Arrays::Float64> Float64Arrays::__array;
 
@@ -952,6 +964,10 @@ namespace moa_cpp {
 
 
 
+    Float64Arrays::_rotateShapeAxiom Float64Arrays::rotateShapeAxiom;
+
+
+
     Float64Arrays::_rotate_body Float64Arrays::rotate_body;
 
 
@@ -1175,6 +1191,10 @@ namespace moa_cpp {
 
 
 
+    Int64Arrays::_size Int64Arrays::size;
+
+
+
     Int64Arrays::_cat_index Int64Arrays::cat_index;
 
 
@@ -1375,6 +1395,10 @@ namespace moa_cpp {
 
 
 
+    Int64Arrays::_lift Int64Arrays::lift;
+
+
+
     Int64Arrays::_lm_div_rep Int64Arrays::lm_div_rep;
 
 
@@ -1439,6 +1463,10 @@ namespace moa_cpp {
 
 
 
+    Int64Arrays::_ravel Int64Arrays::ravel;
+
+
+
     Int64Arrays::_reshape Int64Arrays::reshape;
 
 
@@ -1476,6 +1504,10 @@ namespace moa_cpp {
 
 
     Int64Arrays::_rotate Int64Arrays::rotate;
+
+
+
+    Int64Arrays::_rotateShapeAxiom Int64Arrays::rotateShapeAxiom;
 
 
 

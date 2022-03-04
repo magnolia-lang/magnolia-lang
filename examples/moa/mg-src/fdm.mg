@@ -1,6 +1,5 @@
 package examples.moa.mg-src.fdm
-    imports examples.moa.mg-src.moa-core,
-            examples.moa.mg-src.externals.array-externals,
+    imports examples.moa.mg-src.moa-core-impl,
             examples.moa.mg-src.externals.while-loops;
 
 
