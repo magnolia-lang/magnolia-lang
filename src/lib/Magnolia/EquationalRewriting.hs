@@ -470,9 +470,10 @@ constraintEquation constraint = case constraint of
 type FactDB = S.Set PredicateIRAtom
 type ConstraintDB = [Constraint]
 
--- | Runs an optimizer one time over one module.
-runOptimizer :: Optimizer -> TcModule -> MgMonad TcModule
-runOptimizer (Ann _ optimizer) (Ann tgtDeclO tgtModule) = case optimizer of
+-- | Runs an optimizer maxSteps times over one module.
+runOptimizer :: Optimizer -> Int -> TcModule -> MgMonad TcModule
+runOptimizer (Ann _ optimizer) maxSteps (Ann tgtDeclO tgtModule) =
+  case optimizer of
   MModule Concept optimizerName optimizerModuleExpr -> enter optimizerName $ do
     -- 1. gather axioms
     axioms <- gatherAxioms optimizerModuleExpr
@@ -481,6 +482,7 @@ runOptimizer (Ann _ optimizer) (Ann tgtDeclO tgtModule) = case optimizer of
       AnonymousAxiom v <$> inlineTypedExprIR typedExprIR) axioms
     -- 3. gather directed rewrite rules
     constraintDb <- join <$> mapM gatherConstraints inlinedAxioms
+    --liftIO $ mapM_ print constraintDb
     --liftIO $ mapM_ (pprint . fromTypedExprIR) $ M.keys constraintDb
     -- 4. traverse each expression in the target module to rewrite it (while
     -- elaborating the scope)
@@ -498,17 +500,28 @@ runOptimizer (Ann _ optimizer) (Ann tgtDeclO tgtModule) = case optimizer of
     -- comment out to avoid IDE suggestion
     pure $ Ann tgtDeclO (MModule tgtModuleTy tgtModuleName resultModuleExpr)
   _ -> undefined
+  where
+    -- TODO: do better, because this can infinite loop if not terminating
+    rewriteDecl :: ConstraintDB -> TcDecl -> MgMonad TcDecl
+    rewriteDecl = rewriteDeclNTimes maxSteps
+
+    rewriteDeclNTimes :: Int -> ConstraintDB -> TcDecl -> MgMonad TcDecl
+    rewriteDeclNTimes n constraintDb tcDecl
+      | n <= 0 = pure tcDecl
+      | otherwise = oneRewriteDeclPass constraintDb tcDecl >>=
+          rewriteDeclNTimes (n - 1) constraintDb
+
 
 
 -- | Performs equational rewriting on a Magnolia declaration.
-rewriteDecl :: ConstraintDB -> TcDecl -> MgMonad TcDecl
-rewriteDecl constraintDb tcDecl = case tcDecl of
+oneRewriteDeclPass :: ConstraintDB -> TcDecl -> MgMonad TcDecl
+oneRewriteDeclPass constraintDb tcDecl = case tcDecl of
   MTypeDecl {} -> pure tcDecl
   MCallableDecl mods (Ann callableAnn callableDecl) ->
     case _callableBody callableDecl of
       MagnoliaBody tcExpr -> do
         tcExprIR <- toTypedExprIR tcExpr
-        liftIO $ pprint $ "rewriting " <> pshow (nodeName tcDecl) <> " now"
+        --liftIO $ pprint $ "rewriting " <> pshow (nodeName tcDecl) <> " now"
         tcExprIR' <- oneRewritePass constraintDb tcExprIR
         let tcExpr' = fromTypedExprIR tcExprIR'
             callableDecl' = callableDecl {_callableBody = MagnoliaBody tcExpr'}
@@ -545,14 +558,18 @@ oneRewritePass = oneRewritePass' S.empty
     oneRuleRewritePassExprIR :: FactDB -> Constraint -> TypedExprIR
                              -> MgMonad TypedExprIR
     oneRuleRewritePassExprIR factDb constraint (TypedExprIR tyExprIR exprIR) =
+      let go = oneRuleRewritePass factDb constraint in
       TypedExprIR tyExprIR <$> (case exprIR of
         ExprIR'Var varIR -> pure $ ExprIR'Var varIR
-        ExprIR'Call name args -> ExprIR'Call name <$>
-          mapM (oneRuleRewritePass factDb constraint) args
-        ExprIR'ValueBlock ne -> undefined
-        ExprIR'EffectfulBlock ne -> undefined
-        ExprIR'Value x0 -> undefined
-        ExprIR'Let vi ma -> undefined
+        ExprIR'Call name args -> ExprIR'Call name <$> mapM go args
+        -- TODO: traverse and enrich factDb
+        ExprIR'ValueBlock stmts -> ExprIR'ValueBlock <$> mapM go stmts
+        -- TODO: traverse and enrich factDb
+        ExprIR'EffectfulBlock stmts -> ExprIR'EffectfulBlock <$> mapM go stmts
+        ExprIR'Value tyExprIR' -> ExprIR'Value <$> go tyExprIR'
+        ExprIR'Let varIR mtyExprIR' -> ExprIR'Let varIR <$> case mtyExprIR' of
+          Nothing -> pure Nothing
+          Just tyExprIR' -> Just <$> go tyExprIR'
         ExprIR'If pi x0 x1 -> undefined
         ExprIR'Assert pi -> undefined
         ExprIR'Skip -> undefined)
@@ -980,43 +997,45 @@ exprTy (Ann ty _) = ty
 -- variables (e.g. axiom parameters – where the axioms are unguarded).
 toEquation :: TypedExprIR -> TypedExprIR -> MgMonad Equation
 toEquation srcExprIR tgtExprIR = do
-  let srcPat = toPattern srcExprIR
-      tgtPat = toPattern tgtExprIR
-      srcVariables = allVariables srcPat
-      tgtVariables = allVariables tgtPat
+  let srcVariables = allVariables srcExprIR
+      tgtVariables = allVariables tgtExprIR
+      equationExpr = TypedExprIR Pred $ ExprIR'Assert $ PredicateIR'Atom $
+        PredicateIRAtom'ExprEquation srcExprIR tgtExprIR
+      (TypedPattern Pred
+        (Pattern'Expr
+          (ExprIR'Assert
+            (PredicateIR'Atom
+              (PredicateIRAtom'ExprEquation srcPat tgtPat))))) =
+                toPattern equationExpr
   -- The set of universally quantified variables in the target pattern must be
   -- a subset of the set of universally quantified variables in the source
   -- pattern.
   unless (tgtVariables `S.isSubsetOf` srcVariables) $
-    let equationExpr = TypedExprIR Pred $ ExprIR'Assert $ PredicateIR'Atom $
-          PredicateIRAtom'ExprEquation srcExprIR tgtExprIR
-    in throwNonLocatedE MiscErr $ "could not convert rule " <>
-        pshow (fromTypedExprIR equationExpr) <> " to pattern: the target " <>
-        "expression uses variables not present in the source expression"
+    throwNonLocatedE MiscErr $ "could not convert rule " <>
+      pshow (fromTypedExprIR equationExpr) <> " to pattern: the target " <>
+      "expression uses variables not present in the source expression"
   pure $ Equation srcVariables srcPat tgtPat
   where
     -- Gathers all the variable names within a pattern.
-    allVariables :: TypedPattern -> S.Set Name
-    allVariables (TypedPattern _ pattern) = case pattern of
-      Pattern'Wildcard holeName -> S.singleton holeName
-      Pattern'Expr patExpr -> case patExpr of
-        ExprIR'Var {} -> S.empty
-        ExprIR'Call _ args ->
-          foldl (\s a -> s `S.union` allVariables a) S.empty args
-        ExprIR'ValueBlock patStmts ->
-          foldl (\s a -> s `S.union` allVariables a) S.empty patStmts
-        ExprIR'EffectfulBlock patStmts ->
-          foldl (\s a -> s `S.union` allVariables a) S.empty patStmts
-        ExprIR'Value pat -> allVariables pat
-        ExprIR'Let _ mpat -> maybe S.empty allVariables mpat
-          --S.insert name (maybe S.empty allVariables mtypedExprIR)
-        ExprIR'If patCond patTrue patFalse ->
-          allVariablesPred patCond `S.union`
-          allVariables patTrue `S.union` allVariables patFalse
-        ExprIR'Assert patPredicateIR -> allVariablesPred patPredicateIR
-        ExprIR'Skip -> S.empty
+    allVariables :: TypedExprIR -> S.Set Name
+    allVariables (TypedExprIR _ exprIR) = case exprIR of
+      ExprIR'Var {} -> S.empty
+      ExprIR'Call _ args ->
+        foldl (\s a -> s `S.union` allVariables a) S.empty args
+      ExprIR'ValueBlock stmts ->
+        foldl (\s a -> s `S.union` allVariables a) S.empty stmts
+      ExprIR'EffectfulBlock stmts ->
+        foldl (\s a -> s `S.union` allVariables a) S.empty stmts
+      ExprIR'Value pat -> allVariables pat
+      ExprIR'Let _ mpat -> maybe S.empty allVariables mpat
+        --S.insert name (maybe S.empty allVariables mtypedExprIR)
+      ExprIR'If cond trueExprIR falseExprIR ->
+        allVariablesPred cond `S.union`
+        allVariables trueExprIR `S.union` allVariables falseExprIR
+      ExprIR'Assert predicateIR -> allVariablesPred predicateIR
+      ExprIR'Skip -> S.empty
 
-    allVariablesPred :: PredicatePattern -> S.Set Name
+    allVariablesPred :: PredicateIR -> S.Set Name
     allVariablesPred predicateIR = case predicateIR of
       PredicateIR'And lhs rhs ->
         allVariablesPred lhs `S.union` allVariablesPred rhs
@@ -1028,11 +1047,11 @@ toEquation srcExprIR tgtExprIR = do
         allVariablesPred lhs `S.union` allVariablesPred rhs
       PredicateIR'PredicateEquation lhs rhs ->
         allVariablesPred lhs `S.union` allVariablesPred rhs
-      PredicateIR'Negation patPredicateIR' -> allVariablesPred patPredicateIR'
-      PredicateIR'Atom patPredicateIRAtom ->
-        allVariablesPredAtom patPredicateIRAtom
+      PredicateIR'Negation predicateIR' -> allVariablesPred predicateIR'
+      PredicateIR'Atom predicateIRAtom ->
+        allVariablesPredAtom predicateIRAtom
 
-    allVariablesPredAtom :: PredicateAtomPattern -> S.Set Name
+    allVariablesPredAtom :: PredicateIRAtom -> S.Set Name
     allVariablesPredAtom predicateIRAtom = case predicateIRAtom of
       PredicateIRAtom'Call _ args ->
         foldl (\s arg -> allVariables arg `S.union` s) S.empty args
