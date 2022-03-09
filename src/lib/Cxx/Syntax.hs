@@ -104,8 +104,13 @@ mkCxxName n = let cleanName = n { _name = replaceHyphen (_name n) } in return $
 -- TODO: at the moment, we only give special translation rules for given names.
 --       Eventually, we can come up with custom translation rules definable
 --       directly in Magnolia for calls to certain functions/procedures.
+-- TODO: hackish mapping, fix up naming conventions maybe.
 mkCustomCxxName :: Name -> Maybe CxxName
-mkCustomCxxName (Name _ s) = CxxName <$> M.lookup s customCxxTranslations
+mkCustomCxxName (Name _ s) = CxxName <$> (case s of
+    '_':'_':'_':s' -> ("__" <>) <$> M.lookup ('_':s') customCxxTranslations
+    '_':'_':s' -> ("_" <>) <$> M.lookup ('_':s') customCxxTranslations
+    _ -> M.lookup s customCxxTranslations)
+
 
 -- | Defines custom translation rules for special infix functions allowed in
 -- Magnolia but whose name would not yield a valid C++ identifier.
