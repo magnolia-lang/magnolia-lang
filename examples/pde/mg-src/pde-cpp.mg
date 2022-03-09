@@ -103,7 +103,8 @@ implementation PDE = {
         var zero = zero();
         var one = one(): Offset;
 
-        var result = psi(ix, u + c4 * ( c3 * (((c1 * rotate(v, zero, -one) - c2 * u0) + c1 * rotate(v, zero, one)) + ((c1 * rotate(v, one(): Axis, -one) - c2 * u0) + c1 * rotate(v, one(): Axis, one)) + c1 * rotate(v, one(): Axis, one) + ((c1 * rotate(v, two(): Axis, -one) - c2 * u0) + c1 * rotate(v, two(): Axis, one))) - (u0 * ((-c0 * rotate(v, zero, -one)) + c0 * rotate(v, zero, one)) + u1 * ((-c0 * rotate(v, one(): Axis, -one)) + c0 * rotate(v, one(): Axis, one)) + u2 * ((-c0 * rotate(v, two(): Axis, -one)) + c0 * rotate(v, two(): Axis, one)))));
+        var result = psi(ix, u + c4 * ( c3 * (((c1 * rotate(v, zero, -one) - c2 * u0) + c1 * rotate(v, zero, one)) + ((c1 * rotate(v, one(): Axis, -one) - c2 * u0) + c1 * rotate(v, one(): Axis, one)) + ((c1 * rotate(v, two(): Axis, -one) - c2 * u0) + c1 * rotate(v, two(): Axis, one))) - (u0 * ((-c0 * rotate(v, zero, -one)) + c0 * rotate(v, zero, one)) + u1 * ((-c0 * rotate(v, one(): Axis, -one)) + c0 * rotate(v, one(): Axis, one)) + u2 * ((-c0 * rotate(v, two(): Axis, -one)) + c0 * rotate(v, two(): Axis, one)))));
+
 
         call set(ix, u, result);
     }
