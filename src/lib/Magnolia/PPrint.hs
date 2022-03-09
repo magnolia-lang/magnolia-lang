@@ -9,11 +9,12 @@ module Magnolia.PPrint (pprint, pprintList, pshow, render) where
 import Control.Monad (join)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
+import qualified Data.Set as S
 import qualified Data.Text.Lazy as T
 import qualified Data.Text.Lazy.IO as TIO
+import Data.Void (absurd)
 import Prettyprinter
 import Prettyprinter.Render.Text
-import Data.Void (absurd)
 
 import Backend
 import Env
@@ -219,9 +220,11 @@ instance Pretty (MExpr' p) where
       pNoSemi :: MExpr' p -> Doc ann
       pNoSemi expr = case expr of
         MVar v -> p (nodeName v)
-        MCall name args mcast -> let parglist = map (pNoSemi . _elem) args in
-          p name <> parens (hsep (punctuate comma parglist)) <>
-          (case mcast of Nothing -> ""; Just cast -> " : " <> p cast)
+        MCall name args mcast -> case pSpecialFn name args of
+          Nothing -> let parglist = map (pNoSemi . _elem) args in
+            p name <> parens (hsep (punctuate comma parglist)) <>
+            (case mcast of Nothing -> ""; Just cast -> " : " <> p cast)
+          Just doc -> doc
         MBlockExpr _ block ->
           vsep [ nest 4 (vsep ( "{" : map p (NE.toList block)))
                , "}"
@@ -239,6 +242,17 @@ instance Pretty (MExpr' p) where
                                               ]
         MAssert aexpr -> "assert" <+> pNoSemi (_elem aexpr)
         MSkip -> "skip"
+
+      pSpecialFn (FuncName binOpStr) [lhs, rhs] =
+        if binOpStr `S.member` S.fromList ["_+_", "_-_", "_*_", "_/_"]
+        then let [_, op, _] = binOpStr in
+          Just $ parens (pNoSemi $ _elem lhs) <+> p op <+>
+            parens (pNoSemi $ _elem rhs)
+        else Nothing
+      pSpecialFn _ _ = Nothing
+
+
+
 
 instance Pretty (MaybeTypedVar' p) where
   pretty (Var mode name mtyp) = case mtyp of
