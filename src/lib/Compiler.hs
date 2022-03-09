@@ -60,6 +60,9 @@ data Config = Config { -- | Up to (and including) what pass the compiler should
                        -- | What programs should be rewritten using the
                        -- rewriting rules.
                      , _configProgramsToRewrite :: [FullyQualifiedName]
+                       -- | The maximum number of rewriting steps the compiler
+                       -- is allowed to apply per expression.
+                     , _configMaxRewritingSteps :: Int
                      }
 
 -- | Compiler passes
@@ -94,12 +97,19 @@ runTestWith filePath config = case _configPass config of
   EquationalRewritingPass ->
     let equationsLocation = _configEquationsLocation config
         programsToRewrite = _configProgramsToRewrite config
+        maxRewritingSteps = _configMaxRewritingSteps config
     in runAndLogErrs $ depAnalPass filePath >>= parsePass >>= checkPass
-        >>= rewritePass equationsLocation programsToRewrite
+        >>= rewritePass equationsLocation programsToRewrite maxRewritingSteps
   -- TODO(bchetioui): add rewrite pass in codegen?
-  SelfContainedProgramCodegenPass -> case _configBackend config of
+  SelfContainedProgramCodegenPass ->
+    let equationsLocation = _configEquationsLocation config
+        programsToRewrite = _configProgramsToRewrite config
+        maxRewritingSteps = _configMaxRewritingSteps config
+    in case _configBackend config of
     Cxx -> do
-      (ecxxPkgs, errs) <- runMgMonad $ compileToCxxPackages filePath
+      (ecxxPkgs, errs) <- runMgMonad $
+        compileToCxxPackages filePath equationsLocation programsToRewrite
+                             maxRewritingSteps
       case ecxxPkgs of
         Left () -> logErrs errs
         Right cxxPkgs -> do
@@ -111,7 +121,9 @@ runTestWith filePath config = case _configPass config of
           mapM_ (pprintCxxPackage outDir CxxHeader) sortedPkgs
           mapM_ (pprintCxxPackage outDir CxxImplementation) sortedPkgs
     Python -> do
-      (epyPkgs, errs) <- runMgMonad $ compileToPyPackages filePath
+      (epyPkgs, errs) <- runMgMonad $
+        compileToPyPackages filePath equationsLocation programsToRewrite
+                            maxRewritingSteps
       case epyPkgs of
         Left () -> logErrs errs
         Right pyPkgs -> do
@@ -134,11 +146,17 @@ runAndLogErrs m = runMgMonad m >>= \(_, errs) -> logErrs errs
 -- === build mode-related utils ===
 
 runCompileWith :: FilePath -> Config -> IO ()
-runCompileWith filePath config = case _configOutputDirectory config of
+runCompileWith filePath config =
+  let equationsLocation = _configEquationsLocation config
+      programsToRewrite = _configProgramsToRewrite config
+      maxRewritingSteps = _configMaxRewritingSteps config
+  in case _configOutputDirectory config of
   Nothing -> fail "output directory must be set"
   Just outDir -> case (_configBackend config, _configPass config) of
     (Cxx, SelfContainedProgramCodegenPass) -> do
-      (ecxxPkgs, errs) <- runMgMonad $ compileToCxxPackages filePath
+      (ecxxPkgs, errs) <- runMgMonad $
+        compileToCxxPackages filePath equationsLocation programsToRewrite
+                             maxRewritingSteps
       case ecxxPkgs of
         Left () -> logErrs errs >> fail "compilation failed"
         Right cxxPkgs -> do
@@ -147,7 +165,9 @@ runCompileWith filePath config = case _configOutputDirectory config of
           createBasePath outDir
           mapM_ (writeCxxPackage outDir) cxxPkgsWithModules
     (Python, SelfContainedProgramCodegenPass) -> do
-      (epyPkgs, errs) <- runMgMonad $ compileToPyPackages filePath
+      (epyPkgs, errs) <- runMgMonad $
+        compileToPyPackages filePath equationsLocation programsToRewrite
+                            maxRewritingSteps
       case epyPkgs of
         Left () -> logErrs errs >> fail "compilation failed"
         Right pyPkgs -> do
@@ -223,10 +243,26 @@ runCompileWith filePath config = case _configOutputDirectory config of
 
 -- TODO(bchetioui): add rewriting step in compilation steps
 
-compileToCxxPackages :: FilePath -> MgMonad [CxxPackage]
-compileToCxxPackages filePath =
-  depAnalPass filePath >>= parsePass >>= checkPass >>= programCodegenCxxPass
+compileToCxxPackages :: FilePath
+                     -> [FullyQualifiedName]
+                     -> [FullyQualifiedName]
+                     -> Int
+                     -> MgMonad [CxxPackage]
+compileToCxxPackages filePath rewritingRulesLocation rewritingTargetsLocation
+                     maxRewritingSteps =
+  depAnalPass filePath >>= parsePass >>= checkPass
+  >>= rewritePass rewritingRulesLocation rewritingTargetsLocation
+                  maxRewritingSteps
+  >>= programCodegenCxxPass
 
-compileToPyPackages :: FilePath -> MgMonad [PyPackage]
-compileToPyPackages filePath =
-  depAnalPass filePath >>= parsePass >>= checkPass >>= programCodegenPyPass
+compileToPyPackages :: FilePath
+                    -> [FullyQualifiedName]
+                    -> [FullyQualifiedName]
+                    -> Int
+                    -> MgMonad [PyPackage]
+compileToPyPackages filePath rewritingRulesLocation rewritingTargetsLocation
+                    maxRewritingSteps =
+  depAnalPass filePath >>= parsePass >>= checkPass
+  >>= rewritePass rewritingRulesLocation rewritingTargetsLocation
+                  maxRewritingSteps
+  >>= programCodegenPyPass
