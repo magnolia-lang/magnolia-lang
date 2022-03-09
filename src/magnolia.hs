@@ -58,7 +58,8 @@ parseCompilerMode = mkInfo compilerMode
            (long "allow-overwrite" <>
             help "Allow overwriting target files in the output directory") <*>
       optEquationsLocation <*>
-      optProgramsToRewrite
+      optProgramsToRewrite <*>
+      optMaxRewritingSteps
 
     testConfig = Config <$>
       option (oneOf passOpts)
@@ -72,7 +73,8 @@ parseCompilerMode = mkInfo compilerMode
       optImportDir <*>
       pure WriteIfDoesNotExist <*>
       optEquationsLocation <*>
-      optProgramsToRewrite
+      optProgramsToRewrite <*>
+      optMaxRewritingSteps
 
     optBackend =
       option (oneOf backendOpts)
@@ -99,6 +101,12 @@ parseCompilerMode = mkInfo compilerMode
               short 'r' <>
               help ("Comma-separated list of fully qualified program names " <>
                     "on which to apply rewriting rules"))
+
+    optMaxRewritingSteps =
+      option auto
+             (long "max-rewriting-steps" <> value 10 <>
+              help ("How many rewriting steps the compiler is allowed to " <>
+                    "apply on each expression"))
 
     splitOn :: Eq a => a -> [a] -> [[a]]
     splitOn sep list = case list of

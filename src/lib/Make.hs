@@ -73,19 +73,21 @@ programCodegenPyPass = foldMAccumErrorsAndFail
 -- names on which to apply them, TODO: complete
 rewritePass :: [FullyQualifiedName]
             -> [FullyQualifiedName]
+            -> Int
             -> Env TcPackage
             -> MgMonad (Env TcPackage)
-rewritePass rewritingRulesLocations programsToRewriteLocations env = do
+rewritePass rewritingRulesLocations programsToRewriteLocations maxSteps env = do
   liftIO $ pprint rewritingRulesLocations
   rewritingModules <- mapM findModule rewritingRulesLocations
   programsToRewrite <- mapM findModule programsToRewriteLocations
-  let rewriteAll tgts rewModule = mapM (applyRewritingModule rewModule) tgts
+  let rewriteAll tgts rewModule =
+        mapM (applyRewritingModule rewModule maxSteps) tgts
   rewrittenProgramsWithNames <- zip programsToRewriteLocations <$>
     foldM rewriteAll programsToRewrite rewritingModules
   foldM (\env' (fqn, program) -> insertModule program env' fqn) env
         rewrittenProgramsWithNames
   where
-    applyRewritingModule :: TcModule -> TcModule -> MgMonad TcModule
+    applyRewritingModule :: TcModule -> Int -> TcModule -> MgMonad TcModule
     applyRewritingModule = runOptimizer
 
     findModule :: FullyQualifiedName -> MgMonad TcModule
