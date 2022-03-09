@@ -33,6 +33,7 @@ implementation PDE = {
     require function _/_(num: Float, den: Float): Float;
     require function one(): Float;
     require function two(): Float;
+    require function three(): Float;
 
     /* Scalar-Array ops */
     require function _+_(lhs: Float, rhs: Array): Array;
@@ -102,9 +103,9 @@ implementation PDE = {
                          obs c4: Float, obs ix: Index) {
         var zero = zero();
         var one = one(): Offset;
+        var two = two(): Axis;
 
-        var result = psi(ix, u + c4 * ( c3 * (((c1 * rotate(v, zero, -one) - c2 * u0) + c1 * rotate(v, zero, one)) + ((c1 * rotate(v, one(): Axis, -one) - c2 * u0) + c1 * rotate(v, one(): Axis, one)) + ((c1 * rotate(v, two(): Axis, -one) - c2 * u0) + c1 * rotate(v, two(): Axis, one))) - (u0 * ((-c0 * rotate(v, zero, -one)) + c0 * rotate(v, zero, one)) + u1 * ((-c0 * rotate(v, one(): Axis, -one)) + c0 * rotate(v, one(): Axis, one)) + u2 * ((-c0 * rotate(v, two(): Axis, -one)) + c0 * rotate(v, two(): Axis, one)))));
-
+        var result = psi(ix, u + c4 * (c3 * (c1 * (rotate(v, zero, -one) + rotate(v, zero, one) + rotate(v, one(): Axis, -one) + rotate(v, one(): Axis, one) + rotate(v, two, -one) + rotate(v, two, one)) - three() * c2 * u0) - c0 * ((rotate(v, zero, one) - rotate(v, zero, -one)) * u0 + (rotate(v, one(): Axis, one) - rotate(v, one(): Axis, -one)) * u1 + (rotate(v, two, one) - rotate(v, two, -one)) * u2)));
 
         call set(ix, u, result);
     }
@@ -114,6 +115,7 @@ program PDEProgram = {
     use PDE[-_ => unary_sub, _-_ => binary_sub];
     use ExtArrayOps[ one_float => one
                    , two_float => two
+                   , three_float => three
                    , zero_axis => zero
                    , one_axis => one
                    , two_axis => two
@@ -162,6 +164,7 @@ implementation ExtArrayOps = external C++ base.array_ops {
     function _/_(num: Float, den: Float): Float;
     function one_float(): Float;
     function two_float(): Float;
+    function three_float(): Float;
 
     /* Scalar-Array ops */
     function _+_(lhs: Float, rhs: Array): Array;

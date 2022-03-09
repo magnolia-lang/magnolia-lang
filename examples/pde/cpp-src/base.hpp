@@ -98,6 +98,10 @@ struct array_ops {
         return Float(2);
     }
 
+    inline Float three_float() {
+        return Float(3);
+    }
+
     struct Array {
         private:
             Float *m_content;
