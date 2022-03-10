@@ -81,6 +81,14 @@ concept MoaOps = {
     type Int;
     type Float;
 
+    function zero(): Int;
+    function one(): Int;
+
+    predicate _<_(a: Int, b: Int);
+
+    function get_shape_elem(a: Array, i: Int): Int;
+
+
     // psi
     function get(a: Array, ix: Index): Array;
     function get(a: PaddedArray, ix: Index): Array;
@@ -116,6 +124,14 @@ concept MoaOps = {
     function take(i: Int, a: Array): Array;
     function drop(i: Int, a: Array): Array;
 
+    /*
+    axiom catTakeDropAxiom(a: Array, i: Int)
+        guard i < get_shape_elem(a, zero(): Int) {
+
+        assert a == cat(take(i,a), drop(i,a));
+
+    }
+*/
     function circular_padl(a: Array, i: Int): PaddedArray;
     function circular_padl(a: PaddedArray, i: Int): PaddedArray;
 

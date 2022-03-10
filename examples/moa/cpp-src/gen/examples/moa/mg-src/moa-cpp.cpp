@@ -49,6 +49,10 @@ namespace moa_cpp {
 
 
 
+    BurgerProgram::_create_index4 BurgerProgram::create_index4;
+
+
+
     BurgerProgram::_drop_index_elem BurgerProgram::drop_index_elem;
 
 
@@ -112,6 +116,10 @@ namespace moa_cpp {
 
 
     BurgerProgram::_create_shape3 BurgerProgram::create_shape3;
+
+
+
+    BurgerProgram::_create_shape4 BurgerProgram::create_shape4;
 
 
 
@@ -309,6 +317,10 @@ namespace moa_cpp {
 
 
 
+    BurgerProgram::_fengshui_array BurgerProgram::fengshui_array;
+
+
+
     BurgerProgram::_get BurgerProgram::get;
 
 
@@ -459,6 +471,10 @@ namespace moa_cpp {
 
 
 
+    BurgerProgram::_snippetDNF BurgerProgram::snippetDNF;
+
+
+
     BurgerProgram::_take BurgerProgram::take;
 
 
@@ -474,6 +490,10 @@ namespace moa_cpp {
 
 
     BurgerProgram::_take_repeat BurgerProgram::take_repeat;
+
+
+
+    BurgerProgram::_test_array2_2_3_3 BurgerProgram::test_array2_2_3_3;
 
 
 
@@ -600,6 +620,10 @@ namespace moa_cpp {
 
 
 
+    Float64Arrays::_create_index4 Float64Arrays::create_index4;
+
+
+
     Float64Arrays::_drop_index_elem Float64Arrays::drop_index_elem;
 
 
@@ -659,6 +683,10 @@ namespace moa_cpp {
 
 
     Float64Arrays::_create_shape3 Float64Arrays::create_shape3;
+
+
+
+    Float64Arrays::_create_shape4 Float64Arrays::create_shape4;
 
 
 
@@ -848,6 +876,10 @@ namespace moa_cpp {
 
 
 
+    Float64Arrays::_fengshui_array Float64Arrays::fengshui_array;
+
+
+
     Float64Arrays::_get Float64Arrays::get;
 
 
@@ -1012,6 +1044,10 @@ namespace moa_cpp {
 
 
 
+    Float64Arrays::_test_array2_2_3_3 Float64Arrays::test_array2_2_3_3;
+
+
+
     Float64Arrays::_test_array3_2_2 Float64Arrays::test_array3_2_2;
 
 
@@ -1145,6 +1181,10 @@ namespace moa_cpp {
 
 
 
+    Int64Arrays::_create_shape4 Int64Arrays::create_shape4;
+
+
+
     Int64Arrays::_elem_int Int64Arrays::elem_int;
 
 
@@ -1208,6 +1248,10 @@ namespace moa_cpp {
 
 
     Int64Arrays::_create_index3 Int64Arrays::create_index3;
+
+
+
+    Int64Arrays::_create_index4 Int64Arrays::create_index4;
 
 
 
@@ -1383,6 +1427,10 @@ namespace moa_cpp {
 
 
 
+    Int64Arrays::_fengshui_array Int64Arrays::fengshui_array;
+
+
+
     Int64Arrays::_get Int64Arrays::get;
 
 
@@ -1552,6 +1600,10 @@ namespace moa_cpp {
 
 
     Int64Arrays::_take_repeat Int64Arrays::take_repeat;
+
+
+
+    Int64Arrays::_test_array2_2_3_3 Int64Arrays::test_array2_2_3_3;
 
 
 

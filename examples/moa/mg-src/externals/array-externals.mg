@@ -57,6 +57,8 @@ implementation ExtOps = external C++ base.array {
     function create_shape1(a: Int): Shape;
     function create_shape2(a: Int, b: Int): Shape;
     function create_shape3(a: Int, b: Int, c: Int): Shape;
+    function create_shape4(a: Int, b: Int, c: Int, d: Int): Shape;
+
 
     function create_partial_indices(a: Array, i: Int): IndexContainer;
     function create_total_indices(a: Array): IndexContainer;
@@ -64,6 +66,8 @@ implementation ExtOps = external C++ base.array {
     function create_index1(a: Int): Index;
     function create_index2(a: Int, b: Int): Index;
     function create_index3(a: Int, b: Int, c: Int): Index;
+    function create_index4(a: Int, b: Int, c: Int, d: Int): Index;
+
 
     // util
     function unwrap_scalar(a: Array): Element;
@@ -95,7 +99,10 @@ implementation ExtOps = external C++ base.array {
     function test_array3_2_2(): Array;
     function test_array3_2_2F(): Array;
     function test_array3_3(): Array;
+    function test_array2_2_3_3(): Array;
     function test_index(): Index;
+
+    function fengshui_array(): Array;
 
     // int/float operations
 

@@ -259,7 +259,7 @@ implementation TakeDrop = {
 
     predicate take_cond(a: Array, t: Int, ixc: IndexContainer, res: Array, c: Int) {
 
-        value c < abs(t);
+        value c < size(ixc);
 
     }
 
@@ -297,14 +297,13 @@ implementation TakeDrop = {
                      cond => take_cond,
                      repeat => take_repeat];
 
-    function take(t: Int, a: Array): Array = {
+    function take(t: Int, a: Array): Array
+        guard abs(t) <= get_shape_elem(a,zero():Int) + one(): Int {
 
         var drop_sh_0 = drop_shape_elem(a, zero(): Int);
 
         var res = create_array(cat_shape(create_shape1(abs(t)), drop_sh_0));
-
         var ixc = create_partial_indices(res, one(): Int);
-
         var c = zero(): Int;
 
         call take_repeat(a,t,ixc,res,c);
@@ -389,8 +388,13 @@ implementation Transformations = {
 
         } else {
 
-            var e1 = drop(sigma, get(a, ix));
-            var e2 = take(sigma, get(a, ix));
+            /*
+            NOTE:
+            in the padding paper, there is no abs on sigma,
+            looks like it should be
+            */
+            var e1 = drop(abs(sigma), get(a, ix));
+            var e2 = take(abs(sigma), get(a, ix));
 
             call set(res, ix, cat(e1,e2));
 
@@ -412,10 +416,9 @@ implementation Transformations = {
     function rotate(sigma: Int, j: Int, a: Array): Array
         guard j < dim(a) = {
 
-        // create partial indices of length j
-        var ix_space = create_partial_indices(a, j);
-
         var res = create_array(shape(a));
+        // create partial indices of length j
+        var ix_space = create_partial_indices(res, j);
 
         var c = zero(): Int;
 

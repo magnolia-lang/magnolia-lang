@@ -70,6 +70,7 @@ implementation Burger = {
         d2a = d2a + float_elem(c1) * shift_v;
 
 
+
         shift_v = rotate(-one(): Int, one(): Int, v);
         var d1b = float_elem(-c0) * shift_v;
         var d2b = float_elem(c1) * shift_v - float_elem(c2) * u0;
@@ -115,6 +116,19 @@ implementation Burger = {
         call snippet(u1,v1,v0,v1,v2,c0,c1,c2,c3,c4);
         call snippet(u2,v2,v0,v1,v2,c0,c1,c2,c3,c4);
 
+    }
+
+    procedure snippetDNF(upd u: Array, obs v: Array,
+                         obs u0: Array, obs u1: Array,
+                         upd u2: Array, obs c0: Float, obs c1: Float,
+                         obs c2: Float, obs c3: Float,
+                         obs c4: Float, obs ix: Index) {
+
+        var s0 = get_shape_elem(v, zero(): Int);
+        var s1 = get_shape_elem(v, one(): Int);
+        var s2 = get_shape_elem(v, one(): Int + one(): Int);
+
+        //u = get(u, ix) + c4*(c3*(c1*))
     }
 
 }

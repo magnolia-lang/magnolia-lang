@@ -34,6 +34,24 @@ int main(int argc, char **argv) {
     auto test2 = P.get(a, P.create_index3(1,1,1));
     std::cout << P.unwrap_scalar(test2) << std::endl;
 
+    std::cout << std::endl;
+
+    std::cout << "4d array access testing: " << std::endl;
+    auto fourDtest = P.test_array2_2_3_3();
+    P.print_array(fourDtest);
+    P.print_shape(P.shape(fourDtest));
+    std::cout << "Total ix: access <1 1 2 0>: expect 33:" << std::endl;
+    auto fourDtotalix = P.create_index4(1,1,2,0);
+    P.print_array(P.get(fourDtest, fourDtotalix));
+    std::cout << "Partial ix: access <1 1>: expect [[27 28 29] [30 31 32] [33 34 35]]:" << std::endl;
+    auto fourDpartialix = P.create_index2(1,1);
+    auto fourDpartialA = P.get(fourDtest, fourDpartialix);
+    P.print_array(fourDpartialA);
+    P.print_shape(P.shape(fourDpartialA));
+
+
+    std::cout << std::endl;
+
     std::cout << "TEST PARTIAL INDEX, ACCESS <0>: expect 2 5 7 8" << std::endl;
 
     auto subarray = P.get(a, P.create_index1(0));
@@ -202,16 +220,34 @@ int main(int argc, char **argv) {
     std::cout << "reverse(a):" << std::endl;
     P.print_array(P.reverse(trans_array));
 
+    std::cout << "rotate(1,0,a):, dim(a) = 2" << std::endl;
+    P.print_array(P.rotate(1,0,trans_array));
+    std::cout << "rotate(2,0,a):, dim(a) = 2" << std::endl;
+    P.print_array(P.rotate(2,0,trans_array));
+    std::cout << "rotate(3,0,a):, dim(a) = 2" << std::endl;
+    P.print_array(P.rotate(3,0,trans_array));
     std::cout << "rotate(1,1,a):, dim(a) = 2" << std::endl;
     P.print_array(P.rotate(1,1,trans_array));
-    std::cout << "rotate(1,2,a):, dim(a) = 2" << std::endl;
-    P.print_array(P.rotate(1,2,trans_array));
     std::cout << "rotate(2,1,a):, dim(a) = 2" << std::endl;
     P.print_array(P.rotate(2,1,trans_array));
+    std::cout << "rotate(3,1,a):, dim(a) = 2" << std::endl;
+    P.print_array(P.rotate(3,1,trans_array));
+    std::cout << "rotate(-1,0,a):, dim(a) = 2" << std::endl;
+    P.print_array(P.rotate(-1,0,trans_array));
+    std::cout << "rotate(-2,0,a):, dim(a) = 2" << std::endl;
+    P.print_array(P.rotate(-2,0,trans_array));
+    std::cout << "rotate(-3,0,a):, dim(a) = 2" << std::endl;
+    P.print_array(P.rotate(-3,0,trans_array));
     std::cout << "rotate(-1,1,a):, dim(a) = 2" << std::endl;
     P.print_array(P.rotate(-1,1,trans_array));
 
     auto trans_array2 = P.test_array3_2_2();
+    std::cout << "rotate(1,0,a):, dim(a) = 3" << std::endl;
+    P.print_array(trans_array2);
+    P.print_array(P.rotate(1,0,trans_array2));
+    std::cout << "rotate(2,0,a):, dim(a) = 3" << std::endl;
+    P.print_array(trans_array2);
+    P.print_array(P.rotate(2,0,trans_array2));
     std::cout << "rotate(2,1,a):, dim(a) = 3" << std::endl;
     P.print_array(trans_array2);
     P.print_array(P.rotate(2,1,trans_array2));
@@ -334,23 +370,13 @@ int main(int argc, char **argv) {
     P.print_shape(P.shape(reshaped));
 
     std::cout << "PDE step test" << std::endl;
-    auto a1 = B.test_array3_3();
-    auto a2 = B.test_array3_3();
-    auto a3 = B.test_array3_3();
+    auto a1 = B.fengshui_array();
+    auto a2 = B.fengshui_array();
+    auto a3 = B.fengshui_array();
     B.bstep(a1,a2,a3,1,1.0,1.0);
 
     B.print_array(a1);
     B.print_array(a2);
     B.print_array(a3);
-
-
-    auto b1 = B.test_array3_2_2();
-    auto b2 = B.test_array3_2_2();
-    auto b3 = B.test_array3_2_2();
-    B.bstep(b1,b2,b3,1,1.0,1.0);
-    B.print_array(b1);
-    B.print_array(b2);
-    B.print_array(b3);
-
 
 }

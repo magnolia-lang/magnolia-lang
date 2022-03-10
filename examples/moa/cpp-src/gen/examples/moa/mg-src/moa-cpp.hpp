@@ -92,6 +92,13 @@ public:
     };
 
     static BurgerProgram::_create_index3 create_index3;
+    struct _create_index4 {
+        inline BurgerProgram::Index operator()(const BurgerProgram::Int& a, const BurgerProgram::Int& b, const BurgerProgram::Int& c, const BurgerProgram::Int& d) {
+            return __array.create_index4(a, b, c, d);
+        };
+    };
+
+    static BurgerProgram::_create_index4 create_index4;
     struct _drop_index_elem {
         inline BurgerProgram::Index operator()(const BurgerProgram::Index& ix, const BurgerProgram::Int& i) {
             return __array.drop_index_elem(ix, i);
@@ -220,6 +227,13 @@ public:
     };
 
     static BurgerProgram::_create_shape3 create_shape3;
+    struct _create_shape4 {
+        inline BurgerProgram::Shape operator()(const BurgerProgram::Int& a, const BurgerProgram::Int& b, const BurgerProgram::Int& c, const BurgerProgram::Int& d) {
+            return __array.create_shape4(a, b, c, d);
+        };
+    };
+
+    static BurgerProgram::_create_shape4 create_shape4;
     struct _padded_drop_shape_elem {
         inline BurgerProgram::Shape operator()(const BurgerProgram::PaddedArray& a, const BurgerProgram::Int& i) {
             return __array.padded_drop_shape_elem(a, i);
@@ -756,6 +770,13 @@ public:
     };
 
     static BurgerProgram::_drop_shape_elem drop_shape_elem;
+    struct _fengshui_array {
+        inline BurgerProgram::Array operator()() {
+            return __array.fengshui_array();
+        };
+    };
+
+    static BurgerProgram::_fengshui_array fengshui_array;
     struct _get {
         inline BurgerProgram::Array operator()(const BurgerProgram::Array& a, const BurgerProgram::Int& ix) {
             return __array.get(a, ix);
@@ -996,8 +1017,8 @@ public:
     static BurgerProgram::_reverse_repeat reverse_repeat;
     struct _rotate {
         inline BurgerProgram::Array operator()(const BurgerProgram::Int& sigma, const BurgerProgram::Int& j, const BurgerProgram::Array& a) {
-            BurgerProgram::IndexContainer ix_space = BurgerProgram::create_partial_indices(a, j);
             BurgerProgram::Array res = BurgerProgram::create_array(BurgerProgram::shape(a));
+            BurgerProgram::IndexContainer ix_space = BurgerProgram::create_partial_indices(res, j);
             BurgerProgram::Int c = BurgerProgram::zero.operator()<Int>();
             BurgerProgram::rotate_repeat(a, ix_space, sigma, res, c);
             return res;
@@ -1024,8 +1045,8 @@ public:
             }
             else
             {
-                BurgerProgram::Array e1 = BurgerProgram::drop(sigma, BurgerProgram::get(a, ix));
-                BurgerProgram::Array e2 = BurgerProgram::take(sigma, BurgerProgram::get(a, ix));
+                BurgerProgram::Array e1 = BurgerProgram::drop(BurgerProgram::abs(sigma), BurgerProgram::get(a, ix));
+                BurgerProgram::Array e2 = BurgerProgram::take(BurgerProgram::abs(sigma), BurgerProgram::get(a, ix));
                 BurgerProgram::set(res, ix, BurgerProgram::cat(e1, e2));
             }
             c = BurgerProgram::binary_add(c, BurgerProgram::one.operator()<Int>());
@@ -1113,6 +1134,15 @@ public:
     };
 
     static BurgerProgram::_snippet snippet;
+    struct _snippetDNF {
+        inline void operator()(BurgerProgram::Array& u, const BurgerProgram::Array& v, const BurgerProgram::Array& u0, const BurgerProgram::Array& u1, BurgerProgram::Array& u2, const BurgerProgram::Float& c0, const BurgerProgram::Float& c1, const BurgerProgram::Float& c2, const BurgerProgram::Float& c3, const BurgerProgram::Float& c4, const BurgerProgram::Index& ix) {
+            BurgerProgram::Int s0 = BurgerProgram::get_shape_elem(v, BurgerProgram::zero.operator()<Int>());
+            BurgerProgram::Int s1 = BurgerProgram::get_shape_elem(v, BurgerProgram::one.operator()<Int>());
+            BurgerProgram::Int s2 = BurgerProgram::get_shape_elem(v, BurgerProgram::binary_add(BurgerProgram::one.operator()<Int>(), BurgerProgram::one.operator()<Int>()));
+        };
+    };
+
+    static BurgerProgram::_snippetDNF snippetDNF;
     struct _take {
         inline BurgerProgram::Array operator()(const BurgerProgram::Int& t, const BurgerProgram::Array& a) {
             BurgerProgram::Shape drop_sh_0 = BurgerProgram::drop_shape_elem(a, BurgerProgram::zero.operator()<Int>());
@@ -1146,7 +1176,7 @@ public:
     static BurgerProgram::_take_body take_body;
     struct _take_cond {
         inline bool operator()(const BurgerProgram::Array& a, const BurgerProgram::Int& t, const BurgerProgram::IndexContainer& ixc, const BurgerProgram::Array& res, const BurgerProgram::Int& c) {
-            return BurgerProgram::lt(c, BurgerProgram::abs(t));
+            return BurgerProgram::lt(c, BurgerProgram::size(ixc));
         };
     };
 
@@ -1161,6 +1191,13 @@ public:
     };
 
     static BurgerProgram::_take_repeat take_repeat;
+    struct _test_array2_2_3_3 {
+        inline BurgerProgram::Array operator()() {
+            return __array.test_array2_2_3_3();
+        };
+    };
+
+    static BurgerProgram::_test_array2_2_3_3 test_array2_2_3_3;
     struct _test_array3_2_2 {
         inline BurgerProgram::Array operator()() {
             return __array.test_array3_2_2();
@@ -1414,6 +1451,13 @@ public:
     };
 
     static Float64Arrays::_create_index3 create_index3;
+    struct _create_index4 {
+        inline Float64Arrays::Index operator()(const Float64Arrays::Int& a, const Float64Arrays::Int& b, const Float64Arrays::Int& c, const Float64Arrays::Int& d) {
+            return __array.create_index4(a, b, c, d);
+        };
+    };
+
+    static Float64Arrays::_create_index4 create_index4;
     struct _drop_index_elem {
         inline Float64Arrays::Index operator()(const Float64Arrays::Index& ix, const Float64Arrays::Int& i) {
             return __array.drop_index_elem(ix, i);
@@ -1535,6 +1579,13 @@ public:
     };
 
     static Float64Arrays::_create_shape3 create_shape3;
+    struct _create_shape4 {
+        inline Float64Arrays::Shape operator()(const Float64Arrays::Int& a, const Float64Arrays::Int& b, const Float64Arrays::Int& c, const Float64Arrays::Int& d) {
+            return __array.create_shape4(a, b, c, d);
+        };
+    };
+
+    static Float64Arrays::_create_shape4 create_shape4;
     struct _padded_drop_shape_elem {
         inline Float64Arrays::Shape operator()(const Float64Arrays::PaddedArray& a, const Float64Arrays::Int& i) {
             return __array.padded_drop_shape_elem(a, i);
@@ -2039,6 +2090,13 @@ public:
     };
 
     static Float64Arrays::_drop_shape_elem drop_shape_elem;
+    struct _fengshui_array {
+        inline Float64Arrays::Array operator()() {
+            return __array.fengshui_array();
+        };
+    };
+
+    static Float64Arrays::_fengshui_array fengshui_array;
     struct _get {
         inline Float64Arrays::Array operator()(const Float64Arrays::PaddedArray& a, const Float64Arrays::Index& ix) {
             return __array.get(a, ix);
@@ -2279,8 +2337,8 @@ public:
     static Float64Arrays::_reverse_repeat reverse_repeat;
     struct _rotate {
         inline Float64Arrays::Array operator()(const Float64Arrays::Int& sigma, const Float64Arrays::Int& j, const Float64Arrays::Array& a) {
-            Float64Arrays::IndexContainer ix_space = Float64Arrays::create_partial_indices(a, j);
             Float64Arrays::Array res = Float64Arrays::create_array(Float64Arrays::shape(a));
+            Float64Arrays::IndexContainer ix_space = Float64Arrays::create_partial_indices(res, j);
             Float64Arrays::Int c = Float64Arrays::zero.operator()<Int>();
             Float64Arrays::rotate_repeat(a, ix_space, sigma, res, c);
             return res;
@@ -2307,8 +2365,8 @@ public:
             }
             else
             {
-                Float64Arrays::Array e1 = Float64Arrays::drop(sigma, Float64Arrays::get(a, ix));
-                Float64Arrays::Array e2 = Float64Arrays::take(sigma, Float64Arrays::get(a, ix));
+                Float64Arrays::Array e1 = Float64Arrays::drop(Float64Arrays::abs(sigma), Float64Arrays::get(a, ix));
+                Float64Arrays::Array e2 = Float64Arrays::take(Float64Arrays::abs(sigma), Float64Arrays::get(a, ix));
                 Float64Arrays::set(res, ix, Float64Arrays::cat(e1, e2));
             }
             c = Float64Arrays::binary_add(c, Float64Arrays::one.operator()<Int>());
@@ -2402,7 +2460,7 @@ public:
     static Float64Arrays::_take_body take_body;
     struct _take_cond {
         inline bool operator()(const Float64Arrays::Array& a, const Float64Arrays::Int& t, const Float64Arrays::IndexContainer& ixc, const Float64Arrays::Array& res, const Float64Arrays::Int& c) {
-            return Float64Arrays::lt(c, Float64Arrays::abs(t));
+            return Float64Arrays::lt(c, Float64Arrays::size(ixc));
         };
     };
 
@@ -2417,6 +2475,13 @@ public:
     };
 
     static Float64Arrays::_take_repeat take_repeat;
+    struct _test_array2_2_3_3 {
+        inline Float64Arrays::Array operator()() {
+            return __array.test_array2_2_3_3();
+        };
+    };
+
+    static Float64Arrays::_test_array2_2_3_3 test_array2_2_3_3;
     struct _test_array3_2_2 {
         inline Float64Arrays::Array operator()() {
             return __array.test_array3_2_2();
@@ -2695,6 +2760,13 @@ public:
     };
 
     static Int64Arrays::_create_shape3 create_shape3;
+    struct _create_shape4 {
+        inline Int64Arrays::Shape operator()(const Int64Arrays::Int& a, const Int64Arrays::Int& b, const Int64Arrays::Int& c, const Int64Arrays::Int& d) {
+            return __array.create_shape4(a, b, c, d);
+        };
+    };
+
+    static Int64Arrays::_create_shape4 create_shape4;
     struct _elem_int {
         inline Int64Arrays::Int operator()(const Int64Arrays::Int64& a) {
             return __array.elem_int(a);
@@ -2826,6 +2898,13 @@ public:
     };
 
     static Int64Arrays::_create_index3 create_index3;
+    struct _create_index4 {
+        inline Int64Arrays::Index operator()(const Int64Arrays::Int& a, const Int64Arrays::Int& b, const Int64Arrays::Int& c, const Int64Arrays::Int& d) {
+            return __array.create_index4(a, b, c, d);
+        };
+    };
+
+    static Int64Arrays::_create_index4 create_index4;
     struct _drop_index_elem {
         inline Int64Arrays::Index operator()(const Int64Arrays::Index& ix, const Int64Arrays::Int& i) {
             return __array.drop_index_elem(ix, i);
@@ -3295,6 +3374,13 @@ public:
     };
 
     static Int64Arrays::_drop_shape_elem drop_shape_elem;
+    struct _fengshui_array {
+        inline Int64Arrays::Array operator()() {
+            return __array.fengshui_array();
+        };
+    };
+
+    static Int64Arrays::_fengshui_array fengshui_array;
     struct _get {
         inline Int64Arrays::Array operator()(const Int64Arrays::Array& a, const Int64Arrays::Int& ix) {
             return __array.get(a, ix);
@@ -3549,8 +3635,8 @@ public:
     static Int64Arrays::_reverse_repeat reverse_repeat;
     struct _rotate {
         inline Int64Arrays::Array operator()(const Int64Arrays::Int& sigma, const Int64Arrays::Int& j, const Int64Arrays::Array& a) {
-            Int64Arrays::IndexContainer ix_space = Int64Arrays::create_partial_indices(a, j);
             Int64Arrays::Array res = Int64Arrays::create_array(Int64Arrays::shape(a));
+            Int64Arrays::IndexContainer ix_space = Int64Arrays::create_partial_indices(res, j);
             Int64Arrays::Int c = Int64Arrays::zero.operator()<Int>();
             Int64Arrays::rotate_repeat(a, ix_space, sigma, res, c);
             return res;
@@ -3577,8 +3663,8 @@ public:
             }
             else
             {
-                Int64Arrays::Array e1 = Int64Arrays::drop(sigma, Int64Arrays::get(a, ix));
-                Int64Arrays::Array e2 = Int64Arrays::take(sigma, Int64Arrays::get(a, ix));
+                Int64Arrays::Array e1 = Int64Arrays::drop(Int64Arrays::abs(sigma), Int64Arrays::get(a, ix));
+                Int64Arrays::Array e2 = Int64Arrays::take(Int64Arrays::abs(sigma), Int64Arrays::get(a, ix));
                 Int64Arrays::set(res, ix, Int64Arrays::cat(e1, e2));
             }
             c = Int64Arrays::binary_add(c, Int64Arrays::one.operator()<Int>());
@@ -3672,7 +3758,7 @@ public:
     static Int64Arrays::_take_body take_body;
     struct _take_cond {
         inline bool operator()(const Int64Arrays::Array& a, const Int64Arrays::Int& t, const Int64Arrays::IndexContainer& ixc, const Int64Arrays::Array& res, const Int64Arrays::Int& c) {
-            return Int64Arrays::lt(c, Int64Arrays::abs(t));
+            return Int64Arrays::lt(c, Int64Arrays::size(ixc));
         };
     };
 
@@ -3687,6 +3773,13 @@ public:
     };
 
     static Int64Arrays::_take_repeat take_repeat;
+    struct _test_array2_2_3_3 {
+        inline Int64Arrays::Array operator()() {
+            return __array.test_array2_2_3_3();
+        };
+    };
+
+    static Int64Arrays::_test_array2_2_3_3 test_array2_2_3_3;
     struct _test_array3_2_2 {
         inline Int64Arrays::Array operator()() {
             return __array.test_array3_2_2();
