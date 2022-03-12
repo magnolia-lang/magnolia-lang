@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstring>
 #include <functional>
+#include <iostream>
 #include <utility>
 #include <vector>
 
@@ -122,8 +123,10 @@ struct array_ops {
         public:
             Array(const Shape &shape, Float *content) : m_shape(shape) {
                 auto array_size = shape.index_space_size();
-                this->m_content = new Float[array_size];
-                memcpy(this->m_content, content, array_size * sizeof(Float));
+                // TODO: not this, lol
+                this->m_content = content;
+                //this->m_content = new Float[array_size];
+                //memcpy(this->m_content, content, array_size * sizeof(Float));
             }
 
             Array(const Shape &shape) : m_shape(shape) {
@@ -170,17 +173,99 @@ struct array_ops {
         public:
             PaddedArray(const Array &array) : m_shape(array.shape()) {
                 auto array_size = this->m_shape.index_space_size();
+                // TODO: not this lol
+                //this->m_content = array.unsafe_content();
                 this->m_content = new Float[array_size];
                 memcpy(this->m_content, array.unsafe_content(), array_size * sizeof(Float));
+                
+
+                for (auto shape_it = this->m_shape.components.begin();
+                     shape_it != this->m_shape.components.end(); ++shape_it) {
+                    this->m_bounds.push_back(std::make_pair(0, *shape_it));
+                }
             }
 
             Array outer() const {
                 return Array(this->m_shape, this->m_content);
             }
 
+            std::vector<std::pair<size_t, size_t>> bounds() const {
+                return this->m_bounds;
+            }
+
+            Float *unsafe_content() const {
+                return this->m_content;
+            }
+
+            void cpadl(const Axis &axis) {
+                if (axis.value != 0) { return; } // TODO: this is not impl
+
+                auto old_array_size = this->m_shape.index_space_size();
+                auto one_stride = old_array_size / this->m_shape.components.front();
+                auto new_array_size = old_array_size + one_stride;
+
+                Float *new_content = new Float[new_array_size];
+
+                auto bi = this->m_bounds.front().first,
+                     ei = this->m_bounds.front().second,
+                     si = this->m_shape.components.front();
+                //std::cout << bi + si - ei << std::endl;
+                /*std::cout << bi + si - ei << std::endl;
+                std::cout << old_array_size << std::endl;
+                std::cout << new_array_size << std::endl;
+                std::cout << one_stride << std::endl;
+                std::cout << sizeof(Float) << std::endl;*/
+                memcpy(new_content, this->m_content + (ei - bi - 1) * one_stride, one_stride * sizeof(Float));
+                memcpy(new_content + one_stride, this->m_content, old_array_size * sizeof(Float));
+                
+                this->m_shape.components.front() += 1;
+                this->m_bounds.front().first += 1;
+                this->m_bounds.front().second += 1;
+                this->m_content = new_content; 
+            }
+
+            void cpadr(const Axis &axis) {
+                if (axis.value != 0) { return; } // TODO: this is not impl
+
+                auto old_array_size = this->m_shape.index_space_size();
+                auto one_stride = old_array_size / this->m_shape.components.front();
+                auto new_array_size = old_array_size + one_stride;
+
+                Float *new_content = new Float[new_array_size];
+
+                auto bi = this->m_bounds.front().first,
+                     ei = this->m_bounds.front().second,
+                     si = this->m_shape.components.front();
+                //std::cout << bi + si - ei << std::endl;
+                /*std::cout << bi + si - ei << std::endl;
+                std::cout << old_array_size << std::endl;
+                std::cout << new_array_size << std::endl;
+                std::cout << one_stride << std::endl;
+                std::cout << sizeof(Float) << std::endl;*/
+                memcpy(new_content, this->m_content, old_array_size * sizeof(Float));
+                memcpy(new_content + old_array_size,
+                       this->m_content + (bi + si - ei) * one_stride, // * sizeof(Float),
+                       one_stride * sizeof(Float));
+                
+                this->m_shape.components.front() += 1;
+                this->m_content = new_content; 
+            }
     };
 
+
     PaddedArray asPadded(const Array &array) { return PaddedArray(array); }
+
+    PaddedArray cpadl(const PaddedArray &array, const Axis &axis) {
+        auto result = array;
+        result.cpadl(axis);
+        return result;
+    }
+
+    PaddedArray cpadr(const PaddedArray &array, const Axis &axis) {
+        auto result = array;
+        result.cpadr(axis);
+        return result;
+    }
 
     /* Float ops */
     inline Float unary_sub(Float f) {
@@ -283,14 +368,16 @@ struct array_ops {
         return out_array;
     }
 
-    inline Array forall_ix_padded(const Shape &out_shape,
-                                  std::vector<std::pair<size_t, size_t>> bounds,
+    inline Array forall_ix_padded(std::vector<std::pair<size_t, size_t>> bounds,
                                   auto &fn) {
         std::vector<size_t> offsets;
+        std::vector<size_t> shape_components;
         for (auto bounds_it = bounds.begin(); bounds_it != bounds.end(); ++bounds_it) {
             offsets.push_back((*bounds_it).first);
+            shape_components.push_back((*bounds_it).second - (*bounds_it).first);
         }
 
+        auto out_shape = Shape(shape_components);
         auto out_array = Array(out_shape);
         for (size_t linear_ix = 0; linear_ix < out_shape.index_space_size();
              ++linear_ix) {
@@ -346,6 +433,7 @@ struct forall_ops {
     typedef _Float Float;
     typedef _Index Index;
     typedef _Offset Offset;
+    typedef _PaddedArray PaddedArray;
 
     static _snippet_ix snippet_ix;
 
@@ -357,6 +445,18 @@ struct forall_ops {
             return snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4, ix);
         };
         return _array_ops.forall_ix(u.shape(), fn);
+    }
+
+    Array forall_snippet_ix_padded(const PaddedArray &u, const PaddedArray &v,
+                            const PaddedArray &u0, const PaddedArray &u1,
+                            const PaddedArray &u2, const Float &c0,
+                            const Float &c1, const Float &c2, const Float &c3,
+                            const Float &c4) {
+        auto fn = [&](const Index &ix) {
+            return snippet_ix(u.outer(), v.outer(), u0.outer(), u1.outer(),
+                              u2.outer(), c0, c1, c2, c3, c4, ix);
+        };
+        return _array_ops.forall_ix_padded(u.bounds(), fn);
     }
 };
 

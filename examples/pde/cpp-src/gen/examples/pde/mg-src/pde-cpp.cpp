@@ -25,6 +25,14 @@ namespace pde_cpp {
 
 
 
+    PDEProgram::_cpadl PDEProgram::cpadl;
+
+
+
+    PDEProgram::_cpadr PDEProgram::cpadr;
+
+
+
     PDEProgram::_zero PDEProgram::zero;
 
 
@@ -46,6 +54,10 @@ namespace pde_cpp {
 
 
     PDEProgram::_forall_snippet_ix PDEProgram::forall_snippet_ix;
+
+
+
+    PDEProgram::_forall_snippet_ix_padded PDEProgram::forall_snippet_ix_padded;
 
 
 

@@ -166,12 +166,11 @@ implementation ExtExtendMissingBypass = external C++ base.forall_ops {
                                c0: Float, c1: Float, c2: Float,
                                c3: Float, c4: Float): Array;
 
-    // function forall_snippet_ix_padded(u: PaddedArray, v: PaddedArray,
-    //                                   u0: PaddedArray, u1: PaddedArray,
-    //                                   u2: PaddedArray,
-    //                                   c0: Float, c1: Float, c2: Float,
-    //                                   c3: Float, c4: Float): Array;
-
+    function forall_snippet_ix_padded(u: PaddedArray, v: PaddedArray,
+                                      u0: PaddedArray, u1: PaddedArray,
+                                      u2: PaddedArray,
+                                      c0: Float, c1: Float, c2: Float,
+                                      c3: Float, c4: Float): Array;
 }
 
 implementation ExtArrayOps = external C++ base.array_ops {
@@ -222,8 +221,8 @@ implementation ExtArrayOps = external C++ base.array_ops {
     type PaddedArray;
 
     function asPadded(a: Array): PaddedArray;
-    // function cpadr(a: PaddedArray, axis: Axis): PaddedArray;
-    // function cpadl(a: PaddedArray, axis: Axis): PaddedArray;
+    function cpadr(a: PaddedArray, axis: Axis): PaddedArray;
+    function cpadl(a: PaddedArray, axis: Axis): PaddedArray;
     // function inner(a: PaddedArray): Array;
 }
 
@@ -285,6 +284,45 @@ signature OFRewritingTypesAndOps = {
     function unpadr(a: PaddedArray, axis: Axis): PaddedArray;
 
     function axis(): Axis;
+
+    type Float;
+    function forall_snippet_ix_padded(u: PaddedArray, v: PaddedArray,
+                                      u0: PaddedArray, u1: PaddedArray,
+                                      u2: PaddedArray,
+                                      c0: Float, c1: Float, c2: Float,
+                                      c3: Float, c4: Float): Array;
+
+    function forall_snippet_ix(u: Array, v: Array,
+                               u0: Array, u1: Array, u2: Array,
+                               c0: Float, c1: Float, c2: Float,
+                               c3: Float, c4: Float): Array;
+}
+
+concept OFIntroducePaddingInArguments = {
+    use OFRewritingTypesAndOps;
+
+    axiom toPaddingOpsRule(u: Array, v: Array,
+                           u0: Array, u1: Array, u2: Array,
+                           c0: Float, c1: Float, c2: Float,
+                           c3: Float, c4: Float) {
+        assert forall_snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4) ==
+               forall_snippet_ix_padded(asPadded(u), asPadded(v),
+                                        asPadded(u0), asPadded(u1),
+                                        asPadded(u2), c0, c1, c2, c3, c4);
+    }
+}
+
+concept OFAddLeftPaddingInArgumentsGeneralAxis = {
+    use OFRewritingTypesAndOps;
+    axiom addLeftPaddingInArgumentsGeneral(
+            u: PaddedArray, v: PaddedArray, u0: PaddedArray,
+            u1: PaddedArray, u2: PaddedArray,
+            c0: Float, c1: Float, c2: Float, c3: Float, c4: Float) {
+        assert forall_snippet_ix_padded(u, v, u0, u1, u2, c0, c1, c2, c3, c4) ==
+               forall_snippet_ix_padded(cpadl(u, axis()), cpadl(v, axis()),
+                    cpadl(u0, axis()), cpadl(u1, axis()), cpadl(u2, axis()),
+                    c0, c1, c2, c3, c4);
+    }
 }
 
 concept OFIntroducePaddingRule = {
@@ -301,21 +339,18 @@ concept OFAddLeftPaddingRuleGeneralAxis = {
     }
 }
 
-concept OFAddLeftPadding0Axis = OFAddLeftPaddingRuleGeneralAxis[ axis => zero ];
-concept OFAddLeftPadding1Axis = OFAddLeftPaddingRuleGeneralAxis[ axis => one ];
-concept OFAddLeftPadding2Axis = OFAddLeftPaddingRuleGeneralAxis[ axis => two ];
+concept OFAddLeftPadding0Axis =
+    OFAddLeftPaddingInArgumentsGeneralAxis[ axis => zero ];
+concept OFAddLeftPadding1Axis =
+    OFAddLeftPaddingInArgumentsGeneralAxis[ axis => one ];
+concept OFAddLeftPadding2Axis =
+    OFAddLeftPaddingInArgumentsGeneralAxis[ axis => two ];
 
-concept OFAddRightPadding0Axis = OFAddLeftPadding0Axis[ cpadl => cpadr
-                                                      , unpadl => unpadr
-                                                      ];
-concept OFAddRightPadding1Axis = OFAddLeftPadding1Axis[ cpadl => cpadr
-                                                      , unpadl => unpadr
-                                                      ];
-concept OFAddRightPadding2Axis = OFAddLeftPadding2Axis[ cpadl => cpadr
-                                                      , unpadl => unpadr
-                                                      ];
+concept OFAddRightPadding0Axis = OFAddLeftPadding0Axis[ cpadl => cpadr ];
+concept OFAddRightPadding1Axis = OFAddLeftPadding1Axis[ cpadl => cpadr ];
+concept OFAddRightPadding2Axis = OFAddLeftPadding2Axis[ cpadl => cpadr ];
 
-// TODO: enfore operational compatibility through satisfactions only
+// TODO: enforce signature compatibility through satisfactions only
 // TODO: do not break procedure argument modes when switching stuff (can not
 // make rvalue lvalues)
 concept OFRemoveLeftoverPadding = {
@@ -332,57 +367,31 @@ concept OFRemoveLeftoverPadding = {
     }
 }
 
-concept OFIntroducePaddingInArguments = {
-    use OFRewritingTypesAndOps;
-    type Float;
+// concept OFExtractInnerRule = {
+//     use OFRewritingTypesAndOps;
+//     type Float;
 
-    function forall_snippet_ix_padded(u: PaddedArray, v: PaddedArray,
-                                      u0: PaddedArray, u1: PaddedArray,
-                                      u2: PaddedArray,
-                                      c0: Float, c1: Float, c2: Float,
-                                      c3: Float, c4: Float): Array;
+//     function forall_snippet_ix_padded(u: PaddedArray, v: PaddedArray,
+//                                       u0: PaddedArray, u1: PaddedArray,
+//                                       u2: PaddedArray,
+//                                       c0: Float, c1: Float, c2: Float,
+//                                       c3: Float, c4: Float): PaddedArray;
 
-    function forall_snippet_ix(u: Array, v: Array,
-                               u0: Array, u1: Array, u2: Array,
-                               c0: Float, c1: Float, c2: Float,
-                               c3: Float, c4: Float): Array;
+//     function forall_snippet_ix(u: Array, v: Array,
+//                                u0: Array, u1: Array, u2: Array,
+//                                c0: Float, c1: Float, c2: Float,
+//                                c3: Float, c4: Float): Array;
 
-    axiom toPaddingOpsRule(u: Array, v: Array,
-                           u0: Array, u1: Array, u2: Array,
-                           c0: Float, c1: Float, c2: Float,
-                           c3: Float, c4: Float) {
-        assert forall_snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4) ==
-               forall_snippet_ix_padded(asPadded(u), asPadded(v),
-                                        asPadded(u0), asPadded(u1),
-                                        asPadded(u2), c0, c1, c2, c3, c4);
-    }
-}
-
-concept OFExtractInnerRule = {
-    use OFRewritingTypesAndOps;
-    type Float;
-
-    function forall_snippet_ix_padded(u: PaddedArray, v: PaddedArray,
-                                      u0: PaddedArray, u1: PaddedArray,
-                                      u2: PaddedArray,
-                                      c0: Float, c1: Float, c2: Float,
-                                      c3: Float, c4: Float): PaddedArray;
-
-    function forall_snippet_ix(u: Array, v: Array,
-                               u0: Array, u1: Array, u2: Array,
-                               c0: Float, c1: Float, c2: Float,
-                               c3: Float, c4: Float): Array;
-
-    axiom extractInnerRule(u: PaddedArray, v: PaddedArray, u0: PaddedArray,
-                           u1: PaddedArray, u2: PaddedArray,
-                           c0: Float, c1: Float, c2: Float, c3: Float,
-                           c4: Float, axis: Axis) {
-        assert forall_snippet_ix(inner(u), inner(v), inner(u0), inner(u1),
-                                 inner(u2), c0, c1, c2, c3, c4) ==
-               inner(forall_snippet_ix_padded(u, v, u0, u1, u2,
-                                              c0, c1, c2, c3, c4));
-    }
-}
+//     axiom extractInnerRule(u: PaddedArray, v: PaddedArray, u0: PaddedArray,
+//                            u1: PaddedArray, u2: PaddedArray,
+//                            c0: Float, c1: Float, c2: Float, c3: Float,
+//                            c4: Float, axis: Axis) {
+//         assert forall_snippet_ix(inner(u), inner(v), inner(u0), inner(u1),
+//                                  inner(u2), c0, c1, c2, c3, c4) ==
+//                inner(forall_snippet_ix_padded(u, v, u0, u1, u2,
+//                                               c0, c1, c2, c3, c4));
+//     }
+// }
 
 // concept OFDistributedPaddingRules = OFPaddingRules[ cpadl => dlcpadl
 //                                                   , cpadr => dlcpadr

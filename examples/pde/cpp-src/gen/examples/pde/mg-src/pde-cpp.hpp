@@ -67,6 +67,20 @@ private:
     };
 public:
     typedef array_ops::Axis Axis;
+    struct _cpadl {
+        inline PDEProgram::PaddedArray operator()(const PDEProgram::PaddedArray& a, const PDEProgram::Axis& axis) {
+            return __array_ops.cpadl(a, axis);
+        };
+    };
+
+    static PDEProgram::_cpadl cpadl;
+    struct _cpadr {
+        inline PDEProgram::PaddedArray operator()(const PDEProgram::PaddedArray& a, const PDEProgram::Axis& axis) {
+            return __array_ops.cpadr(a, axis);
+        };
+    };
+
+    static PDEProgram::_cpadr cpadr;
     struct _zero {
         inline PDEProgram::Axis operator()() {
             return __array_ops.zero_axis();
@@ -133,6 +147,13 @@ public:
     };
 
     static PDEProgram::_forall_snippet_ix forall_snippet_ix;
+    struct _forall_snippet_ix_padded {
+        inline PDEProgram::Array operator()(const PDEProgram::PaddedArray& u, const PDEProgram::PaddedArray& v, const PDEProgram::PaddedArray& u0, const PDEProgram::PaddedArray& u1, const PDEProgram::PaddedArray& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4) {
+            return __forall_ops.forall_snippet_ix_padded(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
+        };
+    };
+
+    static PDEProgram::_forall_snippet_ix_padded forall_snippet_ix_padded;
     struct _mul {
         inline PDEProgram::Float operator()(const PDEProgram::Float& lhs, const PDEProgram::Float& rhs) {
             return __array_ops.mul(lhs, rhs);
@@ -169,7 +190,7 @@ public:
     static PDEProgram::_set set;
     struct _snippet {
         inline void operator()(PDEProgram::Array& u, const PDEProgram::Array& v, const PDEProgram::Array& u0, const PDEProgram::Array& u1, const PDEProgram::Array& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4) {
-            u = PDEProgram::forall_snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
+            u = PDEProgram::forall_snippet_ix_padded(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::asPadded(u), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::asPadded(v), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::asPadded(u0), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::asPadded(u1), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::asPadded(u2), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), c0, c1, c2, c3, c4);
         };
     };
 
