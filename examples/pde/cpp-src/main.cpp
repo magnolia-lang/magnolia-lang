@@ -13,7 +13,7 @@ static const double s_nu = 1.0;
 static const double s_dx = 1.0;
 
 int main() {
-    size_t side = 15;
+    size_t side = 30;
     size_t steps = 30;
     Shape shape = Shape(std::vector<size_t>({ side, side, side }));
     Array u0 = dumpsine(shape), u1 = dumpsine(shape), u2 = dumpsine(shape);
