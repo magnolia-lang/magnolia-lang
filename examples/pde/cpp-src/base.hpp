@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstring>
 #include <functional>
+#include <utility>
 #include <vector>
 
 struct array_ops {
@@ -52,6 +53,17 @@ struct array_ops {
             }
 
             return linear_ix;
+        }
+
+        inline Index to_padded(const std::vector<size_t> &offsets) const {
+            std::vector<size_t> out_index;
+            for (auto ix_it = this->value.begin(), offset_it = offsets.begin();
+                 ix_it != this->value.end() && offset_it != offsets.end();
+                 ++ix_it, ++offset_it) {
+                out_index.push_back(*ix_it + *offset_it);
+            }
+
+            return Index(out_index);
         }
 
     };
@@ -108,7 +120,7 @@ struct array_ops {
             Shape m_shape;
 
         public:
-            Array(Shape shape, Float *content) : m_shape(shape) {
+            Array(const Shape &shape, Float *content) : m_shape(shape) {
                 auto array_size = shape.index_space_size();
                 this->m_content = new Float[array_size];
                 memcpy(this->m_content, content, array_size * sizeof(Float));
@@ -137,6 +149,10 @@ struct array_ops {
                 return this->m_content[linear_ix];
             }
 
+            Float *unsafe_content() const {
+                return this->m_content;
+            }
+
             void rotate(const Axis &in_axis, const Offset &in_offset) {
                 auto rotate_aux = [&] (Float *content_ptr, const Axis &axis,
                                        const Offset &offset) {
@@ -144,6 +160,27 @@ struct array_ops {
                 };
             }
     };
+
+    struct PaddedArray {
+        private:
+            Float *m_content;
+            Shape m_shape;
+            std::vector<std::pair<size_t, size_t>> m_bounds;
+
+        public:
+            PaddedArray(const Array &array) : m_shape(array.shape()) {
+                auto array_size = this->m_shape.index_space_size();
+                this->m_content = new Float[array_size];
+                memcpy(this->m_content, array.unsafe_content(), array_size * sizeof(Float));
+            }
+
+            Array outer() const {
+                return Array(this->m_shape, this->m_content);
+            }
+
+    };
+
+    PaddedArray asPadded(const Array &array) { return PaddedArray(array); }
 
     /* Float ops */
     inline Float unary_sub(Float f) {
@@ -168,32 +205,32 @@ struct array_ops {
 
     /* Scalar-Array ops */
     inline Array binary_add(const Float &lhs, const Array &rhs) {
-        auto fn = [&](Array& out, const Index &ix) {
-            out[ix] = binary_add(lhs, rhs[ix]);
+        auto fn = [&](const Index &ix) {
+            return binary_add(lhs, rhs[ix]);
         };
         
         return forall_ix(rhs.shape(), fn); 
     }
 
     inline Array binary_sub(const Float &lhs, const Array &rhs) {
-        auto fn = [&](Array& out, const Index &ix) {
-            out[ix] = binary_sub(lhs, rhs[ix]);
+        auto fn = [&](const Index &ix) {
+            return binary_sub(lhs, rhs[ix]);
         };
 
         return forall_ix(rhs.shape(), fn);
     }
 
     inline Array mul(const Float &lhs, const Array &rhs) {
-        auto fn = [&](Array& out, const Index &ix) {
-            out[ix] = mul(lhs, rhs[ix]);
+        auto fn = [&](const Index &ix) {
+            return mul(lhs, rhs[ix]);
         };
 
         return forall_ix(rhs.shape(), fn);
     }
 
     inline Array div(const Float &lhs, const Array &rhs) {
-        auto fn = [&](Array& out, const Index &ix) {
-            out[ix] = div(lhs, rhs[ix]);
+        auto fn = [&](const Index &ix) {
+            return div(lhs, rhs[ix]);
         };
 
         return forall_ix(rhs.shape(), fn);
@@ -202,8 +239,8 @@ struct array_ops {
     /* Array-Array ops */
     inline Array binary_add(const Array &lhs, const Array &rhs) {
         assert (lhs.shape() == rhs.shape());
-        auto fn = [&](Array& out, const Index &ix) {
-            out[ix] = binary_add(lhs[ix], rhs[ix]);
+        auto fn = [&](const Index &ix) {
+            return binary_add(lhs[ix], rhs[ix]);
         };
 
         return forall_ix(rhs.shape(), fn);
@@ -211,8 +248,8 @@ struct array_ops {
 
     inline Array binary_sub(const Array &lhs, const Array &rhs) {
         assert (lhs.shape() == rhs.shape());
-        auto fn = [&](Array& out, const Index &ix) {
-            out[ix] = binary_sub(lhs[ix], rhs[ix]);
+        auto fn = [&](const Index &ix) {
+            return binary_sub(lhs[ix], rhs[ix]);
         };
 
         return forall_ix(rhs.shape(), fn);
@@ -220,8 +257,8 @@ struct array_ops {
 
     inline Array mul(const Array &lhs, const Array &rhs) {
         assert (lhs.shape() == rhs.shape());
-        auto fn = [&](Array& out, const Index &ix) {
-            out[ix] = mul(lhs[ix], rhs[ix]);
+        auto fn = [&](const Index &ix) {
+            return mul(lhs[ix], rhs[ix]);
         };
 
         return forall_ix(rhs.shape(), fn);
@@ -229,8 +266,8 @@ struct array_ops {
 
     inline Array div(const Array &lhs, const Array &rhs) {
         assert (lhs.shape() == rhs.shape());
-        auto fn = [&](Array& out, const Index &ix) {
-            out[ix] = div(lhs[ix], rhs[ix]);
+        auto fn = [&](const Index &ix) {
+            return div(lhs[ix], rhs[ix]);
         };
 
         return forall_ix(rhs.shape(), fn);
@@ -241,8 +278,26 @@ struct array_ops {
         for (size_t linear_ix = 0; linear_ix < shape.index_space_size();
              ++linear_ix) {
             Index ix = from_linear(shape, linear_ix);
-            fn(out_array, ix);
+            out_array[ix] = fn(ix);
         }
+        return out_array;
+    }
+
+    inline Array forall_ix_padded(const Shape &out_shape,
+                                  std::vector<std::pair<size_t, size_t>> bounds,
+                                  auto &fn) {
+        std::vector<size_t> offsets;
+        for (auto bounds_it = bounds.begin(); bounds_it != bounds.end(); ++bounds_it) {
+            offsets.push_back((*bounds_it).first);
+        }
+
+        auto out_array = Array(out_shape);
+        for (size_t linear_ix = 0; linear_ix < out_shape.index_space_size();
+             ++linear_ix) {
+            Index ix = from_linear(out_shape, linear_ix);
+            out_array[ix] = fn(ix.to_padded(offsets));
+        }
+
         return out_array;
     }
 
@@ -281,7 +336,7 @@ struct array_ops {
 
 // TODO: bypassing extend mechanism, not great
 template <typename _Array, typename _Axis, typename _Float, typename _Index,
-          typename _Offset, class _snippet_ix>
+          typename _Offset, typename _PaddedArray, class _snippet_ix>
 struct forall_ops {
     private:
         array_ops _array_ops;
@@ -294,14 +349,14 @@ struct forall_ops {
 
     static _snippet_ix snippet_ix;
 
-    void forall_snippet_ix(Array &u, const Array &v, const Array &u0,
+    Array forall_snippet_ix(const Array &u, const Array &v, const Array &u0,
                            const Array &u1, const Array &u2, const Float &c0,
                            const Float &c1, const Float &c2, const Float &c3,
                            const Float &c4) {
-        auto fn = [&](Array &out_arr, const Index &ix) {
-            snippet_ix(out_arr, v, u0, u1, u2, c0, c1, c2, c3, c4, ix);
+        auto fn = [&](const Index &ix) {
+            return snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4, ix);
         };
-        u = _array_ops.forall_ix(u.shape(), fn);
+        return _array_ops.forall_ix(u.shape(), fn);
     }
 };
 
@@ -314,9 +369,9 @@ inline array_ops::Array dumpsine(const array_ops::Shape &shape) {
     double t = 0.0;
     array_ops ops;
 
-    auto fn = [&](array_ops::Array &out_arr, const array_ops::Index &ix) {
+    auto fn = [&](const array_ops::Index &ix) {
         auto timestep = step * ix.to_linear(shape);
-        out_arr[ix] = array_ops::Float(amplitude * sin(PI * t + phase));
+        return array_ops::Float(amplitude * sin(PI * t + phase));
     };
     return ops.forall_ix(shape, fn);
 }
