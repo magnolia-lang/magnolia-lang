@@ -508,8 +508,10 @@ runOptimizer (Ann _ optimizer) maxSteps (Ann tgtDeclO tgtModule) =
     rewriteDeclNTimes :: Int -> ConstraintDB -> TcDecl -> MgMonad TcDecl
     rewriteDeclNTimes n constraintDb tcDecl
       | n <= 0 = pure tcDecl
-      | otherwise = oneRewriteDeclPass constraintDb tcDecl >>=
-          rewriteDeclNTimes (n - 1) constraintDb
+      | otherwise = oneRewriteDeclPass constraintDb tcDecl >>= \res ->
+          if res == tcDecl -- No more progress
+          then pure tcDecl
+          else rewriteDeclNTimes (n - 1) constraintDb res
 
 
 
@@ -549,7 +551,7 @@ oneRewritePass = oneRewritePass' S.empty
         Nothing -> oneRuleRewritePassExprIR factDb constraint typedExprIR
         Just bindings -> case constraint of
           Constraint'Equational eqn -> do
-            liftIO $ pprint $ "firing rule " <> show eqn
+            --liftIO $ pprint $ "firing rule " <> show eqn
             instantiatePattern targetPat bindings
           Constraint'ConditionalEquational {} ->
             throwNonLocatedE NotImplementedErr
