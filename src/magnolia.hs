@@ -3,6 +3,7 @@ import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.State
 import Data.Foldable (toList)
+import Data.Either (fromLeft, fromRight, isLeft)
 import qualified Data.List as L
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -57,9 +58,8 @@ parseCompilerMode = mkInfo compilerMode
       flag WriteIfDoesNotExist OverwriteTargetFiles
            (long "allow-overwrite" <>
             help "Allow overwriting target files in the output directory") <*>
-      optEquationsLocation <*>
-      optProgramsToRewrite <*>
-      optMaxRewritingSteps
+      optRewritingSystemConfigs <*>
+      optProgramsToRewrite
 
     testConfig = Config <$>
       option (oneOf passOpts)
@@ -72,9 +72,8 @@ parseCompilerMode = mkInfo compilerMode
               help "Output directory for code generation") <*>
       optImportDir <*>
       pure WriteIfDoesNotExist <*>
-      optEquationsLocation <*>
-      optProgramsToRewrite <*>
-      optMaxRewritingSteps
+      optRewritingSystemConfigs <*>
+      optProgramsToRewrite
 
     optBackend =
       option (oneOf backendOpts)
@@ -88,25 +87,35 @@ parseCompilerMode = mkInfo compilerMode
               help ("Base import directory for the generated code " <>
                     "(defaults to the output directory)"))
 
-    optEquationsLocation =
-      option (map toFullyQualifiedModuleName . splitOn ',' <$> str)
-             (long "equations-location" <> value [] <>
-              short 'e' <>
+    optRewritingSystemConfigs =
+      let mkRewSystemConfig s = case splitOn '|' s of
+            [conceptName] -> Right $ RewritingSystemConfig
+              (toFullyQualifiedModuleName conceptName) 10
+            [conceptName, maxRewSteps] -> Right $ RewritingSystemConfig
+              (toFullyQualifiedModuleName conceptName) (read maxRewSteps)
+            _ -> Left $ "Expected string of format 'path.to.concept|int' " <>
+                        "but got '" <> s <> "'"
+          optParser = eitherReader (\s ->
+            let rewSystemConfigStrings = splitOn ',' s
+                rewSystemConfigs = map mkRewSystemConfig rewSystemConfigStrings
+                errors = filter isLeft rewSystemConfigs
+            in if null errors
+               then Right $ map (fromRight undefined) rewSystemConfigs
+               else Left $ fromLeft undefined $ head errors)
+      in
+      option optParser
+             (long "rewriting-system-configs" <> value [] <>
               help ("Comma-separated list of fully qualified concept names " <>
-                    "in which to look for rewriting rules"))
+                    "in which to look for rewriting rules paired with the " <>
+                    "maximum rewriting steps the compiler is allowed to " <>
+                    "apply for the relevant concept (e.g. " <>
+                    "concept1|nb1,concept2|nb2)"))
 
     optProgramsToRewrite =
       option (map toFullyQualifiedModuleName . splitOn ',' <$> str)
              (long "programs-to-rewrite" <> value [] <>
-              short 'r' <>
               help ("Comma-separated list of fully qualified program names " <>
                     "on which to apply rewriting rules"))
-
-    optMaxRewritingSteps =
-      option auto
-             (long "max-rewriting-steps" <> value 10 <>
-              help ("How many rewriting steps the compiler is allowed to " <>
-                    "apply on each expression"))
 
     splitOn :: Eq a => a -> [a] -> [[a]]
     splitOn sep list = case list of

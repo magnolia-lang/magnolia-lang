@@ -54,15 +54,12 @@ data Config = Config { -- | Up to (and including) what pass the compiler should
                        -- | What the behavior of the compiler should be when
                        -- attempting to write to the file system.
                      , _configWriteToFsBehavior :: WriteToFsBehavior
-                       -- | What concepts contain the rewriting rules to use
-                       -- for the equational rewriting pass.
-                     , _configEquationsLocation :: [FullyQualifiedName ]
+                       -- | A configuration for each rewriting system to be
+                       -- used in the equational rewriting pass.
+                     , _configRewritingSystemConfigs :: [RewritingSystemConfig]
                        -- | What programs should be rewritten using the
                        -- rewriting rules.
                      , _configProgramsToRewrite :: [FullyQualifiedName]
-                       -- | The maximum number of rewriting steps the compiler
-                       -- is allowed to apply per expression.
-                     , _configMaxRewritingSteps :: Int
                      }
 
 -- | Compiler passes
@@ -95,21 +92,18 @@ runTestWith filePath config = case _configPass config of
   ParsePass -> runAndLogErrs $ depAnalPass filePath >>= parsePass
   CheckPass -> runAndLogErrs $ depAnalPass filePath >>= parsePass >>= checkPass
   EquationalRewritingPass ->
-    let equationsLocation = _configEquationsLocation config
+    let rewritingSystemConfigs = _configRewritingSystemConfigs config
         programsToRewrite = _configProgramsToRewrite config
-        maxRewritingSteps = _configMaxRewritingSteps config
     in runAndLogErrs $ depAnalPass filePath >>= parsePass >>= checkPass
-        >>= rewritePass equationsLocation programsToRewrite maxRewritingSteps
+        >>= rewritePass rewritingSystemConfigs programsToRewrite
   -- TODO(bchetioui): add rewrite pass in codegen?
   SelfContainedProgramCodegenPass ->
-    let equationsLocation = _configEquationsLocation config
+    let rewritingSystemConfigs = _configRewritingSystemConfigs config
         programsToRewrite = _configProgramsToRewrite config
-        maxRewritingSteps = _configMaxRewritingSteps config
     in case _configBackend config of
     Cxx -> do
       (ecxxPkgs, errs) <- runMgMonad $
-        compileToCxxPackages filePath equationsLocation programsToRewrite
-                             maxRewritingSteps
+        compileToCxxPackages filePath rewritingSystemConfigs programsToRewrite
       case ecxxPkgs of
         Left () -> logErrs errs
         Right cxxPkgs -> do
@@ -122,8 +116,7 @@ runTestWith filePath config = case _configPass config of
           mapM_ (pprintCxxPackage outDir CxxImplementation) sortedPkgs
     Python -> do
       (epyPkgs, errs) <- runMgMonad $
-        compileToPyPackages filePath equationsLocation programsToRewrite
-                            maxRewritingSteps
+        compileToPyPackages filePath rewritingSystemConfigs programsToRewrite
       case epyPkgs of
         Left () -> logErrs errs
         Right pyPkgs -> do
@@ -147,16 +140,14 @@ runAndLogErrs m = runMgMonad m >>= \(_, errs) -> logErrs errs
 
 runCompileWith :: FilePath -> Config -> IO ()
 runCompileWith filePath config =
-  let equationsLocation = _configEquationsLocation config
+  let rewritingSystemConfigs = _configRewritingSystemConfigs config
       programsToRewrite = _configProgramsToRewrite config
-      maxRewritingSteps = _configMaxRewritingSteps config
   in case _configOutputDirectory config of
   Nothing -> fail "output directory must be set"
   Just outDir -> case (_configBackend config, _configPass config) of
     (Cxx, SelfContainedProgramCodegenPass) -> do
       (ecxxPkgs, errs) <- runMgMonad $
-        compileToCxxPackages filePath equationsLocation programsToRewrite
-                             maxRewritingSteps
+        compileToCxxPackages filePath rewritingSystemConfigs programsToRewrite
       case ecxxPkgs of
         Left () -> logErrs errs >> fail "compilation failed"
         Right cxxPkgs -> do
@@ -166,8 +157,7 @@ runCompileWith filePath config =
           mapM_ (writeCxxPackage outDir) cxxPkgsWithModules
     (Python, SelfContainedProgramCodegenPass) -> do
       (epyPkgs, errs) <- runMgMonad $
-        compileToPyPackages filePath equationsLocation programsToRewrite
-                            maxRewritingSteps
+        compileToPyPackages filePath rewritingSystemConfigs programsToRewrite
       case epyPkgs of
         Left () -> logErrs errs >> fail "compilation failed"
         Right pyPkgs -> do
@@ -244,25 +234,19 @@ runCompileWith filePath config =
 -- TODO(bchetioui): add rewriting step in compilation steps
 
 compileToCxxPackages :: FilePath
+                     -> [RewritingSystemConfig]
                      -> [FullyQualifiedName]
-                     -> [FullyQualifiedName]
-                     -> Int
                      -> MgMonad [CxxPackage]
-compileToCxxPackages filePath rewritingRulesLocation rewritingTargetsLocation
-                     maxRewritingSteps =
+compileToCxxPackages filePath rewritingSystemConfigs rewritingTargetsLocation =
   depAnalPass filePath >>= parsePass >>= checkPass
-  >>= rewritePass rewritingRulesLocation rewritingTargetsLocation
-                  maxRewritingSteps
+  >>= rewritePass rewritingSystemConfigs rewritingTargetsLocation
   >>= programCodegenCxxPass
 
 compileToPyPackages :: FilePath
+                    -> [RewritingSystemConfig]
                     -> [FullyQualifiedName]
-                    -> [FullyQualifiedName]
-                    -> Int
                     -> MgMonad [PyPackage]
-compileToPyPackages filePath rewritingRulesLocation rewritingTargetsLocation
-                    maxRewritingSteps =
+compileToPyPackages filePath rewritingSystemConfigs rewritingTargetsLocation =
   depAnalPass filePath >>= parsePass >>= checkPass
-  >>= rewritePass rewritingRulesLocation rewritingTargetsLocation
-                  maxRewritingSteps
+  >>= rewritePass rewritingSystemConfigs rewritingTargetsLocation
   >>= programCodegenPyPass

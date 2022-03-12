@@ -2,8 +2,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Make (
+    -- * Utils
+    RewritingSystemConfig (..)
     -- * Passes
-    checkPass
+  , checkPass
   , depAnalPass
   , parsePass
   , programCodegenCxxPass
@@ -31,7 +33,19 @@ import MgToPython
 import Monad
 import Python.Syntax
 
--- -- === passes ===
+-- === utils ===
+
+data RewritingSystemConfig =
+  RewritingSystemConfig { -- | The name of the concept containing the rewriting
+                          -- system.
+                          _rewritingSystemName :: FullyQualifiedName
+                          -- | The maximum number of rewriting steps the
+                          -- compiler is allowed to perform per expression with
+                          -- the given rewriting system.
+                        , _rewritingSystemMaxRewritingSteps :: Int
+                        }
+
+-- === passes ===
 
 depAnalPass :: FilePath -> MgMonad [PackageHead]
 depAnalPass filepath = loadDependencyGraph filepath >>= detectCycle
@@ -71,19 +85,21 @@ programCodegenPyPass = foldMAccumErrorsAndFail
 -- | This function takes in a list of concept names containing rewriting rules
 -- (in the forms of equational assertions, in axioms), a list of program
 -- names on which to apply them, TODO: complete
-rewritePass :: [FullyQualifiedName]
+rewritePass :: [RewritingSystemConfig]
             -> [FullyQualifiedName]
-            -> Int
             -> Env TcPackage
             -> MgMonad (Env TcPackage)
-rewritePass rewritingRulesLocations programsToRewriteLocations maxSteps env = do
-  liftIO $ pprint rewritingRulesLocations
-  rewritingModules <- mapM findModule rewritingRulesLocations
+rewritePass rewritingSystemConfigs programsToRewriteLocations env = do
+  --liftIO $ pprint rewritingSystemConfigs
+  rewritingModules <- mapM (findModule . _rewritingSystemName)
+    rewritingSystemConfigs
   programsToRewrite <- mapM findModule programsToRewriteLocations
-  let rewriteAll tgts rewModule =
-        mapM (applyRewritingModule rewModule maxSteps) tgts
+  let rewritingModulesWithMaxSteps = zip rewritingModules
+        (map _rewritingSystemMaxRewritingSteps rewritingSystemConfigs)
+      rewriteAll tgts rewModuleWithMaxSteps =
+        mapM (uncurry applyRewritingModule rewModuleWithMaxSteps) tgts
   rewrittenProgramsWithNames <- zip programsToRewriteLocations <$>
-    foldM rewriteAll programsToRewrite rewritingModules
+    foldM rewriteAll programsToRewrite rewritingModulesWithMaxSteps
   foldM (\env' (fqn, program) -> insertModule program env' fqn) env
         rewrittenProgramsWithNames
   where
