@@ -73,6 +73,7 @@ implementation PDE = {
         var v0 = u0;
         var v1 = u1;
         var v2 = u2;
+
         call snippet(v0, u0, u0, u1, u2, c0, c1, c2, c3, c4);
         call snippet(v1, u1, u0, u1, u2, c0, c1, c2, c3, c4);
         call snippet(v2, u2, u0, u1, u2, c0, c1, c2, c3, c4);
@@ -85,29 +86,43 @@ implementation PDE = {
                       obs u0: Array, obs u1: Array, obs u2: Array,
                       obs c0: Float, obs c1: Float, obs c2: Float,
                       obs c3: Float, obs c4: Float) {
-        call forall_snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
+        u = forall_snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
     }
 
-    require procedure forall_snippet_ix(upd u: Array, obs v: Array,
-                                        obs u0: Array, obs u1: Array, obs u2: Array,
-                                        obs c0: Float, obs c1: Float, obs c2: Float,
-                                        obs c3: Float, obs c4: Float);
+    require function forall_snippet_ix(u: Array, v: Array,
+                                       u0: Array, u1: Array, u2: Array,
+                                       c0: Float, c1: Float, c2: Float,
+                                       c3: Float, c4: Float): Array;
     type Index;
 
     require function psi(ix: Index, array: Array): Float;
     require procedure set(obs ix: Index, upd array: Array, obs v: Float);
 
-    procedure snippet_ix(upd u: Array, obs v: Array, obs u0: Array,
-                         obs u1: Array, obs u2: Array, obs c0: Float,
-                         obs c1: Float, obs c2: Float, obs c3: Float,
-                         obs c4: Float, obs ix: Index) {
+    // procedure snippet_ix(upd u: Array, obs v: Array, obs u0: Array,
+    //                      obs u1: Array, obs u2: Array, obs c0: Float,
+    //                      obs c1: Float, obs c2: Float, obs c3: Float,
+    //                      obs c4: Float, obs ix: Index) {
+    //     var zero = zero();
+    //     var one = one(): Offset;
+    //     var two = two(): Axis;
+
+    //     var result = psi(ix, u + c4 * (c3 * (c1 * (rotate(v, zero, -one) + rotate(v, zero, one) + rotate(v, one(): Axis, -one) + rotate(v, one(): Axis, one) + rotate(v, two, -one) + rotate(v, two, one)) - three() * c2 * u0) - c0 * ((rotate(v, zero, one) - rotate(v, zero, -one)) * u0 + (rotate(v, one(): Axis, one) - rotate(v, one(): Axis, -one)) * u1 + (rotate(v, two, one) - rotate(v, two, -one)) * u2)));
+
+    //     call set(ix, u, result);
+    // }
+
+    function snippet_ix(u: Array, v: Array, u0: Array,
+                        u1: Array, u2: Array, c0: Float,
+                        c1: Float, c2: Float, c3: Float,
+                        c4: Float, ix: Index): Float {
         var zero = zero();
         var one = one(): Offset;
         var two = two(): Axis;
 
         var result = psi(ix, u + c4 * (c3 * (c1 * (rotate(v, zero, -one) + rotate(v, zero, one) + rotate(v, one(): Axis, -one) + rotate(v, one(): Axis, one) + rotate(v, two, -one) + rotate(v, two, one)) - three() * c2 * u0) - c0 * ((rotate(v, zero, one) - rotate(v, zero, -one)) * u0 + (rotate(v, one(): Axis, one) - rotate(v, one(): Axis, -one)) * u1 + (rotate(v, two, one) - rotate(v, two, -one)) * u2)));
 
-        call set(ix, u, result);
+        value result;
+        //call set(ix, u, result);
     }
 }
 
@@ -130,19 +145,32 @@ program PDEProgram = {
 implementation ExtExtendMissingBypass = external C++ base.forall_ops {
     require type Float;
     require type Array;
+    require type PaddedArray;
     require type Offset;
     require type Axis;
     require type Index;
 
-    require procedure snippet_ix(upd u: Array, obs v: Array,
-                                 obs u0: Array, obs u1: Array, obs u2: Array,
-                                 obs c0: Float, obs c1: Float, obs c2: Float,
-                                 obs c3: Float, obs c4: Float, obs ix: Index);
+    // require procedure snippet_ix(upd u: Array, obs v: Array,
+    //                              obs u0: Array, obs u1: Array, obs u2: Array,
+    //                              obs c0: Float, obs c1: Float, obs c2: Float,
+    //                              obs c3: Float, obs c4: Float, obs ix: Index);
 
-    procedure forall_snippet_ix(upd u: Array, obs v: Array,
-                                obs u0: Array, obs u1: Array, obs u2: Array,
-                                obs c0: Float, obs c1: Float, obs c2: Float,
-                                obs c3: Float, obs c4: Float);
+    require function snippet_ix(u: Array, v: Array,
+                                u0: Array, u1: Array, u2: Array,
+                                c0: Float, c1: Float, c2: Float,
+                                c3: Float, c4: Float, ix: Index): Float;
+
+
+    function forall_snippet_ix(u: Array, v: Array,
+                               u0: Array, u1: Array, u2: Array,
+                               c0: Float, c1: Float, c2: Float,
+                               c3: Float, c4: Float): Array;
+
+    // function forall_snippet_ix_padded(u: PaddedArray, v: PaddedArray,
+    //                                   u0: PaddedArray, u1: PaddedArray,
+    //                                   u2: PaddedArray,
+    //                                   c0: Float, c1: Float, c2: Float,
+    //                                   c3: Float, c4: Float): Array;
 
 }
 
@@ -188,6 +216,15 @@ implementation ExtArrayOps = external C++ base.array_ops {
     /* Offset utils */
     function one_offset(): Offset;
     function unary_sub(o: Offset): Offset;
+
+
+    /* Rewriting, padding utils */
+    type PaddedArray;
+
+    function asPadded(a: Array): PaddedArray;
+    // function cpadr(a: PaddedArray, axis: Axis): PaddedArray;
+    // function cpadl(a: PaddedArray, axis: Axis): PaddedArray;
+    // function inner(a: PaddedArray): Array;
 }
 
 concept DNFGenericBinopRule = {
@@ -230,6 +267,188 @@ concept DNFRules = {
     // TODO:
     // TODO: R3
 }
+
+signature OFRewritingTypesAndOps = {
+    type Array;
+    type PaddedArray;
+    type Index;
+
+    type Axis;
+    type Nat;
+
+    function inner(pa: PaddedArray): Array;
+    function asPadded(a: Array): PaddedArray;
+
+    function cpadl(a: PaddedArray, axis: Axis): PaddedArray;
+    function cpadr(a: PaddedArray, axis: Axis): PaddedArray;
+    function unpadl(a: PaddedArray, axis: Axis): PaddedArray;
+    function unpadr(a: PaddedArray, axis: Axis): PaddedArray;
+
+    function axis(): Axis;
+}
+
+concept OFIntroducePaddingRule = {
+    use OFRewritingTypesAndOps;
+    axiom introducePaddingRule(a: Array) {
+        assert a == inner(asPadded(a));
+    }
+}
+
+concept OFAddLeftPaddingRuleGeneralAxis = {
+    use OFRewritingTypesAndOps;
+    axiom addLeftPaddingRule(a: PaddedArray) {
+        assert inner(a) == inner(cpadl(a, axis()));
+    }
+}
+
+concept OFAddLeftPadding0Axis = OFAddLeftPaddingRuleGeneralAxis[ axis => zero ];
+concept OFAddLeftPadding1Axis = OFAddLeftPaddingRuleGeneralAxis[ axis => one ];
+concept OFAddLeftPadding2Axis = OFAddLeftPaddingRuleGeneralAxis[ axis => two ];
+
+concept OFAddRightPadding0Axis = OFAddLeftPadding0Axis[ cpadl => cpadr
+                                                      , unpadl => unpadr
+                                                      ];
+concept OFAddRightPadding1Axis = OFAddLeftPadding1Axis[ cpadl => cpadr
+                                                      , unpadl => unpadr
+                                                      ];
+concept OFAddRightPadding2Axis = OFAddLeftPadding2Axis[ cpadl => cpadr
+                                                      , unpadl => unpadr
+                                                      ];
+
+// TODO: enfore operational compatibility through satisfactions only
+// TODO: do not break procedure argument modes when switching stuff (can not
+// make rvalue lvalues)
+concept OFRemoveLeftoverPadding = {
+    use OFRewritingTypesAndOps;
+    axiom removeLeftoverPaddingPaddedArrayRule(a: PaddedArray, axis: Axis) {
+        //assert inner(unpadl(a, axis)) == inner(a);
+        //assert inner(unpadr(a, axis)) == inner(a);
+        assert inner(cpadr(a, axis)) == inner(a);
+        assert inner(cpadl(a, axis)) == inner(a);
+    }
+
+    axiom removeLeftoverPaddingArrayRule(a: Array) {
+        assert inner(asPadded(a)) == a;
+    }
+}
+
+concept OFIntroducePaddingInArguments = {
+    use OFRewritingTypesAndOps;
+    type Float;
+
+    function forall_snippet_ix_padded(u: PaddedArray, v: PaddedArray,
+                                      u0: PaddedArray, u1: PaddedArray,
+                                      u2: PaddedArray,
+                                      c0: Float, c1: Float, c2: Float,
+                                      c3: Float, c4: Float): Array;
+
+    function forall_snippet_ix(u: Array, v: Array,
+                               u0: Array, u1: Array, u2: Array,
+                               c0: Float, c1: Float, c2: Float,
+                               c3: Float, c4: Float): Array;
+
+    axiom toPaddingOpsRule(u: Array, v: Array,
+                           u0: Array, u1: Array, u2: Array,
+                           c0: Float, c1: Float, c2: Float,
+                           c3: Float, c4: Float) {
+        assert forall_snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4) ==
+               forall_snippet_ix_padded(asPadded(u), asPadded(v),
+                                        asPadded(u0), asPadded(u1),
+                                        asPadded(u2), c0, c1, c2, c3, c4);
+    }
+}
+
+concept OFExtractInnerRule = {
+    use OFRewritingTypesAndOps;
+    type Float;
+
+    function forall_snippet_ix_padded(u: PaddedArray, v: PaddedArray,
+                                      u0: PaddedArray, u1: PaddedArray,
+                                      u2: PaddedArray,
+                                      c0: Float, c1: Float, c2: Float,
+                                      c3: Float, c4: Float): PaddedArray;
+
+    function forall_snippet_ix(u: Array, v: Array,
+                               u0: Array, u1: Array, u2: Array,
+                               c0: Float, c1: Float, c2: Float,
+                               c3: Float, c4: Float): Array;
+
+    axiom extractInnerRule(u: PaddedArray, v: PaddedArray, u0: PaddedArray,
+                           u1: PaddedArray, u2: PaddedArray,
+                           c0: Float, c1: Float, c2: Float, c3: Float,
+                           c4: Float, axis: Axis) {
+        assert forall_snippet_ix(inner(u), inner(v), inner(u0), inner(u1),
+                                 inner(u2), c0, c1, c2, c3, c4) ==
+               inner(forall_snippet_ix_padded(u, v, u0, u1, u2,
+                                              c0, c1, c2, c3, c4));
+    }
+}
+
+// concept OFDistributedPaddingRules = OFPaddingRules[ cpadl => dlcpadl
+//                                                   , cpadr => dlcpadr
+//                                                   , unpadl => dlunpadl
+//                                                   , unpadr => dlunpadr
+//                                                   ];
+
+// concept OFExtractInnerRule = {
+//     use signature(OFPaddingRules);
+
+//     function inner(pa: PaddedArray): Array;
+    // function forall_snippet_ix_padded(u: PaddedArray, v: PaddedArray,
+    //                                   u0: PaddedArray, u1: PaddedArray,
+    //                                   u2: PaddedArray,
+    //                                   c0: Float, c1: Float, c2: Float,
+    //                                   c3: Float, c4: Float): PaddedArray;
+
+    // function forall_snippet_ix(u: Array, v: Array,
+    //                            u0: Array, u1: Array, u2: Array,
+    //                            c0: Float, c1: Float, c2: Float,
+    //                            c3: Float, c4: Float): Array;
+
+//     function zero(): Axis;
+
+    // axiom extractInnerRule(u: PaddedArray, v: PaddedArray, u0: PaddedArray,
+    //                        u1: PaddedArray,
+    //                        u2: Array, c0: Float, c1: Float, c2: Float,
+    //                        c3: Float, c4: Float, axis: Axis) {
+    //     assert forall_snippet_ix(inner(u), inner(v), inner(u0), inner(u1),
+    //                              inner(u2), c0, c1, c2, c3, c4) ==
+    //            inner(forall_snippet_ix_padded(u, v, u0, u1, u2,
+    //                                           c0, c1, c2, c3, c4));
+    // }
+// }
+
+// // TODO: add mode to reverse equations
+// concept OFUnpaddingRules = {
+//     type E;
+//     type Array;
+//     type Index;
+
+//     type Axis;
+//     type Nat;
+
+//     //function nbCores(): Nat;
+//     // No PaddedArray, because we do not care about differentiating padding
+//     // from content in rewriting rules.
+//     function cpadl(a: Array): Array;
+//     function cpadr(a: Array): Array;
+
+//     function unpadl(a: Array): Array;
+//     function unpadr(a: Array): Array;
+
+//     axiom paddingRule(a: Array) {
+//         // left
+//         assert unpadl(cpadl(a)) == a;
+//         // right
+//         assert unpadr(cpadr(a)) == a;
+//     }
+// }
+
+// concept OFDistributedUnpaddingRules = OFUnpaddingRules[ cpadl => dlcpadl
+//                                                       , cpadr => dlcpadr
+//                                                       , unpadl => dlunpadl
+//                                                       , unpadr => dlunpadr
+//                                                       ];
 
 /*
 implementation PDE = {

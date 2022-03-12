@@ -17,11 +17,19 @@ namespace pde_cpp {
 
 
 
+    PDEProgram::_three PDEProgram::three;
+
+
+
     PDEProgram::_unary_sub PDEProgram::unary_sub;
 
 
 
     PDEProgram::_zero PDEProgram::zero;
+
+
+
+    PDEProgram::_asPadded PDEProgram::asPadded;
 
 
 
@@ -61,7 +69,7 @@ namespace pde_cpp {
 
 
 
-    forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Offset, PDEProgram::_snippet_ix> PDEProgram::__forall_ops;
+    forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Offset, PDEProgram::PaddedArray, PDEProgram::_snippet_ix> PDEProgram::__forall_ops;
 
     PDEProgram::_snippet_ix PDEProgram::snippet_ix;
 

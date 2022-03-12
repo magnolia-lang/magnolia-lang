@@ -32,6 +32,7 @@ struct PDEProgram {
 private:
     static array_ops __array_ops;
 public:
+    typedef array_ops::PaddedArray PaddedArray;
     typedef array_ops::Offset Offset;
 private:
     static inline void one0(PDEProgram::Offset& o) {
@@ -40,6 +41,13 @@ private:
 public:
     typedef array_ops::Index Index;
     typedef array_ops::Float Float;
+    struct _three {
+        inline PDEProgram::Float operator()() {
+            return __array_ops.three_float();
+        };
+    };
+
+    static PDEProgram::_three three;
     struct _unary_sub {
         inline PDEProgram::Float operator()(const PDEProgram::Float& f) {
             return __array_ops.unary_sub(f);
@@ -75,6 +83,13 @@ private:
     };
 public:
     typedef array_ops::Array Array;
+    struct _asPadded {
+        inline PDEProgram::PaddedArray operator()(const PDEProgram::Array& a) {
+            return __array_ops.asPadded(a);
+        };
+    };
+
+    static PDEProgram::_asPadded asPadded;
     struct _binary_add {
         inline PDEProgram::Float operator()(const PDEProgram::Float& lhs, const PDEProgram::Float& rhs) {
             return __array_ops.binary_add(lhs, rhs);
@@ -112,7 +127,7 @@ public:
 
     static PDEProgram::_div div;
     struct _forall_snippet_ix {
-        inline void operator()(PDEProgram::Array& u, const PDEProgram::Array& v, const PDEProgram::Array& u0, const PDEProgram::Array& u1, const PDEProgram::Array& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4) {
+        inline PDEProgram::Array operator()(const PDEProgram::Array& u, const PDEProgram::Array& v, const PDEProgram::Array& u0, const PDEProgram::Array& u1, const PDEProgram::Array& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4) {
             return __forall_ops.forall_snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
         };
     };
@@ -154,22 +169,23 @@ public:
     static PDEProgram::_set set;
     struct _snippet {
         inline void operator()(PDEProgram::Array& u, const PDEProgram::Array& v, const PDEProgram::Array& u0, const PDEProgram::Array& u1, const PDEProgram::Array& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4) {
-            PDEProgram::forall_snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
+            u = PDEProgram::forall_snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
         };
     };
 
     static PDEProgram::_snippet snippet;
     struct _snippet_ix {
-        inline void operator()(PDEProgram::Array& u, const PDEProgram::Array& v, const PDEProgram::Array& u0, const PDEProgram::Array& u1, const PDEProgram::Array& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4, const PDEProgram::Index& ix) {
+        inline PDEProgram::Float operator()(const PDEProgram::Array& u, const PDEProgram::Array& v, const PDEProgram::Array& u0, const PDEProgram::Array& u1, const PDEProgram::Array& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4, const PDEProgram::Index& ix) {
             PDEProgram::Axis zero = PDEProgram::zero();
             PDEProgram::Offset one = PDEProgram::one.operator()<Offset>();
-            PDEProgram::Float result = PDEProgram::binary_add(PDEProgram::psi(ix, u), PDEProgram::mul(c4, PDEProgram::binary_sub(PDEProgram::mul(c3, PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_sub(PDEProgram::mul(c1, PDEProgram::psi(ix, PDEProgram::rotate(v, zero, PDEProgram::unary_sub(one)))), PDEProgram::mul(c2, PDEProgram::psi(ix, u0))), PDEProgram::mul(c1, PDEProgram::psi(ix, PDEProgram::rotate(v, zero, one)))), PDEProgram::binary_add(PDEProgram::binary_sub(PDEProgram::mul(c1, PDEProgram::psi(ix, PDEProgram::rotate(v, PDEProgram::one.operator()<Axis>(), PDEProgram::unary_sub(one)))), PDEProgram::mul(c2, PDEProgram::psi(ix, u0))), PDEProgram::mul(c1, PDEProgram::psi(ix, PDEProgram::rotate(v, PDEProgram::one.operator()<Axis>(), one))))), PDEProgram::mul(c1, PDEProgram::psi(ix, PDEProgram::rotate(v, PDEProgram::one.operator()<Axis>(), one)))), PDEProgram::binary_add(PDEProgram::binary_sub(PDEProgram::mul(c1, PDEProgram::psi(ix, PDEProgram::rotate(v, PDEProgram::two.operator()<Axis>(), PDEProgram::unary_sub(one)))), PDEProgram::mul(c2, PDEProgram::psi(ix, u0))), PDEProgram::mul(c1, PDEProgram::psi(ix, PDEProgram::rotate(v, PDEProgram::two.operator()<Axis>(), one)))))), PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::mul(PDEProgram::psi(ix, u0), PDEProgram::binary_add(PDEProgram::mul(PDEProgram::unary_sub(c0), PDEProgram::psi(ix, PDEProgram::rotate(v, zero, PDEProgram::unary_sub(one)))), PDEProgram::mul(c0, PDEProgram::psi(ix, PDEProgram::rotate(v, zero, one))))), PDEProgram::mul(PDEProgram::psi(ix, u1), PDEProgram::binary_add(PDEProgram::mul(PDEProgram::unary_sub(c0), PDEProgram::psi(ix, PDEProgram::rotate(v, PDEProgram::one.operator()<Axis>(), PDEProgram::unary_sub(one)))), PDEProgram::mul(c0, PDEProgram::psi(ix, PDEProgram::rotate(v, PDEProgram::one.operator()<Axis>(), one)))))), PDEProgram::mul(PDEProgram::psi(ix, u2), PDEProgram::binary_add(PDEProgram::mul(PDEProgram::unary_sub(c0), PDEProgram::psi(ix, PDEProgram::rotate(v, PDEProgram::two.operator()<Axis>(), PDEProgram::unary_sub(one)))), PDEProgram::mul(c0, PDEProgram::psi(ix, PDEProgram::rotate(v, PDEProgram::two.operator()<Axis>(), one)))))))));
-            PDEProgram::set(ix, u, result);
+            PDEProgram::Axis two = PDEProgram::two.operator()<Axis>();
+            PDEProgram::Float result = PDEProgram::binary_add(PDEProgram::psi(ix, u), PDEProgram::mul(c4, PDEProgram::binary_sub(PDEProgram::mul(c3, PDEProgram::binary_sub(PDEProgram::mul(c1, PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::psi(ix, PDEProgram::rotate(v, zero, PDEProgram::unary_sub(one))), PDEProgram::psi(ix, PDEProgram::rotate(v, zero, one))), PDEProgram::psi(ix, PDEProgram::rotate(v, PDEProgram::one.operator()<Axis>(), PDEProgram::unary_sub(one)))), PDEProgram::psi(ix, PDEProgram::rotate(v, PDEProgram::one.operator()<Axis>(), one))), PDEProgram::psi(ix, PDEProgram::rotate(v, two, PDEProgram::unary_sub(one)))), PDEProgram::psi(ix, PDEProgram::rotate(v, two, one)))), PDEProgram::mul(PDEProgram::mul(PDEProgram::three(), c2), PDEProgram::psi(ix, u0)))), PDEProgram::mul(c0, PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::mul(PDEProgram::binary_sub(PDEProgram::psi(ix, PDEProgram::rotate(v, zero, one)), PDEProgram::psi(ix, PDEProgram::rotate(v, zero, PDEProgram::unary_sub(one)))), PDEProgram::psi(ix, u0)), PDEProgram::mul(PDEProgram::binary_sub(PDEProgram::psi(ix, PDEProgram::rotate(v, PDEProgram::one.operator()<Axis>(), one)), PDEProgram::psi(ix, PDEProgram::rotate(v, PDEProgram::one.operator()<Axis>(), PDEProgram::unary_sub(one)))), PDEProgram::psi(ix, u1))), PDEProgram::mul(PDEProgram::binary_sub(PDEProgram::psi(ix, PDEProgram::rotate(v, two, one)), PDEProgram::psi(ix, PDEProgram::rotate(v, two, PDEProgram::unary_sub(one)))), PDEProgram::psi(ix, u2)))))));
+            return result;
         };
     };
 
 private:
-    static forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Offset, PDEProgram::_snippet_ix> __forall_ops;
+    static forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Offset, PDEProgram::PaddedArray, PDEProgram::_snippet_ix> __forall_ops;
 public:
     static PDEProgram::_snippet_ix snippet_ix;
     struct _step {
