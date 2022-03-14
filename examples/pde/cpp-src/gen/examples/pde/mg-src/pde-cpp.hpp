@@ -32,6 +32,7 @@ struct PDEProgram {
 private:
     static array_ops __array_ops;
 public:
+    typedef array_ops::Shape Shape;
     typedef array_ops::PaddedArray PaddedArray;
     typedef array_ops::Offset Offset;
 private:
@@ -81,6 +82,13 @@ public:
     };
 
     static PDEProgram::_cpadr cpadr;
+    struct _rotate_ix {
+        inline PDEProgram::Index operator()(const PDEProgram::Index& ix, const PDEProgram::Axis& axis, const PDEProgram::Offset& o, const PDEProgram::Shape& shape) {
+            return __array_ops.rotate_ix(ix, axis, o, shape);
+        };
+    };
+
+    static PDEProgram::_rotate_ix rotate_ix;
     struct _zero {
         inline PDEProgram::Axis operator()() {
             return __array_ops.zero_axis();
@@ -188,9 +196,16 @@ public:
     };
 
     static PDEProgram::_set set;
+    struct _shape {
+        inline PDEProgram::Shape operator()(const PDEProgram::Array& array) {
+            return __array_ops.shape(array);
+        };
+    };
+
+    static PDEProgram::_shape shape;
     struct _snippet {
         inline void operator()(PDEProgram::Array& u, const PDEProgram::Array& v, const PDEProgram::Array& u0, const PDEProgram::Array& u1, const PDEProgram::Array& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4) {
-            u = PDEProgram::forall_snippet_ix_padded(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::asPadded(u), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::asPadded(v), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::asPadded(u0), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::asPadded(u1), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadr(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::cpadl(PDEProgram::asPadded(u2), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), PDEProgram::zero()), c0, c1, c2, c3, c4);
+            u = PDEProgram::forall_snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
         };
     };
 
@@ -200,7 +215,7 @@ public:
             PDEProgram::Axis zero = PDEProgram::zero();
             PDEProgram::Offset one = PDEProgram::one.operator()<Offset>();
             PDEProgram::Axis two = PDEProgram::two.operator()<Axis>();
-            PDEProgram::Float result = PDEProgram::binary_add(PDEProgram::psi(ix, u), PDEProgram::mul(c4, PDEProgram::binary_sub(PDEProgram::mul(c3, PDEProgram::binary_sub(PDEProgram::mul(c1, PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::psi(ix, PDEProgram::rotate(v, zero, PDEProgram::unary_sub(one))), PDEProgram::psi(ix, PDEProgram::rotate(v, zero, one))), PDEProgram::psi(ix, PDEProgram::rotate(v, PDEProgram::one.operator()<Axis>(), PDEProgram::unary_sub(one)))), PDEProgram::psi(ix, PDEProgram::rotate(v, PDEProgram::one.operator()<Axis>(), one))), PDEProgram::psi(ix, PDEProgram::rotate(v, two, PDEProgram::unary_sub(one)))), PDEProgram::psi(ix, PDEProgram::rotate(v, two, one)))), PDEProgram::mul(PDEProgram::mul(PDEProgram::three(), c2), PDEProgram::psi(ix, u0)))), PDEProgram::mul(c0, PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::mul(PDEProgram::binary_sub(PDEProgram::psi(ix, PDEProgram::rotate(v, zero, one)), PDEProgram::psi(ix, PDEProgram::rotate(v, zero, PDEProgram::unary_sub(one)))), PDEProgram::psi(ix, u0)), PDEProgram::mul(PDEProgram::binary_sub(PDEProgram::psi(ix, PDEProgram::rotate(v, PDEProgram::one.operator()<Axis>(), one)), PDEProgram::psi(ix, PDEProgram::rotate(v, PDEProgram::one.operator()<Axis>(), PDEProgram::unary_sub(one)))), PDEProgram::psi(ix, u1))), PDEProgram::mul(PDEProgram::binary_sub(PDEProgram::psi(ix, PDEProgram::rotate(v, two, one)), PDEProgram::psi(ix, PDEProgram::rotate(v, two, PDEProgram::unary_sub(one)))), PDEProgram::psi(ix, u2)))))));
+            PDEProgram::Float result = PDEProgram::binary_add(PDEProgram::psi(ix, u), PDEProgram::mul(c4, PDEProgram::binary_sub(PDEProgram::mul(c3, PDEProgram::binary_sub(PDEProgram::mul(c1, PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::psi(PDEProgram::rotate_ix(ix, zero, PDEProgram::unary_sub(one), PDEProgram::shape(v)), v), PDEProgram::psi(PDEProgram::rotate_ix(ix, zero, one, PDEProgram::shape(v)), v)), PDEProgram::psi(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), PDEProgram::unary_sub(one), PDEProgram::shape(v)), v)), PDEProgram::psi(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), one, PDEProgram::shape(v)), v)), PDEProgram::psi(PDEProgram::rotate_ix(ix, two, PDEProgram::unary_sub(one), PDEProgram::shape(v)), v)), PDEProgram::psi(PDEProgram::rotate_ix(ix, two, one, PDEProgram::shape(v)), v))), PDEProgram::mul(PDEProgram::mul(PDEProgram::three(), c2), PDEProgram::psi(ix, u0)))), PDEProgram::mul(c0, PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::mul(PDEProgram::binary_sub(PDEProgram::psi(PDEProgram::rotate_ix(ix, zero, one, PDEProgram::shape(v)), v), PDEProgram::psi(PDEProgram::rotate_ix(ix, zero, PDEProgram::unary_sub(one), PDEProgram::shape(v)), v)), PDEProgram::psi(ix, u0)), PDEProgram::mul(PDEProgram::binary_sub(PDEProgram::psi(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), one, PDEProgram::shape(v)), v), PDEProgram::psi(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), PDEProgram::unary_sub(one), PDEProgram::shape(v)), v)), PDEProgram::psi(ix, u1))), PDEProgram::mul(PDEProgram::binary_sub(PDEProgram::psi(PDEProgram::rotate_ix(ix, two, one, PDEProgram::shape(v)), v), PDEProgram::psi(PDEProgram::rotate_ix(ix, two, PDEProgram::unary_sub(one), PDEProgram::shape(v)), v)), PDEProgram::psi(ix, u2)))))));
             return result;
         };
     };

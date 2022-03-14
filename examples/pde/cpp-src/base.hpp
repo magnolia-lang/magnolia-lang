@@ -156,11 +156,38 @@ struct array_ops {
                 return this->m_content;
             }
 
-            void rotate(const Axis &in_axis, const Offset &in_offset) {
-                auto rotate_aux = [&] (Float *content_ptr, const Axis &axis,
-                                       const Offset &offset) {
-                   // TODO; 
-                };
+            void rotate(const Axis &axis, const Offset &offset) {
+                Shape start_shape = Shape(std::vector<size_t>(this->m_shape.components.begin(), this->m_shape.components.begin() + axis.value));
+                size_t stride = Shape(std::vector<size_t>(this->m_shape.components.begin() + axis.value, this->m_shape.components.end())).index_space_size();
+
+                auto new_content = new Float[this->m_shape.index_space_size()];
+
+                //std::cout << "------- " << axis.value << " " << offset.value << std::endl;
+                for (size_t linear_ix = 0; linear_ix < start_shape.index_space_size();
+                     ++linear_ix) {
+
+                    auto content_ix = linear_ix * stride;
+                    //std::cout << content_ix << std::endl;
+                    if (offset.value < 0) { // left shift
+                        auto offset_value = offset.value % stride;
+                        // if offset is -4 and stride is 3, this is 1, i.e.
+                        // the number of elements to drop at the start of the
+                        // array
+                        if (offset_value > 0) {
+                            offset_value = stride - offset_value;
+                        }
+
+                        memcpy(new_content + content_ix, this->m_content + content_ix + offset_value, (stride - offset_value) * sizeof(Float));
+                        memcpy(new_content + content_ix + stride - offset_value, this->m_content, offset_value * sizeof(Float));
+                    }
+                    else { // right shift
+                        auto offset_value = offset.value % stride;
+                        memcpy(new_content + content_ix, this->m_content + content_ix + stride - offset_value, offset_value * sizeof(Float));
+                        memcpy(new_content + content_ix + offset_value, this->m_content + content_ix, (stride - offset_value) * sizeof(Float));
+                    }
+                }
+
+                this->m_content = new_content;
             }
     };
 
@@ -392,6 +419,10 @@ struct array_ops {
         array[ix] = value;
     }
 
+    inline Shape shape(const Array &array) {
+        return array.shape();
+    }
+
     inline Float psi(const Index &ix, const Array &array) {
         return array[ix];
     }
@@ -400,6 +431,12 @@ struct array_ops {
        Array result = array;
        result.rotate(axis, offset);
        return result;
+    }
+
+    Index rotate_ix(const Index &index, const Axis &axis, const Offset &offset, const Shape &shape) {
+        Index new_index = index;
+        new_index.value[axis.value] = (index.value[axis.value] + offset.value + shape.components[axis.value]) % shape.components[axis.value];
+        return new_index;
     }
 
     inline Index from_linear(const Shape &shape, size_t linear_ix) {
