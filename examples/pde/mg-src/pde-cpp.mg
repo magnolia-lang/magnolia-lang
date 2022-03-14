@@ -179,7 +179,9 @@ implementation ExtArrayOps = external C++ base.array_ops {
     type Offset;
     type Axis;
     type Index;
+    type Shape;
 
+    function shape(array: Array): Shape;
     function psi(ix: Index, array: Array): Float;
     procedure set(obs ix: Index, upd array: Array, obs v: Float);
 
@@ -206,6 +208,7 @@ implementation ExtArrayOps = external C++ base.array_ops {
 
     /* Rotate */
     function rotate(a: Array, axis: Axis, o: Offset): Array;
+    function rotate_ix(ix: Index, axis: Axis, o: Offset, shape: Shape): Index;
 
     /* Axis utils */
     function zero_axis(): Axis;
@@ -263,8 +266,19 @@ concept DNFRules = {
                            , binopArrayRule => binopArrayRuleSub
                            , binopScalarRule => binopScalarRuleSub
                            ];
-    // TODO:
     // TODO: R3
+    type Shape;
+    type Axis;
+    type Offset;
+    function shape(array: Array): Shape;
+    function rotate(array: Array, axis: Axis, offset: Offset): Array;
+    function rotate_ix(ix: Index, axis: Axis, offset: Offset, shape: Shape): Index;
+    
+    axiom rotateRule(ix: Index, array: Array, axis: Axis,
+                     offset: Offset) {
+        assert psi(ix, rotate(array, axis, offset)) ==
+               psi(rotate_ix(ix, axis, offset, shape(array)), array);
+    }
 }
 
 signature OFRewritingTypesAndOps = {

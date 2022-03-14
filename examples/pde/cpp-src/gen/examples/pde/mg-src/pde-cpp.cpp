@@ -33,6 +33,10 @@ namespace pde_cpp {
 
 
 
+    PDEProgram::_rotate_ix PDEProgram::rotate_ix;
+
+
+
     PDEProgram::_zero PDEProgram::zero;
 
 
@@ -74,6 +78,10 @@ namespace pde_cpp {
 
 
     PDEProgram::_set PDEProgram::set;
+
+
+
+    PDEProgram::_shape PDEProgram::shape;
 
 
 
