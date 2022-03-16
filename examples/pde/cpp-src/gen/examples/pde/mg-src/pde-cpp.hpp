@@ -30,6 +30,7 @@ struct PDEProgram {
 
     static PDEProgram::_one one;
 private:
+    static hardware_info __hardware_info;
     static array_ops __array_ops;
 public:
     typedef array_ops::Shape Shape;
@@ -38,6 +39,19 @@ public:
 private:
     static inline void one0(PDEProgram::Offset& o) {
         o = __array_ops.one_offset();
+    };
+public:
+    typedef hardware_info::Nat Nat;
+    struct _nbCores {
+        inline PDEProgram::Nat operator()() {
+            return __hardware_info.nbCores();
+        };
+    };
+
+    static PDEProgram::_nbCores nbCores;
+private:
+    static inline void one0(PDEProgram::Nat& o) {
+        o = __hardware_info.one();
     };
 public:
     typedef array_ops::Index Index;
@@ -148,20 +162,34 @@ public:
     };
 
     static PDEProgram::_div div;
-    struct _forall_snippet_ix {
+    struct _forall_ix_snippet {
         inline PDEProgram::Array operator()(const PDEProgram::Array& u, const PDEProgram::Array& v, const PDEProgram::Array& u0, const PDEProgram::Array& u1, const PDEProgram::Array& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4) {
-            return __forall_ops.forall_snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
+            return __forall_ops.forall_ix_snippet(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
         };
     };
 
-    static PDEProgram::_forall_snippet_ix forall_snippet_ix;
-    struct _forall_snippet_ix_padded {
+    static PDEProgram::_forall_ix_snippet forall_ix_snippet;
+    struct _forall_ix_snippet_padded {
         inline PDEProgram::Array operator()(const PDEProgram::PaddedArray& u, const PDEProgram::PaddedArray& v, const PDEProgram::PaddedArray& u0, const PDEProgram::PaddedArray& u1, const PDEProgram::PaddedArray& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4) {
-            return __forall_ops.forall_snippet_ix_padded(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
+            return __forall_ops.forall_ix_snippet_padded(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
         };
     };
 
-    static PDEProgram::_forall_snippet_ix_padded forall_snippet_ix_padded;
+    static PDEProgram::_forall_ix_snippet_padded forall_ix_snippet_padded;
+    struct _forall_ix_snippet_threaded {
+        inline PDEProgram::Array operator()(const PDEProgram::Array& u, const PDEProgram::Array& v, const PDEProgram::Array& u0, const PDEProgram::Array& u1, const PDEProgram::Array& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4, const PDEProgram::Nat& nbThreads) {
+            return __forall_ops.forall_ix_snippet_threaded(u, v, u0, u1, u2, c0, c1, c2, c3, c4, nbThreads);
+        };
+    };
+
+    static PDEProgram::_forall_ix_snippet_threaded forall_ix_snippet_threaded;
+    struct _forall_ix_snippet_tiled {
+        inline PDEProgram::Array operator()(const PDEProgram::Array& u, const PDEProgram::Array& v, const PDEProgram::Array& u0, const PDEProgram::Array& u1, const PDEProgram::Array& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4) {
+            return __forall_ops.forall_ix_snippet_tiled(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
+        };
+    };
+
+    static PDEProgram::_forall_ix_snippet_tiled forall_ix_snippet_tiled;
     struct _mul {
         inline PDEProgram::Float operator()(const PDEProgram::Float& lhs, const PDEProgram::Float& rhs) {
             return __array_ops.mul(lhs, rhs);
@@ -175,6 +203,13 @@ public:
     };
 
     static PDEProgram::_mul mul;
+    struct _padAndLift {
+        inline PDEProgram::Array operator()(const PDEProgram::Array& array, const PDEProgram::Axis& axis, const PDEProgram::Nat& d, const PDEProgram::Nat& paddingAmount) {
+            return __forall_ops.padAndLift(array, axis, d, paddingAmount);
+        };
+    };
+
+    static PDEProgram::_padAndLift padAndLift;
     struct _psi {
         inline PDEProgram::Float operator()(const PDEProgram::Index& ix, const PDEProgram::Array& array) {
             return __array_ops.psi(ix, array);
@@ -205,7 +240,7 @@ public:
     static PDEProgram::_shape shape;
     struct _snippet {
         inline void operator()(PDEProgram::Array& u, const PDEProgram::Array& v, const PDEProgram::Array& u0, const PDEProgram::Array& u1, const PDEProgram::Array& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4) {
-            u = PDEProgram::forall_snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
+            u = PDEProgram::forall_ix_snippet_threaded(u, v, u0, u1, u2, c0, c1, c2, c3, c4, PDEProgram::nbCores());
         };
     };
 
@@ -221,7 +256,7 @@ public:
     };
 
 private:
-    static forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Offset, PDEProgram::PaddedArray, PDEProgram::_snippet_ix> __forall_ops;
+    static forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Nat, PDEProgram::Offset, PDEProgram::PaddedArray, PDEProgram::_snippet_ix> __forall_ops;
 public:
     static PDEProgram::_snippet_ix snippet_ix;
     struct _step {
@@ -246,6 +281,13 @@ public:
     };
 
     static PDEProgram::_step step;
+    struct _unliftAndUnpad {
+        inline PDEProgram::Array operator()(const PDEProgram::Array& array, const PDEProgram::Axis& axis, const PDEProgram::Nat& paddingAmount) {
+            return __forall_ops.unliftAndUnpad(array, axis, paddingAmount);
+        };
+    };
+
+    static PDEProgram::_unliftAndUnpad unliftAndUnpad;
 };
 } // examples
 } // pde
