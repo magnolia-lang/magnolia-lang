@@ -13,7 +13,13 @@ namespace pde_cpp {
 
     PDEProgram::_one PDEProgram::one;
 
+    hardware_info PDEProgram::__hardware_info;
+
     array_ops PDEProgram::__array_ops;
+
+
+
+    PDEProgram::_nbCores PDEProgram::nbCores;
 
 
 
@@ -57,15 +63,27 @@ namespace pde_cpp {
 
 
 
-    PDEProgram::_forall_snippet_ix PDEProgram::forall_snippet_ix;
+    PDEProgram::_forall_ix_snippet PDEProgram::forall_ix_snippet;
 
 
 
-    PDEProgram::_forall_snippet_ix_padded PDEProgram::forall_snippet_ix_padded;
+    PDEProgram::_forall_ix_snippet_padded PDEProgram::forall_ix_snippet_padded;
+
+
+
+    PDEProgram::_forall_ix_snippet_threaded PDEProgram::forall_ix_snippet_threaded;
+
+
+
+    PDEProgram::_forall_ix_snippet_tiled PDEProgram::forall_ix_snippet_tiled;
 
 
 
     PDEProgram::_mul PDEProgram::mul;
+
+
+
+    PDEProgram::_padAndLift PDEProgram::padAndLift;
 
 
 
@@ -89,13 +107,17 @@ namespace pde_cpp {
 
 
 
-    forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Offset, PDEProgram::PaddedArray, PDEProgram::_snippet_ix> PDEProgram::__forall_ops;
+    forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Nat, PDEProgram::Offset, PDEProgram::PaddedArray, PDEProgram::_snippet_ix> PDEProgram::__forall_ops;
 
     PDEProgram::_snippet_ix PDEProgram::snippet_ix;
 
 
 
     PDEProgram::_step PDEProgram::step;
+
+
+
+    PDEProgram::_unliftAndUnpad PDEProgram::unliftAndUnpad;
 
 } // examples
 } // pde

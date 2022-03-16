@@ -86,10 +86,10 @@ implementation PDE = {
                       obs u0: Array, obs u1: Array, obs u2: Array,
                       obs c0: Float, obs c1: Float, obs c2: Float,
                       obs c3: Float, obs c4: Float) {
-        u = forall_snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
+        u = forall_ix_snippet(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
     }
 
-    require function forall_snippet_ix(u: Array, v: Array,
+    require function forall_ix_snippet(u: Array, v: Array,
                                        u0: Array, u1: Array, u2: Array,
                                        c0: Float, c1: Float, c2: Float,
                                        c3: Float, c4: Float): Array;
@@ -137,6 +137,13 @@ program PDEProgram = {
                    , one_offset => one
                    ];
     use ExtExtendMissingBypass;
+    use ExtHardwareInfo;
+}
+
+implementation ExtHardwareInfo = external C++ base.hardware_info {
+    type Nat;
+    function nbCores(): Nat;
+    function one(): Nat;
 }
 
 // This is because snippet_ix can not be required in ExtArrayOps, because
@@ -149,6 +156,7 @@ implementation ExtExtendMissingBypass = external C++ base.forall_ops {
     require type Offset;
     require type Axis;
     require type Index;
+    require type Nat;
 
     // require procedure snippet_ix(upd u: Array, obs v: Array,
     //                              obs u0: Array, obs u1: Array, obs u2: Array,
@@ -161,16 +169,31 @@ implementation ExtExtendMissingBypass = external C++ base.forall_ops {
                                 c3: Float, c4: Float, ix: Index): Float;
 
 
-    function forall_snippet_ix(u: Array, v: Array,
+    function forall_ix_snippet(u: Array, v: Array,
                                u0: Array, u1: Array, u2: Array,
                                c0: Float, c1: Float, c2: Float,
                                c3: Float, c4: Float): Array;
 
-    function forall_snippet_ix_padded(u: PaddedArray, v: PaddedArray,
+    function forall_ix_snippet_padded(u: PaddedArray, v: PaddedArray,
                                       u0: PaddedArray, u1: PaddedArray,
                                       u2: PaddedArray,
                                       c0: Float, c1: Float, c2: Float,
                                       c3: Float, c4: Float): Array;
+
+    function forall_ix_snippet_tiled(u: Array, v: Array, u0: Array,
+                                     u1: Array, u2: Array, c0: Float,
+                                     c1: Float, c2: Float, c3: Float,
+                                     c4: Float): Array;
+
+    // unlift(A[<s0 s1 s2...>, ...], 1) = A[<s0 (s1*s2)...>, ...]
+    function unliftAndUnpad(array: Array, axis: Axis,
+                            paddingAmount: Nat): Array;
+    function padAndLift(array: Array, axis: Axis, d: Nat,
+                        paddingAmount: Nat): Array;
+    function forall_ix_snippet_threaded(u: Array, v: Array, u0: Array,
+                                        u1: Array, u2: Array, c0: Float,
+                                        c1: Float, c2: Float, c3: Float,
+                                        c4: Float, nbThreads: Nat): Array;
 }
 
 implementation ExtArrayOps = external C++ base.array_ops {
@@ -273,7 +296,7 @@ concept DNFRules = {
     function shape(array: Array): Shape;
     function rotate(array: Array, axis: Axis, offset: Offset): Array;
     function rotate_ix(ix: Index, axis: Axis, offset: Offset, shape: Shape): Index;
-    
+
     axiom rotateRule(ix: Index, array: Array, axis: Axis,
                      offset: Offset) {
         assert psi(ix, rotate(array, axis, offset)) ==
@@ -300,13 +323,13 @@ signature OFRewritingTypesAndOps = {
     function axis(): Axis;
 
     type Float;
-    function forall_snippet_ix_padded(u: PaddedArray, v: PaddedArray,
+    function forall_ix_snippet_padded(u: PaddedArray, v: PaddedArray,
                                       u0: PaddedArray, u1: PaddedArray,
                                       u2: PaddedArray,
                                       c0: Float, c1: Float, c2: Float,
                                       c3: Float, c4: Float): Array;
 
-    function forall_snippet_ix(u: Array, v: Array,
+    function forall_ix_snippet(u: Array, v: Array,
                                u0: Array, u1: Array, u2: Array,
                                c0: Float, c1: Float, c2: Float,
                                c3: Float, c4: Float): Array;
@@ -319,8 +342,8 @@ concept OFIntroducePaddingInArguments = {
                            u0: Array, u1: Array, u2: Array,
                            c0: Float, c1: Float, c2: Float,
                            c3: Float, c4: Float) {
-        assert forall_snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4) ==
-               forall_snippet_ix_padded(asPadded(u), asPadded(v),
+        assert forall_ix_snippet(u, v, u0, u1, u2, c0, c1, c2, c3, c4) ==
+               forall_ix_snippet_padded(asPadded(u), asPadded(v),
                                         asPadded(u0), asPadded(u1),
                                         asPadded(u2), c0, c1, c2, c3, c4);
     }
@@ -332,8 +355,8 @@ concept OFAddLeftPaddingInArgumentsGeneralAxis = {
             u: PaddedArray, v: PaddedArray, u0: PaddedArray,
             u1: PaddedArray, u2: PaddedArray,
             c0: Float, c1: Float, c2: Float, c3: Float, c4: Float) {
-        assert forall_snippet_ix_padded(u, v, u0, u1, u2, c0, c1, c2, c3, c4) ==
-               forall_snippet_ix_padded(cpadl(u, axis()), cpadl(v, axis()),
+        assert forall_ix_snippet_padded(u, v, u0, u1, u2, c0, c1, c2, c3, c4) ==
+               forall_ix_snippet_padded(cpadl(u, axis()), cpadl(v, axis()),
                     cpadl(u0, axis()), cpadl(u1, axis()), cpadl(u2, axis()),
                     c0, c1, c2, c3, c4);
     }
@@ -381,17 +404,74 @@ concept OFRemoveLeftoverPadding = {
     }
 }
 
+concept OFLiftCores = {
+    use OFRewritingTypesAndOps[ axis => zero ];
+
+    type Nat;
+
+    function nbCores(): Nat;
+    function one(): Nat;
+
+    function padAndLift(array: Array, axis: Axis, d: Nat,
+                        paddingAmount: Nat): Array;
+    function unliftAndUnpad(array: Array, axis: Axis,
+                            paddingAmount: Nat): Array;
+
+    function forall_ix_snippet_threaded(u: Array, v: Array, u0: Array,
+                                        u1: Array, u2: Array, c0: Float,
+                                        c1: Float, c2: Float, c3: Float,
+                                        c4: Float, nbThreads: Nat): Array;
+    function forall_ix_snippet(u: Array, v: Array,
+                               u0: Array, u1: Array, u2: Array,
+                               c0: Float, c1: Float, c2: Float,
+                               c3: Float, c4: Float): Array;
+
+    axiom liftCoresRule(u: Array, v: Array, u0: Array, u1: Array, u2: Array,
+                        c0: Float, c1: Float, c2: Float, c3: Float, c4: Float) {
+        var i = zero(): Axis;
+        var d = nbCores();
+        var p = one(): Nat;
+
+        // assert forall_ix_snippet(u, v, u0, u1, u2, c0, c1, c2, c3, c4) ==
+        //        unliftAndUnpad(forall_ix_snippet_threaded(
+        //            padAndLift(u, i, d, p), padAndLift(v, i, d, p),
+        //            padAndLift(u0, i, d, p), padAndLift(u1, i, d, p),
+        //            padAndLift(u2, i, d, p), c0, c1, c2, c3, c4, d), i, p);
+        assert forall_ix_snippet(u, v, u0, u1, u2, c0, c1, c2, c3, c4) ==
+               forall_ix_snippet_threaded(u, v, u0, u1, u2, c0, c1, c2, c3, c4, d);
+    }
+}
+
+concept OFTile = {
+    use OFRewritingTypesAndOps[ axis => zero ];
+
+    function forall_ix_snippet_tiled(u: Array, v: Array, u0: Array,
+                                     u1: Array, u2: Array, c0: Float,
+                                     c1: Float, c2: Float, c3: Float,
+                                     c4: Float): Array;
+    function forall_ix_snippet(u: Array, v: Array,
+                               u0: Array, u1: Array, u2: Array,
+                               c0: Float, c1: Float, c2: Float,
+                               c3: Float, c4: Float): Array;
+
+    axiom tileRule(u: Array, v: Array, u0: Array, u1: Array, u2: Array,
+                   c0: Float, c1: Float, c2: Float, c3: Float, c4: Float) {
+        assert forall_ix_snippet(u, v, u0, u1, u2, c0, c1, c2, c3, c4) ==
+               forall_ix_snippet_tiled(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
+    }
+}
+
 // concept OFExtractInnerRule = {
 //     use OFRewritingTypesAndOps;
 //     type Float;
 
-//     function forall_snippet_ix_padded(u: PaddedArray, v: PaddedArray,
+//     function forall_ix_snippet_padded(u: PaddedArray, v: PaddedArray,
 //                                       u0: PaddedArray, u1: PaddedArray,
 //                                       u2: PaddedArray,
 //                                       c0: Float, c1: Float, c2: Float,
 //                                       c3: Float, c4: Float): PaddedArray;
 
-//     function forall_snippet_ix(u: Array, v: Array,
+//     function forall_ix_snippet(u: Array, v: Array,
 //                                u0: Array, u1: Array, u2: Array,
 //                                c0: Float, c1: Float, c2: Float,
 //                                c3: Float, c4: Float): Array;
@@ -400,9 +480,9 @@ concept OFRemoveLeftoverPadding = {
 //                            u1: PaddedArray, u2: PaddedArray,
 //                            c0: Float, c1: Float, c2: Float, c3: Float,
 //                            c4: Float, axis: Axis) {
-//         assert forall_snippet_ix(inner(u), inner(v), inner(u0), inner(u1),
+//         assert forall_ix_snippet(inner(u), inner(v), inner(u0), inner(u1),
 //                                  inner(u2), c0, c1, c2, c3, c4) ==
-//                inner(forall_snippet_ix_padded(u, v, u0, u1, u2,
+//                inner(forall_ix_snippet_padded(u, v, u0, u1, u2,
 //                                               c0, c1, c2, c3, c4));
 //     }
 // }
@@ -417,13 +497,13 @@ concept OFRemoveLeftoverPadding = {
 //     use signature(OFPaddingRules);
 
 //     function inner(pa: PaddedArray): Array;
-    // function forall_snippet_ix_padded(u: PaddedArray, v: PaddedArray,
+    // function forall_ix_snippet_padded(u: PaddedArray, v: PaddedArray,
     //                                   u0: PaddedArray, u1: PaddedArray,
     //                                   u2: PaddedArray,
     //                                   c0: Float, c1: Float, c2: Float,
     //                                   c3: Float, c4: Float): PaddedArray;
 
-    // function forall_snippet_ix(u: Array, v: Array,
+    // function forall_ix_snippet(u: Array, v: Array,
     //                            u0: Array, u1: Array, u2: Array,
     //                            c0: Float, c1: Float, c2: Float,
     //                            c3: Float, c4: Float): Array;
@@ -434,9 +514,9 @@ concept OFRemoveLeftoverPadding = {
     //                        u1: PaddedArray,
     //                        u2: Array, c0: Float, c1: Float, c2: Float,
     //                        c3: Float, c4: Float, axis: Axis) {
-    //     assert forall_snippet_ix(inner(u), inner(v), inner(u0), inner(u1),
+    //     assert forall_ix_snippet(inner(u), inner(v), inner(u0), inner(u1),
     //                              inner(u2), c0, c1, c2, c3, c4) ==
-    //            inner(forall_snippet_ix_padded(u, v, u0, u1, u2,
+    //            inner(forall_ix_snippet_padded(u, v, u0, u1, u2,
     //                                           c0, c1, c2, c3, c4));
     // }
 // }

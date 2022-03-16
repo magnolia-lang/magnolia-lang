@@ -8,6 +8,10 @@
 #include <utility>
 #include <vector>
 
+#include <omp.h>
+
+#define NB_CORES 2
+
 struct array_ops {
 
     struct Shape {
@@ -29,6 +33,14 @@ struct array_ops {
 
         bool operator==(const Shape &other) const {
             return this->components == other.components;
+        }
+
+        size_t operator[](const size_t &i) const {
+            return this->components[i];
+        }
+
+        size_t &operator[](const size_t &i) {
+            return this->components[i];
         }
     };
 
@@ -124,9 +136,9 @@ struct array_ops {
             Array(const Shape &shape, Float *content) : m_shape(shape) {
                 auto array_size = shape.index_space_size();
                 // TODO: not this, lol
-                this->m_content = content;
-                //this->m_content = new Float[array_size];
-                //memcpy(this->m_content, content, array_size * sizeof(Float));
+                //this->m_content = content;
+                this->m_content = new Float[array_size];
+                memcpy(this->m_content, content, array_size * sizeof(Float));
             }
 
             Array(const Shape &shape) : m_shape(shape) {
@@ -415,6 +427,51 @@ struct array_ops {
         return out_array;
     }
 
+    // TODO: we only need to dlift for distributed anyway
+    /*inline Array forall_ix_threaded(const Shape &shape, auto &fn, size_t nbThreads) {
+        auto subshape = Shape(std::vector(shape.components.begin() + 1, shape.components.end()));
+        auto out_array = Array(shape);
+        auto subshape_ix_space_size = subshape.index_space_size();
+
+        omp_set_num_threads(nbThreads);
+
+        #pragma omp parallel for
+        for (auto i = 0; i < nbThreads; ++i) {
+            for (auto sub_linear_ix = 0; sub_linear_ix < subshape_ix_space_size; ++sub_linear_ix) {
+                Index ix = from_linear(shape, i * subshape_ix_space_size + sub_linear_ix);
+                out_array[ix] = fn(ix);
+            }
+        }
+
+        return out_array;
+    }*/
+
+    inline Array forall_ix_threaded(const Shape &shape, auto &fn, size_t nbThreads) {
+        omp_set_num_threads(nbThreads);
+
+        Float **threaded_content = new Float*[nbThreads];
+        auto thread_domain_size = shape.index_space_size() / nbThreads;
+
+        #pragma omp parallel for private( fn )
+        for (size_t tix = 0; tix < nbThreads; ++tix) {
+            Float *local_array = new Float[thread_domain_size];
+            threaded_content[tix] = local_array;
+            for (size_t offset_ix = 0; offset_ix < thread_domain_size; ++offset_ix) {
+                auto linear_ix = tix * thread_domain_size + offset_ix;
+                Index ix = from_linear(shape, linear_ix);
+                local_array[offset_ix] = fn(ix);
+            }
+        }
+
+        Float *content = new Float[shape.index_space_size()];
+
+        for (size_t tix = 0; tix < nbThreads; ++tix) {
+            memcpy(content + tix * thread_domain_size, threaded_content[tix], thread_domain_size);
+        }
+
+        return Array(shape, content);
+    }
+
     inline void set(const Index &ix, Array &array, const Float &value) {
         array[ix] = value;
     }
@@ -460,7 +517,7 @@ struct array_ops {
 
 // TODO: bypassing extend mechanism, not great
 template <typename _Array, typename _Axis, typename _Float, typename _Index,
-          typename _Offset, typename _PaddedArray, class _snippet_ix>
+          typename _Nat, typename _Offset, typename _PaddedArray, class _snippet_ix>
 struct forall_ops {
     private:
         array_ops _array_ops;
@@ -469,22 +526,40 @@ struct forall_ops {
     typedef _Axis Axis;
     typedef _Float Float;
     typedef _Index Index;
+    typedef _Nat Nat;
     typedef _Offset Offset;
     typedef _PaddedArray PaddedArray;
 
+    typedef array_ops::Shape Shape;
+
     static _snippet_ix snippet_ix;
 
-    Array forall_snippet_ix(const Array &u, const Array &v, const Array &u0,
+
+    Array forall_ix_snippet(const Array &u, const Array &v, const Array &u0,
                            const Array &u1, const Array &u2, const Float &c0,
                            const Float &c1, const Float &c2, const Float &c3,
                            const Float &c4) {
         auto fn = [&](const Index &ix) {
             return snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4, ix);
         };
-        return _array_ops.forall_ix(u.shape(), fn);
+
+        assert (u.shape().components.size() == 3);
+        auto out_array = Array(u.shape());
+
+        for (size_t i = 0; i < u.shape().components[0]; ++i) {
+            for (size_t j = 0; j < u.shape().components[1]; ++j) {
+                for (size_t k = 0; k < u.shape().components[2]; ++k) {
+                    Index ix = Index(std::vector({ i, j, k }));
+                    out_array[ix] = fn(ix);
+                }
+            }
+        }
+
+        return out_array;
+        //return _array_ops.forall_ix(u.shape(), fn);
     }
 
-    Array forall_snippet_ix_padded(const PaddedArray &u, const PaddedArray &v,
+    Array forall_ix_snippet_padded(const PaddedArray &u, const PaddedArray &v,
                             const PaddedArray &u0, const PaddedArray &u1,
                             const PaddedArray &u2, const Float &c0,
                             const Float &c1, const Float &c2, const Float &c3,
@@ -495,8 +570,169 @@ struct forall_ops {
         };
         return _array_ops.forall_ix_padded(u.bounds(), fn);
     }
+
+    Array forall_ix_snippet_threaded(const Array &u, const Array &v,
+                                     const Array &u0, const Array &u1,
+                                     const Array &u2, const Float &c0,
+                                     const Float &c1, const Float &c2,
+                                     const Float &c3, const Float &c4,
+                                     const Nat &_nbThreads) {
+        size_t nbThreads = _nbThreads.value;
+        auto shape = u.shape();
+        omp_set_num_threads(nbThreads);
+
+        Float **threaded_content = new Float*[nbThreads];
+        size_t thread_axis_length = shape.components[0] / nbThreads;
+        size_t thread_domain_size = shape.index_space_size() / nbThreads;
+        
+        assert (shape.components[0] % nbThreads == 0);
+        assert (shape.components.size() == 3);
+
+        #pragma omp parallel for schedule(static) firstprivate( shape ) // firstprivate( u, v, u0, u1, u2, shape )
+        for (size_t tix = 0; tix < nbThreads; ++tix) {
+            auto fn = [&](const Index &ix) {
+                return snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4, ix);
+            };
+            Float *local_array = new Float[thread_domain_size];
+            threaded_content[tix] = local_array;
+            for (size_t i = 0; i < thread_axis_length; ++i) {
+                for (size_t j = 0; j < shape.components[1]; ++j) {
+                    for (size_t k = 0; k < shape.components[2]; ++k) {
+                //for (size_t offset_ix = 0; offset_ix < thread_domain_size; ++offset_ix) {
+                //auto linear_ix = tix * thread_domain_size + offset_ix;
+                //Index ix = _array_ops.from_linear(shape, linear_ix);
+                        size_t offset_ix = i * (shape.components[1] * shape.components[2]) + j * shape.components[2] + k;
+                        Index ix = Index(std::vector({ tix * thread_axis_length + i, j, k }));
+                        local_array[offset_ix] = fn(ix);
+                    }
+                }
+            }
+        }
+
+        Float *content = new Float[shape.index_space_size()];
+
+        for (size_t tix = 0; tix < nbThreads; ++tix) {
+            memcpy(content + tix * thread_domain_size, threaded_content[tix], thread_domain_size);
+        }
+
+        return Array(shape, content);
+
+        //return _array_ops.forall_ix_threaded(u.shape(), fn, nbThreads.value);
+    }
+
+    Array forall_ix_snippet_tiled(const Array &u, const Array &v,
+                                  const Array &u0, const Array &u1,
+                                  const Array &u2, const Float &c0,
+                                  const Float &c1, const Float &c2,
+                                  const Float &c3, const Float &c4) {
+                                  //const Nat &_nbThreads) {
+        auto fn = [&](const Index &ix) {
+            return snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4, ix);
+        };
+
+        auto s0 = u.shape().components[0],
+             s1 = u.shape().components[1],
+             s2 = u.shape().components[2];
+
+        assert (u.shape().components.size() == 3);
+        auto s0tiles = 4, s1tiles = 4, s2tiles = 4;
+        auto out_array = Array(u.shape());
+
+        for (size_t ti = 0; ti < s0; ti += s0/s0tiles) {
+            for (size_t tj = 0; tj < s1; tj += s1/s1tiles) {
+                for (size_t tk = 0; tk < s2; tk += s2/s2tiles) {
+                    for (size_t i = ti; i < ti + s0/s0tiles; i++) {
+                        for (size_t j = tj; j < tj + s1/s1tiles; j++) {
+                            for (size_t k = tk; k < tk + s2/s2tiles; k++) {
+                                Index ix = Index(std::vector({ i, j, k }));
+                                out_array[ix] = fn(ix);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return out_array;
+    }
+
+    Array unliftAndUnpad(const Array &array, const Axis &axis,
+                         const Nat &paddingAmount) {
+        Shape padded_shape = array.shape();
+        auto d = padded_shape[0];
+
+        assert (axis.value == 0); // not implemented for other axes, no time
+
+        auto out_shape = Shape(std::vector(padded_shape.components.begin() + 1,
+                                           padded_shape.components.end()));
+        out_shape[0] -= paddingAmount.value * 2;
+        out_shape[0] *= d;
+
+        auto out_content = new Float[out_shape.index_space_size()];
+
+        auto stride = out_shape.index_space_size() / out_shape[0];
+        auto strides_to_keep = stride * out_shape[0] / d;
+        auto strides_to_skip = stride * padded_shape[1] / d;
+        auto offset = stride * paddingAmount.value;
+
+        Float *orig_content = array.unsafe_content();
+
+        for (size_t i = 0; i < d; ++i) {
+            memcpy(out_content + i * strides_to_keep, orig_content + i * strides_to_skip + offset, strides_to_keep * sizeof(Float));
+        }
+
+        return Array(out_shape, out_content);
+    }
+
+    Array padAndLift(const Array &array, const Axis &axis, const Nat &d,
+                     const Nat &paddingAmount) {
+        Shape in_shape = array.shape();
+        Float *in_content = array.unsafe_content();
+
+        auto modulus = in_shape.index_space_size();
+        Shape out_shape = array.shape();
+        out_shape.components.insert(out_shape.components.begin(), d.value);
+        out_shape[1] /= d.value;
+        out_shape[1] += 2 * paddingAmount.value;
+
+        assert (axis.value == 0); // not implemented for other axes, no time
+
+        auto out_content = new Float[out_shape.index_space_size()];
+
+        // TODO: fix, not correct
+        /*
+        auto in_stride = modulus / in_shape[0];
+        auto out_stride = out_shape.index_space_size() / d.value;
+
+        for (size_t i = 0; i < d; ++i) {
+            // Get left padding
+            int left_padding_offset = (((i - 2) * in_stride) + modulus) % modulus;
+            memcpy(out_content + i * out_stride, in_content + left_padding_offset, 
+        }
+        */
+
+        // TODO: hacky just to get something
+        memcpy(out_content, in_content, in_shape.index_space_size() * sizeof(Float));
+        memcpy(out_content + in_shape.index_space_size(), in_content, (out_shape.index_space_size() - in_shape.index_space_size()) * sizeof(Float));
+
+        return Array(out_shape, out_content);
+    }
 };
 
+
+struct hardware_info {
+    struct Nat {
+        size_t value;
+        Nat(size_t value) : value(value) {}
+        Nat() : value(0) {}
+    };
+
+    inline Nat nbCores() {
+        return Nat(NB_CORES);
+    }
+
+    inline Nat one() { return Nat(1); }
+};
 
 inline array_ops::Array dumpsine(const array_ops::Shape &shape) {
     double step = 0.01;

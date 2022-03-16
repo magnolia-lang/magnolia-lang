@@ -13,11 +13,11 @@ static const double s_nu = 1.0;
 static const double s_dx = 1.0;
 
 int main() {
-    size_t side = 15;
-    size_t steps = 15;
+    size_t side = 300;
+    size_t steps = 1;
     Shape shape = Shape(std::vector<size_t>({ side, side, side }));
     Array u0 = dumpsine(shape), u1 = dumpsine(shape), u2 = dumpsine(shape);
-    //for (size_t i = 0; i < 30; ++i) {
+    //for (size_t i = 0; i < steps; ++i) {
         PDEProgram::step(u0, u1, u2, s_nu, s_dx, s_dt);
     //}
 }
