@@ -461,6 +461,10 @@ concept OFTile = {
     }
 }
 
+concept OFVectorize = {
+    use OFRewritingTypesAndOps[ axis => last_axis ];
+}[ last_axis => two ];
+
 // concept OFExtractInnerRule = {
 //     use OFRewritingTypesAndOps;
 //     type Float;
