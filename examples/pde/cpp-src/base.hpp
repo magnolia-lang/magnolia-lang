@@ -588,7 +588,8 @@ struct forall_ops {
         assert (shape.components[0] % nbThreads == 0);
         assert (shape.components.size() == 3);
 
-        #pragma omp parallel for schedule(static) firstprivate( shape ) // firstprivate( u, v, u0, u1, u2, shape )
+        std::cout << "you call me right? " << nbThreads << std::endl;
+        #pragma omp parallel for schedule(static) firstprivate( u, v, u0, u1, u2, shape, thread_axis_length, thread_domain_size, nbThreads )
         for (size_t tix = 0; tix < nbThreads; ++tix) {
             auto fn = [&](const Index &ix) {
                 return snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4, ix);
@@ -602,7 +603,7 @@ struct forall_ops {
                 //auto linear_ix = tix * thread_domain_size + offset_ix;
                 //Index ix = _array_ops.from_linear(shape, linear_ix);
                         size_t offset_ix = i * (shape.components[1] * shape.components[2]) + j * shape.components[2] + k;
-                        Index ix = Index(std::vector({ tix * thread_axis_length + i, j, k }));
+                        Index ix = Index(std::vector({ i + tix * thread_axis_length, j, k }));
                         local_array[offset_ix] = fn(ix);
                     }
                 }
@@ -619,6 +620,36 @@ struct forall_ops {
 
         //return _array_ops.forall_ix_threaded(u.shape(), fn, nbThreads.value);
     }
+
+    /*Array forall_ix_snippet_threaded(const Array &u, const Array &v,
+                                     const Array &u0, const Array &u1,
+                                     const Array &u2, const Float &c0,
+                                     const Float &c1, const Float &c2,
+                                     const Float &c3, const Float &c4,
+                                     const Nat &_nbThreads) {
+        size_t nbThreads = _nbThreads.value;
+        auto shape = u.shape();
+        omp_set_num_threads(nbThreads);
+
+        assert (shape.components[0] % nbThreads == 0);
+        assert (shape.components.size() == 3);
+
+        Array out_array = Array(shape);
+        auto fn = [&](const Index &ix) {
+            return snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4, ix);
+        };
+        
+        #pragma omp parallel for schedule(static) // firstprivate( u, v, u0, u1, u2, shape, thread_axis_length, thread_domain_size, nbThreads )
+        for (size_t i = 0; i < u.shape().components[0]; ++i) {
+            for (size_t j = 0; j < u.shape().components[1]; ++j) {
+                for (size_t k = 0; k < u.shape().components[2]; ++k) {
+                    Index ix = Index(std::vector({ i, j, k }));
+                    out_array[ix] = fn(ix);
+                }
+            }
+        }
+        return out_array;
+    }*/
 
     Array forall_ix_snippet_tiled(const Array &u, const Array &v,
                                   const Array &u0, const Array &u1,
