@@ -95,8 +95,8 @@ implementation PDE = {
                                        c3: Float, c4: Float): Array;
     type Index;
 
-    require function psi(ix: Index, array: Array): Float;
-    require procedure set(obs ix: Index, upd array: Array, obs v: Float);
+    require function psi(ix: Index, array: Array): Array;
+    //require procedure set(obs ix: Index, upd array: Array, obs v: Float);
 
     // procedure snippet_ix(upd u: Array, obs v: Array, obs u0: Array,
     //                      obs u1: Array, obs u2: Array, obs c0: Float,
@@ -114,7 +114,7 @@ implementation PDE = {
     function snippet_ix(u: Array, v: Array, u0: Array,
                         u1: Array, u2: Array, c0: Float,
                         c1: Float, c2: Float, c3: Float,
-                        c4: Float, ix: Index): Float {
+                        c4: Float, ix: Index): Array {
         var zero = zero();
         var one = one(): Offset;
         var two = two(): Axis;
@@ -166,7 +166,7 @@ implementation ExtExtendMissingBypass = external C++ base.forall_ops {
     require function snippet_ix(u: Array, v: Array,
                                 u0: Array, u1: Array, u2: Array,
                                 c0: Float, c1: Float, c2: Float,
-                                c3: Float, c4: Float, ix: Index): Float;
+                                c3: Float, c4: Float, ix: Index): Array;
 
 
     function forall_ix_snippet(u: Array, v: Array,
@@ -203,10 +203,11 @@ implementation ExtArrayOps = external C++ base.array_ops {
     type Axis;
     type Index;
     type Shape;
+    type LinearArray;
 
     function shape(array: Array): Shape;
-    function psi(ix: Index, array: Array): Float;
-    procedure set(obs ix: Index, upd array: Array, obs v: Float);
+    function psi(ix: Index, array: Array): Array;
+    //procedure set(obs ix: Index, upd array: Array, obs v: Float);
 
     /* Float ops */
     function unary_sub(f: Float): Float;
@@ -242,6 +243,20 @@ implementation ExtArrayOps = external C++ base.array_ops {
     function one_offset(): Offset;
     function unary_sub(o: Offset): Offset;
 
+    /* Scalar-LinearArray ops */
+    function _+_(lhs: Float, rhs: LinearArray): LinearArray;
+    function binary_sub(lhs: Float, rhs: LinearArray): LinearArray;
+    function _*_(lhs: Float, rhs: LinearArray): LinearArray;
+    function _/_(num: Float, den: LinearArray): LinearArray;
+
+    /* LinearArray-LinearArray ops */
+    function _+_(lhs: LinearArray, rhs: LinearArray): LinearArray;
+    function binary_sub(lhs: LinearArray, rhs: LinearArray): LinearArray;
+    function _*_(lhs: LinearArray, rhs: LinearArray): LinearArray;
+
+    /* OF utils */
+    function uniqueShape(): Shape;
+    function toArray(la: LinearArray, s: Shape): Array;
 
     /* Rewriting, padding utils */
     type PaddedArray;
@@ -257,10 +272,9 @@ concept DNFGenericBinopRule = {
     type Array;
     type Index;
 
-    function binop(lhs: E, rhs: E): E;
     function binop(lhs: E, rhs: Array): Array;
     function binop(lhs: Array, rhs: Array): Array;
-    function psi(ix: Index, array: Array): E;
+    function psi(ix: Index, array: Array): Array;
 
     // R1
     axiom binopArrayRule(ix: Index, lhs: Array, rhs: Array) {
@@ -464,6 +478,108 @@ concept OFTile = {
 concept OFVectorize = {
     use OFRewritingTypesAndOps[ axis => last_axis ];
 }[ last_axis => two ];
+
+concept OFRavel = {
+    type Array;
+    type Shape;
+    type LinearArray;
+    type Index;
+
+    function shape(arr: Array): Shape;
+    function psi(ix: Index, arr: Array): Array;
+    function rav(a: Array): LinearArray;
+
+    function toArray(la: LinearArray, shape: Shape): Array;
+
+    axiom pctRule(ix: Index, a: Array) {
+        assert psi(ix, a) == toArray(rav(psi(ix, a)), shape(a));
+    }
+}
+
+concept ShapeIsUnique = {
+    type Shape;
+
+    function uniqueShape(): Shape;
+
+    axiom shapeIsUniqueRule(s: Shape) {
+        assert s == uniqueShape();
+    }
+}
+
+concept ONFToArrayGenericBinopRule = {
+    type Array;
+    type LinearArray;
+    type E;
+    type Shape;
+
+    function binop(lhs: E, rhs: Array): Array;
+    function binop(lhs: Array, rhs: Array): Array;
+    function binop(lhs: E, rhs: LinearArray): LinearArray;
+    function binop(lhs: LinearArray, rhs: LinearArray): LinearArray;
+
+    function toArray(la: LinearArray, shape: Shape): Array;
+
+    axiom binopArrayRule(lhs: LinearArray, rhs: LinearArray, s: Shape) {
+        assert binop(toArray(lhs, s), toArray(rhs, s)) ==
+               toArray(binop(lhs, rhs), s);
+    }
+
+    axiom binopScalarRule(lhs: E, rhs: LinearArray, s: Shape) {
+        assert binop(lhs, toArray(rhs, s)) == toArray(binop(lhs, rhs), s);
+    }
+}
+
+concept ONFToArrayRules = {
+    use ONFToArrayGenericBinopRule[ E => Float
+                                  , binop => _+_
+                                  , binopArrayRule => binopArrayRulePlus
+                                  , binopScalarRule => binopScalarRulePlus
+                                  ];
+    use ONFToArrayGenericBinopRule[ E => Float
+                                  , binop => _*_
+                                  , binopArrayRule => binopArrayRuleMul
+                                  , binopScalarRule => binopScalarRuleMul
+                                  ];
+    use ONFToArrayGenericBinopRule[ E => Float
+                                  , binop => binary_sub
+                                  , binopArrayRule => binopArrayRuleSub
+                                  , binopScalarRule => binopScalarRuleSub
+                                  ];
+}
+
+// Ranges in the PCT are always contiguous
+concept PsiCorrespondenceTheorem = {
+    //use OFRewritingTypesAndOps;
+
+    type Array;
+    type Index;
+    type LinearArray;
+    type LinearIndex;
+    type Range;
+    type Shape;
+    type Stride;
+
+    function shape(arr: Array): Shape;
+    function psi(ix: Index, arr: Array): Array;
+
+    function start(ix: Index, shape: Shape): LinearIndex;
+    function stride(ix: Index, shape: Shape): Stride;
+    function iota(s: Stride): Range;
+
+    function _+_(lix: LinearIndex, range: Range): Range;
+    function _*_(lix: LinearIndex, stride: Stride): LinearIndex;
+
+    function rav(a: Array): LinearArray;
+    function elementsAt(la: LinearArray, r: Range): LinearArray;
+
+    axiom pctRule(ix: Index, a: Array) {
+        var start = start(ix, shape(a));
+        var stride = stride(ix, shape(a));
+
+        assert rav(psi(ix, a)) ==
+               elementsAt(rav(a), start * stride + iota(stride));
+    }
+}
 
 // concept OFExtractInnerRule = {
 //     use OFRewritingTypesAndOps;
