@@ -95,10 +95,6 @@ namespace pde_cpp {
 
 
 
-    PDEProgram::_set PDEProgram::set;
-
-
-
     PDEProgram::_shape PDEProgram::shape;
 
 
