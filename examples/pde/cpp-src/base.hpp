@@ -44,6 +44,8 @@ struct array_ops {
         }
     };
 
+    inline Shape empty_shape() { return Shape(std::vector<size_t>()); }
+
     struct Index {
         std::vector<size_t> value;
         Index(std::vector<size_t> value) : value(value) {}
@@ -56,7 +58,7 @@ struct array_ops {
             size_t index_space_size = shape.index_space_size();
             size_t linear_ix = 0;
 
-            assert (this->dim() == shape.dim());
+            //assert (this->dim() == shape.dim());
 
             for (auto shape_it = shape.components.begin(), ix_it = this->value.begin();
                  shape_it != shape.components.end() && ix_it != this->value.end();
@@ -129,21 +131,52 @@ struct array_ops {
 
     struct Array {
         private:
-            Float *m_content;
+            Float m_value;
+            //Float *m_content;
             Shape m_shape;
+            Array *m_subarrays;
 
         public:
             Array(const Shape &shape, Float *content) : m_shape(shape) {
-                auto array_size = shape.index_space_size();
+                if (shape.components.size() == 0) {
+                    this->m_value = *content;
+                    this->m_subarrays = NULL;
+                }
+                else {
+                    auto total_size = shape.index_space_size();
+                    auto shape_hd = shape.components.front();
+                    auto subshape = Shape(std::vector(shape.components.begin() + 1, shape.components.end()));
+
+                    this->m_subarrays = (Array*) ::operator new (shape_hd * sizeof(Array)); //new Array[shape_hd];
+
+                    for (auto start = 0, i = 0; i < shape_hd; start += total_size / shape_hd, i += 1) {
+                        this->m_subarrays[i] = Array(subshape, content + start);
+                    }
+                }
+                /*
                 // TODO: not this, lol
                 //this->m_content = content;
                 this->m_content = new Float[array_size];
                 memcpy(this->m_content, content, array_size * sizeof(Float));
+                */
             }
 
             Array(const Shape &shape) : m_shape(shape) {
-                auto array_size = shape.index_space_size();
-                this->m_content = new Float[array_size];
+                if (shape.components.size() == 0) {
+                    this->m_subarrays = NULL;
+                }
+                else {
+                    auto shape_hd = shape.components.front();
+                    auto subshape = Shape(std::vector(shape.components.begin() + 1, shape.components.end()));
+                    this->m_subarrays = (Array*) ::operator new (shape_hd * sizeof(Array));
+                    for (auto i = 0; i < shape_hd; ++i) {
+                        this->m_subarrays[i] = Array(subshape);
+                    }
+                }
+            }
+
+            bool is_scalar() const {
+                return this->m_shape.components.size() == 0;
             }
 
             Shape shape() const {
@@ -154,20 +187,71 @@ struct array_ops {
                 return this->m_shape.index_space_size();
             }
 
-            Float operator[](const Index &ix) const {
-                auto linear_ix = ix.to_linear(this->m_shape);
-                return this->m_content[linear_ix];
+            Float &as_scalar() {
+                assert (this->m_shape.components.size() == 0);
+                return this->m_value;
             }
 
-            Float &operator[](const Index &ix) {
-                auto linear_ix = ix.to_linear(this->m_shape);
-                return this->m_content[linear_ix];
+            Array operator[](const Index &ix) const {
+                if (ix.value.size() == 0) {
+                    return *this;
+                }
+                else {
+                    auto subix = Index(std::vector(ix.value.begin() + 1, ix.value.end()));
+                    return this->m_subarrays[ix.value.front()][subix];
+                }
+                //auto linear_ix = ix.to_linear(this->m_shape);
+                //auto result_shape = Shape(std::vector(this->m_shape.components.begin() + ix.value.size(), this->m_shape.components.end()));
+                //return Array(result_shape, this->m_content + linear_ix);
             }
 
+            Array &operator[](const Index &ix) {
+                if (ix.value.size() == 0) {
+                    return *this;
+                }
+                else {
+                    auto subix = Index(std::vector(ix.value.begin() + 1, ix.value.end()));
+                    return this->m_subarrays[ix.value.front()][subix];
+                }
+                //auto linear_ix = ix.to_linear(this->m_shape);
+                //auto result_shape = Shape(std::vector(this->m_shape.components.begin() + ix.value.size(), this->m_shape.components.end()));
+                //return Array(result_shape, this->m_content + linear_ix);
+            }
+
+            // TODO: clean up and remove
             Float *unsafe_content() const {
-                return this->m_content;
+                return NULL; //this->m_content;
             }
 
+            void rotate(const Axis &axis, const Offset &offset) {
+                if (this->m_shape.components.size() == 0) return;
+
+                auto shape_hd = this->m_shape.components.front();
+                if (axis.value == 0) {
+                    Array *new_subarrays = (Array*) ::operator new (shape_hd * sizeof(Array));
+                    //std::cout << offset.value << std::endl;
+                    if (offset.value < 0) {
+                        auto positive_offset = -offset.value;
+                        memcpy(new_subarrays, this->m_subarrays + positive_offset, (shape_hd - positive_offset) * sizeof(Array));
+                        memcpy(new_subarrays + shape_hd - positive_offset, this->m_subarrays, positive_offset * sizeof(Array));
+                    }
+                    else {
+                        memcpy(new_subarrays, this->m_subarrays + shape_hd - offset.value, offset.value * sizeof(Array));
+                        memcpy(new_subarrays + offset.value, this->m_subarrays, (shape_hd - offset.value) * sizeof(Array));
+                        //memcpy(new_subarrays, this->m_suba
+                    }
+                    //delete this->m_subarrays;
+                    this->m_subarrays = new_subarrays;
+                }
+                else {
+                    auto new_axis = Axis(axis.value - 1);
+                    for (auto subarray = this->m_subarrays; subarray < this->m_subarrays + shape_hd; ++subarray) {
+                        subarray->rotate(new_axis, offset);
+                    }
+                }
+            }
+
+            /*
             void rotate(const Axis &axis, const Offset &offset) {
                 Shape start_shape = Shape(std::vector<size_t>(this->m_shape.components.begin(), this->m_shape.components.begin() + axis.value));
                 size_t stride = Shape(std::vector<size_t>(this->m_shape.components.begin() + axis.value, this->m_shape.components.end())).index_space_size();
@@ -200,7 +284,30 @@ struct array_ops {
                 }
 
                 this->m_content = new_content;
-            }
+            }*/
+    };
+
+    /*
+    type Array;
+    type Index;
+    type LinearArray;
+    type LinearIndex;
+    type Range;
+    type Shape;
+    type Stride;
+    */
+
+    // Always contiguous
+    struct Range {
+        size_t start;
+        size_t end;
+
+        Range(size_t end) : start(0), end(end) {}
+        Range(size_t start, size_t end) : start(start), end(end) {}
+    };
+
+    struct LinearArray {
+        
     };
 
     struct PaddedArray {
@@ -330,7 +437,9 @@ struct array_ops {
     /* Scalar-Array ops */
     inline Array binary_add(const Float &lhs, const Array &rhs) {
         auto fn = [&](const Index &ix) {
-            return binary_add(lhs, rhs[ix]);
+            assert (rhs[ix].is_scalar());
+            Float value = binary_add(lhs, rhs[ix].as_scalar());
+            return Array(empty_shape(), &value);
         };
         
         return forall_ix(rhs.shape(), fn); 
@@ -338,7 +447,9 @@ struct array_ops {
 
     inline Array binary_sub(const Float &lhs, const Array &rhs) {
         auto fn = [&](const Index &ix) {
-            return binary_sub(lhs, rhs[ix]);
+            assert (rhs[ix].is_scalar());
+            Float value = binary_sub(lhs, rhs[ix].as_scalar());
+            return Array(empty_shape(), &value);
         };
 
         return forall_ix(rhs.shape(), fn);
@@ -346,7 +457,9 @@ struct array_ops {
 
     inline Array mul(const Float &lhs, const Array &rhs) {
         auto fn = [&](const Index &ix) {
-            return mul(lhs, rhs[ix]);
+            assert (rhs[ix].is_scalar());
+            Float value = mul(lhs, rhs[ix].as_scalar());
+            return Array(empty_shape(), &value);
         };
 
         return forall_ix(rhs.shape(), fn);
@@ -354,7 +467,9 @@ struct array_ops {
 
     inline Array div(const Float &lhs, const Array &rhs) {
         auto fn = [&](const Index &ix) {
-            return div(lhs, rhs[ix]);
+            assert (rhs[ix].is_scalar());
+            Float value = div(lhs, rhs[ix].as_scalar());
+            return Array(empty_shape(), &value);
         };
 
         return forall_ix(rhs.shape(), fn);
@@ -364,7 +479,9 @@ struct array_ops {
     inline Array binary_add(const Array &lhs, const Array &rhs) {
         assert (lhs.shape() == rhs.shape());
         auto fn = [&](const Index &ix) {
-            return binary_add(lhs[ix], rhs[ix]);
+            assert (lhs[ix].is_scalar());
+            auto result = binary_add(lhs[ix].as_scalar(), rhs[ix].as_scalar());
+            return Array(empty_shape(), &result);
         };
 
         return forall_ix(rhs.shape(), fn);
@@ -373,7 +490,9 @@ struct array_ops {
     inline Array binary_sub(const Array &lhs, const Array &rhs) {
         assert (lhs.shape() == rhs.shape());
         auto fn = [&](const Index &ix) {
-            return binary_sub(lhs[ix], rhs[ix]);
+            assert (lhs[ix].is_scalar());
+            auto result = binary_sub(lhs[ix].as_scalar(), rhs[ix].as_scalar());
+            return Array(empty_shape(), &result);
         };
 
         return forall_ix(rhs.shape(), fn);
@@ -382,7 +501,9 @@ struct array_ops {
     inline Array mul(const Array &lhs, const Array &rhs) {
         assert (lhs.shape() == rhs.shape());
         auto fn = [&](const Index &ix) {
-            return mul(lhs[ix], rhs[ix]);
+            assert (lhs[ix].is_scalar());
+            auto result = mul(lhs[ix].as_scalar(), rhs[ix].as_scalar());
+            return Array(empty_shape(), &result);
         };
 
         return forall_ix(rhs.shape(), fn);
@@ -391,7 +512,9 @@ struct array_ops {
     inline Array div(const Array &lhs, const Array &rhs) {
         assert (lhs.shape() == rhs.shape());
         auto fn = [&](const Index &ix) {
-            return div(lhs[ix], rhs[ix]);
+            assert (lhs[ix].is_scalar());
+            auto result = div(lhs[ix].as_scalar(), rhs[ix].as_scalar());
+            return Array(empty_shape(), &result);
         };
 
         return forall_ix(rhs.shape(), fn);
@@ -472,15 +595,11 @@ struct array_ops {
         return Array(shape, content);
     }
 
-    inline void set(const Index &ix, Array &array, const Float &value) {
-        array[ix] = value;
-    }
-
     inline Shape shape(const Array &array) {
         return array.shape();
     }
 
-    inline Float psi(const Index &ix, const Array &array) {
+    inline Array psi(const Index &ix, const Array &array) {
         return array[ix];
     }
 
@@ -577,11 +696,11 @@ struct forall_ops {
                                      const Float &c1, const Float &c2,
                                      const Float &c3, const Float &c4,
                                      const Nat &_nbThreads) {
-        size_t nbThreads = _nbThreads.value;
+        /*size_t nbThreads = _nbThreads.value;
         auto shape = u.shape();
         omp_set_num_threads(nbThreads);
 
-        Float **threaded_content = new Float*[nbThreads];
+        Array **threaded_content = new Array*[nbThreads];
         size_t thread_axis_length = shape.components[0] / nbThreads;
         size_t thread_domain_size = shape.index_space_size() / nbThreads;
         
@@ -594,7 +713,8 @@ struct forall_ops {
             auto fn = [&](const Index &ix) {
                 return snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4, ix);
             };
-            Float *local_array = new Float[thread_domain_size];
+            Array *local_array = (Array*) ::operator new (shape_hd * sizeof(Array));
+            //new Float[thread_domain_size];
             threaded_content[tix] = local_array;
             for (size_t i = 0; i < thread_axis_length; ++i) {
                 for (size_t j = 0; j < shape.components[1]; ++j) {
@@ -610,13 +730,14 @@ struct forall_ops {
             }
         }
 
-        Float *content = new Float[shape.index_space_size()];
-
+        // TODO: resovle
         for (size_t tix = 0; tix < nbThreads; ++tix) {
             memcpy(content + tix * thread_domain_size, threaded_content[tix], thread_domain_size);
         }
 
         return Array(shape, content);
+        */
+        return Array(u.shape()); // TODO: resolve
 
         //return _array_ops.forall_ix_threaded(u.shape(), fn, nbThreads.value);
     }
@@ -775,7 +896,8 @@ inline array_ops::Array dumpsine(const array_ops::Shape &shape) {
 
     auto fn = [&](const array_ops::Index &ix) {
         auto timestep = step * ix.to_linear(shape);
-        return array_ops::Float(amplitude * sin(PI * t + phase));
+        auto val = array_ops::Float(amplitude * sin(PI * t + phase));
+        return array_ops::Array(array_ops::Shape(std::vector<size_t>()), &val); //&array_ops::Float(amplitude * sin(PI * t + phase)));
     };
     return ops.forall_ix(shape, fn);
 }
