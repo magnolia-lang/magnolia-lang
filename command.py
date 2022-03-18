@@ -23,10 +23,17 @@ def run_compiler(rewrite_confs):
 
 if __name__ == '__main__':
     rew_configs = [ ("DNFRules", 100)
-                  , ("OFIntroducePaddingInArguments", 1)
+                  , ("OFRavel", 1)
+                  , ("ShapeIsUnique", 100)
+                  , ("ONFToArrayRules", 100)
+                  , ("PsiCorrespondenceTheorem", 1)
+                  , ("ShapeIsUnique", 100) # Could rewrite next rewrite rules
+                  #, ("OFTile", 1)
+                  #, ("OFLiftCores", 1)
+                  ##, ("OFIntroducePaddingInArguments", 1)
                   #, ("OFIntroducePaddingRule", 1)
-                  , ("OFAddLeftPadding0Axis", 10)
-                  , ("OFAddRightPadding0Axis", 10)
+                  ##, ("OFAddLeftPadding0Axis", 10)
+                  ##, ("OFAddRightPadding0Axis", 10)
                   #, ("OFExtractInnerRule", 1)
                   #, ("OFRemoveLeftoverPadding", 100)
                   ]
