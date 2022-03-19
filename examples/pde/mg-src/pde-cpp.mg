@@ -89,6 +89,17 @@ implementation PDE = {
         u = forall_ix_snippet(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
     }
 
+    /*procedure snippet(upd u: Array, obs v: Array,
+                      obs u0: Array, obs u1: Array, obs u2: Array,
+                      obs c0: Float, obs c1: Float, obs c2: Float,
+                      obs c3: Float, obs c4: Float) {
+        var zero = zero();
+        var one = one(): Offset;
+        var two = two(): Axis;
+
+        u = u + c4 * (c3 * (c1 * (rotate(v, zero, -one) + rotate(v, zero, one) + rotate(v, one(): Axis, -one) + rotate(v, one(): Axis, one) + rotate(v, two, -one) + rotate(v, two, one)) - three() * c2 * u0) - c0 * ((rotate(v, zero, one) - rotate(v, zero, -one)) * u0 + (rotate(v, one(): Axis, one) - rotate(v, one(): Axis, -one)) * u1 + (rotate(v, two, one) - rotate(v, two, -one)) * u2));
+    }*/
+
     require function forall_ix_snippet(u: Array, v: Array,
                                        u0: Array, u1: Array, u2: Array,
                                        c0: Float, c1: Float, c2: Float,
@@ -204,8 +215,12 @@ implementation ExtArrayOps = external C++ base.array_ops {
     type Index;
     type Shape;
     type LinearArray;
+    type LinearIndex;
+    type Stride;
+    type Range;
 
     function shape(array: Array): Shape;
+    function subshape(ix: Index, shape: Shape): Shape;
     function psi(ix: Index, array: Array): Array;
     //procedure set(obs ix: Index, upd array: Array, obs v: Float);
 
@@ -258,6 +273,19 @@ implementation ExtArrayOps = external C++ base.array_ops {
     function uniqueShape(): Shape;
     function toArray(la: LinearArray, s: Shape): Array;
 
+    function start(ix: Index, shape: Shape): LinearIndex;
+    function stride(ix: Index, shape: Shape): Stride;
+    function iota(s: Stride): Range;
+
+    function _+_(lix: LinearIndex, range: Range): Range;
+    function _*_(lix: LinearIndex, stride: Stride): LinearIndex;
+
+    function rav(a: Array): LinearArray;
+    function elementsAt(la: LinearArray, r: Range): LinearArray;
+
+    /* DNF utils */
+    function emptyIndex(): Index;
+
     /* Rewriting, padding utils */
     type PaddedArray;
 
@@ -265,6 +293,27 @@ implementation ExtArrayOps = external C++ base.array_ops {
     function cpadr(a: PaddedArray, axis: Axis): PaddedArray;
     function cpadl(a: PaddedArray, axis: Axis): PaddedArray;
     // function inner(a: PaddedArray): Array;
+}
+
+concept DNFIntroducePsi = {
+    type Array;
+    type Index;
+
+    function psi(ix: Index, a: Array): Array;
+    function emptyIndex(): Index;
+
+    axiom introducePsiRule(a: Array) {
+        assert a == psi(emptyIndex(), a);
+    }
+}
+
+concept DNFCleanupPsiIntroduction = {
+    use signature(DNFIntroducePsi);
+
+    axiom cleanUpPsiRule(a: Array) {
+        assert psi(emptyIndex(), psi(emptyIndex(), a)) ==
+               psi(emptyIndex(), a);
+    }
 }
 
 concept DNFGenericBinopRule = {
@@ -486,13 +535,14 @@ concept OFRavel = {
     type Index;
 
     function shape(arr: Array): Shape;
+    function subshape(ix: Index, shape: Shape): Shape;
     function psi(ix: Index, arr: Array): Array;
     function rav(a: Array): LinearArray;
 
     function toArray(la: LinearArray, shape: Shape): Array;
 
     axiom pctRule(ix: Index, a: Array) {
-        assert psi(ix, a) == toArray(rav(psi(ix, a)), shape(a));
+        assert psi(ix, a) == toArray(rav(psi(ix, a)), subshape(ix, shape(a)));
     }
 }
 
@@ -578,6 +628,23 @@ concept PsiCorrespondenceTheorem = {
 
         assert rav(psi(ix, a)) ==
                elementsAt(rav(a), start * stride + iota(stride));
+    }
+}
+
+concept OFCleanupIdentity = {
+    use signature(PsiCorrespondenceTheorem);
+    use signature(ONFToArrayRules);
+
+    function emptyIndex(): Index;
+    function uniqueShape(): Shape;
+
+    axiom cleanUpIdentityRule(a: Array) {
+        var start = start(emptyIndex(), uniqueShape());
+        var stride = stride(emptyIndex(), uniqueShape());
+
+        assert toArray(rav(a), uniqueShape()) == a;
+        assert toArray(elementsAt(rav(a), start * stride + iota(stride)),
+                       uniqueShape()) == a;
     }
 }
 
