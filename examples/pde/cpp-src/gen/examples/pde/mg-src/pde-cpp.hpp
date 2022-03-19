@@ -33,7 +33,23 @@ private:
     static hardware_info __hardware_info;
     static array_ops __array_ops;
 public:
+    typedef array_ops::Stride Stride;
     typedef array_ops::Shape Shape;
+    struct _uniqueShape {
+        inline PDEProgram::Shape operator()() {
+            return __array_ops.uniqueShape();
+        };
+    };
+
+    static PDEProgram::_uniqueShape uniqueShape;
+    typedef array_ops::Range Range;
+    struct _iota {
+        inline PDEProgram::Range operator()(const PDEProgram::Stride& s) {
+            return __array_ops.iota(s);
+        };
+    };
+
+    static PDEProgram::_iota iota;
     typedef array_ops::PaddedArray PaddedArray;
     typedef array_ops::Offset Offset;
 private:
@@ -54,8 +70,44 @@ private:
         o = __hardware_info.one();
     };
 public:
+    typedef array_ops::LinearIndex LinearIndex;
     typedef array_ops::LinearArray LinearArray;
+    struct _elementsAt {
+        inline PDEProgram::LinearArray operator()(const PDEProgram::LinearArray& la, const PDEProgram::Range& r) {
+            return __array_ops.elementsAt(la, r);
+        };
+    };
+
+    static PDEProgram::_elementsAt elementsAt;
     typedef array_ops::Index Index;
+    struct _emptyIndex {
+        inline PDEProgram::Index operator()() {
+            return __array_ops.emptyIndex();
+        };
+    };
+
+    static PDEProgram::_emptyIndex emptyIndex;
+    struct _start {
+        inline PDEProgram::LinearIndex operator()(const PDEProgram::Index& ix, const PDEProgram::Shape& shape) {
+            return __array_ops.start(ix, shape);
+        };
+    };
+
+    static PDEProgram::_start start;
+    struct _stride {
+        inline PDEProgram::Stride operator()(const PDEProgram::Index& ix, const PDEProgram::Shape& shape) {
+            return __array_ops.stride(ix, shape);
+        };
+    };
+
+    static PDEProgram::_stride stride;
+    struct _subshape {
+        inline PDEProgram::Shape operator()(const PDEProgram::Index& ix, const PDEProgram::Shape& shape) {
+            return __array_ops.subshape(ix, shape);
+        };
+    };
+
+    static PDEProgram::_subshape subshape;
     typedef array_ops::Float Float;
     struct _three {
         inline PDEProgram::Float operator()() {
@@ -143,6 +195,9 @@ public:
         inline PDEProgram::LinearArray operator()(const PDEProgram::LinearArray& lhs, const PDEProgram::LinearArray& rhs) {
             return __array_ops.binary_add(lhs, rhs);
         };
+        inline PDEProgram::Range operator()(const PDEProgram::LinearIndex& lix, const PDEProgram::Range& range) {
+            return __array_ops.binary_add(lix, range);
+        };
     };
 
     static PDEProgram::_binary_add binary_add;
@@ -222,6 +277,9 @@ public:
         inline PDEProgram::LinearArray operator()(const PDEProgram::LinearArray& lhs, const PDEProgram::LinearArray& rhs) {
             return __array_ops.mul(lhs, rhs);
         };
+        inline PDEProgram::LinearIndex operator()(const PDEProgram::LinearIndex& lix, const PDEProgram::Stride& stride) {
+            return __array_ops.mul(lix, stride);
+        };
     };
 
     static PDEProgram::_mul mul;
@@ -239,6 +297,13 @@ public:
     };
 
     static PDEProgram::_psi psi;
+    struct _rav {
+        inline PDEProgram::LinearArray operator()(const PDEProgram::Array& a) {
+            return __array_ops.rav(a);
+        };
+    };
+
+    static PDEProgram::_rav rav;
     struct _rotate {
         inline PDEProgram::Array operator()(const PDEProgram::Array& a, const PDEProgram::Axis& axis, const PDEProgram::Offset& o) {
             return __array_ops.rotate(a, axis, o);
@@ -255,7 +320,7 @@ public:
     static PDEProgram::_shape shape;
     struct _snippet {
         inline void operator()(PDEProgram::Array& u, const PDEProgram::Array& v, const PDEProgram::Array& u0, const PDEProgram::Array& u1, const PDEProgram::Array& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4) {
-            u = PDEProgram::forall_ix_snippet(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
+            u = PDEProgram::forall_ix_snippet_tiled(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
         };
     };
 
@@ -265,7 +330,7 @@ public:
             PDEProgram::Axis zero = PDEProgram::zero();
             PDEProgram::Offset one = PDEProgram::one.operator()<Offset>();
             PDEProgram::Axis two = PDEProgram::two.operator()<Axis>();
-            PDEProgram::Array result = PDEProgram::toArray(PDEProgram::binary_add(PDEProgram::elementsAt(PDEProgram::rav(u), PDEProgram::binary_add(PDEProgram::mul(PDEProgram::start(ix, PDEProgram::uniqueShape()), PDEProgram::stride(ix, PDEProgram::uniqueShape())), PDEProgram::iota(PDEProgram::stride(ix, PDEProgram::uniqueShape())))), PDEProgram::mul(c4, PDEProgram::binary_sub(PDEProgram::mul(c3, PDEProgram::binary_sub(PDEProgram::mul(c1, PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::elementsAt(PDEProgram::rav(v), PDEProgram::binary_add(PDEProgram::mul(PDEProgram::start(PDEProgram::rotate_ix(ix, zero, PDEProgram::unary_sub(one), PDEProgram::uniqueShape()), PDEProgram::uniqueShape()), PDEProgram::stride(PDEProgram::rotate_ix(ix, zero, PDEProgram::unary_sub(one), PDEProgram::uniqueShape()), PDEProgram::uniqueShape())), PDEProgram::iota(PDEProgram::stride(PDEProgram::rotate_ix(ix, zero, PDEProgram::unary_sub(one), PDEProgram::uniqueShape()), PDEProgram::uniqueShape())))), PDEProgram::elementsAt(PDEProgram::rav(v), PDEProgram::binary_add(PDEProgram::mul(PDEProgram::start(PDEProgram::rotate_ix(ix, zero, one, PDEProgram::uniqueShape()), PDEProgram::uniqueShape()), PDEProgram::stride(PDEProgram::rotate_ix(ix, zero, one, PDEProgram::uniqueShape()), PDEProgram::uniqueShape())), PDEProgram::iota(PDEProgram::stride(PDEProgram::rotate_ix(ix, zero, one, PDEProgram::uniqueShape()), PDEProgram::uniqueShape()))))), PDEProgram::elementsAt(PDEProgram::rav(v), PDEProgram::binary_add(PDEProgram::mul(PDEProgram::start(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), PDEProgram::unary_sub(one), PDEProgram::uniqueShape()), PDEProgram::uniqueShape()), PDEProgram::stride(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), PDEProgram::unary_sub(one), PDEProgram::uniqueShape()), PDEProgram::uniqueShape())), PDEProgram::iota(PDEProgram::stride(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), PDEProgram::unary_sub(one), PDEProgram::uniqueShape()), PDEProgram::uniqueShape()))))), PDEProgram::elementsAt(PDEProgram::rav(v), PDEProgram::binary_add(PDEProgram::mul(PDEProgram::start(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), one, PDEProgram::uniqueShape()), PDEProgram::uniqueShape()), PDEProgram::stride(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), one, PDEProgram::uniqueShape()), PDEProgram::uniqueShape())), PDEProgram::iota(PDEProgram::stride(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), one, PDEProgram::uniqueShape()), PDEProgram::uniqueShape()))))), PDEProgram::elementsAt(PDEProgram::rav(v), PDEProgram::binary_add(PDEProgram::mul(PDEProgram::start(PDEProgram::rotate_ix(ix, two, PDEProgram::unary_sub(one), PDEProgram::uniqueShape()), PDEProgram::uniqueShape()), PDEProgram::stride(PDEProgram::rotate_ix(ix, two, PDEProgram::unary_sub(one), PDEProgram::uniqueShape()), PDEProgram::uniqueShape())), PDEProgram::iota(PDEProgram::stride(PDEProgram::rotate_ix(ix, two, PDEProgram::unary_sub(one), PDEProgram::uniqueShape()), PDEProgram::uniqueShape()))))), PDEProgram::elementsAt(PDEProgram::rav(v), PDEProgram::binary_add(PDEProgram::mul(PDEProgram::start(PDEProgram::rotate_ix(ix, two, one, PDEProgram::uniqueShape()), PDEProgram::uniqueShape()), PDEProgram::stride(PDEProgram::rotate_ix(ix, two, one, PDEProgram::uniqueShape()), PDEProgram::uniqueShape())), PDEProgram::iota(PDEProgram::stride(PDEProgram::rotate_ix(ix, two, one, PDEProgram::uniqueShape()), PDEProgram::uniqueShape())))))), PDEProgram::mul(PDEProgram::mul(PDEProgram::three(), c2), PDEProgram::elementsAt(PDEProgram::rav(u0), PDEProgram::binary_add(PDEProgram::mul(PDEProgram::start(ix, PDEProgram::uniqueShape()), PDEProgram::stride(ix, PDEProgram::uniqueShape())), PDEProgram::iota(PDEProgram::stride(ix, PDEProgram::uniqueShape()))))))), PDEProgram::mul(c0, PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::mul(PDEProgram::binary_sub(PDEProgram::elementsAt(PDEProgram::rav(v), PDEProgram::binary_add(PDEProgram::mul(PDEProgram::start(PDEProgram::rotate_ix(ix, zero, one, PDEProgram::uniqueShape()), PDEProgram::uniqueShape()), PDEProgram::stride(PDEProgram::rotate_ix(ix, zero, one, PDEProgram::uniqueShape()), PDEProgram::uniqueShape())), PDEProgram::iota(PDEProgram::stride(PDEProgram::rotate_ix(ix, zero, one, PDEProgram::uniqueShape()), PDEProgram::uniqueShape())))), PDEProgram::elementsAt(PDEProgram::rav(v), PDEProgram::binary_add(PDEProgram::mul(PDEProgram::start(PDEProgram::rotate_ix(ix, zero, PDEProgram::unary_sub(one), PDEProgram::uniqueShape()), PDEProgram::uniqueShape()), PDEProgram::stride(PDEProgram::rotate_ix(ix, zero, PDEProgram::unary_sub(one), PDEProgram::uniqueShape()), PDEProgram::uniqueShape())), PDEProgram::iota(PDEProgram::stride(PDEProgram::rotate_ix(ix, zero, PDEProgram::unary_sub(one), PDEProgram::uniqueShape()), PDEProgram::uniqueShape()))))), PDEProgram::elementsAt(PDEProgram::rav(u0), PDEProgram::binary_add(PDEProgram::mul(PDEProgram::start(ix, PDEProgram::uniqueShape()), PDEProgram::stride(ix, PDEProgram::uniqueShape())), PDEProgram::iota(PDEProgram::stride(ix, PDEProgram::uniqueShape()))))), PDEProgram::mul(PDEProgram::binary_sub(PDEProgram::elementsAt(PDEProgram::rav(v), PDEProgram::binary_add(PDEProgram::mul(PDEProgram::start(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), one, PDEProgram::uniqueShape()), PDEProgram::uniqueShape()), PDEProgram::stride(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), one, PDEProgram::uniqueShape()), PDEProgram::uniqueShape())), PDEProgram::iota(PDEProgram::stride(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), one, PDEProgram::uniqueShape()), PDEProgram::uniqueShape())))), PDEProgram::elementsAt(PDEProgram::rav(v), PDEProgram::binary_add(PDEProgram::mul(PDEProgram::start(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), PDEProgram::unary_sub(one), PDEProgram::uniqueShape()), PDEProgram::uniqueShape()), PDEProgram::stride(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), PDEProgram::unary_sub(one), PDEProgram::uniqueShape()), PDEProgram::uniqueShape())), PDEProgram::iota(PDEProgram::stride(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), PDEProgram::unary_sub(one), PDEProgram::uniqueShape()), PDEProgram::uniqueShape()))))), PDEProgram::elementsAt(PDEProgram::rav(u1), PDEProgram::binary_add(PDEProgram::mul(PDEProgram::start(ix, PDEProgram::uniqueShape()), PDEProgram::stride(ix, PDEProgram::uniqueShape())), PDEProgram::iota(PDEProgram::stride(ix, PDEProgram::uniqueShape())))))), PDEProgram::mul(PDEProgram::binary_sub(PDEProgram::elementsAt(PDEProgram::rav(v), PDEProgram::binary_add(PDEProgram::mul(PDEProgram::start(PDEProgram::rotate_ix(ix, two, one, PDEProgram::uniqueShape()), PDEProgram::uniqueShape()), PDEProgram::stride(PDEProgram::rotate_ix(ix, two, one, PDEProgram::uniqueShape()), PDEProgram::uniqueShape())), PDEProgram::iota(PDEProgram::stride(PDEProgram::rotate_ix(ix, two, one, PDEProgram::uniqueShape()), PDEProgram::uniqueShape())))), PDEProgram::elementsAt(PDEProgram::rav(v), PDEProgram::binary_add(PDEProgram::mul(PDEProgram::start(PDEProgram::rotate_ix(ix, two, PDEProgram::unary_sub(one), PDEProgram::uniqueShape()), PDEProgram::uniqueShape()), PDEProgram::stride(PDEProgram::rotate_ix(ix, two, PDEProgram::unary_sub(one), PDEProgram::uniqueShape()), PDEProgram::uniqueShape())), PDEProgram::iota(PDEProgram::stride(PDEProgram::rotate_ix(ix, two, PDEProgram::unary_sub(one), PDEProgram::uniqueShape()), PDEProgram::uniqueShape()))))), PDEProgram::elementsAt(PDEProgram::rav(u2), PDEProgram::binary_add(PDEProgram::mul(PDEProgram::start(ix, PDEProgram::uniqueShape()), PDEProgram::stride(ix, PDEProgram::uniqueShape())), PDEProgram::iota(PDEProgram::stride(ix, PDEProgram::uniqueShape())))))))))), PDEProgram::uniqueShape());
+            PDEProgram::Array result = PDEProgram::binary_add(PDEProgram::psi(ix, u), PDEProgram::mul(c4, PDEProgram::binary_sub(PDEProgram::mul(c3, PDEProgram::binary_sub(PDEProgram::mul(c1, PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::psi(PDEProgram::rotate_ix(ix, zero, PDEProgram::unary_sub(one), PDEProgram::shape(v)), v), PDEProgram::psi(PDEProgram::rotate_ix(ix, zero, one, PDEProgram::shape(v)), v)), PDEProgram::psi(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), PDEProgram::unary_sub(one), PDEProgram::shape(v)), v)), PDEProgram::psi(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), one, PDEProgram::shape(v)), v)), PDEProgram::psi(PDEProgram::rotate_ix(ix, two, PDEProgram::unary_sub(one), PDEProgram::shape(v)), v)), PDEProgram::psi(PDEProgram::rotate_ix(ix, two, one, PDEProgram::shape(v)), v))), PDEProgram::mul(PDEProgram::mul(PDEProgram::three(), c2), PDEProgram::psi(ix, u0)))), PDEProgram::mul(c0, PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::mul(PDEProgram::binary_sub(PDEProgram::psi(PDEProgram::rotate_ix(ix, zero, one, PDEProgram::shape(v)), v), PDEProgram::psi(PDEProgram::rotate_ix(ix, zero, PDEProgram::unary_sub(one), PDEProgram::shape(v)), v)), PDEProgram::psi(ix, u0)), PDEProgram::mul(PDEProgram::binary_sub(PDEProgram::psi(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), one, PDEProgram::shape(v)), v), PDEProgram::psi(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), PDEProgram::unary_sub(one), PDEProgram::shape(v)), v)), PDEProgram::psi(ix, u1))), PDEProgram::mul(PDEProgram::binary_sub(PDEProgram::psi(PDEProgram::rotate_ix(ix, two, one, PDEProgram::shape(v)), v), PDEProgram::psi(PDEProgram::rotate_ix(ix, two, PDEProgram::unary_sub(one), PDEProgram::shape(v)), v)), PDEProgram::psi(ix, u2)))))));
             return result;
         };
     };
@@ -296,6 +361,13 @@ public:
     };
 
     static PDEProgram::_step step;
+    struct _toArray {
+        inline PDEProgram::Array operator()(const PDEProgram::LinearArray& la, const PDEProgram::Shape& s) {
+            return __array_ops.toArray(la, s);
+        };
+    };
+
+    static PDEProgram::_toArray toArray;
     struct _unliftAndUnpad {
         inline PDEProgram::Array operator()(const PDEProgram::Array& array, const PDEProgram::Axis& axis, const PDEProgram::Nat& paddingAmount) {
             return __forall_ops.unliftAndUnpad(array, axis, paddingAmount);

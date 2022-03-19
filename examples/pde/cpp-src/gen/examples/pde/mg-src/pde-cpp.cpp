@@ -19,7 +19,35 @@ namespace pde_cpp {
 
 
 
+    PDEProgram::_uniqueShape PDEProgram::uniqueShape;
+
+
+
+    PDEProgram::_iota PDEProgram::iota;
+
+
+
     PDEProgram::_nbCores PDEProgram::nbCores;
+
+
+
+    PDEProgram::_elementsAt PDEProgram::elementsAt;
+
+
+
+    PDEProgram::_emptyIndex PDEProgram::emptyIndex;
+
+
+
+    PDEProgram::_start PDEProgram::start;
+
+
+
+    PDEProgram::_stride PDEProgram::stride;
+
+
+
+    PDEProgram::_subshape PDEProgram::subshape;
 
 
 
@@ -91,6 +119,10 @@ namespace pde_cpp {
 
 
 
+    PDEProgram::_rav PDEProgram::rav;
+
+
+
     PDEProgram::_rotate PDEProgram::rotate;
 
 
@@ -110,6 +142,10 @@ namespace pde_cpp {
 
 
     PDEProgram::_step PDEProgram::step;
+
+
+
+    PDEProgram::_toArray PDEProgram::toArray;
 
 
 
