@@ -320,7 +320,7 @@ public:
     static PDEProgram::_shape shape;
     struct _snippet {
         inline void operator()(PDEProgram::Array& u, const PDEProgram::Array& v, const PDEProgram::Array& u0, const PDEProgram::Array& u1, const PDEProgram::Array& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4) {
-            u = PDEProgram::forall_ix_snippet_tiled(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
+            u = PDEProgram::forall_ix_snippet(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
         };
     };
 
