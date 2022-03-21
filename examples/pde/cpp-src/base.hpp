@@ -5,13 +5,14 @@
 #include <cstring>
 #include <functional>
 #include <iostream>
+#include <memory>
 #include <utility>
 #include <vector>
 
 #include <omp.h>
 
 #define NB_CORES 2
-#define SIDE 256
+#define SIDE 64
 struct array_ops {
 
     struct Shape {
@@ -135,22 +136,30 @@ struct array_ops {
 
     struct Array {
         private:
-            Float *m_content;
+            std::shared_ptr<Float[]> m_content;
             Shape m_shape;
 
         public:
             Array(const Shape &shape, Float *content) : m_shape(shape) {
                 auto array_size = shape.index_space_size();
-                this->m_content = new Float[array_size];
-                memcpy(this->m_content, content, array_size * sizeof(Float));
+                this->m_content = std::shared_ptr<Float[]>(new Float[array_size]); //array_size); //new Float[array_size]);
+                //std::cout << "ooh? " << array_size << std::endl;
+                memcpy(this->m_content.get(), content, array_size * sizeof(Float));
             }
 
-            void operator delete(void *ptr) {
+            /*
+            Array(const Array &array) : m_shape(array.shape()) {
+                auto array_size = this->m_shape.index_space_size();
+                this->m_content = std::make_shared<Float[]>(new Float[array_size]);
+                memcpy(this->m_content.get(), array.unsafe_content(), array_size * sizeof(Float));
+            }*/
+
+            /*void operator delete(void *ptr) {
                 std::cout << ((Array*)ptr)->shape().index_space_size() << std::endl;
-            }
+            }*/
 
             Array(const Shape &shape) : m_shape(shape) {
-                this->m_content = new Float[shape.index_space_size()];
+                this->m_content = std::shared_ptr<Float[]>(new Float[shape.index_space_size()]); //new Float[shape.index_space_size()]);
             }
 
             bool is_scalar() const {
@@ -167,13 +176,29 @@ struct array_ops {
 
             Float as_scalar() const {
                 assert (this->m_shape.components.size() == 0);
-                return *this->m_content;
+                return *this->m_content.get();
             }
 
-            Array operator[](const Index &ix) const {
+            /*Float operator[](const Index &ix) const {
                 auto linear_ix = ix.to_linear(this->m_shape);
                 auto result_shape = Shape(std::vector(this->m_shape.components.begin() + ix.value.size(), this->m_shape.components.end()));
-                return Array(result_shape, this->m_content + linear_ix);
+                return this->m_content.get()[linear_ix];
+            }*/
+            Array operator[](const Index &ix) const {
+                return this->psi(ix);
+            }
+
+            Float &operator[](const Index &ix) {
+                assert (ix.value.size() == this->m_shape.components.size());
+                auto linear_ix = ix.to_linear(this->m_shape);
+                auto result_shape = Shape(std::vector(this->m_shape.components.begin() + ix.value.size(), this->m_shape.components.end()));
+                return this->m_content[linear_ix];
+            }
+
+            Array psi(const Index &ix) const {
+                auto linear_ix = ix.to_linear(this->m_shape);
+                auto result_shape = Shape(std::vector(this->m_shape.components.begin() + ix.value.size(), this->m_shape.components.end()));
+                return Array(result_shape, this->m_content.get() + linear_ix);
             }
 
             /*Array &operator[](const Index &ix) {
@@ -183,7 +208,7 @@ struct array_ops {
             }*/
 
             Float *unsafe_content() const {
-                return this->m_content;
+                return this->m_content.get();
             }
 
             void rotate(const Axis &axis, const Offset &offset) {
@@ -193,32 +218,32 @@ struct array_ops {
                 auto shape_hd = this->m_shape.components.front();
                 size_t stride = this->m_shape.index_space_size() / shape_hd;
 
-                Float *new_content = new Float[array_size];
+                std::shared_ptr<Float[]> new_content(new Float[array_size]); //new Float[array_size]);
 
                 if (axis.value == 0) {
                     
                     if (offset.value < 0) {
                         auto positive_offset = -offset.value;
-                        memcpy(new_content, this->m_content + positive_offset * stride, (shape_hd - positive_offset) * stride * sizeof(Float));
-                        memcpy(new_content + (shape_hd - positive_offset) * stride, this->m_content, positive_offset * stride * sizeof(Float));
+                        memcpy(new_content.get(), this->m_content.get() + positive_offset * stride, (shape_hd - positive_offset) * stride * sizeof(Float));
+                        memcpy(new_content.get() + (shape_hd - positive_offset) * stride, this->m_content.get(), positive_offset * stride * sizeof(Float));
                     }
                     else {
-                        memcpy(new_content, this->m_content + (shape_hd - offset.value) * stride, offset.value * stride * sizeof(Float));
+                        memcpy(new_content.get(), this->m_content.get() + (shape_hd - offset.value) * stride, offset.value * stride * sizeof(Float));
 
-                        memcpy(new_content + offset.value * stride, this->m_content, (shape_hd - offset.value) * stride * sizeof(Float));
+                        memcpy(new_content.get() + offset.value * stride, this->m_content.get(), (shape_hd - offset.value) * stride * sizeof(Float));
                     }
                 }
                 else {
                     auto new_axis = Axis(axis.value - 1);
                     auto subshape = Shape(std::vector(this->m_shape.components.begin() + 1, this->m_shape.components.end()));
                     for (size_t i = 0; i < shape_hd; i += stride) {
-                        auto subarray = Array(subshape, this->m_content + i);
+                        auto subarray = Array(subshape, this->m_content.get() + i);
                         subarray.rotate(new_axis, offset);
-                        memcpy(new_content + i, subarray.unsafe_content(), stride);
+                        memcpy(new_content.get() + i, subarray.unsafe_content(), stride);
                     }
                 }
 
-                this->m_content = new_content;
+                this->m_content = std::move(new_content);
             }
     };
 
@@ -681,7 +706,12 @@ struct array_ops {
         for (size_t linear_ix = 0; linear_ix < shape.index_space_size();
              ++linear_ix) {
             Index ix = from_linear(shape, linear_ix);
-            out_array[ix] = fn(ix);
+            //std::cout << out_array[ix].value << std::endl;
+            //std::cout << linear_ix << std::endl;
+            Float scalar_value = fn(ix).as_scalar();
+            //std::cout << "casting?" << std::endl;
+            out_array[ix] = scalar_value;
+            //std::cout << "death" << std::endl;
         }
         return out_array;
     }
@@ -761,7 +791,7 @@ struct array_ops {
         for (size_t linear_ix = 0; linear_ix < out_shape.index_space_size();
              ++linear_ix) {
             Index ix = from_linear(out_shape, linear_ix);
-            out_array[ix] = fn(ix.to_padded(offsets));
+            out_array[ix] = fn(ix.to_padded(offsets)).as_scalar();
         }
 
         return out_array;
@@ -821,7 +851,7 @@ struct array_ops {
     }
 
     inline Array psi(const Index &ix, const Array &array) {
-        return array[ix];
+        return array.psi(ix);
     }
 
     Array rotate(const Array &array, const Axis &axis, const Offset &offset) {
@@ -872,7 +902,7 @@ struct forall_ops {
 
     typedef array_ops::Shape Shape;
 
-    static _snippet_ix snippet_ix;
+    _snippet_ix snippet_ix;
 
 
     Array forall_ix_snippet(const Array &u, const Array &v, const Array &u0,
@@ -889,16 +919,17 @@ struct forall_ops {
         Index ix = Index(std::vector<size_t>({ 0, 0, 0 }));
         auto linear_ix = 0;
 
+        std::cout << "in" << std::endl;
         for (size_t i = 0; i < u.shape().components[0]; ++i) {
             ix.value[0] = i;
             for (size_t j = 0; j < u.shape().components[1]; ++j) {
                 ix.value[1] = j;
                 for (size_t k = 0; k < u.shape().components[2]; ++k) {
                     ix.value[2] = k;
-                    std::cout << "hep" << std::endl;
+                    //std::cout << "hep" << std::endl;
                     auto result = fn(ix);
                     out_ptr[linear_ix] = result.as_scalar(); //fn(ix).as_scalar();
-                    delete &result;
+                    //delete &result;
                     linear_ix += 1;
                 }
             }
