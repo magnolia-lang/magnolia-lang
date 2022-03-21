@@ -44,7 +44,7 @@ struct array_ops {
         }
     };
 
-    inline Shape empty_shape() { return Shape(std::vector<size_t>()); }
+    const Shape empty_shape = Shape(std::vector<size_t>());
 
     struct Index {
         std::vector<size_t> value;
@@ -141,8 +141,12 @@ struct array_ops {
         public:
             Array(const Shape &shape, Float *content) : m_shape(shape) {
                 auto array_size = shape.index_space_size();
-                this->m_content = content; // new Float[array_size];
-                //memcpy(this->m_content, content, array_size * sizeof(Float));
+                this->m_content = new Float[array_size];
+                memcpy(this->m_content, content, array_size * sizeof(Float));
+            }
+
+            void operator delete(void *ptr) {
+                std::cout << ((Array*)ptr)->shape().index_space_size() << std::endl;
             }
 
             Array(const Shape &shape) : m_shape(shape) {
@@ -161,7 +165,7 @@ struct array_ops {
                 return this->m_shape.index_space_size();
             }
 
-            Float &as_scalar() {
+            Float as_scalar() const {
                 assert (this->m_shape.components.size() == 0);
                 return *this->m_content;
             }
@@ -380,13 +384,15 @@ struct array_ops {
             size_t m_length;
         public:
             LinearArray(size_t length, Float *content) : m_length(length) {
+                /*
                 if (content != NULL) {
                     this->m_content = new Float[length];
                     memcpy(this->m_content, content, length * sizeof(Float));
                 }
                 else {
                     this->m_content = NULL;
-                }
+                }*/
+                this->m_content = content;
             }
 
             void set_content(Float *content) { this->m_content = content; }
@@ -589,7 +595,7 @@ struct array_ops {
         auto fn = [&](const Index &ix) {
             assert (rhs[ix].is_scalar());
             Float value = binary_add(lhs, rhs[ix].as_scalar());
-            return Array(empty_shape(), &value);
+            return Array(empty_shape, &value);
         };
         
         return forall_ix(rhs.shape(), fn); 
@@ -599,7 +605,7 @@ struct array_ops {
         auto fn = [&](const Index &ix) {
             assert (rhs[ix].is_scalar());
             Float value = binary_sub(lhs, rhs[ix].as_scalar());
-            return Array(empty_shape(), &value);
+            return Array(empty_shape, &value);
         };
 
         return forall_ix(rhs.shape(), fn);
@@ -609,7 +615,7 @@ struct array_ops {
         auto fn = [&](const Index &ix) {
             assert (rhs[ix].is_scalar());
             Float value = mul(lhs, rhs[ix].as_scalar());
-            return Array(empty_shape(), &value);
+            return Array(empty_shape, &value);
         };
 
         return forall_ix(rhs.shape(), fn);
@@ -619,7 +625,7 @@ struct array_ops {
         auto fn = [&](const Index &ix) {
             assert (rhs[ix].is_scalar());
             Float value = div(lhs, rhs[ix].as_scalar());
-            return Array(empty_shape(), &value);
+            return Array(empty_shape, &value);
         };
 
         return forall_ix(rhs.shape(), fn);
@@ -631,7 +637,7 @@ struct array_ops {
         auto fn = [&](const Index &ix) {
             assert (lhs[ix].is_scalar());
             auto result = binary_add(lhs[ix].as_scalar(), rhs[ix].as_scalar());
-            return Array(empty_shape(), &result);
+            return Array(empty_shape, &result);
         };
 
         return forall_ix(rhs.shape(), fn);
@@ -642,7 +648,7 @@ struct array_ops {
         auto fn = [&](const Index &ix) {
             assert (lhs[ix].is_scalar());
             auto result = binary_sub(lhs[ix].as_scalar(), rhs[ix].as_scalar());
-            return Array(empty_shape(), &result);
+            return Array(empty_shape, &result);
         };
 
         return forall_ix(rhs.shape(), fn);
@@ -653,7 +659,7 @@ struct array_ops {
         auto fn = [&](const Index &ix) {
             assert (lhs[ix].is_scalar());
             auto result = mul(lhs[ix].as_scalar(), rhs[ix].as_scalar());
-            return Array(empty_shape(), &result);
+            return Array(empty_shape, &result);
         };
 
         return forall_ix(rhs.shape(), fn);
@@ -664,7 +670,7 @@ struct array_ops {
         auto fn = [&](const Index &ix) {
             assert (lhs[ix].is_scalar());
             auto result = div(lhs[ix].as_scalar(), rhs[ix].as_scalar());
-            return Array(empty_shape(), &result);
+            return Array(empty_shape, &result);
         };
 
         return forall_ix(rhs.shape(), fn);
@@ -879,12 +885,21 @@ struct forall_ops {
 
         assert (u.shape().components.size() == 3);
         auto out_array = Array(u.shape());
+        auto out_ptr = out_array.unsafe_content();
+        Index ix = Index(std::vector<size_t>({ 0, 0, 0 }));
+        auto linear_ix = 0;
 
         for (size_t i = 0; i < u.shape().components[0]; ++i) {
+            ix.value[0] = i;
             for (size_t j = 0; j < u.shape().components[1]; ++j) {
+                ix.value[1] = j;
                 for (size_t k = 0; k < u.shape().components[2]; ++k) {
-                    Index ix = Index(std::vector({ i, j, k }));
-                    out_array.unsafe_content()[ix.to_linear(u.shape())] = fn(ix).as_scalar();
+                    ix.value[2] = k;
+                    std::cout << "hep" << std::endl;
+                    auto result = fn(ix);
+                    out_ptr[linear_ix] = result.as_scalar(); //fn(ix).as_scalar();
+                    delete &result;
+                    linear_ix += 1;
                 }
             }
         }
@@ -1106,12 +1121,11 @@ inline array_ops::Array dumpsine(const array_ops::Shape &shape) {
     double PI = 3.14159265358979323846;
     double amplitude = 10.0;
     double phase = 0.0125;
-    double t = 0.0;
     array_ops ops;
 
     auto fn = [&](const array_ops::Index &ix) {
         auto timestep = step * ix.to_linear(shape);
-        auto val = array_ops::Float(amplitude * sin(PI * t + phase));
+        auto val = array_ops::Float(amplitude * sin(PI * timestep + phase));
         return array_ops::Array(array_ops::Shape(std::vector<size_t>()), &val); //&array_ops::Float(amplitude * sin(PI * t + phase)));
     };
     return ops.forall_ix(shape, fn);
