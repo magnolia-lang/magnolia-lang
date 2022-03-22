@@ -13,41 +13,7 @@ namespace pde_cpp {
 
     PDEProgram::_one PDEProgram::one;
 
-    hardware_info PDEProgram::__hardware_info;
-
     array_ops PDEProgram::__array_ops;
-
-
-
-    PDEProgram::_uniqueShape PDEProgram::uniqueShape;
-
-
-
-    PDEProgram::_iota PDEProgram::iota;
-
-
-
-    PDEProgram::_nbCores PDEProgram::nbCores;
-
-
-
-    PDEProgram::_elementsAt PDEProgram::elementsAt;
-
-
-
-    PDEProgram::_emptyIndex PDEProgram::emptyIndex;
-
-
-
-    PDEProgram::_start PDEProgram::start;
-
-
-
-    PDEProgram::_stride PDEProgram::stride;
-
-
-
-    PDEProgram::_subshape PDEProgram::subshape;
 
 
 
@@ -59,23 +25,11 @@ namespace pde_cpp {
 
 
 
-    PDEProgram::_cpadl PDEProgram::cpadl;
-
-
-
-    PDEProgram::_cpadr PDEProgram::cpadr;
-
-
-
     PDEProgram::_rotate_ix PDEProgram::rotate_ix;
 
 
 
     PDEProgram::_zero PDEProgram::zero;
-
-
-
-    PDEProgram::_asPadded PDEProgram::asPadded;
 
 
 
@@ -95,23 +49,7 @@ namespace pde_cpp {
 
 
 
-    PDEProgram::_forall_ix_snippet_padded PDEProgram::forall_ix_snippet_padded;
-
-
-
-    PDEProgram::_forall_ix_snippet_threaded PDEProgram::forall_ix_snippet_threaded;
-
-
-
-    PDEProgram::_forall_ix_snippet_tiled PDEProgram::forall_ix_snippet_tiled;
-
-
-
     PDEProgram::_mul PDEProgram::mul;
-
-
-
-    PDEProgram::_padAndLift PDEProgram::padAndLift;
 
 
 
@@ -119,15 +57,7 @@ namespace pde_cpp {
 
 
 
-    PDEProgram::_rav PDEProgram::rav;
-
-
-
     PDEProgram::_rotate PDEProgram::rotate;
-
-
-
-    PDEProgram::_shape PDEProgram::shape;
 
 
 
@@ -135,21 +65,13 @@ namespace pde_cpp {
 
 
 
-    forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Nat, PDEProgram::Offset, PDEProgram::PaddedArray, PDEProgram::_snippet_ix> PDEProgram::__forall_ops;
+    forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Nat, PDEProgram::Offset, PDEProgram::_snippet_ix> PDEProgram::__forall_ops;
 
     PDEProgram::_snippet_ix PDEProgram::snippet_ix;
 
 
 
     PDEProgram::_step PDEProgram::step;
-
-
-
-    PDEProgram::_toArray PDEProgram::toArray;
-
-
-
-    PDEProgram::_unliftAndUnpad PDEProgram::unliftAndUnpad;
 
 } // examples
 } // pde
