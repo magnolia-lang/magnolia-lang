@@ -11,8 +11,8 @@
 
 #include <omp.h>
 
-#define NB_CORES 2
-#define SIDE 64
+#define NB_CORES 4
+#define SIDE 256
 struct array_ops {
 
     struct Shape {
@@ -47,28 +47,22 @@ struct array_ops {
 
     const Shape empty_shape = Shape(std::vector<size_t>());
 
-    struct Index {
+    
+    /*struct OldIndex {
         std::vector<size_t> value;
         Index(std::vector<size_t> value) : value(value) {}
 
-        size_t dim(void) const {
+        inline size_t dim(void) const {
             return this->value.size();
         }
 
         inline size_t to_linear(const Shape &shape) const {
-            size_t index_space_size = shape.index_space_size();
-            size_t linear_ix = 0;
+            if (shape.dim() == 0) { return 0; }
 
-            //assert (this->dim() == shape.dim());
+            assert (shape.dim() == 3);
+            assert (this->value.size() == 3);
 
-            for (auto shape_it = shape.components.begin(), ix_it = this->value.begin();
-                 shape_it != shape.components.end() && ix_it != this->value.end();
-                 ++shape_it, ++ix_it) {
-                index_space_size /= *shape_it;
-                linear_ix += *ix_it * index_space_size;
-            }
-
-            return linear_ix;
+            return this->value[0] * SIDE * SIDE + this->value[1] * SIDE + this->value[0];
         }
 
         inline Index to_padded(const std::vector<size_t> &offsets) const {
@@ -82,10 +76,17 @@ struct array_ops {
             return Index(out_index);
         }
 
+    };*/
+
+    struct Index {
+        size_t value;
+        Index(size_t value) : value(value) {};
+
+        inline size_t to_linear(const Shape &shape) const { return this->value; }
     };
 
     Index emptyIndex() {
-        return Index(std::vector<size_t>());
+        return Index(0); //return Index(std::vector<size_t>());
     }
 
     struct Offset {
@@ -116,23 +117,31 @@ struct array_ops {
         return Axis(2);
     }
 
-    struct Float {
+    /*struct Float {
         float value;
         Float(float value) : value(value) {}
         Float() : value(0) {}
-    };
+    };*/
+    typedef float Float;
 
     inline Float one_float() {
-        return Float(1);
+        return 1;
+        //return Float(1);
     }
 
     inline Float two_float() {
-        return Float(2);
+        return 2;
+        //return Float(2);
     }
 
     inline Float three_float() {
-        return Float(3);
+        return 3;
+        //return Float(3);
     }
+
+    //inline Float Float(const float &f) {
+    //    return f;
+    //}
 
     struct Array {
         private:
@@ -189,15 +198,16 @@ struct array_ops {
             }
 
             Float &operator[](const Index &ix) {
-                assert (ix.value.size() == this->m_shape.components.size());
+                //assert (ix.value.size() == this->m_shape.components.size());
                 auto linear_ix = ix.to_linear(this->m_shape);
-                auto result_shape = Shape(std::vector(this->m_shape.components.begin() + ix.value.size(), this->m_shape.components.end()));
+                //auto result_shape = Shape(std::vector(this->m_shape.components.begin() + ix.value.size(), this->m_shape.components.end()));
                 return this->m_content[linear_ix];
             }
 
             Array psi(const Index &ix) const {
                 auto linear_ix = ix.to_linear(this->m_shape);
-                auto result_shape = Shape(std::vector(this->m_shape.components.begin() + ix.value.size(), this->m_shape.components.end()));
+                //auto result_shape = Shape(std::vector(this->m_shape.components.begin() + ix.value.size(), this->m_shape.components.end()));
+                auto result_shape = Shape(std::vector<size_t>());
                 return Array(result_shape, this->m_content.get() + linear_ix);
             }
 
@@ -464,7 +474,8 @@ struct array_ops {
     }
 
     Stride stride(const Index &ix, const Shape &shape) {
-        return Stride(Shape(std::vector(shape.components.begin() + ix.value.size(), shape.components.end())).index_space_size());
+        return Stride(shape.index_space_size()); // TODO: dummy, this is wrong
+        //return Stride(Shape(std::vector(shape.components.begin() + ix.value.size(), shape.components.end())).index_space_size());
     }
 
     LinearArray rav(const Array &array) {
@@ -596,23 +607,26 @@ struct array_ops {
 
     /* Float ops */
     inline Float unary_sub(Float f) {
-        return Float(-f.value);
+        return -f; //Float(-f.value);
     }
 
     inline Float binary_add(Float lhs, Float rhs) {
-        return Float(lhs.value + rhs.value);
+        return lhs + rhs; //Float(lhs.value + rhs.value);
     }
 
     inline Float binary_sub(Float lhs, Float rhs) {
-        return Float(lhs.value - rhs.value);
+        return lhs - rhs;
+        //return Float(lhs.value - rhs.value);
     }
 
     inline Float mul(Float lhs, Float rhs) {
-        return Float(lhs.value * rhs.value);
+        return lhs * rhs;
+        //return Float(lhs.value * rhs.value);
     }
 
     inline Float div(Float num, Float den) {
-        return Float(num.value / den.value);
+        return num / den;
+        //return Float(num.value / den.value);
     }
 
     /* Scalar-Array ops */
@@ -658,7 +672,6 @@ struct array_ops {
 
     /* Array-Array ops */
     inline Array binary_add(const Array &lhs, const Array &rhs) {
-        assert (lhs.shape() == rhs.shape());
         auto fn = [&](const Index &ix) {
             assert (lhs[ix].is_scalar());
             auto result = binary_add(lhs[ix].as_scalar(), rhs[ix].as_scalar());
@@ -788,11 +801,15 @@ struct array_ops {
 
         auto out_shape = Shape(shape_components);
         auto out_array = Array(out_shape);
+        
+        // TODO debug
+        /*
         for (size_t linear_ix = 0; linear_ix < out_shape.index_space_size();
              ++linear_ix) {
             Index ix = from_linear(out_shape, linear_ix);
             out_array[ix] = fn(ix.to_padded(offsets)).as_scalar();
         }
+        */
 
         return out_array;
     }
@@ -847,7 +864,9 @@ struct array_ops {
     }
 
     inline Shape subshape(const Index &ix, const Shape &shape) {
-        return Shape(std::vector(shape.components.begin() + ix.value.size(), shape.components.end()));
+        // TODO: wrong
+        return Shape(std::vector<size_t>());
+        // return Shape(std::vector(shape.components.begin() + ix.value.size(), shape.components.end()));
     }
 
     inline Array psi(const Index &ix, const Array &array) {
@@ -862,12 +881,14 @@ struct array_ops {
 
     Index rotate_ix(const Index &index, const Axis &axis, const Offset &offset, const Shape &shape) {
         Index new_index = index;
-        new_index.value[axis.value] = (index.value[axis.value] + offset.value + shape.components[axis.value]) % shape.components[axis.value];
+        auto total_ix_space_size = shape.index_space_size();
+        new_index.value = (index.value + offset.value * (Shape(std::vector(shape.components.begin() + axis.value + 1, shape.components.end())).index_space_size())) % total_ix_space_size;
+        //new_index.value[axis.value] = (index.value[axis.value] + offset.value + shape.components[axis.value]) % shape.components[axis.value];
         return new_index;
     }
 
     inline Index from_linear(const Shape &shape, size_t linear_ix) {
-        size_t index_space_size = shape.index_space_size();
+        /*size_t index_space_size = shape.index_space_size();
         std::vector<size_t> ix;
 
         for (auto it = shape.components.begin(); it != shape.components.end(); ++it) {
@@ -876,7 +897,8 @@ struct array_ops {
             linear_ix %= index_space_size;
         }
 
-        return Index(ix);
+        return Index(ix);*/
+        return Index(linear_ix);
     }
 
     /* Offset utils */
@@ -909,30 +931,15 @@ struct forall_ops {
                            const Array &u1, const Array &u2, const Float &c0,
                            const Float &c1, const Float &c2, const Float &c3,
                            const Float &c4) {
-        auto fn = [&](const Index &ix) {
-            return snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4, ix);
-        };
-
         assert (u.shape().components.size() == 3);
         auto out_array = Array(u.shape());
         auto out_ptr = out_array.unsafe_content();
-        Index ix = Index(std::vector<size_t>({ 0, 0, 0 }));
-        auto linear_ix = 0;
 
         std::cout << "in" << std::endl;
-        for (size_t i = 0; i < u.shape().components[0]; ++i) {
-            ix.value[0] = i;
-            for (size_t j = 0; j < u.shape().components[1]; ++j) {
-                ix.value[1] = j;
-                for (size_t k = 0; k < u.shape().components[2]; ++k) {
-                    ix.value[2] = k;
-                    //std::cout << "hep" << std::endl;
-                    auto result = fn(ix);
-                    out_ptr[linear_ix] = result.as_scalar(); //fn(ix).as_scalar();
-                    //delete &result;
-                    linear_ix += 1;
-                }
-            }
+        for (size_t linear_ix = 0; linear_ix < u.shape().index_space_size(); ++linear_ix) {
+            auto ix = Index(linear_ix);
+            auto result = snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4, ix);
+            out_ptr[linear_ix] = result.as_scalar(); //fn(ix).as_scalar();
         }
 
         return out_array;
@@ -957,48 +964,28 @@ struct forall_ops {
                                      const Float &c1, const Float &c2,
                                      const Float &c3, const Float &c4,
                                      const Nat &_nbThreads) {
-        /*size_t nbThreads = _nbThreads.value;
+        std::cout << "in" << std::endl;
+        size_t nbThreads = _nbThreads.value;
         auto shape = u.shape();
         omp_set_num_threads(nbThreads);
 
-        Array **threaded_content = new Array*[nbThreads];
         size_t thread_axis_length = shape.components[0] / nbThreads;
         size_t thread_domain_size = shape.index_space_size() / nbThreads;
         
         assert (shape.components[0] % nbThreads == 0);
         assert (shape.components.size() == 3);
 
-        std::cout << "you call me right? " << nbThreads << std::endl;
-        #pragma omp parallel for schedule(static) firstprivate( u, v, u0, u1, u2, shape, thread_axis_length, thread_domain_size, nbThreads )
-        for (size_t tix = 0; tix < nbThreads; ++tix) {
-            auto fn = [&](const Index &ix) {
-                return snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4, ix);
-            };
-            Array *local_array = (Array*) ::operator new (shape_hd * sizeof(Array));
-            //new Float[thread_domain_size];
-            threaded_content[tix] = local_array;
-            for (size_t i = 0; i < thread_axis_length; ++i) {
-                for (size_t j = 0; j < shape.components[1]; ++j) {
-                    for (size_t k = 0; k < shape.components[2]; ++k) {
-                //for (size_t offset_ix = 0; offset_ix < thread_domain_size; ++offset_ix) {
-                //auto linear_ix = tix * thread_domain_size + offset_ix;
-                //Index ix = _array_ops.from_linear(shape, linear_ix);
-                        size_t offset_ix = i * (shape.components[1] * shape.components[2]) + j * shape.components[2] + k;
-                        Index ix = Index(std::vector({ i + tix * thread_axis_length, j, k }));
-                        local_array[offset_ix] = fn(ix);
-                    }
-                }
-            }
+        auto result = Array(shape);
+        auto content_ptr = result.unsafe_content();
+
+        #pragma omp parallel for schedule(static) firstprivate(shape, c0, c1, c2, c3, c4) //firstprivate( u, v, u0, u1, u2, shape, thread_axis_length, thread_domain_size, nbThreads )
+        for (size_t linear_ix = 0; linear_ix < SIDE * SIDE * SIDE; ++linear_ix) {
+            Index ix = Index(linear_ix);
+            content_ptr[linear_ix] = snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4, ix).as_scalar();
         }
 
-        // TODO: resovle
-        for (size_t tix = 0; tix < nbThreads; ++tix) {
-            memcpy(content + tix * thread_domain_size, threaded_content[tix], thread_domain_size);
-        }
-
-        return Array(shape, content);
-        */
-        return Array(u.shape()); // TODO: resolve
+        return result; //Array(shape, content);
+        //return Array(u.shape()); // TODO: resolve
 
         //return _array_ops.forall_ix_threaded(u.shape(), fn, nbThreads.value);
     }
@@ -1050,18 +1037,15 @@ struct forall_ops {
         assert (u.shape().components.size() == 3);
         auto s0tiles = 4, s1tiles = 4, s2tiles = 4;
         auto out_array = Array(u.shape());
-
-        for (size_t ti = 0; ti < s0; ti += s0/s0tiles) {
-            for (size_t tj = 0; tj < s1; tj += s1/s1tiles) {
-                for (size_t tk = 0; tk < s2; tk += s2/s2tiles) {
-                    for (size_t i = ti; i < ti + s0/s0tiles; i++) {
-                        for (size_t j = tj; j < tj + s1/s1tiles; j++) {
-                            for (size_t k = tk; k < tk + s2/s2tiles; k++) {
-                                Index ix = Index(std::vector({ i, j, k }));
-                                out_array.unsafe_content()[ix.to_linear(u.shape())] = fn(ix).as_scalar();
-                            }
-                        }
-                    }
+        auto linear_ix = 0;
+        
+        #pragma omp tile sizes(16, 1, 1024)
+        for (size_t i = 0; i < s0; ++i) {
+            for (size_t j = 0; j < s1; ++j) {
+                for (size_t k = 0; k < s2; ++k) {
+                    Index ix = Index(linear_ix); //std::vector({ i, j, k }));
+                    out_array[ix] = fn(ix).as_scalar();
+                    linear_ix += 1;
                 }
             }
         }
