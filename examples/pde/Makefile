@@ -10,7 +10,7 @@ CC := g++
 
 # if clang++, can use
 # -mllvm -inline-threshold=1000000000
-CCFLAGS := -g -O3 -std=c++20 -I$(CPP_SOURCE_DIR) -fopenmp
+CCFLAGS := -g -mtune=native -march=native -O3 -std=c++20 -I$(CPP_SOURCE_DIR) -fopenmp
 
 MKDIR := @mkdir
 RM := @rm

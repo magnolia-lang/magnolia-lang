@@ -1,13 +1,18 @@
 #pragma once
 
 #include <array>
+#include <cassert>
 #include <cmath>
 #include <cstring>
 #include <iostream>
 #include <memory>
 #include <utility>
 
+#include <omp.h>
+
 #define SIDE 512
+#define NTILES 4
+#define NB_CORES 2
 
 struct array_ops {
   typedef float Float;
@@ -167,20 +172,61 @@ struct forall_ops {
 
   _snippet_ix snippet_ix;
 
+  inline Nat nbCores() { return Nat(NB_CORES); }
+
   inline Array forall_ix_snippet(const Array &u, const Array &v,
-    const Array &u0, const Array &u1, const Array &u2, const Float &c0,
-    const Float &c1, const Float &c2, const Float &c3, const Float &c4) {
-      Array result;
-      std::cout << "in forall_ix_snippet" << std::endl;
-      for (size_t i = 0; i < SIDE * SIDE * SIDE; ++i) {
-        result[i] = snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4, i);
-      }
-
-      std::cout << result[SIDE * SIDE * SIDE - 1] << " "
-                << result[0] << std::endl;
-
-      return result;
+      const Array &u0, const Array &u1, const Array &u2, const Float &c0,
+      const Float &c1, const Float &c2, const Float &c3, const Float &c4) {
+    Array result;
+    std::cout << "in forall_ix_snippet" << std::endl;
+    for (size_t i = 0; i < SIDE * SIDE * SIDE; ++i) {
+      result[i] = snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4, i);
     }
+
+    std::cout << result[SIDE * SIDE * SIDE - 1] << " "
+              << result[0] << std::endl;
+
+    return result;
+  }
+
+  inline Array forall_ix_snippet_threaded(const Array &u, const Array &v,
+      const Array &u0, const Array &u1, const Array &u2, const Float &c0,
+      const Float &c1, const Float &c2, const Float &c3, const Float &c4,
+      const Nat &nbThreads) {
+    Array result;
+    omp_set_num_threads(nbThreads.value);
+
+    #pragma omp parallel for schedule(static)
+    for (size_t i = 0; i < SIDE * SIDE * SIDE; ++i) {
+      result[i] = snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4, i);
+    }
+    return result;
+  }
+
+  inline Array forall_ix_snippet_tiled(const Array &u, const Array &v,
+      const Array &u0, const Array &u1, const Array &u2, const Float &c0,
+      const Float &c1, const Float &c2, const Float &c3, const Float &c4) {
+    Array result;
+
+    #pragma omp parallel for schedule(static) collapse(3)
+    for (size_t ti = 0; ti < SIDE; ti += SIDE/NTILES) {
+      for (size_t tj = 0; tj < SIDE; tj += SIDE/NTILES) {
+        for (size_t tk = 0; tk < SIDE; tk += SIDE/NTILES) {
+          for (size_t i = ti; i < ti + SIDE/NTILES; ++i) {
+            for (size_t j = tj; j < tj + SIDE/NTILES; ++j) {
+              for (size_t k = tk; k < tk + SIDE/NTILES; ++k) {
+                size_t ix = i * SIDE * SIDE + j * SIDE + k;
+                //assert (ix < SIDE * SIDE * SIDE);
+                result[ix] = snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4, ix);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return result;
+  }
 };
 
 inline void dumpsine(array_ops::Array &result) {

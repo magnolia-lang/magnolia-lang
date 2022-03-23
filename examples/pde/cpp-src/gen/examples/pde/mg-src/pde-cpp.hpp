@@ -39,6 +39,13 @@ private:
     };
 public:
     typedef array_ops::Nat Nat;
+    struct _nbCores {
+        inline PDEProgram::Nat operator()() {
+            return __forall_ops.nbCores();
+        };
+    };
+
+    static PDEProgram::_nbCores nbCores;
     typedef array_ops::Index Index;
     typedef array_ops::Float Float;
     struct _three {
@@ -133,6 +140,20 @@ public:
     };
 
     static PDEProgram::_forall_ix_snippet forall_ix_snippet;
+    struct _forall_ix_snippet_threaded {
+        inline PDEProgram::Array operator()(const PDEProgram::Array& u, const PDEProgram::Array& v, const PDEProgram::Array& u0, const PDEProgram::Array& u1, const PDEProgram::Array& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4, const PDEProgram::Nat& nbThreads) {
+            return __forall_ops.forall_ix_snippet_threaded(u, v, u0, u1, u2, c0, c1, c2, c3, c4, nbThreads);
+        };
+    };
+
+    static PDEProgram::_forall_ix_snippet_threaded forall_ix_snippet_threaded;
+    struct _forall_ix_snippet_tiled {
+        inline PDEProgram::Array operator()(const PDEProgram::Array& u, const PDEProgram::Array& v, const PDEProgram::Array& u0, const PDEProgram::Array& u1, const PDEProgram::Array& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4) {
+            return __forall_ops.forall_ix_snippet_tiled(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
+        };
+    };
+
+    static PDEProgram::_forall_ix_snippet_tiled forall_ix_snippet_tiled;
     struct _mul {
         inline PDEProgram::Float operator()(const PDEProgram::Float& lhs, const PDEProgram::Float& rhs) {
             return __array_ops.mul(lhs, rhs);
@@ -162,7 +183,7 @@ public:
     static PDEProgram::_rotate rotate;
     struct _snippet {
         inline void operator()(PDEProgram::Array& u, const PDEProgram::Array& v, const PDEProgram::Array& u0, const PDEProgram::Array& u1, const PDEProgram::Array& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4) {
-            u = PDEProgram::forall_ix_snippet(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
+            u = PDEProgram::forall_ix_snippet_tiled(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
         };
     };
 
