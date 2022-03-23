@@ -17,6 +17,10 @@ namespace pde_cpp {
 
 
 
+    PDEProgram::_nbCores PDEProgram::nbCores;
+
+
+
     PDEProgram::_three PDEProgram::three;
 
 
@@ -46,6 +50,14 @@ namespace pde_cpp {
 
 
     PDEProgram::_forall_ix_snippet PDEProgram::forall_ix_snippet;
+
+
+
+    PDEProgram::_forall_ix_snippet_threaded PDEProgram::forall_ix_snippet_threaded;
+
+
+
+    PDEProgram::_forall_ix_snippet_tiled PDEProgram::forall_ix_snippet_tiled;
 
 
 

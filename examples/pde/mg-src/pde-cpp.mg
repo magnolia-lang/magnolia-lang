@@ -127,6 +127,19 @@ implementation ExtExtendMissingBypass = external C++ base.forall_ops {
                                u0: Array, u1: Array, u2: Array,
                                c0: Float, c1: Float, c2: Float,
                                c3: Float, c4: Float): Array;
+
+    /* OF Lift Cores extension */
+    function forall_ix_snippet_threaded(u: Array, v: Array, u0: Array,
+                                        u1: Array, u2: Array, c0: Float,
+                                        c1: Float, c2: Float, c3: Float,
+                                        c4: Float, nbThreads: Nat): Array;
+    function nbCores(): Nat;
+
+    /* OF Tiled extension */
+    function forall_ix_snippet_tiled(u: Array, v: Array, u0: Array,
+                                     u1: Array, u2: Array, c0: Float,
+                                     c1: Float, c2: Float, c3: Float,
+                                     c4: Float): Array;
 }
 
 implementation ExtArrayOps = external C++ base.array_ops {
@@ -222,5 +235,53 @@ concept DNFRules = {
                      offset: Offset) {
         assert psi(ix, rotate(array, axis, offset)) ==
                psi(rotate_ix(ix, axis, offset), array);
+    }
+}
+
+/// End of DNF base, start of experiments
+
+concept OFLiftCores = {
+    type Array;
+    type Float;
+    type Axis;
+    type Nat;
+
+    function nbCores(): Nat;
+
+    function forall_ix_snippet_threaded(u: Array, v: Array, u0: Array,
+                                        u1: Array, u2: Array, c0: Float,
+                                        c1: Float, c2: Float, c3: Float,
+                                        c4: Float, nbThreads: Nat): Array;
+    function forall_ix_snippet(u: Array, v: Array,
+                               u0: Array, u1: Array, u2: Array,
+                               c0: Float, c1: Float, c2: Float,
+                               c3: Float, c4: Float): Array;
+
+    axiom liftCoresRule(u: Array, v: Array, u0: Array, u1: Array, u2: Array,
+                        c0: Float, c1: Float, c2: Float, c3: Float, c4: Float) {
+        var d = nbCores();
+
+        assert forall_ix_snippet(u, v, u0, u1, u2, c0, c1, c2, c3, c4) ==
+               forall_ix_snippet_threaded(u, v, u0, u1, u2, c0, c1, c2, c3, c4, d);
+    }
+}
+
+concept OFTile = {
+    type Array;
+    type Float;
+
+    function forall_ix_snippet_tiled(u: Array, v: Array, u0: Array,
+                                     u1: Array, u2: Array, c0: Float,
+                                     c1: Float, c2: Float, c3: Float,
+                                     c4: Float): Array;
+    function forall_ix_snippet(u: Array, v: Array,
+                               u0: Array, u1: Array, u2: Array,
+                               c0: Float, c1: Float, c2: Float,
+                               c3: Float, c4: Float): Array;
+
+    axiom tileRule(u: Array, v: Array, u0: Array, u1: Array, u2: Array,
+                   c0: Float, c1: Float, c2: Float, c3: Float, c4: Float) {
+        assert forall_ix_snippet(u, v, u0, u1, u2, c0, c1, c2, c3, c4) ==
+               forall_ix_snippet_tiled(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
     }
 }

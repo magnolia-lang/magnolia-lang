@@ -14,7 +14,7 @@ static const double s_dx = 1.0;
 
 int main() {
     size_t side = SIDE; //256;
-    size_t steps = 50;
+    size_t steps = 20;
     //Shape shape = Shape(std::vector<size_t>({ side, side, side }));
     Array u0, u1, u2;
     dumpsine(u0);

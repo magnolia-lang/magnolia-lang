@@ -25,10 +25,10 @@ if __name__ == '__main__':
     rew_configs = [ ##("DNFIntroducePsi", 100)
                   ##, ("DNFCleanupPsiIntroduction", 100)
                     ("DNFRules", 100)
-                  ##, ("OFRavel", 1)
+                  ## ("OFRavel", 1)
                   ##, ("ShapeIsUnique", 100) # WRONG SHAPE IS NOT UNIQUE
-                  ##, ("ONFToArrayRules", 100)
-                  ##, ("PsiCorrespondenceTheorem", 1)
+                  ## ("ONFToArrayRules", 100)
+                  ## ("PsiCorrespondenceTheorem", 1)
                   ##, ("ShapeIsUnique", 100) # Could rewrite next rewrite rules
                   ##, ("OFCleanupIdentity", 100)
                   , ("OFTile", 1)
