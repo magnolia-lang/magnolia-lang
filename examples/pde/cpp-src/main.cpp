@@ -1,5 +1,7 @@
 #include <vector>
 
+#include <omp.h>
+
 #include "gen/examples/pde/mg-src/pde-cpp.hpp"
 #include "base.hpp"
 
@@ -20,10 +22,17 @@ int main() {
     dumpsine(u0);
     dumpsine(u1);
     dumpsine(u2);
+
+    double begin = omp_get_wtime();
+
     for (size_t i = 0; i < steps; ++i) {
         PDEProgram::step(u0, u1, u2, s_nu, s_dx, s_dt);
         std::cout << u0[0] << " "
                   << u1[0] << " "
                   << u2[0] << std::endl;
     }
+
+    double end = omp_get_wtime();
+
+    std::cout << end - begin << "[s] elapsed" << std::endl;
 }
