@@ -33,11 +33,20 @@ struct array_ops {
              SIDE * SIDE * SIDE * sizeof(Float));
     }
 
+    Array(Array &&other) {
+        this->content = std::move(other.content);
+    }
+
     Array &operator=(const Array &other) {
       this->content = std::unique_ptr<Float[]>(new Float[SIDE * SIDE * SIDE]);
       memcpy(this->content.get(), other.content.get(),
              SIDE * SIDE * SIDE * sizeof(Float));
       return *this;
+    }
+
+    Array &operator=(Array &&other) {
+        this->content = std::move(other.content);
+        return *this;
     }
 
     inline Float operator[](const Index &ix) const {
