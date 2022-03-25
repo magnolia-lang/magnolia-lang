@@ -677,18 +677,21 @@ mgExprToCxxExpr returnTypeOverloadsNameAliasMap = goExpr
       MBlockExpr blockTy exprs -> do
         cxxExprs <- mapM goStmt (NE.toList exprs)
         case blockTy of
-          MValueBlock -> mgToCxxLambdaVal cxxExprs
+          -- TODO: check properly that ref is okay here (it should be)
+          MValueBlock -> mgToCxxLambdaRef cxxExprs
           MEffectfulBlock -> mgToCxxLambdaRef cxxExprs
       MValue expr -> goExpr expr
-      MLet {} -> goStmt annInExpr >>= mgToCxxLambdaVal . (:[])
+      -- TODO: check properly that ref is okay here (it should be)
+      MLet {} -> goStmt annInExpr >>= mgToCxxLambdaRef . (:[])
       MIf cond trueExpr falseExpr -> CxxIfExpr <$> goExpr cond <*>
         goExpr trueExpr <*> goExpr falseExpr
-      MAssert _ -> goStmt annInExpr >>= mgToCxxLambdaVal . (:[])
+      -- TODO: check properly that ref is okay here (it should be)
+      MAssert _ -> goStmt annInExpr >>= mgToCxxLambdaRef . (:[])
       MSkip -> mgToCxxLambdaRef []
 
     goStmt = mgExprToCxxStmt returnTypeOverloadsNameAliasMap
     mgToCxxLambdaRef = return . CxxLambdaCall CxxLambdaCaptureDefaultReference
-    mgToCxxLambdaVal = return . CxxLambdaCall CxxLambdaCaptureDefaultValue
+    --mgToCxxLambdaVal = return . CxxLambdaCall CxxLambdaCaptureDefaultValue
 
 -- TODO: for the moment, this assumes no '_:T ==_:T' predicate is implemented
 -- in Magnolia, although it will be possible to define one manually. Therefore,

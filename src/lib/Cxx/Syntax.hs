@@ -379,6 +379,8 @@ data CxxUnOp = CxxLogicalNot
 data CxxBinOp = CxxLogicalAnd | CxxLogicalOr | CxxEqual | CxxNotEqual
                 deriving (Eq, Ord, Show)
 
+-- TODO: I think we actually never have to capture by value, since Magnolia
+-- takes care of checking that variables are not updated in effectful blocks.
 data CxxLambdaCaptureDefault = CxxLambdaCaptureDefaultValue
                              | CxxLambdaCaptureDefaultReference
                              deriving (Eq, Ord, Show)
