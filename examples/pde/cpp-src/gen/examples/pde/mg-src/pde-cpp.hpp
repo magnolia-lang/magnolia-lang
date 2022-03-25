@@ -97,6 +97,21 @@ private:
     };
 public:
     typedef array_ops::Array Array;
+    struct _all_substeps {
+        inline void operator()(PDEProgram::Array& u0, PDEProgram::Array& u1, PDEProgram::Array& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4) {
+            PDEProgram::Array v0 = u0;
+            PDEProgram::Array v1 = u1;
+            PDEProgram::Array v2 = u2;
+            v0 = PDEProgram::refill_all_padding(PDEProgram::forall_ix_snippet_padded(v0, u0, u0, u1, u2, c0, c1, c2, c3, c4));
+            v1 = PDEProgram::refill_all_padding(PDEProgram::forall_ix_snippet_padded(v1, u1, u0, u1, u2, c0, c1, c2, c3, c4));
+            v2 = PDEProgram::refill_all_padding(PDEProgram::forall_ix_snippet_padded(v2, u2, u0, u1, u2, c0, c1, c2, c3, c4));
+            u0 = PDEProgram::refill_all_padding(PDEProgram::forall_ix_snippet_padded(u0, v0, u0, u1, u2, c0, c1, c2, c3, c4));
+            u1 = PDEProgram::refill_all_padding(PDEProgram::forall_ix_snippet_padded(u1, v1, u0, u1, u2, c0, c1, c2, c3, c4));
+            u2 = PDEProgram::refill_all_padding(PDEProgram::forall_ix_snippet_padded(u2, v2, u0, u1, u2, c0, c1, c2, c3, c4));
+        };
+    };
+
+    static PDEProgram::_all_substeps all_substeps;
     struct _binary_add {
         inline PDEProgram::Float operator()(const PDEProgram::Float& lhs, const PDEProgram::Float& rhs) {
             return __array_ops.binary_add(lhs, rhs);
@@ -181,13 +196,6 @@ public:
     };
 
     static PDEProgram::_rotate rotate;
-    struct _snippet {
-        inline void operator()(PDEProgram::Array& u, const PDEProgram::Array& v, const PDEProgram::Array& u0, const PDEProgram::Array& u1, const PDEProgram::Array& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4) {
-            u = PDEProgram::forall_ix_snippet_tiled(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
-        };
-    };
-
-    static PDEProgram::_snippet snippet;
     struct _snippet_ix {
         inline PDEProgram::Float operator()(const PDEProgram::Array& u, const PDEProgram::Array& v, const PDEProgram::Array& u0, const PDEProgram::Array& u1, const PDEProgram::Array& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4, const PDEProgram::Index& ix) {
             PDEProgram::Axis zero = PDEProgram::zero();
@@ -198,6 +206,36 @@ public:
         };
     };
 
+    typedef forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Nat, PDEProgram::Offset, PDEProgram::_snippet_ix>::PaddedArray PaddedArray;
+    struct _forall_ix_snippet_padded {
+        inline PDEProgram::PaddedArray operator()(const PDEProgram::PaddedArray& u, const PDEProgram::PaddedArray& v, const PDEProgram::PaddedArray& u0, const PDEProgram::PaddedArray& u1, const PDEProgram::PaddedArray& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4) {
+            return __forall_ops.forall_ix_snippet_padded(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
+        };
+    };
+
+    static PDEProgram::_forall_ix_snippet_padded forall_ix_snippet_padded;
+    struct _inner {
+        inline PDEProgram::Array operator()(const PDEProgram::PaddedArray& pa) {
+            return __forall_ops.inner(pa);
+        };
+    };
+
+    static PDEProgram::_inner inner;
+    typedef forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Nat, PDEProgram::Offset, PDEProgram::_snippet_ix>::PaddingAmount PaddingAmount;
+    struct _cpadlr {
+        inline PDEProgram::PaddedArray operator()(const PDEProgram::Array& a, const PDEProgram::Axis& axis, const PDEProgram::PaddingAmount& n) {
+            return __forall_ops.cpadlr(a, axis, n);
+        };
+    };
+
+    static PDEProgram::_cpadlr cpadlr;
+    struct _paddingAmount {
+        inline PDEProgram::PaddingAmount operator()() {
+            return __forall_ops.paddingAmount();
+        };
+    };
+
+    static PDEProgram::_paddingAmount paddingAmount;
 private:
     static forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Nat, PDEProgram::Offset, PDEProgram::_snippet_ix> __forall_ops;
 public:
@@ -211,15 +249,7 @@ public:
             PDEProgram::Float c2 = PDEProgram::div(PDEProgram::div(_2, dx), dx);
             PDEProgram::Float c3 = nu;
             PDEProgram::Float c4 = PDEProgram::div(dt, _2);
-            PDEProgram::Array v0 = u0;
-            PDEProgram::Array v1 = u1;
-            PDEProgram::Array v2 = u2;
-            PDEProgram::snippet(v0, u0, u0, u1, u2, c0, c1, c2, c3, c4);
-            PDEProgram::snippet(v1, u1, u0, u1, u2, c0, c1, c2, c3, c4);
-            PDEProgram::snippet(v2, u2, u0, u1, u2, c0, c1, c2, c3, c4);
-            PDEProgram::snippet(u0, v0, u0, u1, u2, c0, c1, c2, c3, c4);
-            PDEProgram::snippet(u1, v1, u0, u1, u2, c0, c1, c2, c3, c4);
-            PDEProgram::snippet(u2, v2, u0, u1, u2, c0, c1, c2, c3, c4);
+            PDEProgram::all_substeps(u0, u1, u2, c0, c1, c2, c3, c4);
         };
     };
 

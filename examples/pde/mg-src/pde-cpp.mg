@@ -51,23 +51,24 @@ implementation PDE = {
         var c3 = nu;
         var c4 = dt/_2;
 
+        call all_substeps(u0, u1, u2, c0, c1, c2, c3, c4);
+    }
+
+    // TODO: possibly instantiate v variables inside?
+    procedure all_substeps(upd u0: Array, upd u1: Array, upd u2: Array,
+                           obs c0: Float, obs c1: Float, obs c2: Float,
+                           obs c3: Float, obs c4: Float) {
         var v0 = u0;
         var v1 = u1;
         var v2 = u2;
 
-        call snippet(v0, u0, u0, u1, u2, c0, c1, c2, c3, c4);
-        call snippet(v1, u1, u0, u1, u2, c0, c1, c2, c3, c4);
-        call snippet(v2, u2, u0, u1, u2, c0, c1, c2, c3, c4);
-        call snippet(u0, v0, u0, u1, u2, c0, c1, c2, c3, c4);
-        call snippet(u1, v1, u0, u1, u2, c0, c1, c2, c3, c4);
-        call snippet(u2, v2, u0, u1, u2, c0, c1, c2, c3, c4);
-    }
-
-    procedure snippet(upd u: Array, obs v: Array,
-                      obs u0: Array, obs u1: Array, obs u2: Array,
-                      obs c0: Float, obs c1: Float, obs c2: Float,
-                      obs c3: Float, obs c4: Float) {
-        u = forall_ix_snippet(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
+        // TODO: transpose as AoS instead of SoA
+        v0 = forall_ix_snippet(v0, u0, u0, u1, u2, c0, c1, c2, c3, c4);
+        v1 = forall_ix_snippet(v1, u1, u0, u1, u2, c0, c1, c2, c3, c4);
+        v2 = forall_ix_snippet(v2, u2, u0, u1, u2, c0, c1, c2, c3, c4);
+        u0 = forall_ix_snippet(u0, v0, u0, u1, u2, c0, c1, c2, c3, c4);
+        u1 = forall_ix_snippet(u1, v1, u0, u1, u2, c0, c1, c2, c3, c4);
+        u2 = forall_ix_snippet(u2, v2, u0, u1, u2, c0, c1, c2, c3, c4);
     }
 
     require function forall_ix_snippet(u: Array, v: Array,
@@ -140,6 +141,20 @@ implementation ExtExtendMissingBypass = external C++ base.forall_ops {
                                      u1: Array, u2: Array, c0: Float,
                                      c1: Float, c2: Float, c3: Float,
                                      c4: Float): Array;
+
+    /* OF Pad extension */
+    type PaddedArray;
+    type PaddingAmount;
+
+    function cpadlr(a: Array, axis: Axis, n: PaddingAmount)
+        : PaddedArray;
+    function inner(pa: PaddedArray): Array;
+    function paddingAmount(): PaddingAmount;
+    function forall_ix_snippet_padded(u: PaddedArray, v: PaddedArray,
+        u0: PaddedArray, u1: PaddedArray, u2: PaddedArray, c0: Float,
+        c1: Float, c2: Float, c3: Float, c4: Float): PaddedArray;
+    // function padded_rotate_ix()
+
 }
 
 implementation ExtArrayOps = external C++ base.array_ops {
@@ -285,3 +300,102 @@ concept OFTile = {
                forall_ix_snippet_tiled(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
     }
 }
+
+// concept OFPad = {
+//     type Array;
+//     type PaddedArray;
+//     type Float;
+//     type PaddingAmount;
+//     type Axis;
+
+//     function cpadlr(a: Array, axis: Axis, n: PaddingAmount)
+//         : PaddedArray;
+//     function inner(pa: PaddedArray): Array;
+
+//     function axis(): Axis;
+//     function paddingAmount(): PaddingAmount;
+
+//     function forall_ix_snippet_padded(u: PaddedArray, v: PaddedArray,
+//         u0: PaddedArray, u1: PaddedArray, u2: PaddedArray, c0: Float,
+//         c1: Float, c2: Float, c3: Float, c4: Float): PaddedArray;
+
+//     function forall_ix_snippet(u: Array, v: Array,
+//                                u0: Array, u1: Array, u2: Array,
+//                                c0: Float, c1: Float, c2: Float,
+//                                c3: Float, c4: Float): Array;
+
+
+//     axiom padRule(u: Array, v: Array, u0: Array, u1: Array, u2: Array,
+//                   c0: Float, c1: Float, c2: Float, c3: Float, c4: Float) {
+//         var a = axis();
+//         var p = paddingAmount();
+//         assert forall_ix_snippet(u, v, u0, u1, u2, c0, c1, c2, c3, c4) ==
+//                inner(forall_ix_snippet_padded(cpadlr(u, a, p), cpadlr(v, a, p),
+//                     cpadlr(u0, a, p), cpadlr(u1, a, p), cpadlr(u2, a, p),
+//                     c0, c1, c2, c3, c4));
+//     }
+// }
+
+// For the below, we assume that the inputs are padded as needed.
+concept OFPad = {
+    type Array;
+    type Float;
+
+    procedure all_substeps(upd u0: Array, upd u1: Array, upd u2: Array,
+                           obs c0: Float, obs c1: Float, obs c2: Float,
+                           obs c3: Float, obs c4: Float);
+
+    function refill_all_padding(a: Array): Array;
+
+    function forall_ix_snippet_padded(u: Array, v: Array,
+        u0: Array, u1: Array, u2: Array, c0: Float,
+        c1: Float, c2: Float, c3: Float, c4: Float): Array;
+
+    function forall_ix_snippet(u: Array, v: Array,
+                               u0: Array, u1: Array, u2: Array,
+                               c0: Float, c1: Float, c2: Float,
+                               c3: Float, c4: Float): Array;
+
+    axiom padRule(u: Array, v: Array, u0: Array, u1: Array, u2: Array,
+                  c0: Float, c1: Float, c2: Float, c3: Float, c4: Float) {
+        assert forall_ix_snippet(u, v, u0, u1, u2, c0, c1, c2, c3, c4) ==
+               refill_all_padding(forall_ix_snippet_padded(u, v, u0, u1, u2, c0,
+                    c1, c2, c3, c4));
+    }
+}
+
+// concept OFPad0 = OFPad[ axis => zero ];
+// concept OFPad1 = OFPad[ axis => one ];
+// concept OFPad2 = OFPad[ axis => two ];
+
+/*concept OFTest = {
+    type Array;
+    type Float;
+    type PaddingAmount;
+    type Axis;
+
+    procedure all_substeps(upd u0: Array, upd u1: Array, upd u2: Array,
+                           obs c0: Float, obs c1: Float, obs c2: Float,
+                           obs c3: Float, obs c4: Float);
+
+    axiom test(u0: Array, u1: Array, u2: Array, c0: Float, c1: Float, c2: Float,
+               c3: Float, c4: Float) {
+
+        var c0u = c0;
+        var c1u = c1;
+        var c2u = c2;
+        var c3u = c3;
+        var c4u = c4;
+
+        assert { var u0u = u0;
+                 var u1u = u1;
+                 var u2u = u2;
+                 call all_substeps(u0u, u1u, u1u, c0u, c1u, c2u, c3u, c4u);
+               } ==
+               { var u0p = u0;
+                 var u1p = u1;
+                 var u2p = u2;
+                 call all_substeps(u0p, u1p, u2p, c0u, c1u, c2u, c3u, c4u);
+               };
+    }
+}*/

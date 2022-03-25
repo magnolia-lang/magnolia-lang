@@ -37,6 +37,10 @@ namespace pde_cpp {
 
 
 
+    PDEProgram::_all_substeps PDEProgram::all_substeps;
+
+
+
     PDEProgram::_binary_add PDEProgram::binary_add;
 
 
@@ -73,9 +77,21 @@ namespace pde_cpp {
 
 
 
-    PDEProgram::_snippet PDEProgram::snippet;
 
 
+    PDEProgram::_forall_ix_snippet_padded PDEProgram::forall_ix_snippet_padded;
+
+
+
+    PDEProgram::_inner PDEProgram::inner;
+
+
+
+    PDEProgram::_cpadlr PDEProgram::cpadlr;
+
+
+
+    PDEProgram::_paddingAmount PDEProgram::paddingAmount;
 
     forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Nat, PDEProgram::Offset, PDEProgram::_snippet_ix> PDEProgram::__forall_ops;
 
