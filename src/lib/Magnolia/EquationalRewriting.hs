@@ -325,15 +325,19 @@ matchesPattern inTypedExprIR inPattern =
     patternMatches = pure ()
     patternDoesNotMatch = throwE ()
 
--- | Transforms a typed expression into a typed pattern.
-toPattern :: TypedExprIR -> TypedPattern
-toPattern typedExprIR =
+-- | Transforms a typed expression into a typed pattern. The set of variable
+-- names passed to 'toPattern' denotes those variables that are universally
+-- quantified within the typed expression IR.
+toPattern :: S.Set Name -> TypedExprIR -> TypedPattern
+toPattern argVariables typedExprIR =
   toPattern' typedExprIR `evalState` (M.empty, 0)
   where
     toPattern' :: TypedExprIR -> State (M.Map Name Name, Int) TypedPattern
     toPattern' (TypedExprIR inTyExprIR inExprIR) =
       TypedPattern inTyExprIR <$> (case inExprIR of
-        ExprIR'Var (VarIR _ name _) -> toWildcard name
+        ExprIR'Var (VarIR mode name ty) -> if name `S.member` argVariables
+          then toWildcard name
+          else pure $ pe $ ExprIR'Var (VarIR mode name ty)
         ExprIR'Call name args -> pe . ExprIR'Call name <$> mapM toPattern' args
         ExprIR'ValueBlock stmts -> pe . ExprIR'ValueBlock <$>
           mapM toPattern' stmts
@@ -341,7 +345,11 @@ toPattern typedExprIR =
           mapM toPattern' stmts
         ExprIR'Value exprIR -> pe . ExprIR'Value <$> toPattern' exprIR
         ExprIR'Let (VarIR mode name ty) mexprIR ->
-          error "let stmts in toPattern are not implemented"
+          -- TODO: again, this is dangerous, who knows what will happen...
+          pe . ExprIR'Let (VarIR mode name ty) <$>
+            (case mexprIR of Nothing -> pure Nothing
+                             Just exprIR' -> Just <$> toPattern' exprIR')
+          --error "let stmts in toPattern are not implemented"
         ExprIR'If condIR trueExprIR falseExprIR -> do
           pe <$> (ExprIR'If <$> toPredicatePattern condIR
                             <*> toPattern' trueExprIR
@@ -482,7 +490,7 @@ runOptimizer (Ann _ optimizer) maxSteps (Ann tgtDeclO tgtModule) =
       AnonymousAxiom v <$> inlineTypedExprIR typedExprIR) axioms
     -- 3. gather directed rewrite rules
     constraintDb <- join <$> mapM gatherConstraints inlinedAxioms
-    --liftIO $ mapM_ print constraintDb
+    liftIO $ mapM_ print constraintDb
     --liftIO $ mapM_ (pprint . fromTypedExprIR) $ M.keys constraintDb
     -- 4. traverse each expression in the target module to rewrite it (while
     -- elaborating the scope)
@@ -773,7 +781,7 @@ gatherConstraints (AnonymousAxiom variables typedExprIR) = go typedExprIR
         -- do? TODO: collect facts somewhere
         PredicateIRAtom'Call {} -> pure []
         PredicateIRAtom'ExprEquation lhs rhs ->
-          (:[]) . Constraint'Equational <$> toEquation lhs rhs --undefined
+          (:[]) . Constraint'Equational <$> toEquation variables lhs rhs --undefined
         --PredicateIRAtom'PredicateEquation pi pi' -> undefined
         --PredicateIRAtom'Negation pi -> undefined
 
@@ -879,8 +887,20 @@ inlineTypedExprIR inTypedExprIR = snd <$> go M.empty inTypedExprIR
           -- be automatically generated for Magnolia procedures, but not for
           -- external ones.
           -- TODO: implement, or explicitly ignore
-          ProcName _ -> throwNonLocatedE NotImplementedErr
-            "inlining involving procedure calls"
+          ProcName _ -> do
+            -- TODO: this is mega dangerous, and not correct in all
+            -- cases. This has to be safeguarded before being
+            -- merged, so that only well-behaved cases work out.
+            -- TODO: we invalidate all the variables that are passed as
+            -- arguments to the procedure, as a precaution. This is not 100%
+            -- correct, we should rely on actually identifying which ones are
+            -- modified, but this is best effort for the moment.
+            -- Rewritings that use procedures will only work in some simple
+            -- cases.
+            let bindings' = foldl invalidateProcedureArgBinding bindings args
+            ret bindings' (ExprIR'Call name args)
+            --throwNonLocatedE NotImplementedErr
+            --"inlining involving procedure calls"
           _ -> ret bindings (ExprIR'Call name args')
       ExprIR'ValueBlock stmts -> do
         -- In principle, bindings can be discarded when exiting value blocks.
@@ -932,6 +952,13 @@ inlineTypedExprIR inTypedExprIR = snd <$> go M.empty inTypedExprIR
         ret :: M.Map Name TypedExprIR -> ExprIR
             -> MgMonad (M.Map Name TypedExprIR, TypedExprIR)
         ret bindings' exprIR = pure (bindings', TypedExprIR inTyExprIR exprIR)
+
+        invalidateProcedureArgBinding :: M.Map Name TypedExprIR -> TypedExprIR
+                                      -> M.Map Name TypedExprIR
+        invalidateProcedureArgBinding bindings' (TypedExprIR _ exprIR) =
+          case exprIR of
+            ExprIR'Var (VarIR _ name _) -> M.delete name bindings'
+            _ -> bindings'
 
     joinBranches :: PredicateIR -> TypedExprIR -> TypedExprIR -> TypedExprIR
     joinBranches cond branch1@(TypedExprIR ty _) branch2 =
@@ -996,9 +1023,12 @@ exprTy (Ann ty _) = ty
 -- | Takes two expressions e1 and e2 and creates an equation out of them. It is
 -- assumed that the expressions have been inlined as much as possible, i.e. the
 -- only variables left within the expression should be universally quantified
--- variables (e.g. axiom parameters – where the axioms are unguarded).
-toEquation :: TypedExprIR -> TypedExprIR -> MgMonad Equation
-toEquation srcExprIR tgtExprIR = do
+-- variables (e.g. axiom parameters – where the axioms are unguarded), or
+-- variables declared as part of the expression (if the expression is a block).
+-- The set of variables passed to 'toEquation' corresponds to the universally
+-- quantified variables that may appear within the expression.
+toEquation :: S.Set Name -> TypedExprIR -> TypedExprIR -> MgMonad Equation
+toEquation argVariables srcExprIR tgtExprIR = do
   let srcVariables = allVariables srcExprIR
       tgtVariables = allVariables tgtExprIR
       equationExpr = TypedExprIR Pred $ ExprIR'Assert $ PredicateIR'Atom $
@@ -1008,7 +1038,7 @@ toEquation srcExprIR tgtExprIR = do
           (ExprIR'Assert
             (PredicateIR'Atom
               (PredicateIRAtom'ExprEquation srcPat tgtPat))))) =
-                toPattern equationExpr
+                toPattern argVariables equationExpr
   -- The set of universally quantified variables in the target pattern must be
   -- a subset of the set of universally quantified variables in the source
   -- pattern.
