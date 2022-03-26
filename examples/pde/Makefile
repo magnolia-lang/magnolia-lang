@@ -5,6 +5,7 @@ TARGET := $(shell basename `pwd`).bin
 BIN_DIR := bin
 CPP_SOURCE_DIR := cpp-src
 CPP_SOURCES := $(shell find $(CPP_SOURCE_DIR) -name "*.cpp")
+DEFINES := -DPAD0=0 -DPAD1=0 -DPAD2=0
 
 CC := g++
 
@@ -16,7 +17,7 @@ MKDIR := @mkdir
 RM := @rm
 
 all: setup
-	$(CC) $(CCFLAGS) $(CPP_SOURCES) -o $(BIN_DIR)/$(TARGET)
+	$(CC) $(CCFLAGS) $(DEFINES) $(CPP_SOURCES) -o $(BIN_DIR)/$(TARGET)
 	@echo $(TARGET)
 	@echo $(CPP_SOURCES)
 

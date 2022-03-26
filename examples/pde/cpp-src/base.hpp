@@ -13,9 +13,6 @@
 #define S0 512
 #define S1 512
 #define S2 512
-#define PAD0 0
-#define PAD1 0
-#define PAD2 0
 
 #define PADDED_S0 (S0 + 2 * PAD0)
 #define PADDED_S1 (S1 + 2 * PAD1)
