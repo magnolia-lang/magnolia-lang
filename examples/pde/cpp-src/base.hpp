@@ -27,7 +27,7 @@
 #define NB_CORES 1
 
 struct array_ops {
-  typedef double Float;
+  typedef float Float;
   struct Offset { int value; };
   struct Axis { size_t value; };
   typedef size_t Index;
