@@ -15,9 +15,7 @@ static const double s_nu = 1.0;
 static const double s_dx = 1.0;
 
 int main() {
-    size_t side = SIDE; //256;
-    size_t steps = 20;
-    //Shape shape = Shape(std::vector<size_t>({ side, side, side }));
+    size_t steps = 50;
     Array u0, u1, u2;
     dumpsine(u0);
     dumpsine(u1);
@@ -27,12 +25,20 @@ int main() {
 
     for (size_t i = 0; i < steps; ++i) {
         PDEProgram::step(u0, u1, u2, s_nu, s_dx, s_dt);
-        std::cout << u0[0] << " "
-                  << u1[0] << " "
-                  << u2[0] << std::endl;
+        std::cout << u0[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2] << " "
+                  << u1[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2] << " "
+                  << u2[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2] << std::endl;
     }
 
     double end = omp_get_wtime();
 
-    std::cout << end - begin << "[s] elapsed" << std::endl;
+    std::cout << end - begin << "[s] elapsed with sizes ("
+              << S0 << ", "
+              << S1 << ", "
+              << S2 << ") with padding ("
+              << PAD0 << ", "
+              << PAD1 << ", "
+              << PAD2 << ") on "
+              << NB_CORES << " threads for "
+              << steps << " steps" << std::endl;
 }

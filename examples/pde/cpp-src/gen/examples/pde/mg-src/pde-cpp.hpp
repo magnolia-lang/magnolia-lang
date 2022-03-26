@@ -81,6 +81,13 @@ public:
     };
 
     static PDEProgram::_rotate_ix rotate_ix;
+    struct _rotate_ix_padded {
+        inline PDEProgram::Index operator()(const PDEProgram::Index& ix, const PDEProgram::Axis& axis, const PDEProgram::Offset& offset) {
+            return __forall_ops.rotate_ix_padded(ix, axis, offset);
+        };
+    };
+
+    static PDEProgram::_rotate_ix_padded rotate_ix_padded;
     struct _zero {
         inline PDEProgram::Axis operator()() {
             return __array_ops.zero_axis();
@@ -102,12 +109,36 @@ public:
             PDEProgram::Array v0 = u0;
             PDEProgram::Array v1 = u1;
             PDEProgram::Array v2 = u2;
-            v0 = PDEProgram::refill_all_padding(PDEProgram::forall_ix_snippet_padded(v0, u0, u0, u1, u2, c0, c1, c2, c3, c4));
-            v1 = PDEProgram::refill_all_padding(PDEProgram::forall_ix_snippet_padded(v1, u1, u0, u1, u2, c0, c1, c2, c3, c4));
-            v2 = PDEProgram::refill_all_padding(PDEProgram::forall_ix_snippet_padded(v2, u2, u0, u1, u2, c0, c1, c2, c3, c4));
-            u0 = PDEProgram::refill_all_padding(PDEProgram::forall_ix_snippet_padded(u0, v0, u0, u1, u2, c0, c1, c2, c3, c4));
-            u1 = PDEProgram::refill_all_padding(PDEProgram::forall_ix_snippet_padded(u1, v1, u0, u1, u2, c0, c1, c2, c3, c4));
-            u2 = PDEProgram::refill_all_padding(PDEProgram::forall_ix_snippet_padded(u2, v2, u0, u1, u2, c0, c1, c2, c3, c4));
+            v0 = [&]() {
+                PDEProgram::Array result = PDEProgram::forall_ix_snippet_padded(v0, u0, u0, u1, u2, c0, c1, c2, c3, c4);
+                PDEProgram::refill_all_padding(result);
+                return result;
+            }();
+            v1 = [&]() {
+                PDEProgram::Array result = PDEProgram::forall_ix_snippet_padded(v1, u1, u0, u1, u2, c0, c1, c2, c3, c4);
+                PDEProgram::refill_all_padding(result);
+                return result;
+            }();
+            v2 = [&]() {
+                PDEProgram::Array result = PDEProgram::forall_ix_snippet_padded(v2, u2, u0, u1, u2, c0, c1, c2, c3, c4);
+                PDEProgram::refill_all_padding(result);
+                return result;
+            }();
+            u0 = [&]() {
+                PDEProgram::Array result = PDEProgram::forall_ix_snippet_padded(u0, v0, u0, u1, u2, c0, c1, c2, c3, c4);
+                PDEProgram::refill_all_padding(result);
+                return result;
+            }();
+            u1 = [&]() {
+                PDEProgram::Array result = PDEProgram::forall_ix_snippet_padded(u1, v1, u0, u1, u2, c0, c1, c2, c3, c4);
+                PDEProgram::refill_all_padding(result);
+                return result;
+            }();
+            u2 = [&]() {
+                PDEProgram::Array result = PDEProgram::forall_ix_snippet_padded(u2, v2, u0, u1, u2, c0, c1, c2, c3, c4);
+                PDEProgram::refill_all_padding(result);
+                return result;
+            }();
         };
     };
 
@@ -155,6 +186,13 @@ public:
     };
 
     static PDEProgram::_forall_ix_snippet forall_ix_snippet;
+    struct _forall_ix_snippet_padded {
+        inline PDEProgram::Array operator()(const PDEProgram::Array& u, const PDEProgram::Array& v, const PDEProgram::Array& u0, const PDEProgram::Array& u1, const PDEProgram::Array& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4) {
+            return __forall_ops.forall_ix_snippet_padded(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
+        };
+    };
+
+    static PDEProgram::_forall_ix_snippet_padded forall_ix_snippet_padded;
     struct _forall_ix_snippet_threaded {
         inline PDEProgram::Array operator()(const PDEProgram::Array& u, const PDEProgram::Array& v, const PDEProgram::Array& u0, const PDEProgram::Array& u1, const PDEProgram::Array& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4, const PDEProgram::Nat& nbThreads) {
             return __forall_ops.forall_ix_snippet_threaded(u, v, u0, u1, u2, c0, c1, c2, c3, c4, nbThreads);
@@ -189,6 +227,13 @@ public:
     };
 
     static PDEProgram::_psi psi;
+    struct _refill_all_padding {
+        inline void operator()(PDEProgram::Array& a) {
+            return __forall_ops.refill_all_padding(a);
+        };
+    };
+
+    static PDEProgram::_refill_all_padding refill_all_padding;
     struct _rotate {
         inline PDEProgram::Array operator()(const PDEProgram::Array& a, const PDEProgram::Axis& axis, const PDEProgram::Offset& o) {
             return __array_ops.rotate(a, axis, o);
@@ -201,41 +246,11 @@ public:
             PDEProgram::Axis zero = PDEProgram::zero();
             PDEProgram::Offset one = PDEProgram::one.operator()<Offset>();
             PDEProgram::Axis two = PDEProgram::two.operator()<Axis>();
-            PDEProgram::Float result = PDEProgram::binary_add(PDEProgram::psi(ix, u), PDEProgram::mul(c4, PDEProgram::binary_sub(PDEProgram::mul(c3, PDEProgram::binary_sub(PDEProgram::mul(c1, PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::psi(PDEProgram::rotate_ix(ix, zero, PDEProgram::unary_sub(one)), v), PDEProgram::psi(PDEProgram::rotate_ix(ix, zero, one), v)), PDEProgram::psi(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), PDEProgram::unary_sub(one)), v)), PDEProgram::psi(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), one), v)), PDEProgram::psi(PDEProgram::rotate_ix(ix, two, PDEProgram::unary_sub(one)), v)), PDEProgram::psi(PDEProgram::rotate_ix(ix, two, one), v))), PDEProgram::mul(PDEProgram::mul(PDEProgram::three(), c2), PDEProgram::psi(ix, u0)))), PDEProgram::mul(c0, PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::mul(PDEProgram::binary_sub(PDEProgram::psi(PDEProgram::rotate_ix(ix, zero, one), v), PDEProgram::psi(PDEProgram::rotate_ix(ix, zero, PDEProgram::unary_sub(one)), v)), PDEProgram::psi(ix, u0)), PDEProgram::mul(PDEProgram::binary_sub(PDEProgram::psi(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), one), v), PDEProgram::psi(PDEProgram::rotate_ix(ix, PDEProgram::one.operator()<Axis>(), PDEProgram::unary_sub(one)), v)), PDEProgram::psi(ix, u1))), PDEProgram::mul(PDEProgram::binary_sub(PDEProgram::psi(PDEProgram::rotate_ix(ix, two, one), v), PDEProgram::psi(PDEProgram::rotate_ix(ix, two, PDEProgram::unary_sub(one)), v)), PDEProgram::psi(ix, u2)))))));
+            PDEProgram::Float result = PDEProgram::binary_add(PDEProgram::psi(ix, u), PDEProgram::mul(c4, PDEProgram::binary_sub(PDEProgram::mul(c3, PDEProgram::binary_sub(PDEProgram::mul(c1, PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::psi(PDEProgram::rotate_ix_padded(ix, zero, PDEProgram::unary_sub(one)), v), PDEProgram::psi(PDEProgram::rotate_ix_padded(ix, zero, one), v)), PDEProgram::psi(PDEProgram::rotate_ix_padded(ix, PDEProgram::one.operator()<Axis>(), PDEProgram::unary_sub(one)), v)), PDEProgram::psi(PDEProgram::rotate_ix_padded(ix, PDEProgram::one.operator()<Axis>(), one), v)), PDEProgram::psi(PDEProgram::rotate_ix_padded(ix, two, PDEProgram::unary_sub(one)), v)), PDEProgram::psi(PDEProgram::rotate_ix_padded(ix, two, one), v))), PDEProgram::mul(PDEProgram::mul(PDEProgram::three(), c2), PDEProgram::psi(ix, u0)))), PDEProgram::mul(c0, PDEProgram::binary_add(PDEProgram::binary_add(PDEProgram::mul(PDEProgram::binary_sub(PDEProgram::psi(PDEProgram::rotate_ix_padded(ix, zero, one), v), PDEProgram::psi(PDEProgram::rotate_ix_padded(ix, zero, PDEProgram::unary_sub(one)), v)), PDEProgram::psi(ix, u0)), PDEProgram::mul(PDEProgram::binary_sub(PDEProgram::psi(PDEProgram::rotate_ix_padded(ix, PDEProgram::one.operator()<Axis>(), one), v), PDEProgram::psi(PDEProgram::rotate_ix_padded(ix, PDEProgram::one.operator()<Axis>(), PDEProgram::unary_sub(one)), v)), PDEProgram::psi(ix, u1))), PDEProgram::mul(PDEProgram::binary_sub(PDEProgram::psi(PDEProgram::rotate_ix_padded(ix, two, one), v), PDEProgram::psi(PDEProgram::rotate_ix_padded(ix, two, PDEProgram::unary_sub(one)), v)), PDEProgram::psi(ix, u2)))))));
             return result;
         };
     };
 
-    typedef forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Nat, PDEProgram::Offset, PDEProgram::_snippet_ix>::PaddedArray PaddedArray;
-    struct _forall_ix_snippet_padded {
-        inline PDEProgram::PaddedArray operator()(const PDEProgram::PaddedArray& u, const PDEProgram::PaddedArray& v, const PDEProgram::PaddedArray& u0, const PDEProgram::PaddedArray& u1, const PDEProgram::PaddedArray& u2, const PDEProgram::Float& c0, const PDEProgram::Float& c1, const PDEProgram::Float& c2, const PDEProgram::Float& c3, const PDEProgram::Float& c4) {
-            return __forall_ops.forall_ix_snippet_padded(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
-        };
-    };
-
-    static PDEProgram::_forall_ix_snippet_padded forall_ix_snippet_padded;
-    struct _inner {
-        inline PDEProgram::Array operator()(const PDEProgram::PaddedArray& pa) {
-            return __forall_ops.inner(pa);
-        };
-    };
-
-    static PDEProgram::_inner inner;
-    typedef forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Nat, PDEProgram::Offset, PDEProgram::_snippet_ix>::PaddingAmount PaddingAmount;
-    struct _cpadlr {
-        inline PDEProgram::PaddedArray operator()(const PDEProgram::Array& a, const PDEProgram::Axis& axis, const PDEProgram::PaddingAmount& n) {
-            return __forall_ops.cpadlr(a, axis, n);
-        };
-    };
-
-    static PDEProgram::_cpadlr cpadlr;
-    struct _paddingAmount {
-        inline PDEProgram::PaddingAmount operator()() {
-            return __forall_ops.paddingAmount();
-        };
-    };
-
-    static PDEProgram::_paddingAmount paddingAmount;
 private:
     static forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Nat, PDEProgram::Offset, PDEProgram::_snippet_ix> __forall_ops;
 public:

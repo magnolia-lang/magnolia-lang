@@ -33,6 +33,10 @@ namespace pde_cpp {
 
 
 
+    PDEProgram::_rotate_ix_padded PDEProgram::rotate_ix_padded;
+
+
+
     PDEProgram::_zero PDEProgram::zero;
 
 
@@ -57,6 +61,10 @@ namespace pde_cpp {
 
 
 
+    PDEProgram::_forall_ix_snippet_padded PDEProgram::forall_ix_snippet_padded;
+
+
+
     PDEProgram::_forall_ix_snippet_threaded PDEProgram::forall_ix_snippet_threaded;
 
 
@@ -73,25 +81,13 @@ namespace pde_cpp {
 
 
 
+    PDEProgram::_refill_all_padding PDEProgram::refill_all_padding;
+
+
+
     PDEProgram::_rotate PDEProgram::rotate;
 
 
-
-
-
-    PDEProgram::_forall_ix_snippet_padded PDEProgram::forall_ix_snippet_padded;
-
-
-
-    PDEProgram::_inner PDEProgram::inner;
-
-
-
-    PDEProgram::_cpadlr PDEProgram::cpadlr;
-
-
-
-    PDEProgram::_paddingAmount PDEProgram::paddingAmount;
 
     forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Nat, PDEProgram::Offset, PDEProgram::_snippet_ix> PDEProgram::__forall_ops;
 

@@ -143,16 +143,23 @@ implementation ExtExtendMissingBypass = external C++ base.forall_ops {
                                      c4: Float): Array;
 
     /* OF Pad extension */
-    type PaddedArray;
-    type PaddingAmount;
+    procedure refill_all_padding(upd a: Array);
 
-    function cpadlr(a: Array, axis: Axis, n: PaddingAmount)
-        : PaddedArray;
-    function inner(pa: PaddedArray): Array;
-    function paddingAmount(): PaddingAmount;
-    function forall_ix_snippet_padded(u: PaddedArray, v: PaddedArray,
-        u0: PaddedArray, u1: PaddedArray, u2: PaddedArray, c0: Float,
-        c1: Float, c2: Float, c3: Float, c4: Float): PaddedArray;
+    function forall_ix_snippet_padded(u: Array, v: Array,
+        u0: Array, u1: Array, u2: Array, c0: Float,
+        c1: Float, c2: Float, c3: Float, c4: Float): Array;
+
+    function rotate_ix_padded(ix: Index, axis: Axis, offset: Offset): Index;
+    // type PaddedArray;
+    // type PaddingAmount;
+
+    // function cpadlr(a: Array, axis: Axis, n: PaddingAmount)
+    //     : PaddedArray;
+    // function inner(pa: PaddedArray): Array;
+    // function paddingAmount(): PaddingAmount;
+    // function forall_ix_snippet_padded(u: PaddedArray, v: PaddedArray,
+    //     u0: PaddedArray, u1: PaddedArray, u2: PaddedArray, c0: Float,
+    //     c1: Float, c2: Float, c3: Float, c4: Float): PaddedArray;
     // function padded_rotate_ix()
 
 }
@@ -345,7 +352,7 @@ concept OFPad = {
                            obs c0: Float, obs c1: Float, obs c2: Float,
                            obs c3: Float, obs c4: Float);
 
-    function refill_all_padding(a: Array): Array;
+    procedure refill_all_padding(upd a: Array);
 
     function forall_ix_snippet_padded(u: Array, v: Array,
         u0: Array, u1: Array, u2: Array, c0: Float,
@@ -359,8 +366,23 @@ concept OFPad = {
     axiom padRule(u: Array, v: Array, u0: Array, u1: Array, u2: Array,
                   c0: Float, c1: Float, c2: Float, c3: Float, c4: Float) {
         assert forall_ix_snippet(u, v, u0, u1, u2, c0, c1, c2, c3, c4) ==
-               refill_all_padding(forall_ix_snippet_padded(u, v, u0, u1, u2, c0,
-                    c1, c2, c3, c4));
+               { var result = forall_ix_snippet_padded(u, v, u0, u1, u2, c0,
+                    c1, c2, c3, c4);
+                 call refill_all_padding(result);
+                 value result;
+               };
+    }
+
+    type Index;
+    type Axis;
+    type Offset;
+    function rotate_ix(ix: Index, axis: Axis, offset: Offset): Index;
+    function rotate_ix_padded(ix: Index, axis: Axis, offset: Offset): Index;
+
+    // We can replace rotate_ix by a more optimal rotation
+    axiom rotateIxPadRule(ix: Index, axis: Axis, offset: Offset) {
+        assert rotate_ix(ix, axis, offset) ==
+               rotate_ix_padded(ix, axis, offset);
     }
 }
 
