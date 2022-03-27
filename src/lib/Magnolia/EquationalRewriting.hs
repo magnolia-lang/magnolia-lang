@@ -2,7 +2,8 @@
 {-# LANGUAGE TupleSections #-}
 
 module Magnolia.EquationalRewriting (
-    runOptimizer
+    runGenerator
+  , runOptimizer
   )
   where
 
@@ -10,24 +11,26 @@ import Control.Monad (foldM, join)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Except as E
 import Control.Monad.State
+import qualified Data.List as L
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
 import Data.Maybe (isNothing)
 import qualified Data.Set as S
 import qualified Data.Text.Lazy as T
-import Data.Void (absurd)
+import Data.Void (absurd, vacuous)
 
 import Env
+import Magnolia.Check
 import Magnolia.PPrint
 import Magnolia.Syntax
 import Magnolia.Util
 import Monad
-import Python.Syntax (extractParentObjectName)
 import Data.Foldable (traverse_)
 
 -- TODO: define optimizer modes in the compiler
 
 type Optimizer = TcModule
+type CallableGenerator = TcModule
 
 -- TODO: should we only optimize Programs here?
 
@@ -206,10 +209,10 @@ fromTypedExprIR (TypedExprIR tyExprIR exprIR) = Ann tyExprIR $ case exprIR of
 -- == equational rewriting ==
 
 data TypedPattern = TypedPattern MType Pattern
-                    deriving (Eq, Show)
+                    deriving (Eq, Ord, Show)
 data Pattern = Pattern'Wildcard Name
              | Pattern'Expr (GenericExprIR TypedPattern)
-               deriving (Eq, Show)
+               deriving (Eq, Ord, Show)
 type PredicatePattern = GenericPredicateIR TypedPattern
 type PredicateAtomPattern = GenericPredicateIRAtom TypedPattern
 
@@ -478,6 +481,80 @@ constraintEquation constraint = case constraint of
 type FactDB = S.Set PredicateIRAtom
 type ConstraintDB = [Constraint]
 
+-- | Runs a callable generator within one context module.
+runGenerator :: CallableGenerator -> TcModule -> MgMonad TcModule
+runGenerator tcGenModule@(Ann _ gen) tcTgtModule@(Ann tgtDeclO tgtModule) =
+  case gen of
+  MModule Concept generatorName generatorModuleExpr -> enter generatorName $ do
+    -- 1. gather axioms
+    axioms <- gatherAxioms generatorModuleExpr
+    -- 2. inline expressions within axioms (TODO)
+    inlinedAxioms <- mapM (\(AnonymousAxiom v typedExprIR) ->
+      AnonymousAxiom v <$> inlineTypedExprIR typedExprIR) axioms
+    -- 3. gather directed rewrite rules
+    constraintDb <- join <$> mapM gatherConstraints inlinedAxioms
+    liftIO $ mapM_ print constraintDb
+    -- TODO: proper error handling
+    -- 4. traverse each constraint to create a new callable
+    let ~(MModule tgtModuleTy tgtModuleName (Ann src tgtModuleExpr)) = tgtModule
+    resultModuleExpr <- Ann src <$> case tgtModuleExpr of
+      MModuleDef _ deps renamings -> do
+        contextDecls <- mergeModuleDecls tcGenModule tcTgtModule
+        newDefs <- mapM (generateCallable contextDecls generatorModuleExpr)
+                        constraintDb
+        let newDefsAsMap = M.fromListWith (<>)
+              (map (\d -> (nodeName d, [d])) newDefs)
+        decls' <- mergeModuleDecls
+          (Ann tgtDeclO (MModule tgtModuleTy (ModName "dummy1")
+            (Ann src (MModuleDef contextDecls [] []))))
+          (Ann tgtDeclO (MModule tgtModuleTy (ModName "dummy2")
+            (Ann src (MModuleDef newDefsAsMap [] []))))
+        pure $ MModuleDef decls' deps renamings
+      MModuleRef v _ -> absurd v
+      MModuleAsSignature v _ -> absurd v
+      MModuleExternal {} -> pure tgtModuleExpr
+    liftIO $ pprint resultModuleExpr
+    -- 6: wrap it up
+    pure $ Ann tgtDeclO (MModule tgtModuleTy tgtModuleName resultModuleExpr)
+  _ -> undefined
+  where
+    generatorDecls :: TcModuleExpr -> M.Map Name [TcDecl]
+    generatorDecls (Ann _ generatorExpr) = case generatorExpr of
+      MModuleDef decls _ _ -> decls
+      MModuleRef v _ -> absurd v
+      MModuleAsSignature v _ -> absurd v
+      MModuleExternal _ _ v -> absurd v
+
+    generateCallable :: M.Map Name [TcDecl] -> TcModuleExpr -> Constraint
+                     -> MgMonad TcDecl
+    generateCallable contextDecls generatorExpr constraint = case constraint of
+      Constraint'ConditionalEquational {} -> throwNonLocatedE NotImplementedErr
+        "conditional equational support in generators"
+      Constraint'Equational (Equation _ sourcePat targetPat) ->
+        case sourcePat of
+          (TypedPattern tyPattern (Pattern'Expr
+              (ExprIR'Call callableName patArgs))) -> do
+            let extractType (TypedPattern tyPat _) = tyPat
+                generatorCallableDecls = M.map getCallableDecls $
+                  generatorDecls generatorExpr
+            callableDecl <- findCallable generatorCallableDecls callableName
+              (map extractType patArgs) tyPattern
+            defineCallable contextDecls sourcePat callableDecl targetPat
+          _ -> undefined
+
+    findCallable :: M.Map Name [TcCallableDecl]
+                 -> Name -> [MType] -> MType -> MgMonad TcCallableDecl
+    findCallable callableDecls name argTypes returnType = do
+      let signature (Ann _ (Callable _ _ args returnType' _ _)) =
+            (map (_varType . _elem) args, returnType')
+          matches = filter ((== (argTypes, returnType)) . signature) $
+            M.findWithDefault [] name callableDecls
+      case matches of
+        [] -> undefined -- TODO: throw error
+        [tcCallableDecl] -> pure tcCallableDecl
+        _ -> undefined -- TODO: throw error
+
+
 -- | Runs an optimizer maxSteps times over one module.
 runOptimizer :: Optimizer -> Int -> TcModule -> MgMonad TcModule
 runOptimizer (Ann _ optimizer) maxSteps (Ann tgtDeclO tgtModule) =
@@ -520,7 +597,6 @@ runOptimizer (Ann _ optimizer) maxSteps (Ann tgtDeclO tgtModule) =
           if res == tcDecl -- No more progress
           then pure tcDecl
           else rewriteDeclNTimes (n - 1) constraintDb res
-
 
 
 -- | Performs equational rewriting on a Magnolia declaration.
@@ -863,7 +939,12 @@ gatherAxioms tcModuleExpr = do
 -- TODO: this will not need to be an MgMonad if we can deal with procedures
 -- properly.
 inlineTypedExprIR :: TypedExprIR -> MgMonad TypedExprIR
-inlineTypedExprIR inTypedExprIR = snd <$> go M.empty inTypedExprIR
+inlineTypedExprIR = flip inlineTypedExprIRWith M.empty
+
+inlineTypedExprIRWith :: TypedExprIR -> M.Map Name TypedExprIR
+                      -> MgMonad TypedExprIR
+inlineTypedExprIRWith inTypedExprIR inBindings = snd <$>
+  go inBindings inTypedExprIR
   where
     go :: M.Map Name TypedExprIR -> TypedExprIR
        -> MgMonad (M.Map Name TypedExprIR, TypedExprIR)
@@ -1089,6 +1170,167 @@ toEquation argVariables srcExprIR tgtExprIR = do
         foldl (\s arg -> allVariables arg `S.union` s) S.empty args
       PredicateIRAtom'ExprEquation lhs rhs ->
         allVariables lhs `S.union` allVariables rhs
+
+defineCallable :: M.Map Name [TcDecl]
+               -> TypedPattern
+               -- ^ the pattern corresponding
+               -> TcCallableDecl
+               -- ^ the definition of the callable within the rewrite module
+               -> TypedPattern
+               -> MgMonad TcDecl
+defineCallable tcDecls
+    (TypedPattern tyPattern (Pattern'Expr (ExprIR'Call callableName patArgs)))
+    (Ann declOs callable@(Callable _ defName defArgs defRetTy _ EmptyBody))
+    rhsPattern | defRetTy == tyPattern && defName == callableName &&
+                 defArgTypes == patArgTypes = do
+  let wildcardArgs = S.fromList $ filter isWildcard patArgs
+      defArgVars = map
+        (\(Ann _ (Var m n t)) -> TypedExprIR t (ExprIR'Var (VarIR m n t)))
+        defArgs
+  unless (S.size wildcardArgs == length patArgs) $
+    throwNonLocatedE CompilerErr "WIP defineCallable"
+  patVarNames <- mapM getWildcardName patArgs
+  let bindings = M.fromList $ zip patVarNames defArgVars
+  bodyExpr <- fromTypedExprIR <$> (instantiatePattern rhsPattern bindings >>=
+    unfoldCalls tcDecls)
+  pure $ MCallableDecl []
+    (Ann declOs callable { _callableBody = MagnoliaBody bodyExpr })
+  where
+    isWildcard (TypedPattern _ (Pattern'Wildcard _)) = True
+    isWildcard _ = False
+
+    getWildcardName (TypedPattern _ (Pattern'Wildcard n)) = pure n
+    getWildcardName _ = throwNonLocatedE CompilerErr
+      "WIP defineCallable getWildcardName"
+
+    defArgTypes = map (_varType . _elem) defArgs
+    patArgTypes = map (\(TypedPattern patTy _) -> patTy) patArgs
+-- TODO: throw proper errors
+defineCallable _ _ _ _ = error "invalid call to defineCallable"
+
+  -- instantiatePattern :: TypedPattern -> M.Map Name TypedExprIR
+  --                  -> MgMonad TypedExprIR
+
+  --             = undefined
+
+-- let sourcePat = eqnSourcePat $ constraintEquation constraint
+--           targetPat = eqnTargetPat $ constraintEquation constraint
+--       case typedExprIR `matchesPattern` sourcePat of
+--         Nothing -> oneRuleRewritePassExprIR factDb constraint typedExprIR
+--         Just bindings -> case constraint of
+--           Constraint'Equational eqn -> do
+--             --liftIO $ pprint $ "firing rule " <> show eqn
+--             instantiatePattern targetPat bindings
+
+-- | Unfolds all calls within an expression.
+-- TODO: perform alpha renaming of variables inside to avoid name clashes.
+unfoldCalls :: M.Map Name [TcDecl] -> TypedExprIR -> MgMonad TypedExprIR
+unfoldCalls tcDecls inTypedExprIR@(TypedExprIR inTyExprIR inExprIR) =
+  case inExprIR of
+    ExprIR'Var {} -> pure inTypedExprIR
+    ExprIR'Call callableName args -> do
+      let argTypes = map (\(TypedExprIR ty _) -> ty) args
+      unfoldedArgs <- mapM unfoldCalls' args
+      findCallable callableName argTypes inTyExprIR >>=
+        flip unfoldWith unfoldedArgs >>= ret
+    ExprIR'ValueBlock stmts ->
+      mapM unfoldCalls' stmts >>= ret . ExprIR'ValueBlock
+    ExprIR'EffectfulBlock stmts ->
+      mapM unfoldCalls' stmts >>= ret . ExprIR'EffectfulBlock
+    ExprIR'Value typedExprIR ->
+      unfoldCalls' typedExprIR >>= ret . ExprIR'Value
+    ExprIR'Let varName mtypedExprIR ->
+      maybe (pure inTypedExprIR)
+            (unfoldCalls' >=> ret . ExprIR'Let varName . Just) mtypedExprIR
+    ExprIR'If cond trueExprIR falseExprIR -> do
+      ExprIR'If <$> unfoldCallsPred cond <*> unfoldCalls' trueExprIR
+                <*> unfoldCalls' falseExprIR >>= ret
+    ExprIR'Assert predicateIR -> unfoldCallsPred predicateIR >>=
+      ret . ExprIR'Assert
+    ExprIR'Skip -> ret ExprIR'Skip
+  where
+    callableDecls = M.map getCallableDecls tcDecls
+    findCallable :: Name -> [MType] -> MType -> MgMonad TcCallableDecl
+    findCallable name argTypes returnType = do
+      let signature (Ann _ (Callable _ _ args returnType' _ _)) =
+            (map (_varType . _elem) args, returnType')
+          matches = filter ((== (argTypes, returnType)) . signature) $
+            M.findWithDefault [] name callableDecls
+      case matches of
+        -- TODO: prototypes should be inserted
+        [] -> throwNonLocatedE CompilerErr $
+          "could not find" <> pshow name <> pshow argTypes-- TODO: throw error
+        [tcCallableDecl] -> pure tcCallableDecl
+        _ -> undefined -- TODO: throw error
+
+    ret :: ExprIR -> MgMonad TypedExprIR
+    ret = pure . TypedExprIR inTyExprIR
+
+    unfoldCalls' = unfoldCalls tcDecls
+
+    unfoldCallsPred :: PredicateIR -> MgMonad PredicateIR
+    unfoldCallsPred predicateIR = case predicateIR of
+      PredicateIR'And lhs rhs -> PredicateIR'And <$>
+        unfoldCallsPred lhs <*> unfoldCallsPred rhs
+      PredicateIR'Or lhs rhs -> PredicateIR'Or <$>
+        unfoldCallsPred lhs <*> unfoldCallsPred rhs
+      PredicateIR'Implies lhs rhs -> PredicateIR'Implies <$>
+        unfoldCallsPred lhs <*> unfoldCallsPred rhs
+      PredicateIR'Equivalent lhs rhs -> PredicateIR'Equivalent <$>
+        unfoldCallsPred lhs <*> unfoldCallsPred rhs
+      PredicateIR'PredicateEquation lhs rhs -> PredicateIR'PredicateEquation <$>
+        unfoldCallsPred lhs <*> unfoldCallsPred rhs
+      PredicateIR'Negation predicateIR' -> PredicateIR'Negation <$>
+        unfoldCallsPred predicateIR'
+      PredicateIR'Atom predicateIRAtom -> PredicateIR'Atom <$>
+        unfoldCallsPredAtom predicateIRAtom
+
+    unfoldCallsPredAtom :: PredicateIRAtom -> MgMonad PredicateIRAtom
+    unfoldCallsPredAtom predicateIRAtom = case predicateIRAtom of
+      -- TODO: here, we should also unwrap predicate calls, but this doesn't
+      -- fit well here atm. Let's see how to do it later.
+      PredicateIRAtom'Call name args -> pure $
+        PredicateIRAtom'Call name args
+      PredicateIRAtom'ExprEquation lhs rhs -> PredicateIRAtom'ExprEquation <$>
+        unfoldCalls' lhs <*> unfoldCalls' rhs
+
+    -- TODO: need to do alpha renaming inside here to avoid shadowing problems!
+    -- But, we do not have time for the paper. This is WIP.
+    unfoldWith :: TcCallableDecl -> [TypedExprIR] -> MgMonad ExprIR
+    unfoldWith (Ann _ (Callable _ name argVars _ _ body)) args = case body of
+      MagnoliaBody tcExpr -> do
+        typedExprIR <- toTypedExprIR tcExpr
+        let argBindings = M.fromList $ zip (map nodeName argVars) args
+        (TypedExprIR _ exprIR) <- inlineTypedExprIRWith typedExprIR argBindings
+        pure exprIR
+      -- In other cases, there is nothing to unfold.
+      _ -> pure $ ExprIR'Call name args
+
+-- TODO: this works but we should change it later.
+mergeModuleDecls :: TcModule -> TcModule -> MgMonad (M.Map Name [TcDecl])
+mergeModuleDecls module1 module2 = enter (PkgName "dummy") $
+  moduleDecls <$> checkModule topLevelEnv compositeModule
+  where
+    topLevelEnv = M.insert (nodeName module1) [MModuleDecl module1]
+      (M.insert (nodeName module2) [MModuleDecl module2] M.empty)
+
+    compositeModule :: ParsedModule
+    compositeModule = Ann (SrcCtx Nothing) (MModule Implementation
+      (ModName "#dummy#") (Ann (SrcCtx Nothing) (MModuleDef [] deps [])))
+
+    mkRef :: TcModule -> FullyQualifiedName
+    mkRef tcModule = FullyQualifiedName Nothing (nodeName tcModule)
+
+    deps :: [ParsedModuleDep]
+    deps = [ Ann (SrcCtx Nothing) $
+              MModuleDep MModuleDepUse
+                (Ann (SrcCtx Nothing) $
+                  MModuleRef (mkRef module1) [])
+           , Ann (SrcCtx Nothing) $
+              MModuleDep MModuleDepUse
+                (Ann (SrcCtx Nothing) $
+                  MModuleRef (mkRef module2) [])
+           ]
 
 -- Note: Strategy for rewriting
 -- We have two kinds of rewritings: rewritings based on conditional equational

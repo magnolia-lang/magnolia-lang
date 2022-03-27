@@ -4,6 +4,7 @@
 module Make (
     -- * Utils
     RewritingSystemConfig (..)
+  , RewritingSystemMode (..)
     -- * Passes
   , checkPass
   , depAnalPass
@@ -43,7 +44,13 @@ data RewritingSystemConfig =
                           -- compiler is allowed to perform per expression with
                           -- the given rewriting system.
                         , _rewritingSystemMaxRewritingSteps :: Int
+                          -- | What type of operation to use the rewriting
+                          -- system for.
+                        , _rewritingSystemMode :: RewritingSystemMode
                         }
+
+data RewritingSystemMode = RewritingSystemMode'Optimize
+                         | RewritingSystemMode'GenerateCallable
 
 -- === passes ===
 
@@ -94,17 +101,21 @@ rewritePass rewritingSystemConfigs programsToRewriteLocations env = do
   rewritingModules <- mapM (findModule . _rewritingSystemName)
     rewritingSystemConfigs
   programsToRewrite <- mapM findModule programsToRewriteLocations
-  let rewritingModulesWithMaxSteps = zip rewritingModules
-        (map _rewritingSystemMaxRewritingSteps rewritingSystemConfigs)
-      rewriteAll tgts rewModuleWithMaxSteps =
-        mapM (uncurry applyRewritingModule rewModuleWithMaxSteps) tgts
+  let rewritingModulesWithModeAndMaxSteps = zip rewritingModules $
+          zip (map _rewritingSystemMode rewritingSystemConfigs)
+              (map _rewritingSystemMaxRewritingSteps rewritingSystemConfigs)
+      rewriteAll tgts (rewModule, (mode, maxSteps)) =
+        mapM (applyRewritingModule rewModule mode maxSteps) tgts
   rewrittenProgramsWithNames <- zip programsToRewriteLocations <$>
-    foldM rewriteAll programsToRewrite rewritingModulesWithMaxSteps
+    foldM rewriteAll programsToRewrite rewritingModulesWithModeAndMaxSteps
   foldM (\env' (fqn, program) -> insertModule program env' fqn) env
         rewrittenProgramsWithNames
   where
-    applyRewritingModule :: TcModule -> Int -> TcModule -> MgMonad TcModule
-    applyRewritingModule = runOptimizer
+    applyRewritingModule :: TcModule -> RewritingSystemMode -> Int -> TcModule
+                         -> MgMonad TcModule
+    applyRewritingModule rewModule mode = case mode of
+      RewritingSystemMode'Optimize -> runOptimizer rewModule
+      RewritingSystemMode'GenerateCallable -> \_ -> runGenerator rewModule
 
     findModule :: FullyQualifiedName -> MgMonad TcModule
     findModule fqn = case fqn of
