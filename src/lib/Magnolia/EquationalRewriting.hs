@@ -1318,18 +1318,20 @@ mergeModuleDecls module1 module2 = enter (PkgName "dummy") $
     compositeModule = Ann (SrcCtx Nothing) (MModule Implementation
       (ModName "#dummy#") (Ann (SrcCtx Nothing) (MModuleDef [] deps [])))
 
-    mkRef :: TcModule -> FullyQualifiedName
-    mkRef tcModule = FullyQualifiedName Nothing (nodeName tcModule)
+    mkRef :: TcModule -> ParsedModuleExpr
+    mkRef tcModule@(Ann _ (MModule moduleTy _ _)) = Ann (SrcCtx Nothing) $
+      case moduleTy of
+        Concept -> MModuleAsSignature
+          (FullyQualifiedName Nothing (nodeName tcModule)) []
+        _ -> MModuleRef (FullyQualifiedName Nothing (nodeName tcModule)) []
 
     deps :: [ParsedModuleDep]
     deps = [ Ann (SrcCtx Nothing) $
               MModuleDep MModuleDepUse
-                (Ann (SrcCtx Nothing) $
-                  MModuleRef (mkRef module1) [])
+                (mkRef module1)
            , Ann (SrcCtx Nothing) $
               MModuleDep MModuleDepUse
-                (Ann (SrcCtx Nothing) $
-                  MModuleRef (mkRef module2) [])
+                (mkRef module2)
            ]
 
 -- Note: Strategy for rewriting
