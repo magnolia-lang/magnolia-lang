@@ -10,9 +10,9 @@
 
 #include <omp.h>
 
-#define S0 256
-#define S1 256
-#define S2 256
+#define S0 512
+#define S1 512
+#define S2 512
 
 #define PADDED_S0 (S0 + 2 * PAD0)
 #define PADDED_S1 (S1 + 2 * PAD1)
