@@ -87,10 +87,7 @@ implementation PDE = {
         var one = one(): Offset;
         var two = two(): Axis;
 
-        var result = psi(ix, u + c4 * (c3 * (c1 * (rotate(v, zero, -one) + rotate(v, zero, one) + rotate(v, one(): Axis, -one) + rotate(v, one(): Axis, one) + rotate(v, two, -one) + rotate(v, two, one)) - three() * c2 * u0) - c0 * ((rotate(v, zero, one) - rotate(v, zero, -one)) * u0 + (rotate(v, one(): Axis, one) - rotate(v, one(): Axis, -one)) * u1 + (rotate(v, two, one) - rotate(v, two, -one)) * u2)));
-
-        value result;
-        //call set(ix, u, result);
+        value psi(ix, u + c4 * (c3 * (c1 * (rotate(v, zero, -one) + rotate(v, zero, one) + rotate(v, one(): Axis, -one) + rotate(v, one(): Axis, one) + rotate(v, two, -one) + rotate(v, two, one)) - three() * c2 * u0) - c0 * ((rotate(v, zero, one) - rotate(v, zero, -one)) * u0 + (rotate(v, one(): Axis, one) - rotate(v, one(): Axis, -one)) * u1 + (rotate(v, two, one) - rotate(v, two, -one)) * u2)));
     }
 }
 
@@ -162,6 +159,29 @@ implementation ExtExtendMissingBypass = external C++ base.forall_ops {
     //     c1: Float, c2: Float, c3: Float, c4: Float): PaddedArray;
     // function padded_rotate_ix()
 
+    /* OF Specialize Psi extension */
+    type ScalarIndex;
+
+    function make_ix(ix1: ScalarIndex, ix2: ScalarIndex, ix3: ScalarIndex)
+        : Index;
+
+    /* OF Reduce MakeIx projections */
+    function ix_0(ix: Index): ScalarIndex;
+    function ix_1(ix: Index): ScalarIndex;
+    function ix_2(ix: Index): ScalarIndex;
+
+    /* OF Reduce MakeIx Rotate extension */
+    type AxisLength;
+
+    function _+_(six: ScalarIndex, o: Offset): ScalarIndex;
+    function _%_(six: ScalarIndex, sc: AxisLength): ScalarIndex;
+    function shape_0(): AxisLength;
+    function shape_1(): AxisLength;
+    function shape_2(): AxisLength;
+
+    /* OF Specialize Psi extension */
+    //function psi(i: ScalarIndex, j: ScalarIndex, k: ScalarIndex, a: Array)
+    //    : Float;
 }
 
 implementation ExtArrayOps = external C++ base.array_ops {
@@ -421,3 +441,186 @@ concept OFPad = {
                };
     }
 }*/
+
+concept OFSpecializePsiGenerator = {
+    type Index;
+    type Array;
+    type E;
+    type ScalarIndex;
+
+    function make_ix(ix1: ScalarIndex, ix2: ScalarIndex, ix3: ScalarIndex)
+        : Index;
+    function psi(ix: Index, array: Array): E;
+    function psi(i: ScalarIndex, j: ScalarIndex, k: ScalarIndex, array: Array)
+        : E;
+
+    axiom specializePsiGenerateRule(i: ScalarIndex, j: ScalarIndex,
+            k: ScalarIndex, a: Array) = {
+        assert psi(i, j, k, a) == psi(make_ix(i, j, k), a);
+    }
+}[ E => Float ];
+
+concept OFSpecializePsi = {
+    type Index;
+    type Array;
+    type E;
+
+    type ScalarIndex;
+
+    function ix_0(ix: Index): ScalarIndex;
+    function ix_1(ix: Index): ScalarIndex;
+    function ix_2(ix: Index): ScalarIndex;
+
+    function psi(ix: Index, array: Array): E;
+    function psi(i: ScalarIndex, j: ScalarIndex, k: ScalarIndex, array: Array)
+        : E;
+
+    axiom specializePsiRule(ix: Index, array: Array) {
+        assert psi(ix, array) ==
+               psi(ix_0(ix), ix_1(ix), ix_2(ix), array);
+    }
+}[ E => Float ];
+
+concept OFSpecializeSnippetGenerator = {
+    use signature(OFSpecializePsiGenerator);
+    function snippet_ix(u: Array, v: Array, u0: Array,
+                        u1: Array, u2: Array, c0: Float,
+                        c1: Float, c2: Float, c3: Float,
+                        c4: Float, ix: Index): Float;
+    function snippet_ix_specialized(u: Array, v: Array, u0: Array,
+                                    u1: Array, u2: Array, c0: Float,
+                                    c1: Float, c2: Float, c3: Float,
+                                    c4: Float, i: ScalarIndex,
+                                    j: ScalarIndex, k: ScalarIndex): Float;
+
+    axiom specializeSnippetRule(u: Array, v: Array, u0: Array,
+                                u1: Array, u2: Array, c0: Float,
+                                c1: Float, c2: Float, c3: Float,
+                                c4: Float, i: ScalarIndex,
+                                j: ScalarIndex, k: ScalarIndex) {
+        assert snippet_ix_specialized(u, v, u0, u1, u2, c0, c1, c2, c3, c4,
+                    i, j, k) ==
+               snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4,
+                    make_ix(i, j, k));
+    }
+};
+
+// concept OFSpecializeForallIx = {
+//     function forall_ix_snippet()
+// }
+
+concept OFReduceMakeIxRotate = {
+    use signature(OFSpecializePsiGenerator);
+    use signature(OFSpecializePsi);
+
+    type Axis;
+    type Offset;
+
+    function zero(): Axis;
+    function one(): Axis;
+    function two(): Axis;
+
+    function rotate_ix(ix: Index, axis: Axis, offset: Offset): Index;
+
+    type AxisLength;
+    function shape_0(): AxisLength;
+    function shape_1(): AxisLength;
+    function shape_2(): AxisLength;
+
+    function _+_(six: ScalarIndex, o: Offset): ScalarIndex;
+    function _%_(six: ScalarIndex, sc: AxisLength): ScalarIndex;
+
+    axiom reduceMakeIxRotateRule(i: ScalarIndex, j: ScalarIndex, k: ScalarIndex,
+            array: Array, o: Offset) {
+        var ix = make_ix(i, j, k);
+        var s0 = shape_0();
+        var s1 = shape_1();
+        var s2 = shape_2();
+
+        assert ix_0(rotate_ix(ix, zero(), o)) == (i + o) % s0;
+        assert ix_0(rotate_ix(ix, one(), o)) == i;
+        assert ix_0(rotate_ix(ix, two(), o)) == i;
+
+        assert ix_1(rotate_ix(ix, zero(), o)) == j;
+        assert ix_1(rotate_ix(ix, one(), o)) == (j + o) % s1;
+        assert ix_1(rotate_ix(ix, two(), o)) == j;
+
+        assert ix_2(rotate_ix(ix, zero(), o)) == k;
+        assert ix_2(rotate_ix(ix, one(), o)) == k;
+        assert ix_2(rotate_ix(ix, two(), o)) == (k + o) % s2;
+    }
+}
+
+concept OFReduceMakeIx = {
+    use signature(OFSpecializePsiGenerator);
+    use signature(OFSpecializePsi);
+
+    axiom reduceMakeIxRule(i: ScalarIndex, j: ScalarIndex, k: ScalarIndex,
+            array: Array) {
+        var ix = make_ix(i, j, k);
+        assert ix_0(ix) == i;
+        assert ix_1(ix) == j;
+        assert ix_2(ix) == k;
+    }
+};
+
+implementation ExtOFSpecializePsi = external C++ base.specialize_psi_ops {
+    require type ScalarIndex;
+    require type Index;
+    require type Array;
+    require type Float;
+    require function snippet_ix_specialized(u: Array, v: Array, u0: Array,
+                                    u1: Array, u2: Array, c0: Float,
+                                    c1: Float, c2: Float, c3: Float,
+                                    c4: Float, i: ScalarIndex,
+                                    j: ScalarIndex, k: ScalarIndex): Float;
+
+    function psi(i: ScalarIndex, j: ScalarIndex, k: ScalarIndex, a: Array)
+        : Float;
+    function forall_ix_snippet_specialized_psi_padded(u: Array, v: Array,
+        u0: Array, u1: Array, u2: Array, c0: Float, c1: Float,
+        c2: Float, c3: Float, c4: Float): Array;
+}
+
+concept OFSpecializePsiForallPadded = {
+    type Array;
+    type Float;
+
+    function forall_ix_snippet_specialized_psi_padded(u: Array, v: Array,
+        u0: Array, u1: Array, u2: Array, c0: Float,
+        c1: Float, c2: Float, c3: Float, c4: Float): Array;
+
+    function forall_ix_snippet_padded(u: Array, v: Array,
+                                      u0: Array, u1: Array, u2: Array,
+                                      c0: Float, c1: Float, c2: Float,
+                                      c3: Float, c4: Float): Array;
+
+    axiom specializePsiForallRule(u: Array, v: Array, u0: Array, u1: Array,
+        u2: Array, c0: Float, c1: Float, c2: Float, c3: Float, c4: Float) {
+        assert forall_ix_snippet_padded(u, v, u0, u1, u2, c0, c1, c2, c3, c4) ==
+               forall_ix_snippet_specialized_psi_padded(u, v, u0, u1, u2, c0, c1, c2, c3, c4);
+    }
+}
+
+// We suppose here that the amount of padding is sufficient across each axis
+// for every indexing operation.
+concept OFEliminateModuloPadding = {
+    use signature(OFReduceMakeIxRotate);
+
+    type Array;
+    type Float;
+
+    function psi(i: ScalarIndex, j: ScalarIndex, k: ScalarIndex, a: Array)
+        : Float;
+
+    axiom eliminateModuloPaddingRule(i: ScalarIndex, j: ScalarIndex,
+            k: ScalarIndex, a: Array, o: Offset) {
+        var s0 = shape_0();
+        var s1 = shape_1();
+        var s2 = shape_2();
+
+        assert psi((i + o) % s0, j, k, a) == psi(i + o, j, k, a);
+        assert psi(i, (j + o) % s1, k, a) == psi(i, j + o, k, a);
+        assert psi(i, j, (k + o) % s2, a) == psi(i, j, k + o, a);
+    }
+}

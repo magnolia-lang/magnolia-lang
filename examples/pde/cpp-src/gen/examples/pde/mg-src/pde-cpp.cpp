@@ -45,10 +45,6 @@ namespace pde_cpp {
 
 
 
-    PDEProgram::_binary_add PDEProgram::binary_add;
-
-
-
     PDEProgram::_binary_sub PDEProgram::binary_sub;
 
 
@@ -65,6 +61,10 @@ namespace pde_cpp {
 
 
 
+    PDEProgram::_forall_ix_snippet_specialized_psi_padded PDEProgram::forall_ix_snippet_specialized_psi_padded;
+
+
+
     PDEProgram::_forall_ix_snippet_threaded PDEProgram::forall_ix_snippet_threaded;
 
 
@@ -77,10 +77,6 @@ namespace pde_cpp {
 
 
 
-    PDEProgram::_psi PDEProgram::psi;
-
-
-
     PDEProgram::_refill_all_padding PDEProgram::refill_all_padding;
 
 
@@ -89,9 +85,55 @@ namespace pde_cpp {
 
 
 
+
+
+    PDEProgram::_shape_0 PDEProgram::shape_0;
+
+
+
+    PDEProgram::_shape_1 PDEProgram::shape_1;
+
+
+
+    PDEProgram::_shape_2 PDEProgram::shape_2;
+
+
+
+    PDEProgram::_binary_add PDEProgram::binary_add;
+
+
+
+    PDEProgram::_ix_0 PDEProgram::ix_0;
+
+
+
+    PDEProgram::_ix_1 PDEProgram::ix_1;
+
+
+
+    PDEProgram::_ix_2 PDEProgram::ix_2;
+
+
+
+    PDEProgram::_make_ix PDEProgram::make_ix;
+
+
+
+    PDEProgram::_mod PDEProgram::mod;
+
+
+
+    PDEProgram::_psi PDEProgram::psi;
+
     forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Nat, PDEProgram::Offset, PDEProgram::_snippet_ix> PDEProgram::__forall_ops;
 
     PDEProgram::_snippet_ix PDEProgram::snippet_ix;
+
+
+
+    specialize_psi_ops<PDEProgram::Array, PDEProgram::Float, PDEProgram::Index, PDEProgram::ScalarIndex, PDEProgram::_snippet_ix_specialized> PDEProgram::__specialize_psi_ops;
+
+    PDEProgram::_snippet_ix_specialized PDEProgram::snippet_ix_specialized;
 
 
 
