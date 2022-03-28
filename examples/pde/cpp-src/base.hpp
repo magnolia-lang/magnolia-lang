@@ -10,9 +10,9 @@
 
 #include <omp.h>
 
-#define S0 512
-#define S1 512
-#define S2 512
+#define S0 256
+#define S1 256
+#define S2 256
 
 #define PADDED_S0 (S0 + 2 * PAD0)
 #define PADDED_S1 (S1 + 2 * PAD1)
@@ -378,6 +378,77 @@ struct forall_ops {
     throw "failed at rotating index";
     //std::unreachable();
     return 0;
+  }
+
+  /* OF specialize psi extension */
+
+  struct ScalarIndex { size_t value; };
+
+  inline Index make_ix(const ScalarIndex &i, const ScalarIndex &j,
+                       const ScalarIndex &k) {
+    return i.value * PADDED_S1 * PADDED_S2 + j.value * PADDED_S2 + k.value;
+  }
+
+  /* OF Reduce MakeIx Rotate extension */
+
+  struct AxisLength { size_t value; };
+
+  inline ScalarIndex binary_add(const ScalarIndex &six, const Offset &offset) {
+    return ScalarIndex(six.value + offset.value);
+  }
+
+  inline ScalarIndex mod(const ScalarIndex &six, const AxisLength &sc) {
+    return ScalarIndex(six.value % sc.value);
+  }
+
+  inline AxisLength shape_0() { return AxisLength(PADDED_S0); }
+  inline AxisLength shape_1() { return AxisLength(PADDED_S1); }
+  inline AxisLength shape_2() { return AxisLength(PADDED_S2); }
+
+  inline ScalarIndex ix_0(const Index &ix) {
+    return ScalarIndex(ix / (PADDED_S1 * PADDED_S2));
+  }
+
+  inline ScalarIndex ix_1(const Index &ix) {
+    return ScalarIndex((ix % PADDED_S1 * PADDED_S2) / PADDED_S2);
+  }
+
+  inline ScalarIndex ix_2(const Index &ix) {
+    return ScalarIndex(ix % PADDED_S2);
+  }
+};
+
+/* OF Specialize Psi extension */
+template <typename _Array, typename _Float, typename _Index,
+          typename _ScalarIndex, class _snippet_ix_specialized>
+struct specialize_psi_ops {
+  typedef _Array Array;
+  typedef _Float Float;
+  typedef _Index Index;
+  typedef _ScalarIndex ScalarIndex;
+
+  _snippet_ix_specialized snippet_ix_specialized;
+
+  inline Float psi(const ScalarIndex &i, const ScalarIndex &j,
+                   const ScalarIndex &k, const Array &a) {
+    return a[i.value * PADDED_S1 * PADDED_S2 + j.value * PADDED_S2 + k.value];
+  }
+
+  inline Array forall_ix_snippet_specialized_psi_padded(const Array &u, const Array &v,
+      const Array &u0, const Array &u1, const Array &u2, const Float &c0,
+      const Float &c1, const Float &c2, const Float &c3, const Float &c4) {
+    Array result;
+    std::cout << "in forall_ix_snippet_specialized_psi_padded" << std::endl;
+    for (size_t i = PAD0; i < S0 + PAD0; ++i) {
+      for (size_t j = PAD1; j < S1 + PAD1; ++j) {
+        for (size_t k = PAD2; k < S2 + PAD2; ++k) {
+          size_t ix = i * PADDED_S1 * PADDED_S2 + j * PADDED_S2 + k;
+          result[ix] = snippet_ix_specialized(u, v, u0, u1, u2, c0, c1, c2, c3, c4, ScalarIndex(i), ScalarIndex(j), ScalarIndex(k));
+        }
+      }
+    }
+
+    return result;
   }
 };
 

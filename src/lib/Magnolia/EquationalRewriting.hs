@@ -485,7 +485,8 @@ type ConstraintDB = [Constraint]
 runGenerator :: CallableGenerator -> TcModule -> MgMonad TcModule
 runGenerator tcGenModule@(Ann _ gen) tcTgtModule@(Ann tgtDeclO tgtModule) =
   case gen of
-  MModule Concept generatorName generatorModuleExpr -> enter generatorName $ do
+  -- TODO: only allow concepts?
+  MModule _ generatorName generatorModuleExpr -> enter generatorName $ do
     -- 1. gather axioms
     axioms <- gatherAxioms generatorModuleExpr
     -- 2. inline expressions within axioms (TODO)
@@ -516,7 +517,7 @@ runGenerator tcGenModule@(Ann _ gen) tcTgtModule@(Ann tgtDeclO tgtModule) =
     liftIO $ pprint resultModuleExpr
     -- 6: wrap it up
     pure $ Ann tgtDeclO (MModule tgtModuleTy tgtModuleName resultModuleExpr)
-  _ -> undefined
+  --_ -> undefined
   where
     generatorDecls :: TcModuleExpr -> M.Map Name [TcDecl]
     generatorDecls (Ann _ generatorExpr) = case generatorExpr of

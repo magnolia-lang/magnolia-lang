@@ -244,7 +244,7 @@ instance Pretty (MExpr' p) where
         MSkip -> "skip"
 
       pSpecialFn (FuncName binOpStr) [lhs, rhs] =
-        if binOpStr `S.member` S.fromList ["_+_", "_-_", "_*_", "_/_"]
+        if binOpStr `S.member` S.fromList ["_+_", "_-_", "_*_", "_/_", "_%_"]
         then let [_, op, _] = binOpStr in
           Just $ parens (pNoSemi $ _elem lhs) <+> p op <+>
             parens (pNoSemi $ _elem rhs)
