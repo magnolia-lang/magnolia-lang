@@ -471,6 +471,9 @@ concept OFSpecializePsi = {
     function ix_1(ix: Index): ScalarIndex;
     function ix_2(ix: Index): ScalarIndex;
 
+    function make_ix(i: ScalarIndex, j: ScalarIndex, k: ScalarIndex)
+      : Index;
+
     function psi(ix: Index, array: Array): E;
     function psi(i: ScalarIndex, j: ScalarIndex, k: ScalarIndex, array: Array)
         : E;
@@ -478,6 +481,14 @@ concept OFSpecializePsi = {
     axiom specializePsiRule(ix: Index, array: Array) {
         assert psi(ix, array) ==
                psi(ix_0(ix), ix_1(ix), ix_2(ix), array);
+    }
+
+    axiom reduceMakeIxRule(i: ScalarIndex, j: ScalarIndex,
+                           k: ScalarIndex) {
+        var ix = make_ix(i, j, k);
+        assert ix_0(ix) == i;
+        assert ix_1(ix) == j;
+        assert ix_2(ix) == k;
     }
 }[ E => Float ];
 
