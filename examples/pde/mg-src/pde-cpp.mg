@@ -91,7 +91,7 @@ implementation PDE = {
     }
 }
 
-program PDEProgram = {
+program BasePDEProgram = {
     use PDE[-_ => unary_sub, _-_ => binary_sub];
     use ExtArrayOps[ one_float => one
                    , two_float => two
@@ -105,9 +105,69 @@ program PDEProgram = {
 }
 
 
-// This is because snippet_ix can not be required in ExtArrayOps, because
-// then the types could not be ordered properly. We need to impleement the
-// extend mechanism in Magnolia to avoid having to require the types here.
+implementation DNFImplementation = rewrite BasePDEProgram with DNFRules 20;
+//program PDEProgram = DNFImplementation;
+
+//program IntermediateImpl = rewrite DNFImplementation with OFLiftCores 1;
+
+program PDEProgram = {
+    use (rewrite
+            (rewrite
+                (rewrite
+                    (generate OFSpecializeSnippetGenerator in
+                                DNFImplementation)
+                with OFSpecializePsi 10)
+            with OFReduceMakeIxRotate 20)
+        with OFPad[forall_ix_snippet_padded =>
+                   forall_ix_snippet_specialized_psi_padded] 1);
+
+    use ExtNeededFns;
+    use ExtExtendPadding;
+}
+
+
+implementation ExtNeededFns = external C++ base.specialize_psi_ops_2 {
+    require type Index;
+    require type Offset;
+    require type ScalarIndex;
+    require type Array;
+    require type Float;
+    require function snippet_ix_specialized(u: Array, v: Array, u0: Array,
+                                    u1: Array, u2: Array, c0: Float,
+                                    c1: Float, c2: Float, c3: Float,
+                                    c4: Float, i: ScalarIndex,
+                                    j: ScalarIndex, k: ScalarIndex): Float;
+
+    function psi(i: ScalarIndex, j: ScalarIndex, k: ScalarIndex, a: Array)
+        : Float;
+    function forall_ix_snippet_specialized_psi_padded(u: Array, v: Array,
+        u0: Array, u1: Array, u2: Array, c0: Float, c1: Float,
+        c2: Float, c3: Float, c4: Float): Array;
+
+    /* OF Specialize Psi extension */
+    //TODO: add ScalarIndex, make_ix
+    //type ScalarIndex;
+
+    //function make_ix(ix1: ScalarIndex, ix2: ScalarIndex, ix3: ScalarIndex)
+    //    : Index;
+
+    /* OF Reduce MakeIx projections */
+    function ix_0(ix: Index): ScalarIndex;
+    function ix_1(ix: Index): ScalarIndex;
+    function ix_2(ix: Index): ScalarIndex;
+
+    /* OF Reduce MakeIx Rotate extension */
+    type AxisLength;
+
+    function _+_(six: ScalarIndex, o: Offset): ScalarIndex;
+    function _%_(six: ScalarIndex, sc: AxisLength): ScalarIndex;
+    function shape_0(): AxisLength;
+    function shape_1(): AxisLength;
+    function shape_2(): AxisLength;
+}
+
+
+
 implementation ExtExtendMissingBypass = external C++ base.forall_ops {
     require type Float;
     require type Array;
@@ -126,11 +186,59 @@ implementation ExtExtendMissingBypass = external C++ base.forall_ops {
                                c0: Float, c1: Float, c2: Float,
                                c3: Float, c4: Float): Array;
 
+    type ScalarIndex;
+    function make_ix(a: ScalarIndex, b: ScalarIndex, c: ScalarIndex): Index;
+}
+
+implementation ExtExtendPadding = external C++ base.forall_ops {
+    require type Float;
+    require type Array;
+    require type Offset;
+    require type Axis;
+    require type Index;
+    require type Nat;
+
+    require function snippet_ix(u: Array, v: Array,
+                                u0: Array, u1: Array, u2: Array,
+                                c0: Float, c1: Float, c2: Float,
+                                c3: Float, c4: Float, ix: Index): Float;
+
+    /* OF Pad extension */
+    procedure refill_all_padding(upd a: Array);
+
+    function forall_ix_snippet_padded(u: Array, v: Array,
+        u0: Array, u1: Array, u2: Array, c0: Float,
+        c1: Float, c2: Float, c3: Float, c4: Float): Array;
+
+    function rotate_ix_padded(ix: Index, axis: Axis, offset: Offset): Index;
+}
+
+// This is because snippet_ix can not be required in ExtArrayOps, because
+// then the types could not be ordered properly. We need to impleement the
+// extend mechanism in Magnolia to avoid having to require the types here.
+implementation ExtExtendMissingBypass_OLD = external C++ base.forall_ops {
+    require type Float;
+    require type Array;
+    require type Offset;
+    require type Axis;
+    require type Index;
+    require type Nat;
+
+    require function snippet_ix(u: Array, v: Array,
+                                u0: Array, u1: Array, u2: Array,
+                                c0: Float, c1: Float, c2: Float,
+                                c3: Float, c4: Float, ix: Index): Float;
+
+    function forall_ix_snippet(u: Array, v: Array,
+                               u0: Array, u1: Array, u2: Array,
+                               c0: Float, c1: Float, c2: Float,
+                               c3: Float, c4: Float): Array;
+
     /* OF Lift Cores extension */
-    function forall_ix_snippet_threaded(u: Array, v: Array, u0: Array,
-                                        u1: Array, u2: Array, c0: Float,
-                                        c1: Float, c2: Float, c3: Float,
-                                        c4: Float, nbThreads: Nat): Array;
+    // function forall_ix_snippet_threaded(u: Array, v: Array, u0: Array,
+    //                                     u1: Array, u2: Array, c0: Float,
+    //                                     c1: Float, c2: Float, c3: Float,
+    //                                     c4: Float, nbThreads: Nat): Array;
     function nbCores(): Nat;
 
     /* OF Tiled extension */
