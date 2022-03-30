@@ -42,6 +42,7 @@ library
                   , Err
                   , Magnolia.Check
                   , Magnolia.EquationalRewriting
+                  , Magnolia.EquationalRewriting2
                   , Magnolia.Parser
                   , Magnolia.PPrint
                   , Magnolia.Syntax

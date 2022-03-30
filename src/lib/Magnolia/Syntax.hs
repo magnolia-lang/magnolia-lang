@@ -39,6 +39,7 @@ module Magnolia.Syntax (
   , MModuleDep
   , MModuleDep' (..)
   , MModuleDepType (..)
+  , MModuleMorphism (..)
   , MModuleType (..)
   , MNamedRenaming
   , MNamedRenaming' (..)
@@ -291,9 +292,16 @@ data MModuleExpr' p =
                [MRenamingBlock p]
   | MModuleRef (XRef p) [MRenamingBlock p]
   | MModuleAsSignature (XRef p) [MRenamingBlock p]
+  | MModuleTransform (MModuleMorphism p) (XTransformTarget p)
   | MModuleExternal Backend FullyQualifiedName (XExternalModule p)
 
 deriving instance Eq (MModuleExpr' PhCheck)
+
+data MModuleMorphism p = MModuleMorphism'ToSignature
+                       | MModuleMorphism'RewriteWith (MModuleExpr p) Int
+                       | MModuleMorphism'GenerateWith (MModuleExpr p)
+
+deriving instance Eq (MModuleMorphism PhCheck)
 
 -- Expose out for DAG building
 type MModuleDep p = Ann p MModuleDep'
@@ -665,6 +673,11 @@ type family XRef p where
   XRef PhParse = FullyQualifiedName
   XRef PhCheck = Void
 
+-- TODO: document
+type family XTransformTarget p where
+  XTransformTarget PhParse = MModuleExpr PhParse
+  XTransformTarget PhCheck = Void
+
 -- | The goal of XExternalModule is to flatten external module expressions
 -- during the type checking phase. See 'MModuleExpr\''.
 type family XExternalModule p where
@@ -686,6 +699,7 @@ deriving instance Show (MModuleDep' PhCheck)
 deriving instance Show (MNamedRenaming' PhCheck)
 deriving instance Show (MModule' PhCheck)
 deriving instance Show (MModuleExpr' PhCheck)
+deriving instance Show (MModuleMorphism PhCheck)
 deriving instance Show (MSatisfaction' PhCheck)
 deriving instance Show (MTopLevelDecl PhCheck)
 deriving instance Show (MPackage' PhCheck)
@@ -757,6 +771,7 @@ instance HasDependencies (MModuleExpr' PhParse) where
       map (dependencies . _elem . _mmoduleDepModuleExpr . _elem) deps
     MModuleRef refName _ -> [refName]
     MModuleAsSignature refName _ -> [refName]
+    MModuleTransform _ moduleExpr' -> dependencies moduleExpr'
     MModuleExternal _ _ moduleExpr' -> dependencies moduleExpr'
 
 instance HasDependencies (MModuleExpr' PhCheck) where
@@ -764,6 +779,7 @@ instance HasDependencies (MModuleExpr' PhCheck) where
     MModuleDef _ deps _ -> join $ map (snd . _ann) deps
     MModuleRef v _ -> absurd v
     MModuleAsSignature v _ -> absurd v
+    MModuleTransform _ v -> absurd v
     MModuleExternal _ _ v -> absurd v
 
 instance HasDependencies (MNamedRenaming' PhParse) where
@@ -871,6 +887,7 @@ moduleExprDecls (Ann _ moduleExpr) = case moduleExpr of
   MModuleDef decls _ _ -> decls
   MModuleRef v _ -> absurd v
   MModuleAsSignature v _ -> absurd v
+  MModuleTransform _ v -> absurd v
   MModuleExternal _ _ v -> absurd v
 
 -- === module declarations manipulation ===
