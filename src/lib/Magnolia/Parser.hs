@@ -144,14 +144,38 @@ moduleDecl = label "module" $ annot $ do
     Just (backend, externalFqn) ->
       MModule typ name . Ann src . MModuleExternal backend externalFqn <$>
         moduleExpr
-  where
-    moduleExpr = moduleDef <|> moduleCastedRef <|> moduleRef
+
+moduleExpr :: Parser ParsedModuleExpr
+moduleExpr = parens moduleExpr <|> moduleDef <|> moduleCastedRef
+          <|> moduleTransformedRef <|> moduleRef
 
 moduleType :: Parser MModuleType
 moduleType = (keyword ConceptKW >> return Concept)
           <|> (keyword ImplementationKW >> return Implementation)
           <|> (keyword SignatureKW >> return Signature)
           <|> (keyword ProgramKW >> return Program)
+
+moduleTransformedRef :: Parser ParsedModuleExpr
+moduleTransformedRef = annot $ do
+  (morphism, targetModuleExpr) <- choice [rewriteWith, generateWith]
+  --renamingBlocks <- many renamingBlock
+  return $ MModuleTransform morphism targetModuleExpr
+  where
+    rewriteWith = do
+      keyword RewriteKW
+      targetModuleExpr <- moduleExpr
+      keyword WithKW
+      rewModuleExpr <- moduleExpr
+      nbRewrites <- lexeme Lex.decimal
+      pure (MModuleMorphism'RewriteWith rewModuleExpr nbRewrites,
+            targetModuleExpr)
+
+    generateWith = do
+      keyword GenerateKW
+      genModuleExpr <- moduleExpr
+      keyword InKW
+      targetModuleExpr <- moduleExpr
+      pure (MModuleMorphism'GenerateWith genModuleExpr, targetModuleExpr)
 
 moduleRef :: Parser ParsedModuleExpr
 moduleRef = annot $ do
@@ -188,9 +212,9 @@ moduleDef = annot $ do
 
     dependency :: MModuleDepType -> Parser ParsedModuleDep
     dependency mmoduleDepType = label "module dependency" $ annot $ do
-      moduleExpr <- moduleDef <|> moduleCastedRef <|> moduleRef
+      modExpr <- moduleExpr
       semi
-      pure $ MModuleDep mmoduleDepType moduleExpr
+      pure $ MModuleDep mmoduleDepType modExpr
 
 renamingDecl :: Parser ParsedNamedRenaming
 renamingDecl = annot $ do
@@ -209,7 +233,6 @@ satisfaction = annot $ do
   modeledModule <-
     choice [keyword ModelsKW, keyword ApproximatesKW] >> moduleExpr
   return $ MSatisfaction name initialModule withModule modeledModule
-  where moduleExpr = moduleDef <|> moduleCastedRef <|> moduleRef
 
 typeDecl :: Parser ParsedTypeDecl
 typeDecl = annot $ do
@@ -413,6 +436,7 @@ data Keyword = ConceptKW | ImplementationKW | ProgramKW | SignatureKW
              | AssertKW | CallKW | IfKW | ThenKW | ElseKW | LetKW | SkipKW
              | ValueKW
              | PackageKW | ImportKW
+             | RewriteKW | GenerateKW | InKW
 
 keyword :: Keyword -> Parser ()
 keyword kw = (lexeme . try) $ string s *> notFollowedBy nameChar
@@ -453,6 +477,9 @@ keyword kw = (lexeme . try) $ string s *> notFollowedBy nameChar
       ValueKW          -> "value"
       PackageKW        -> "package"
       ImportKW         -> "imports"
+      RewriteKW        -> "rewrite"
+      GenerateKW       -> "generate"
+      InKW             -> "in"
 
 sc :: Parser ()
 sc = skipMany $

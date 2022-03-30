@@ -9,7 +9,7 @@ module Magnolia.Check (
 
 import Control.Applicative
 import Control.Monad.Except (foldM, join, unless, when)
---import Control.Monad.IO.Class (liftIO)
+import Control.Monad.IO.Class (liftIO)
 --import Debug.Trace (trace)
 import Data.Foldable (traverse_)
 import Data.Maybe (fromJust, isJust, isNothing)
@@ -24,6 +24,7 @@ import qualified Data.Set as S
 import qualified Data.Text.Lazy as T
 
 import Env
+import Magnolia.EquationalRewriting2
 import Magnolia.PPrint
 import Magnolia.Syntax
 import Magnolia.Util
@@ -207,6 +208,34 @@ checkModuleExpr tlDecls _
   checkModuleExpr tlDecls Implementation moduleRefExpr
     >>= castModuleExpr Signature
 
+-- TODO: handle
+checkModuleExpr tlDecls _
+        (Ann src (MModuleTransform morphism moduleExpr)) = do
+  tcModuleExpr <- checkModuleExpr tlDecls Implementation moduleExpr
+  case morphism of
+    MModuleMorphism'ToSignature -> throwLocatedE NotImplementedErr src
+      "WIP have not implemented module morphism cast to signature"
+    -- TODO: here there'll be problems when merging different bodies coming from
+    -- the same decl. Will work on error-handling after the deadline.
+    MModuleMorphism'RewriteWith rewModuleExpr nbRewrites -> do
+      tcRewModuleExpr <- checkModuleExpr tlDecls Concept rewModuleExpr
+      ~(Ann _ (MModuleDef tcRewrittenDecls tcDeps tcRenamingBlocks)) <-
+          runOptimizer tcRewModuleExpr nbRewrites tcModuleExpr
+      ~(Ann _ (MModuleDef tcRewDecls _ _)) <-
+        castModuleExpr Signature tcRewModuleExpr
+      allDecls <- foldM insertAndMergeDecl tcRewrittenDecls
+                        (join $ M.elems tcRewDecls)
+      pure (Ann src (MModuleDef allDecls tcDeps tcRenamingBlocks))
+    MModuleMorphism'GenerateWith genModuleExpr -> do
+      tcGenModuleExpr <- checkModuleExpr tlDecls Concept genModuleExpr
+      ~(Ann _ (MModuleDef tcGenDecls _ _)) <-
+        castModuleExpr Signature tcGenModuleExpr
+      let ~(Ann _ (MModuleDef tcDecls tcDeps tcRenamingBlocks)) = tcModuleExpr
+          tcGenDeclsList = join (M.elems tcGenDecls)
+      newDecls <- runGenerator tcGenModuleExpr tcModuleExpr
+      allDecls <- foldM insertAndMergeDecl tcDecls (tcGenDeclsList <> newDecls)
+      pure (Ann src (MModuleDef allDecls tcDeps tcRenamingBlocks))
+
 checkModuleExpr tlDecls moduleType
                 (Ann src (MModuleExternal backend fqn moduleExpr)) = do
   -- TODO: should we make external void?
@@ -340,6 +369,7 @@ checkModuleExprFitsModuleType :: MModuleType -> TcModuleExpr -> MgMonad ()
 checkModuleExprFitsModuleType targetModuleType tcModuleExpr
   | MModuleRef v _ <- _elem tcModuleExpr = absurd v
   | MModuleAsSignature v _ <- _elem tcModuleExpr = absurd v
+  | MModuleTransform _ v <- _elem tcModuleExpr = absurd v
   | MModuleExternal _ _ v <- _elem tcModuleExpr = absurd v
   | MModuleDef decls _ _ <- _elem tcModuleExpr =
     case targetModuleType of
@@ -444,6 +474,7 @@ castModuleExpr :: MModuleType -> TcModuleExpr -> MgMonad TcModuleExpr
 castModuleExpr targetModuleType tcModuleExpr
   | MModuleRef v _ <- _elem tcModuleExpr = absurd v
   | MModuleAsSignature v _ <- _elem tcModuleExpr = absurd v
+  | MModuleTransform _ v <- _elem tcModuleExpr = absurd v
   | MModuleExternal _ _ v <- _elem tcModuleExpr = absurd v
   | MModuleDef decls deps renamings <- _elem tcModuleExpr =
     case targetModuleType of
@@ -502,6 +533,7 @@ externalizeModuleExpr :: Backend -- ^ the backend of the external module
 externalizeModuleExpr backend extModuleFqn src tcModuleExpr
   | MModuleRef v _ <- _elem tcModuleExpr = absurd v
   | MModuleAsSignature v _ <- _elem tcModuleExpr = absurd v
+  | MModuleTransform _ v <- _elem tcModuleExpr = absurd v
   | MModuleExternal _ _ v <- _elem tcModuleExpr = absurd v
   | MModuleDef decls deps renamings <- _elem tcModuleExpr = do
       traverse_ (
@@ -1163,6 +1195,7 @@ checkModuleDep env (Ann src (MModuleDep mmoduleDepType moduleExpr)) = do
     requireModuleExpr (Ann ann tcModuleExpr)
       | MModuleRef v _ <- tcModuleExpr = absurd v
       | MModuleAsSignature v _ <- tcModuleExpr = absurd v
+      | MModuleTransform _ v <- tcModuleExpr = absurd v
       | MModuleExternal _ _ v <- tcModuleExpr = absurd v
       | MModuleDef decls deps renamings <- tcModuleExpr =
           let addRequireModifier mods = if Require `elem` mods

@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections #-}
 
-module Magnolia.EquationalRewriting (
+module Magnolia.EquationalRewriting2 (
     runGenerator
   , runOptimizer
   )
@@ -17,7 +17,6 @@ import qualified Data.Set as S
 import Data.Void (absurd)
 
 import Env
-import Magnolia.Check
 import Magnolia.PPrint
 import Magnolia.Syntax
 import Magnolia.Util
@@ -479,52 +478,28 @@ type FactDB = S.Set PredicateIRAtom
 type ConstraintDB = [Constraint]
 
 -- | Runs a callable generator within one context module.
-runGenerator :: CallableGenerator -> TcModule -> MgMonad TcModule
-runGenerator tcGenModule@(Ann _ gen) tcTgtModule@(Ann tgtDeclO tgtModule) =
-  case gen of
-  -- TODO: only allow
-  MModule _ generatorName generatorModuleExpr -> enter generatorName $ do
-    -- 1. gather axioms
-    axioms <- gatherAxioms generatorModuleExpr
-    -- 2. inline expressions within axioms (TODO)
-    inlinedAxioms <- mapM (\(AnonymousAxiom v typedExprIR) ->
-      AnonymousAxiom v <$> inlineTypedExprIR typedExprIR) axioms
-    -- 3. gather directed rewrite rules
-    constraintDb <- join <$> mapM gatherConstraints inlinedAxioms
-    liftIO $ mapM_ print constraintDb
-    -- TODO: proper error handling
-    -- 4. traverse each constraint to create a new callable
-    let ~(MModule tgtModuleTy tgtModuleName (Ann src tgtModuleExpr)) = tgtModule
-    resultModuleExpr <- Ann src <$> case tgtModuleExpr of
-      MModuleDef _ deps renamings -> do
-        contextDecls <- mergeModuleDecls tcGenModule tcTgtModule
-        newDefs <- mapM (generateCallable contextDecls generatorModuleExpr)
-                        constraintDb
-        let newDefsAsMap = M.fromListWith (<>)
-              (map (\d -> (nodeName d, [d])) newDefs)
-        decls' <- mergeModuleDecls
-          (Ann tgtDeclO (MModule tgtModuleTy (ModName "dummy1")
-            (Ann src (MModuleDef contextDecls [] []))))
-          (Ann tgtDeclO (MModule tgtModuleTy (ModName "dummy2")
-            (Ann src (MModuleDef newDefsAsMap [] []))))
-        pure $ MModuleDef decls' deps renamings
-      MModuleRef v _ -> absurd v
-      MModuleAsSignature v _ -> absurd v
-      MModuleTransform _ v -> absurd v
-      MModuleExternal {} -> pure tgtModuleExpr
-    liftIO $ pprint resultModuleExpr
-    -- 6: wrap it up
-    pure $ Ann tgtDeclO (MModule tgtModuleTy tgtModuleName resultModuleExpr)
-  --_ -> undefined
+runGenerator :: TcModuleExpr -> TcModuleExpr -> MgMonad [TcDecl]
+runGenerator generatorModuleExpr (Ann _ ctxModuleExpr') = do
+  -- 1. gather axioms
+  axioms <- gatherAxioms generatorModuleExpr
+  -- 2. inline expressions within axioms (TODO)
+  inlinedAxioms <- mapM (\(AnonymousAxiom v typedExprIR) ->
+    AnonymousAxiom v <$> inlineTypedExprIR typedExprIR) axioms
+  -- 3. gather directed rewrite rules
+  constraintDb <- join <$> mapM gatherConstraints inlinedAxioms
+  liftIO $ mapM_ print constraintDb
+  -- 4. traverse each constraint to create a new callable
+  x <- case ctxModuleExpr' of
+    MModuleDef contextDecls _ _ -> do
+      mapM (generateCallable contextDecls generatorModuleExpr)
+            constraintDb
+    MModuleRef v _ -> absurd v
+    MModuleAsSignature v _ -> absurd v
+    MModuleTransform _ v -> absurd v
+    MModuleExternal _ _ v -> absurd v
+  liftIO $ pprint x
+  pure x
   where
-    generatorDecls :: TcModuleExpr -> M.Map Name [TcDecl]
-    generatorDecls (Ann _ generatorExpr) = case generatorExpr of
-      MModuleDef decls _ _ -> decls
-      MModuleRef v _ -> absurd v
-      MModuleAsSignature v _ -> absurd v
-      MModuleTransform _ v -> absurd v
-      MModuleExternal _ _ v -> absurd v
-
     generateCallable :: M.Map Name [TcDecl] -> TcModuleExpr -> Constraint
                      -> MgMonad TcDecl
     generateCallable contextDecls generatorExpr constraint = case constraint of
@@ -536,7 +511,7 @@ runGenerator tcGenModule@(Ann _ gen) tcTgtModule@(Ann tgtDeclO tgtModule) =
               (ExprIR'Call callableName patArgs))) -> do
             let extractType (TypedPattern tyPat _) = tyPat
                 generatorCallableDecls = M.map getCallableDecls $
-                  generatorDecls generatorExpr
+                  moduleExprDecls generatorExpr
             callableDecl <- findCallable generatorCallableDecls callableName
               (map extractType patArgs) tyPattern
             defineCallable contextDecls sourcePat callableDecl targetPat
@@ -556,36 +531,30 @@ runGenerator tcGenModule@(Ann _ gen) tcTgtModule@(Ann tgtDeclO tgtModule) =
 
 
 -- | Runs an optimizer maxSteps times over one module.
-runOptimizer :: Optimizer -> Int -> TcModule -> MgMonad TcModule
-runOptimizer (Ann _ optimizer) maxSteps (Ann tgtDeclO tgtModule) =
-  case optimizer of
-  MModule Concept optimizerName optimizerModuleExpr -> enter optimizerName $ do
-    -- 1. gather axioms
-    axioms <- gatherAxioms optimizerModuleExpr
-    -- 2. inline expressions within axioms (TODO)
-    inlinedAxioms <- mapM (\(AnonymousAxiom v typedExprIR) ->
-      AnonymousAxiom v <$> inlineTypedExprIR typedExprIR) axioms
-    -- 3. gather directed rewrite rules
-    constraintDb <- join <$> mapM gatherConstraints inlinedAxioms
-    liftIO $ mapM_ print constraintDb
-    --liftIO $ mapM_ (pprint . fromTypedExprIR) $ M.keys constraintDb
-    -- 4. traverse each expression in the target module to rewrite it (while
-    -- elaborating the scope)
-    let ~(MModule tgtModuleTy tgtModuleName (Ann src tgtModuleExpr)) = tgtModule
-    resultModuleExpr <- Ann src <$> case tgtModuleExpr of
-      MModuleDef decls deps renamings -> do
-        decls' <- mapM (traverse $ rewriteDecl constraintDb) decls
-        pure $ MModuleDef decls' deps renamings
-      MModuleRef v _ -> absurd v
-      MModuleAsSignature v _ -> absurd v
-      MModuleTransform _ v -> absurd v
-      MModuleExternal {} -> pure tgtModuleExpr
-
-    liftIO $ pprint resultModuleExpr
-    -- 6: wrap it up
-    -- comment out to avoid IDE suggestion
-    pure $ Ann tgtDeclO (MModule tgtModuleTy tgtModuleName resultModuleExpr)
-  _ -> undefined
+runOptimizer :: TcModuleExpr -> Int -> TcModuleExpr -> MgMonad TcModuleExpr
+runOptimizer optimizerModuleExpr maxSteps (Ann src tgtModuleExpr) = do
+  -- 1. gather axioms
+  axioms <- gatherAxioms optimizerModuleExpr
+  -- 2. inline expressions within axioms (TODO)
+  inlinedAxioms <- mapM (\(AnonymousAxiom v typedExprIR) ->
+    AnonymousAxiom v <$> inlineTypedExprIR typedExprIR) axioms
+  -- 3. gather directed rewrite rules
+  constraintDb <- join <$> mapM gatherConstraints inlinedAxioms
+  liftIO $ mapM_ print constraintDb
+  --liftIO $ mapM_ (pprint . fromTypedExprIR) $ M.keys constraintDb
+  -- 4. traverse each expression in the target module to rewrite it (while
+  -- elaborating the scope)
+  resultModuleExpr <- Ann src <$> case tgtModuleExpr of
+    MModuleDef decls deps renamings -> do
+      decls' <- mapM (traverse $ rewriteDecl constraintDb) decls
+      pure $ MModuleDef decls' deps renamings
+    MModuleRef v _ -> absurd v
+    MModuleAsSignature v _ -> absurd v
+    MModuleTransform _ v -> absurd v
+    MModuleExternal {} -> pure tgtModuleExpr
+  liftIO $ pprint resultModuleExpr
+  -- 6: wrap it up
+  pure resultModuleExpr
   where
     -- TODO: do better, because this can infinite loop if not terminating
     rewriteDecl :: ConstraintDB -> TcDecl -> MgMonad TcDecl
@@ -1181,7 +1150,8 @@ defineCallable :: M.Map Name [TcDecl]
                -> MgMonad TcDecl
 defineCallable tcDecls
     (TypedPattern tyPattern (Pattern'Expr (ExprIR'Call callableName patArgs)))
-    (Ann declOs callable@(Callable _ defName defArgs defRetTy _ EmptyBody))
+    (Ann (mconDeclO, absDeclOs)
+         callable@(Callable _ defName defArgs defRetTy _ EmptyBody))
     rhsPattern | defRetTy == tyPattern && defName == callableName &&
                  defArgTypes == patArgTypes = do
   let wildcardArgs = S.fromList $ filter isWildcard patArgs
@@ -1194,6 +1164,10 @@ defineCallable tcDecls
   let bindings = M.fromList $ zip patVarNames defArgVars
   bodyExpr <- fromTypedExprIR <$> (instantiatePattern rhsPattern bindings >>=
     unfoldCalls tcDecls)
+  -- TODO: GeneratedBuiltin here is a hack. We should define a new constructor
+  -- and do things properly.
+  let declOs = case mconDeclO of Nothing -> (Just GeneratedBuiltin, absDeclOs)
+                                 _ -> (mconDeclO, absDeclOs)
   pure $ MCallableDecl []
     (Ann declOs callable { _callableBody = MagnoliaBody bodyExpr })
   where
@@ -1209,19 +1183,6 @@ defineCallable tcDecls
 -- TODO: throw proper errors
 defineCallable _ _ _ _ = error "invalid call to defineCallable"
 
-  -- instantiatePattern :: TypedPattern -> M.Map Name TypedExprIR
-  --                  -> MgMonad TypedExprIR
-
-  --             = undefined
-
--- let sourcePat = eqnSourcePat $ constraintEquation constraint
---           targetPat = eqnTargetPat $ constraintEquation constraint
---       case typedExprIR `matchesPattern` sourcePat of
---         Nothing -> oneRuleRewritePassExprIR factDb constraint typedExprIR
---         Just bindings -> case constraint of
---           Constraint'Equational eqn -> do
---             --liftIO $ pprint $ "firing rule " <> show eqn
---             instantiatePattern targetPat bindings
 
 -- | Unfolds all calls within an expression.
 -- TODO: perform alpha renaming of variables inside to avoid name clashes.
@@ -1260,7 +1221,7 @@ unfoldCalls tcDecls inTypedExprIR@(TypedExprIR inTyExprIR inExprIR) =
       case matches of
         -- TODO: prototypes should be inserted
         [] -> throwNonLocatedE CompilerErr $
-          "could not find" <> pshow name <> pshow argTypes-- TODO: throw error
+          "could not find " <> pshow name <> pshow argTypes-- TODO: throw error
         [tcCallableDecl] -> pure tcCallableDecl
         _ -> undefined -- TODO: throw error
 
@@ -1308,32 +1269,32 @@ unfoldCalls tcDecls inTypedExprIR@(TypedExprIR inTyExprIR inExprIR) =
       _ -> pure $ ExprIR'Call name args
 
 -- TODO: this works but we should change it later.
-mergeModuleDecls :: TcModule -> TcModule -> MgMonad (M.Map Name [TcDecl])
-mergeModuleDecls module1 module2 = enter (PkgName "dummy") $
-  moduleDecls <$> checkModule topLevelEnv compositeModule
-  where
-    topLevelEnv = M.insert (nodeName module1) [MModuleDecl module1]
-      (M.insert (nodeName module2) [MModuleDecl module2] M.empty)
+-- mergeModuleDecls :: TcModule -> TcModule -> MgMonad (M.Map Name [TcDecl])
+-- mergeModuleDecls module1 module2 = enter (PkgName "dummy") $
+--   moduleDecls <$> checkModule topLevelEnv compositeModule
+--   where
+--     topLevelEnv = M.insert (nodeName module1) [MModuleDecl module1]
+--       (M.insert (nodeName module2) [MModuleDecl module2] M.empty)
 
-    compositeModule :: ParsedModule
-    compositeModule = Ann (SrcCtx Nothing) (MModule Implementation
-      (ModName "#dummy#") (Ann (SrcCtx Nothing) (MModuleDef [] deps [])))
+--     compositeModule :: ParsedModule
+--     compositeModule = Ann (SrcCtx Nothing) (MModule Implementation
+--       (ModName "#dummy#") (Ann (SrcCtx Nothing) (MModuleDef [] deps [])))
 
-    mkRef :: TcModule -> ParsedModuleExpr
-    mkRef tcModule@(Ann _ (MModule moduleTy _ _)) = Ann (SrcCtx Nothing) $
-      case moduleTy of
-        Concept -> MModuleAsSignature
-          (FullyQualifiedName Nothing (nodeName tcModule)) []
-        _ -> MModuleRef (FullyQualifiedName Nothing (nodeName tcModule)) []
+--     mkRef :: TcModule -> ParsedModuleExpr
+--     mkRef tcModule@(Ann _ (MModule moduleTy _ _)) = Ann (SrcCtx Nothing) $
+--       case moduleTy of
+--         Concept -> MModuleAsSignature
+--           (FullyQualifiedName Nothing (nodeName tcModule)) []
+--         _ -> MModuleRef (FullyQualifiedName Nothing (nodeName tcModule)) []
 
-    deps :: [ParsedModuleDep]
-    deps = [ Ann (SrcCtx Nothing) $
-              MModuleDep MModuleDepUse
-                (mkRef module1)
-           , Ann (SrcCtx Nothing) $
-              MModuleDep MModuleDepUse
-                (mkRef module2)
-           ]
+--     deps :: [ParsedModuleDep]
+--     deps = [ Ann (SrcCtx Nothing) $
+--               MModuleDep MModuleDepUse
+--                 (mkRef module1)
+--            , Ann (SrcCtx Nothing) $
+--               MModuleDep MModuleDepUse
+--                 (mkRef module2)
+--            ]
 
 -- Note: Strategy for rewriting
 -- We have two kinds of rewritings: rewritings based on conditional equational
