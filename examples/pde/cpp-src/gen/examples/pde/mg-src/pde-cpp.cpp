@@ -49,10 +49,6 @@ namespace pde_cpp {
 
 
 
-    BasePDEProgram::_forall_ix_snippet BasePDEProgram::forall_ix_snippet;
-
-
-
     BasePDEProgram::_mul BasePDEProgram::mul;
 
 
@@ -65,13 +61,7 @@ namespace pde_cpp {
 
 
 
-
-
-    BasePDEProgram::_make_ix BasePDEProgram::make_ix;
-
-    forall_ops<BasePDEProgram::Array, BasePDEProgram::Axis, BasePDEProgram::Float, BasePDEProgram::Index, BasePDEProgram::Nat, BasePDEProgram::Offset, BasePDEProgram::_snippet_ix> BasePDEProgram::__forall_ops;
-
-    BasePDEProgram::_snippet_ix BasePDEProgram::snippet_ix;
+    BasePDEProgram::_snippet BasePDEProgram::snippet;
 
 
 
@@ -98,6 +88,10 @@ namespace pde_cpp {
 
 
 
+    PDEProgram::_nbCores PDEProgram::nbCores;
+
+
+
     PDEProgram::_three PDEProgram::three;
 
 
@@ -110,15 +104,15 @@ namespace pde_cpp {
 
 
 
-    PDEProgram::_rotate_ix_padded PDEProgram::rotate_ix_padded;
-
-
-
     PDEProgram::_zero PDEProgram::zero;
 
 
 
     PDEProgram::_all_substeps PDEProgram::all_substeps;
+
+
+
+    PDEProgram::_binary_add PDEProgram::binary_add;
 
 
 
@@ -130,23 +124,11 @@ namespace pde_cpp {
 
 
 
-    PDEProgram::_forall_ix_snippet PDEProgram::forall_ix_snippet;
-
-
-
-    PDEProgram::_forall_ix_snippet_padded PDEProgram::forall_ix_snippet_padded;
-
-
-
-    PDEProgram::_forall_ix_snippet_specialized_psi_padded PDEProgram::forall_ix_snippet_specialized_psi_padded;
-
-
-
     PDEProgram::_mul PDEProgram::mul;
 
 
 
-    PDEProgram::_refill_all_padding PDEProgram::refill_all_padding;
+    PDEProgram::_psi PDEProgram::psi;
 
 
 
@@ -154,29 +136,21 @@ namespace pde_cpp {
 
 
 
-
-
-    PDEProgram::_binary_add PDEProgram::binary_add;
-
-
-
-    PDEProgram::_ix_0 PDEProgram::ix_0;
+    PDEProgram::_schedule PDEProgram::schedule;
 
 
 
-    PDEProgram::_ix_1 PDEProgram::ix_1;
+    PDEProgram::_schedule_threaded PDEProgram::schedule_threaded;
 
 
 
-    PDEProgram::_ix_2 PDEProgram::ix_2;
+    PDEProgram::_snippet PDEProgram::snippet;
+
+
 
 
 
     PDEProgram::_make_ix PDEProgram::make_ix;
-
-
-
-    PDEProgram::_psi PDEProgram::psi;
 
     forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Nat, PDEProgram::Offset, PDEProgram::_snippet_ix> PDEProgram::__forall_ops;
 
@@ -184,29 +158,163 @@ namespace pde_cpp {
 
 
 
-
-
-    PDEProgram::_mod PDEProgram::mod;
-
-
-
-    PDEProgram::_shape_0 PDEProgram::shape_0;
-
-
-
-    PDEProgram::_shape_1 PDEProgram::shape_1;
-
-
-
-    PDEProgram::_shape_2 PDEProgram::shape_2;
-
-    specialize_psi_ops_2<PDEProgram::Array, PDEProgram::Float, PDEProgram::Index, PDEProgram::Offset, PDEProgram::ScalarIndex, PDEProgram::_snippet_ix_specialized> PDEProgram::__specialize_psi_ops_2;
-
-    PDEProgram::_snippet_ix_specialized PDEProgram::snippet_ix_specialized;
-
-
-
     PDEProgram::_step PDEProgram::step;
+
+} // examples
+} // pde
+} // mg_src
+} // pde_cpp
+
+namespace examples {
+namespace pde {
+namespace mg_src {
+namespace pde_cpp {
+
+
+    PDEProgram0::_two PDEProgram0::two;
+
+
+
+    PDEProgram0::_one PDEProgram0::one;
+
+    array_ops PDEProgram0::__array_ops;
+
+
+
+    PDEProgram0::_three PDEProgram0::three;
+
+
+
+    PDEProgram0::_unary_sub PDEProgram0::unary_sub;
+
+
+
+    PDEProgram0::_rotate_ix PDEProgram0::rotate_ix;
+
+
+
+    PDEProgram0::_zero PDEProgram0::zero;
+
+
+
+    PDEProgram0::_all_substeps PDEProgram0::all_substeps;
+
+
+
+    PDEProgram0::_binary_add PDEProgram0::binary_add;
+
+
+
+    PDEProgram0::_binary_sub PDEProgram0::binary_sub;
+
+
+
+    PDEProgram0::_div PDEProgram0::div;
+
+
+
+    PDEProgram0::_mul PDEProgram0::mul;
+
+
+
+    PDEProgram0::_psi PDEProgram0::psi;
+
+
+
+    PDEProgram0::_rotate PDEProgram0::rotate;
+
+
+
+    PDEProgram0::_snippet PDEProgram0::snippet;
+
+
+
+    PDEProgram0::_step PDEProgram0::step;
+
+} // examples
+} // pde
+} // mg_src
+} // pde_cpp
+
+namespace examples {
+namespace pde {
+namespace mg_src {
+namespace pde_cpp {
+
+
+    PDEProgram1::_two PDEProgram1::two;
+
+
+
+    PDEProgram1::_one PDEProgram1::one;
+
+    array_ops PDEProgram1::__array_ops;
+
+
+
+    PDEProgram1::_three PDEProgram1::three;
+
+
+
+    PDEProgram1::_unary_sub PDEProgram1::unary_sub;
+
+
+
+    PDEProgram1::_rotate_ix PDEProgram1::rotate_ix;
+
+
+
+    PDEProgram1::_zero PDEProgram1::zero;
+
+
+
+    PDEProgram1::_all_substeps PDEProgram1::all_substeps;
+
+
+
+    PDEProgram1::_binary_add PDEProgram1::binary_add;
+
+
+
+    PDEProgram1::_binary_sub PDEProgram1::binary_sub;
+
+
+
+    PDEProgram1::_div PDEProgram1::div;
+
+
+
+    PDEProgram1::_mul PDEProgram1::mul;
+
+
+
+    PDEProgram1::_psi PDEProgram1::psi;
+
+
+
+    PDEProgram1::_rotate PDEProgram1::rotate;
+
+
+
+    PDEProgram1::_schedule PDEProgram1::schedule;
+
+
+
+    PDEProgram1::_snippet PDEProgram1::snippet;
+
+
+
+
+
+    PDEProgram1::_make_ix PDEProgram1::make_ix;
+
+    forall_ops<PDEProgram1::Array, PDEProgram1::Axis, PDEProgram1::Float, PDEProgram1::Index, PDEProgram1::Nat, PDEProgram1::Offset, PDEProgram1::_snippet_ix> PDEProgram1::__forall_ops;
+
+    PDEProgram1::_snippet_ix PDEProgram1::snippet_ix;
+
+
+
+    PDEProgram1::_step PDEProgram1::step;
 
 } // examples
 } // pde
