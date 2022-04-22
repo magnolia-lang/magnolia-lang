@@ -771,7 +771,11 @@ instance HasDependencies (MModuleExpr' PhParse) where
       map (dependencies . _elem . _mmoduleDepModuleExpr . _elem) deps
     MModuleRef refName _ -> [refName]
     MModuleAsSignature refName _ -> [refName]
-    MModuleTransform _ moduleExpr' -> dependencies moduleExpr'
+    MModuleTransform transformation moduleExpr' -> (case transformation of
+      MModuleMorphism'ToSignature -> []
+      MModuleMorphism'RewriteWith rewriteRules _ -> dependencies rewriteRules
+      MModuleMorphism'GenerateWith generator -> dependencies generator) <>
+        dependencies moduleExpr'
     MModuleExternal _ _ moduleExpr' -> dependencies moduleExpr'
 
 instance HasDependencies (MModuleExpr' PhCheck) where
