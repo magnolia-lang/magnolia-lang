@@ -88,10 +88,6 @@ namespace pde_cpp {
 
 
 
-    PDEProgram::_nbCores PDEProgram::nbCores;
-
-
-
     PDEProgram::_three PDEProgram::three;
 
 
@@ -136,25 +132,7 @@ namespace pde_cpp {
 
 
 
-    PDEProgram::_schedule PDEProgram::schedule;
-
-
-
-    PDEProgram::_schedule_threaded PDEProgram::schedule_threaded;
-
-
-
     PDEProgram::_snippet PDEProgram::snippet;
-
-
-
-
-
-    PDEProgram::_make_ix PDEProgram::make_ix;
-
-    forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Nat, PDEProgram::Offset, PDEProgram::_snippet_ix> PDEProgram::__forall_ops;
-
-    PDEProgram::_snippet_ix PDEProgram::snippet_ix;
 
 
 
@@ -315,6 +293,99 @@ namespace pde_cpp {
 
 
     PDEProgram1::_step PDEProgram1::step;
+
+} // examples
+} // pde
+} // mg_src
+} // pde_cpp
+
+namespace examples {
+namespace pde {
+namespace mg_src {
+namespace pde_cpp {
+
+
+    PDEProgram2::_two PDEProgram2::two;
+
+
+
+    PDEProgram2::_one PDEProgram2::one;
+
+    array_ops PDEProgram2::__array_ops;
+
+
+
+    PDEProgram2::_nbCores PDEProgram2::nbCores;
+
+
+
+    PDEProgram2::_three PDEProgram2::three;
+
+
+
+    PDEProgram2::_unary_sub PDEProgram2::unary_sub;
+
+
+
+    PDEProgram2::_rotate_ix PDEProgram2::rotate_ix;
+
+
+
+    PDEProgram2::_zero PDEProgram2::zero;
+
+
+
+    PDEProgram2::_all_substeps PDEProgram2::all_substeps;
+
+
+
+    PDEProgram2::_binary_add PDEProgram2::binary_add;
+
+
+
+    PDEProgram2::_binary_sub PDEProgram2::binary_sub;
+
+
+
+    PDEProgram2::_div PDEProgram2::div;
+
+
+
+    PDEProgram2::_mul PDEProgram2::mul;
+
+
+
+    PDEProgram2::_psi PDEProgram2::psi;
+
+
+
+    PDEProgram2::_rotate PDEProgram2::rotate;
+
+
+
+    PDEProgram2::_schedule PDEProgram2::schedule;
+
+
+
+    PDEProgram2::_schedule_threaded PDEProgram2::schedule_threaded;
+
+
+
+    PDEProgram2::_snippet PDEProgram2::snippet;
+
+
+
+
+
+    PDEProgram2::_make_ix PDEProgram2::make_ix;
+
+    forall_ops<PDEProgram2::Array, PDEProgram2::Axis, PDEProgram2::Float, PDEProgram2::Index, PDEProgram2::Nat, PDEProgram2::Offset, PDEProgram2::_snippet_ix> PDEProgram2::__forall_ops;
+
+    PDEProgram2::_snippet_ix PDEProgram2::snippet_ix;
+
+
+
+    PDEProgram2::_step PDEProgram2::step;
 
 } // examples
 } // pde

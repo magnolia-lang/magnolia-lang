@@ -219,7 +219,7 @@ program PDEProgram2 = {
     use ExtExtendLiftCores;
 }
 
-program PDEProgram = PDEProgram1;
+program PDEProgram = PDEProgram0;
 
 concept ToIxwiseGenerator = {
     type Array;
