@@ -214,10 +214,12 @@ program PDEProgram1 = {
 
     use ExtExtendMissingBypass;
 }
-program PDEProgram = {
+program PDEProgram2 = {
     use (rewrite PDEProgram1 with OFLiftCores 1);
     use ExtExtendLiftCores;
 }
+
+program PDEProgram = PDEProgram1;
 
 concept ToIxwiseGenerator = {
     type Array;
