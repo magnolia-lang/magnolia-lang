@@ -21,7 +21,7 @@
 #define TOTAL_PADDED_SIZE (PADDED_S0 * PADDED_S1 * PADDED_S2)
 
 #define NTILES 4
-#define NB_CORES 2
+#define NB_CORES 1
 
 struct array_ops {
   typedef float Float;

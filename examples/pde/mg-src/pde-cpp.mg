@@ -209,15 +209,17 @@ program PDEProgram1 = {
     use (rewrite
             (rewrite
                 (generate ToIxwiseGenerator in BasePDEProgram)
-            with DNFRules 20)
+            with DNFRules 1000)
         with ToIxwise 1);
 
     use ExtExtendMissingBypass;
 }
-program PDEProgram = {
+program PDEProgram2 = {
     use (rewrite PDEProgram1 with OFLiftCores 1);
     use ExtExtendLiftCores;
 }
+
+program PDEProgram = PDEProgram1;
 
 concept ToIxwiseGenerator = {
     type Array;
