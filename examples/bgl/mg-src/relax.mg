@@ -9,7 +9,7 @@ implementation CombinableAndComparable = {
 }
 
 implementation Relax = {
-    
+
     use CombinableAndComparable[ A => Cost
                                , combine => plus
                                , compare => less

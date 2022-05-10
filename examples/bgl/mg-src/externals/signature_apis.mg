@@ -1,5 +1,6 @@
 package examples.bgl.mg-src.externals.signature_apis
-    imports examples.bgl.mg-src.color_marker
+    imports examples.bgl.mg-src.bool
+          , examples.bgl.mg-src.color_marker
           , examples.bgl.mg-src.for_loop
           , examples.bgl.mg-src.graph
           , examples.bgl.mg-src.list
@@ -7,6 +8,7 @@ package examples.bgl.mg-src.externals.signature_apis
           , examples.bgl.mg-src.queue
           , examples.bgl.mg-src.stack
           , examples.bgl.mg-src.tuple
+          , examples.bgl.mg-src.unit
           , examples.bgl.mg-src.vector
           , examples.bgl.mg-src.while_loop;
 
@@ -19,6 +21,9 @@ implementation ExtBaseFloatOps = {
     type Float;
     function plus(i1: Float, i2: Float): Float;
     predicate less(i1: Float, i2: Float);
+    function negate(f: Float): Float;
+    function zero(): Float;
+    function inf(): Float;
 }
 
 implementation ExtColorMarker = signature(ColorMarker);
@@ -27,10 +32,11 @@ implementation ExtColorMarker = signature(ColorMarker);
 // the extend keyword. Perhaps this should be improved.
 implementation ExtEdge = signature(Edge);
 
-implementation ExtIncidenceAndVertexListGraph = {
+implementation ExtIncidenceAndVertexListAndEdgeListGraph = {
     require type Vertex;
 
     use Edge;
+    use EdgeListGraph;
     use IncidenceGraph;
     use VertexListGraph;
 
@@ -40,10 +46,24 @@ implementation ExtIncidenceAndVertexListGraph = {
                               g: Graph): EdgeDescriptor;
 }
 
-implementation ExtCustomIncidenceAndVertexListGraph = {
+implementation ExtCustomIncidenceAndVertexListAndEdgeListGraph = {
     require EdgeWithoutDescriptor[ src => srcPlainEdge
                                  , tgt => tgtPlainEdge
                                  ];
+    require IterableList[ A => Edge
+                        , ListIterator => OutEdgeIterator
+                        , List => EdgeList
+                        , cons => consEdgeList
+                        , empty => emptyEdgeList
+                        , getIterator => getOutEdgeIterator
+                        , head => headEdgeList
+                        , isEmpty => isEmptyEdgeList
+                        , iterEnd => outEdgeIterEnd
+                        , iterNext => outEdgeIterNext
+                        , iterUnpack => outEdgeIterUnpack
+                        , tail => tailEdgeList
+                        ];
+
     require IterableList[ A => Edge
                         , ListIterator => EdgeIterator
                         , List => EdgeList
@@ -72,7 +92,7 @@ implementation ExtCustomIncidenceAndVertexListGraph = {
                         , iterUnpack => vertexIterUnpack
                         , tail => tailVertexList
                         ];
-    
+
     type Graph;
     type VertexCount;
 
@@ -80,9 +100,10 @@ implementation ExtCustomIncidenceAndVertexListGraph = {
     function tgt(e: Edge, g: Graph): Vertex;
 
     procedure outEdges(obs v: Vertex, obs g: Graph,
-                       out itr: EdgeIterator);
+                       out itr: OutEdgeIterator);
     function outDegree(v: Vertex, g: Graph): VertexCount;
 
+    procedure edges(obs g: Graph, out itr: EdgeIterator);
     procedure vertices(obs g: Graph, out itr: VertexIterator);
     function numVertices(g: Graph): VertexCount;
 }
@@ -145,8 +166,14 @@ implementation ExtTriplet = signature(Triplet);
 implementation ExtVector = signature(Vector);
 
 implementation ExtForIteratorLoop = signature(ForIteratorLoop);
+implementation ExtForIteratorLoop1_2 = signature(ForIteratorLoop1_2);
+implementation ExtForIteratorLoop1_3 = signature(ForIteratorLoop1_3);
+implementation ExtForIteratorLoop2_3 = signature(ForIteratorLoop2_3);
 implementation ExtForIteratorLoop3_2 = signature(ForIteratorLoop3_2);
 
 implementation ExtWhileLoop = signature(WhileLoop);
 implementation ExtWhileLoop3 = signature(WhileLoop3);
 implementation ExtWhileLoop4_3 = signature(WhileLoop4_3);
+
+implementation ExtUnit = signature(Unit);
+implementation ExtBool = signature(Bool);

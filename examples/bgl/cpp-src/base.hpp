@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include <math.h>
 #include <omp.h>
 #include <stdlib.h>
 
@@ -34,6 +35,23 @@
 
 #endif
 
+// _bool
+struct base_bool {
+    struct Bool {
+        bool value;
+        bool operator==(const Bool &other) const = default;
+    };
+
+    inline Bool btrue() { return Bool(true); }
+    inline Bool bfalse() { return Bool(false); }
+};
+
+// _unit
+struct base_unit {
+    struct Unit {};
+    inline Unit unit() { Unit u; return u; }
+};
+
 // base_types_cpp
 struct base_types {
     typedef unsigned int Int;
@@ -44,6 +62,9 @@ struct base_float_ops {
     typedef float Float;
     inline Float plus(const Float &i1, const Float &i2) { return i1 + i2; }
     inline bool less(const Float &i1, const Float &i2) const { return i1 < i2; }
+    inline Float negate(const Float &f) { return -f; }
+    inline Float zero() { return 0; }
+    inline Float inf() { return INFINITY; }
 };
 
 // color_marker_cpp
@@ -86,21 +107,24 @@ struct edge_without_descriptor {
     }
 };
 
-//template <typename 
+//template <typename
 
 template <typename _Edge, typename _EdgeIterator, typename _EdgeList,
-          typename _Vertex, typename _VertexIterator, typename _VertexList,
+          typename _OutEdgeIterator, typename _Vertex, typename _VertexIterator,
+          typename _VertexList,
           class _consEdgeList, class _consVertexList, class _edgeIterEnd,
           class _edgeIterNext, class _edgeIterUnpack, class _emptyEdgeList,
-          class _emptyVertexList, class _getEdgeIterator,
+          class _emptyVertexList, class _getEdgeIterator, class _getOutEdgeIterator,
           class _getVertexIterator, class _headEdgeList, class _headVertexList,
           class _isEmptyEdgeList, class _isEmptyVertexList, class _makeEdge,
+          class _outEdgeIterEnd, class _outEdgeIterNext, class _outEdgeIterUnpack,
           class _srcPlainEdge,  class _tailEdgeList, class _tailVertexList,
           class _tgtPlainEdge, class _vertexIterEnd, class _vertexIterNext,
           class _vertexIterUnpack>
-struct custom_incidence_and_vertex_list_graph {
+struct custom_incidence_and_vertex_list_and_edge_list_graph {
     typedef _Edge Edge;
     typedef _EdgeIterator EdgeIterator;
+    typedef _OutEdgeIterator OutEdgeIterator;
     typedef _EdgeList EdgeList;
     typedef _Vertex Vertex;
     typedef _VertexIterator VertexIterator;
@@ -111,9 +135,13 @@ struct custom_incidence_and_vertex_list_graph {
     static inline _edgeIterEnd edgeIterEnd;
     static inline _edgeIterNext edgeIterNext;
     static inline _edgeIterUnpack edgeIterUnpack;
+    static inline _outEdgeIterEnd outEdgeIterEnd;
+    static inline _outEdgeIterNext outEdgeIterNext;
+    static inline _outEdgeIterUnpack outEdgeIterUnpack;
     static inline _emptyEdgeList emptyEdgeList;
     static inline _emptyVertexList emptyVertexList;
     static inline _getEdgeIterator getEdgeIterator;
+    static inline _getOutEdgeIterator getOutEdgeIterator;
     static inline _getVertexIterator getVertexIterator;
     static inline _headEdgeList headEdgeList;
     static inline _headVertexList headVertexList;
@@ -133,6 +161,7 @@ struct custom_incidence_and_vertex_list_graph {
     struct DirectedGraph {
         VertexList vertices;
         EdgeList *edges;
+        EdgeList allEdges;
         // TODO: spec somewhere we can always use vertices as unsigned int kinda
 
         DirectedGraph(const std::list<Edge> &edges,
@@ -153,6 +182,7 @@ struct custom_incidence_and_vertex_list_graph {
             for (auto i = 0; i < num_vertices; ++i) {
                 for (auto vertex_it = unique_out_edges[i].begin(); vertex_it != unique_out_edges[i].end(); ++vertex_it) {
                     consEdgeList(makeEdge(i, *vertex_it), this->edges[i]);
+                    consEdgeList(makeEdge(i, *vertex_it), this->allEdges);
                 }
             }
 
@@ -164,8 +194,8 @@ struct custom_incidence_and_vertex_list_graph {
 
     typedef DirectedGraph Graph;
 
-    inline void outEdges(const Vertex &v, const Graph &g, EdgeIterator &itr) {
-        itr = getEdgeIterator(g.edges[v]);
+    inline void outEdges(const Vertex &v, const Graph &g, OutEdgeIterator &itr) {
+        itr = getOutEdgeIterator(g.edges[v]);
     }
 
     inline VertexCount outDegree(const Vertex &v, const Graph &g) {
@@ -189,14 +219,18 @@ struct custom_incidence_and_vertex_list_graph {
         for (auto itr = getVertexIterator(g.vertices);
              !vertexIterEnd(itr);
              vertexIterNext(itr), ++count) {}
-        
+
         return count;
+    }
+
+    inline void edges(const Graph &g, EdgeIterator &itr) {
+        itr = getEdgeIterator(g.allEdges);
     }
 };
 
 
 template <typename _Vertex>
-struct incidence_and_vertex_list_graph {
+struct incidence_and_vertex_list_and_edge_list_graph {
     typedef _Vertex Vertex;
     typedef std::pair<Vertex, Vertex> Edge;
 
@@ -204,7 +238,8 @@ struct incidence_and_vertex_list_graph {
     typedef Graph::vertex_descriptor VertexDescriptor;
     typedef Graph::edge_descriptor EdgeDescriptor;
 
-    typedef std::pair<Graph::out_edge_iterator, Graph::out_edge_iterator> EdgeIterator;
+    typedef std::pair<Graph::out_edge_iterator, Graph::out_edge_iterator> OutEdgeIterator;
+    typedef std::pair<Graph::edge_iterator, Graph::edge_iterator> EdgeIterator;
     typedef std::pair<Graph::vertex_iterator, Graph::vertex_iterator> VertexIterator;
 
     typedef std::list<EdgeDescriptor> EdgeList;
@@ -235,6 +270,10 @@ struct incidence_and_vertex_list_graph {
         return std::make_pair(v1, v2);
     }
 
+    inline bool outEdgeIterEnd(const OutEdgeIterator &it) { return it.first == it.second; }
+    inline void outEdgeIterNext(OutEdgeIterator &it) { ++(it.first); }
+    inline EdgeDescriptor outEdgeIterUnpack(const OutEdgeIterator &it) { return *(it.first); }
+
     inline bool edgeIterEnd(const EdgeIterator &it) { return it.first == it.second; }
     inline void edgeIterNext(EdgeIterator &it) { ++(it.first); }
     inline EdgeDescriptor edgeIterUnpack(const EdgeIterator &it) { return *(it.first); }
@@ -243,7 +282,7 @@ struct incidence_and_vertex_list_graph {
     inline void vertexIterNext(VertexIterator &it) { ++(it.first); }
     inline VertexDescriptor vertexIterUnpack(const VertexIterator &it) { return *(it.first); }
 
-    inline void outEdges(const VertexDescriptor &v, const Graph &g, EdgeIterator &itr) {
+    inline void outEdges(const VertexDescriptor &v, const Graph &g, OutEdgeIterator &itr) {
         itr = boost::out_edges(v, g);
     }
 
@@ -267,6 +306,10 @@ struct incidence_and_vertex_list_graph {
         return std::distance(vs.first, vs.second);
         //.size();
     }
+
+    inline void edges(const Graph &g, EdgeIterator &itr) {
+        itr = boost::edges(g);
+    }
 };
 
 // list_cpp
@@ -277,12 +320,12 @@ struct list {
 
     inline List empty() { return List(); }
     inline void cons(const A &a, List &l) { l.push_front(a); }
-        
+
     inline const A& head(const List &l) {
         return l.front();
     }
     inline void tail(List &l) { l.pop_front(); }
-        
+
     inline bool isEmpty(const List &l) {
         return l.empty();
     }
@@ -481,7 +524,7 @@ struct two_bit_color_map {
     private:
     typedef typename boost::vec_adj_list_vertex_id_map<boost::no_property, Key> IndexMap;
     typedef typename boost::property_traits<IndexMap> Traits;
-    
+
     public:
     typedef typename boost::two_bit_color_map<IndexMap>
             ColorPropertyMap;
@@ -793,11 +836,11 @@ struct triplet {
     typedef _B B;
     typedef _C C;
     typedef std::tuple<A, B, C> Triplet;
-    
+
     Triplet makeTriplet(const A &a, const B &b, const C &c) {
         return std::make_tuple(a, b, c);
     }
-    
+
     inline A first(const Triplet &triplet) { return std::get<0>(triplet); }
     inline B second(const Triplet &triplet) { return std::get<1>(triplet); }
     inline C third(const Triplet &triplet) { return std::get<2>(triplet); }
@@ -810,7 +853,7 @@ struct for_iterator_loop {
     typedef _State State;
     typedef _Context Context;
     typedef _Iterator Iterator;
-    
+
     _iterEnd iterEnd;
     _iterNext iterNext;
     _step step;
@@ -823,6 +866,82 @@ struct for_iterator_loop {
         }
     }
 };
+
+template <typename _Context1, typename _Context2,
+          typename _Iterator, typename _State,
+          class _iterEnd, class _iterNext, class _step>
+struct for_iterator_loop1_2 {
+    typedef _Context1 Context1;
+    typedef _Context2 Context2;
+    typedef _Iterator Iterator;
+    typedef _State State;
+
+    _iterEnd iterEnd;
+    _iterNext iterNext;
+    _step step;
+
+    inline __attribute__((always_inline)) void forLoopRepeat(Iterator itr,
+                                                             State &s,
+                                                             const Context1 &c1,
+                                                             const Context2 &c2) {
+        for (; !iterEnd(itr); iterNext(itr)) {
+            step(itr, s, c1, c2);
+        }
+    }
+};
+
+template <typename _Context1, typename _Context2, typename _Context3,
+          typename _Iterator, typename _State,
+          class _iterEnd, class _iterNext, class _step>
+struct for_iterator_loop1_3 {
+    typedef _Context1 Context1;
+    typedef _Context2 Context2;
+    typedef _Context3 Context3;
+    typedef _Iterator Iterator;
+    typedef _State State;
+
+    _iterEnd iterEnd;
+    _iterNext iterNext;
+    _step step;
+
+    inline __attribute__((always_inline)) void forLoopRepeat(Iterator itr,
+                                                             State &s,
+                                                             const Context1 &c1,
+                                                             const Context2 &c2,
+                                                             const Context3 &c3) {
+        for (; !iterEnd(itr); iterNext(itr)) {
+            step(itr, s, c1, c2, c3);
+        }
+    }
+};
+
+template <typename _Context1, typename _Context2, typename _Context3,
+          typename _Iterator, typename _State1, typename _State2,
+          class _iterEnd, class _iterNext, class _step>
+struct for_iterator_loop2_3 {
+    typedef _Context1 Context1;
+    typedef _Context2 Context2;
+    typedef _Context3 Context3;
+    typedef _Iterator Iterator;
+    typedef _State1 State1;
+    typedef _State2 State2;
+
+    _iterEnd iterEnd;
+    _iterNext iterNext;
+    _step step;
+
+    inline __attribute__((always_inline)) void forLoopRepeat(Iterator itr,
+                                                             State1 &s1,
+                                                             State2 &s2,
+                                                             const Context1 &c1,
+                                                             const Context2 &c2,
+                                                             const Context3 &c3) {
+        for (; !iterEnd(itr); iterNext(itr)) {
+            step(itr, s1, s2, c1, c2, c3);
+        }
+    }
+};
+
 
 template <typename _Context1, typename _Context2, typename _Iterator,
           typename _State1, typename _State2, typename _State3,
@@ -896,7 +1015,7 @@ struct while_loop {
 };
 
 
-template <typename _Context, typename _State1, typename _State2, 
+template <typename _Context, typename _State1, typename _State2,
           typename _State3, class _cond, class _step>
 struct while_loop3 {
     typedef _State1 State1;

@@ -19,9 +19,9 @@ implementation DijkstraVisitorBase = {
                                , empty => emptyPriorityQueue
                                , isEmpty => isEmptyQueue
                                ];
-    use BFSVisit[ Queue => PriorityQueue
-                , A => StateWithMaps
-                ]; // TODO: the rest
+    use GenericBFSUtils[ Queue => PriorityQueue
+                       , A => StateWithMaps
+                       ]; // TODO: the rest
 
     use Relax[ Edge => Edge
              , EdgeDescriptor => EdgeDescriptor
@@ -43,24 +43,11 @@ implementation DijkstraVisitorBase = {
     require function makeStateWithMaps(vcm: VertexCostMap,
                                        vpm: VertexPredecessorMap,
                                        ecm: EdgeCostMap): StateWithMaps;
-    /*procedure treeEdge(obs e: EdgeDescriptor,
-                       obs g: Graph,
-                       upd pq: PriorityQueue,
-                       upd swm: StateWithMaps) {
-        
-        var vcm = getVertexCostMap(swm);
-        var vpm = getVertexPredecessorMap(swm);
-        var ecm = getEdgeCostMap(swm);
-
-        call relax(e, g, ecm, vcm, vpm);
-
-        swm = putVertexPredecessorMap(vpm, putVertexCostMap(vcm, swm));
-    }*/
 
     procedure examineEdge(obs e: EdgeDescriptor,
-                         obs g: Graph,
-                         upd pq: PriorityQueue,
-                         upd swm: StateWithMaps) {
+                          obs g: Graph,
+                          upd pq: PriorityQueue,
+                          upd swm: StateWithMaps) {
         var origVcm = getVertexCostMap(swm);
         var vpm = getVertexPredecessorMap(swm);
         var ecm = getEdgeCostMap(swm);
@@ -98,6 +85,7 @@ implementation DijkstraVisitorBase = {
 
     require function emptyVPMap(): VertexPredecessorMap;
 
+    // TODO: add 'A' type parameter, for potential event points (?)
     procedure dijkstraShortestPaths(obs g: Graph,
                                     obs start: VertexDescriptor,
                                     upd vcm: VertexCostMap,

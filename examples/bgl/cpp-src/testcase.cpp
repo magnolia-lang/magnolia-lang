@@ -22,6 +22,21 @@ std::pair<int, std::list<std::pair<int, int>>> gen_test_case() {
     return std::make_pair(nb_vertices, edges);
 }
 
+std::list<int> gen_dijkstra_weights() {
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_int_distribution<std::mt19937::result_type>
+        range_obj(1, 10000);
+    static std::list<int> weights;
+    if (weights.size() > 0) { return weights; }
+
+    for (auto i = 0; i < NB_TEST_EDGES; ++i) {
+        weights.push_back(range_obj(rng));
+    }
+
+    return weights;
+}
+
 /*
 std::pair<int, std::list<std::pair<int, int>>> gen_test_case() {
     int nb_vertices = NB_TEST_VERTICES, nb_edges = NB_TEST_EDGES;
