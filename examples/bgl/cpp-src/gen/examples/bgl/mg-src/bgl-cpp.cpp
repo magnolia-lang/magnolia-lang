@@ -1083,3 +1083,292 @@ namespace bgl_cpp {
 } // bgl
 } // mg_src
 } // bgl_cpp
+
+namespace examples {
+namespace bgl {
+namespace mg_src {
+namespace bgl_cpp {
+    base_types CppPrimVisitor::__base_types;
+
+    base_float_ops CppPrimVisitor::__base_float_ops;
+
+
+
+    CppPrimVisitor::_emptyVertexVector CppPrimVisitor::emptyVertexVector;
+
+    vector<CppPrimVisitor::VertexDescriptor> CppPrimVisitor::__vector;
+
+
+
+    CppPrimVisitor::_pushBack CppPrimVisitor::pushBack;
+
+
+
+    CppPrimVisitor::_vertexIterEnd CppPrimVisitor::vertexIterEnd;
+
+
+
+    CppPrimVisitor::_vertexIterNext CppPrimVisitor::vertexIterNext;
+
+
+
+
+
+    CppPrimVisitor::_emptyVPMap CppPrimVisitor::emptyVPMap;
+
+
+
+    CppPrimVisitor::_forIterationEnd CppPrimVisitor::forIterationEnd;
+
+
+
+    CppPrimVisitor::_populateVPMapLoopRepeat CppPrimVisitor::populateVPMapLoopRepeat;
+
+
+
+    for_iterator_loop<CppPrimVisitor::VertexDescriptor, CppPrimVisitor::VertexIterator, CppPrimVisitor::VertexPredecessorMap, CppPrimVisitor::_vertexIterEnd, CppPrimVisitor::_vertexIterNext, CppPrimVisitor::_populateVPMapLoopStep> CppPrimVisitor::__for_iterator_loop;
+
+    CppPrimVisitor::_populateVPMapLoopStep CppPrimVisitor::populateVPMapLoopStep;
+
+    read_write_property_map<CppPrimVisitor::VertexDescriptor, CppPrimVisitor::VertexIterator, CppPrimVisitor::VertexDescriptor, CppPrimVisitor::_vertexIterEnd, CppPrimVisitor::_vertexIterNext, CppPrimVisitor::_vertexIterUnpack> CppPrimVisitor::__read_write_property_map1;
+
+    two_bit_color_map<CppPrimVisitor::VertexDescriptor, CppPrimVisitor::VertexIterator, CppPrimVisitor::_vertexIterEnd, CppPrimVisitor::_vertexIterNext, CppPrimVisitor::_vertexIterUnpack> CppPrimVisitor::__two_bit_color_map;
+
+    CppPrimVisitor::_vertexIterUnpack CppPrimVisitor::vertexIterUnpack;
+
+    incidence_and_vertex_list_graph<CppPrimVisitor::Vertex> CppPrimVisitor::__incidence_and_vertex_list_graph;
+
+
+
+    CppPrimVisitor::_numVertices CppPrimVisitor::numVertices;
+
+
+
+    CppPrimVisitor::_outDegree CppPrimVisitor::outDegree;
+
+
+
+    CppPrimVisitor::_toVertexDescriptor CppPrimVisitor::toVertexDescriptor;
+
+
+
+    CppPrimVisitor::_vertices CppPrimVisitor::vertices;
+
+    pair<CppPrimVisitor::EdgeIterator, CppPrimVisitor::EdgeIterator> CppPrimVisitor::__pair;
+
+
+
+    CppPrimVisitor::_edgeIterEnd CppPrimVisitor::edgeIterEnd;
+
+
+
+    CppPrimVisitor::_edgeIterNext CppPrimVisitor::edgeIterNext;
+
+
+
+    CppPrimVisitor::_iterRangeBegin CppPrimVisitor::iterRangeBegin;
+
+
+
+    CppPrimVisitor::_iterRangeEnd CppPrimVisitor::iterRangeEnd;
+
+
+
+    CppPrimVisitor::_makeEdgeIteratorRange CppPrimVisitor::makeEdgeIteratorRange;
+
+
+
+    CppPrimVisitor::_outEdges CppPrimVisitor::outEdges;
+
+
+
+    CppPrimVisitor::_edgeIterUnpack CppPrimVisitor::edgeIterUnpack;
+
+
+
+    CppPrimVisitor::_src CppPrimVisitor::src;
+
+
+
+    CppPrimVisitor::_tgt CppPrimVisitor::tgt;
+
+
+
+    CppPrimVisitor::_toEdgeDescriptor CppPrimVisitor::toEdgeDescriptor;
+
+
+
+    CppPrimVisitor::_makeEdge CppPrimVisitor::makeEdge;
+
+
+
+    CppPrimVisitor::_emptyECMap CppPrimVisitor::emptyECMap;
+
+
+
+    CppPrimVisitor::_getEdgeCostMap CppPrimVisitor::getEdgeCostMap;
+
+
+
+    CppPrimVisitor::_getVertexPredecessorMap CppPrimVisitor::getVertexPredecessorMap;
+
+
+
+    CppPrimVisitor::_putVertexPredecessorMap CppPrimVisitor::putVertexPredecessorMap;
+
+    triplet<CppPrimVisitor::VertexCostMap, CppPrimVisitor::VertexPredecessorMap, CppPrimVisitor::EdgeCostMap> CppPrimVisitor::__triplet;
+
+
+
+    CppPrimVisitor::_emptyVCMap CppPrimVisitor::emptyVCMap;
+
+
+
+    CppPrimVisitor::_getVertexCostMap CppPrimVisitor::getVertexCostMap;
+
+
+
+    CppPrimVisitor::_makeStateWithMaps CppPrimVisitor::makeStateWithMaps;
+
+
+
+    CppPrimVisitor::_putVertexCostMap CppPrimVisitor::putVertexCostMap;
+
+
+
+    CppPrimVisitor::_relax CppPrimVisitor::relax;
+
+    read_write_property_map<CppPrimVisitor::EdgeDescriptor, CppPrimVisitor::EdgeIterator, CppPrimVisitor::Cost, CppPrimVisitor::_edgeIterEnd, CppPrimVisitor::_edgeIterNext, CppPrimVisitor::_edgeIterUnpack> CppPrimVisitor::__read_write_property_map;
+
+    read_write_property_map<CppPrimVisitor::VertexDescriptor, CppPrimVisitor::VertexIterator, CppPrimVisitor::Cost, CppPrimVisitor::_vertexIterEnd, CppPrimVisitor::_vertexIterNext, CppPrimVisitor::_vertexIterUnpack> CppPrimVisitor::__read_write_property_map0;
+
+
+
+    CppPrimVisitor::_less CppPrimVisitor::less;
+
+
+
+    CppPrimVisitor::_plus CppPrimVisitor::plus;
+
+
+
+    CppPrimVisitor::_primMinimumSpanningTree CppPrimVisitor::primMinimumSpanningTree;
+
+
+
+    CppPrimVisitor::_second CppPrimVisitor::second;
+
+
+
+    CppPrimVisitor::_black CppPrimVisitor::black;
+
+
+
+
+
+    CppPrimVisitor::_bfsInnerLoopRepeat CppPrimVisitor::bfsInnerLoopRepeat;
+
+
+
+    for_iterator_loop3_2<CppPrimVisitor::Graph, CppPrimVisitor::VertexDescriptor, CppPrimVisitor::EdgeIterator, CppPrimVisitor::StateWithMaps, CppPrimVisitor::PriorityQueue, CppPrimVisitor::ColorPropertyMap, CppPrimVisitor::_edgeIterEnd, CppPrimVisitor::_edgeIterNext, CppPrimVisitor::_bfsInnerLoopStep> CppPrimVisitor::__for_iterator_loop3_2;
+
+    CppPrimVisitor::_bfsInnerLoopStep CppPrimVisitor::bfsInnerLoopStep;
+
+
+
+    CppPrimVisitor::_bfsOuterLoopCond CppPrimVisitor::bfsOuterLoopCond;
+
+
+
+    CppPrimVisitor::_bfsOuterLoopRepeat CppPrimVisitor::bfsOuterLoopRepeat;
+
+
+
+    while_loop3<CppPrimVisitor::Graph, CppPrimVisitor::StateWithMaps, CppPrimVisitor::PriorityQueue, CppPrimVisitor::ColorPropertyMap, CppPrimVisitor::_bfsOuterLoopCond, CppPrimVisitor::_bfsOuterLoopStep> CppPrimVisitor::__while_loop3;
+
+    CppPrimVisitor::_bfsOuterLoopStep CppPrimVisitor::bfsOuterLoopStep;
+
+
+
+    CppPrimVisitor::_blackTarget CppPrimVisitor::blackTarget;
+
+
+
+    CppPrimVisitor::_breadthFirstVisit CppPrimVisitor::breadthFirstVisit;
+
+
+
+    CppPrimVisitor::_discoverVertex CppPrimVisitor::discoverVertex;
+
+
+
+    CppPrimVisitor::_emptyPriorityQueue CppPrimVisitor::emptyPriorityQueue;
+
+
+
+    CppPrimVisitor::_examineEdge CppPrimVisitor::examineEdge;
+
+
+
+    CppPrimVisitor::_examineVertex CppPrimVisitor::examineVertex;
+
+
+
+    CppPrimVisitor::_finishVertex CppPrimVisitor::finishVertex;
+
+
+
+    CppPrimVisitor::_front CppPrimVisitor::front;
+
+
+
+    CppPrimVisitor::_grayTarget CppPrimVisitor::grayTarget;
+
+
+
+    CppPrimVisitor::_isEmptyQueue CppPrimVisitor::isEmptyQueue;
+
+
+
+    CppPrimVisitor::_nonTreeEdge CppPrimVisitor::nonTreeEdge;
+
+
+
+    CppPrimVisitor::_pop CppPrimVisitor::pop;
+
+
+
+    CppPrimVisitor::_push CppPrimVisitor::push;
+
+
+
+    CppPrimVisitor::_treeEdge CppPrimVisitor::treeEdge;
+
+
+
+    CppPrimVisitor::_update CppPrimVisitor::update;
+
+    priority_queue<CppPrimVisitor::VertexDescriptor, CppPrimVisitor::Cost, CppPrimVisitor::VertexCostMap, CppPrimVisitor::_get> CppPrimVisitor::__priority_queue;
+
+    CppPrimVisitor::_get CppPrimVisitor::get;
+
+
+
+    CppPrimVisitor::_gray CppPrimVisitor::gray;
+
+
+
+    CppPrimVisitor::_initMap CppPrimVisitor::initMap;
+
+
+
+    CppPrimVisitor::_put CppPrimVisitor::put;
+
+
+
+    CppPrimVisitor::_white CppPrimVisitor::white;
+
+} // examples
+} // bgl
+} // mg_src
+} // bgl_cpp

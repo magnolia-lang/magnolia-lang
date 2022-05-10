@@ -43,19 +43,6 @@ implementation DijkstraVisitorBase = {
     require function makeStateWithMaps(vcm: VertexCostMap,
                                        vpm: VertexPredecessorMap,
                                        ecm: EdgeCostMap): StateWithMaps;
-    /*procedure treeEdge(obs e: EdgeDescriptor,
-                       obs g: Graph,
-                       upd pq: PriorityQueue,
-                       upd swm: StateWithMaps) {
-        
-        var vcm = getVertexCostMap(swm);
-        var vpm = getVertexPredecessorMap(swm);
-        var ecm = getEdgeCostMap(swm);
-
-        call relax(e, g, ecm, vcm, vpm);
-
-        swm = putVertexPredecessorMap(vpm, putVertexCostMap(vcm, swm));
-    }*/
 
     procedure examineEdge(obs e: EdgeDescriptor,
                          obs g: Graph,

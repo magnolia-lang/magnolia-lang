@@ -2,6 +2,7 @@ package examples.bgl.mg-src.bgl-cpp
     imports examples.bgl.mg-src.bfs_utils
           , examples.bgl.mg-src.dfs_utils
           , examples.bgl.mg-src.dijkstra_utils
+          , examples.bgl.mg-src.prim_utils
           , examples.bgl.mg-src.externals.cpp_apis;
 
 program CppBFSTestVisitor = {
@@ -10,7 +11,7 @@ program CppBFSTestVisitor = {
     use CppFIFOQueue[ A => VertexDescriptor
                     , isEmpty => isEmptyQueue
                     ];
-    
+
     use CppWhileLoop3[ Context => Graph
                      , State1 => VertexVector
                      , State2 => FIFOQueue
@@ -21,7 +22,7 @@ program CppBFSTestVisitor = {
                      ];
 
     use CppForIteratorLoop3_2[ Iterator => EdgeIterator
-                             , Context1 => Graph 
+                             , Context1 => Graph
                              , Context2 => VertexDescriptor
                              , State1 => VertexVector
                              , State2 => FIFOQueue
@@ -32,20 +33,20 @@ program CppBFSTestVisitor = {
                              , forLoopRepeat => bfsInnerLoopRepeat
                              ];
 
-    
+
     use CppReadWriteColorMapWithInitList[ Key => VertexDescriptor
                                         , KeyListIterator => VertexIterator
                                         , iterEnd => vertexIterEnd
                                         , iterNext => vertexIterNext
                                         , iterUnpack => vertexIterUnpack
                                         ];
-    
+
     use CppBaseTypes;
-    
+
     // CppIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
     // and VertexListGraph.
     use CppIncidenceAndVertexListGraph;
-    
+
     use CppPair[ A => EdgeIterator
                , B => EdgeIterator
                , Pair => EdgeIteratorRange
@@ -688,6 +689,116 @@ program CppCustomGraphTypeBFSTestVisitor = {
                ];
 
     use CppVector[ A => Vertex
+                 , Vector => VertexVector
+                 , empty => emptyVertexVector
+                 ];
+};
+
+program CppPrimVisitor = {
+    use GenericPrimVisitor;
+
+    use CppBaseFloatOps[ Float => Cost ];
+
+    use CppUpdateablePriorityQueue[ A => VertexDescriptor
+                                  , Priority => Cost
+                                  , PriorityMap => VertexCostMap
+                                  , empty => emptyPriorityQueue
+                                  , isEmpty => isEmptyQueue
+                                  ];
+
+    use CppWhileLoop3[ Context => Graph
+                     , State1 => StateWithMaps
+                     , State2 => PriorityQueue
+                     , State3 => ColorPropertyMap
+                     , cond => bfsOuterLoopCond
+                     , step => bfsOuterLoopStep
+                     , repeat => bfsOuterLoopRepeat
+                     ];
+
+    use CppForIteratorLoop3_2[ Iterator => EdgeIterator
+                             , Context1 => Graph
+                             , Context2 => VertexDescriptor
+                             , State1 => StateWithMaps
+                             , State2 => PriorityQueue
+                             , State3 => ColorPropertyMap
+                             , iterEnd => edgeIterEnd
+                             , iterNext => edgeIterNext
+                             , step => bfsInnerLoopStep
+                             , forLoopRepeat => bfsInnerLoopRepeat
+                             ];
+
+    use CppForIteratorLoop[ Context => VertexDescriptor
+                          , Iterator => VertexIterator
+                          , State => VertexPredecessorMap
+                          , iterEnd => vertexIterEnd
+                          , iterNext => vertexIterNext
+                          , step => populateVPMapLoopStep
+                          , forLoopRepeat => populateVPMapLoopRepeat
+                          ];
+
+    use CppReadWriteColorMapWithInitList[ Key => VertexDescriptor
+                                        , KeyListIterator => VertexIterator
+                                        , iterEnd => vertexIterEnd
+                                        , iterNext => vertexIterNext
+                                        , iterUnpack => vertexIterUnpack
+                                        ];
+
+
+    use CppReadWritePropertyMapWithInitList[ Key => EdgeDescriptor
+                                           , KeyListIterator => EdgeIterator
+                                           , Value => Cost
+                                           , PropertyMap => EdgeCostMap
+                                           , emptyMap => emptyECMap
+                                           , iterEnd => edgeIterEnd
+                                           , iterNext => edgeIterNext
+                                           , iterUnpack => edgeIterUnpack
+                                           ];
+
+    use CppReadWritePropertyMapWithInitList[ Key => VertexDescriptor
+                                           , KeyListIterator => VertexIterator
+                                           , Value => VertexDescriptor
+                                           , PropertyMap => VertexPredecessorMap
+                                           , emptyMap => emptyVPMap
+                                           , iterEnd => vertexIterEnd
+                                           , iterNext => vertexIterNext
+                                           , iterUnpack => vertexIterUnpack
+                                           ];
+
+    use CppReadWritePropertyMapWithInitList[ Key => VertexDescriptor
+                                           , KeyListIterator => VertexIterator
+                                           , Value => Cost
+                                           , PropertyMap => VertexCostMap
+                                           , emptyMap => emptyVCMap
+                                           , iterEnd => vertexIterEnd
+                                           , iterNext => vertexIterNext
+                                           , iterUnpack => vertexIterUnpack
+                                           ];
+
+    use CppTriplet[ A => VertexCostMap
+                  , B => VertexPredecessorMap
+                  , C => EdgeCostMap
+                  , Triplet => StateWithMaps
+                  , makeTriplet => makeStateWithMaps
+                  , first => getVertexCostMap
+                  , second => getVertexPredecessorMap
+                  , third => getEdgeCostMap
+                  ];
+
+    use CppBaseTypes;
+
+    // CppIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
+    // and VertexListGraph.
+    use CppIncidenceAndVertexListGraph;
+
+    use CppPair[ A => EdgeIterator
+               , B => EdgeIterator
+               , Pair => EdgeIteratorRange
+               , first => iterRangeBegin
+               , second => iterRangeEnd
+               , makePair => makeEdgeIteratorRange
+               ];
+
+    use CppVector[ A => VertexDescriptor
                  , Vector => VertexVector
                  , empty => emptyVertexVector
                  ];
