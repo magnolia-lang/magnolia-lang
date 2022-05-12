@@ -112,7 +112,7 @@ def edge(Vertex):
                             ['Vertex', 'Edge', 'src', 'tgt', 'makeEdge'])
     return edge_tuple(Vertex, Edge, src, tgt, makeEdge)
 
-def incidence_and_vertex_list_graph(Vertex):
+def incidence_and_vertex_list_and_edge_list_graph(Vertex):
     class Edge:
         def __init__(self, source, target):
             self.source, self.target = source, target
@@ -148,6 +148,42 @@ def incidence_and_vertex_list_graph(Vertex):
             cls = self.__class__
             self.itr, copy_itr = itertools.tee(self.itr)
             result = EdgeIterator()
+            result.itr = copy_itr
+            result.value = self.value
+            result.is_end = self.is_end
+            return result
+
+        def mutate(self, other):
+            self.itr = copy(other.itr)
+            self.is_end = other.is_end
+            self.value = other.value
+
+        def unpack(self):
+            assert not self.is_end, "can't unpack ended iterator"
+            return self.value
+
+        def next(self):
+            try:
+                self.value = next(self.itr)
+            except:
+                self.is_end = True
+                self.value = None
+
+    class OutEdgeIterator:
+        def __init__(self, *args):
+            if len(args) == 0:
+                pass
+            else:
+                itr = args[0]
+                self.itr = itr
+                self.is_end = False
+                self.value = None
+                self.next()
+
+        def __copy__(self):
+            cls = self.__class__
+            self.itr, copy_itr = itertools.tee(self.itr)
+            result = OutEdgeIterator()
             result.itr = copy_itr
             result.value = self.value
             result.is_end = self.is_end
@@ -234,13 +270,15 @@ def incidence_and_vertex_list_graph(Vertex):
             #       poc), we don't care.
             self.vertices = set()
             self.out_edge_map = defaultdict(list)
+            self.all_edges = []
             for edge in edge_list:
                 source, target = (self.toVertexDescriptor(edge.source),
                                   self.toVertexDescriptor(edge.target))
                 self.vertices.add(source)
                 self.vertices.add(target)
-                self.out_edge_map[source].append(
-                    self.toEdgeDescriptor(source, target))
+                edge_descriptor = self.toEdgeDescriptor(source, target)
+                self.out_edge_map[source].append(edge_descriptor)
+                self.all_edges.append(edge_descriptor)
 
         def toVertexDescriptor(self, v: Vertex):
             return VertexDescriptor(v)
@@ -249,10 +287,13 @@ def incidence_and_vertex_list_graph(Vertex):
             return EdgeDescriptor(v1, v2)
 
         def out_edges(self, v: VertexDescriptor):
-            return EdgeIterator(iter(self.out_edge_map[v]))
+            return OutEdgeIterator(iter(self.out_edge_map[v]))
 
         def num_vertices(self):
             return len(self.vertices)
+
+        def get_edges(self):
+            return EdgeIterator(iter(self.all_edges))
 
         def get_vertices(self):
             return VertexIterator(iter(self.vertices))
@@ -282,6 +323,15 @@ def incidence_and_vertex_list_graph(Vertex):
     def edgeIterUnpack(itr: EdgeIterator) -> EdgeDescriptor:
         return itr.unpack()
 
+    def outEdgeIterEnd(itr: OutEdgeIterator) -> bool:
+        return itr.is_end
+
+    def outEdgeIterNext(itr: OutEdgeIterator):
+        itr.next()
+
+    def outEdgeIterUnpack(itr: OutEdgeIterator) -> EdgeDescriptor:
+        return itr.unpack()
+
     def vertexIterEnd(itr: VertexIterator) -> bool:
         return itr.is_end
 
@@ -291,35 +341,38 @@ def incidence_and_vertex_list_graph(Vertex):
     def vertexIterUnpack(itr: VertexIterator) -> VertexDescriptor:
         return itr.unpack()
 
-    def outEdges(v: VertexDescriptor, g: Graph, ei: EdgeIterator):
+    def outEdges(v: VertexDescriptor, g: Graph, ei: OutEdgeIterator):
         ei.mutate(g.out_edges(v))
     
     def outDegree(v: VertexDescriptor, g: Graph):
         return 0 # TODO
 
+    def edges(g: Graph, itr: EdgeIterator):
+        itr.mutate(g.get_edges())
+
     def vertices(g: Graph, itr: VertexIterator):
         itr.mutate(g.get_vertices())
-        x = g.get_vertices()
-        while not vertexIterEnd(x):
-            vertexIterNext(x)
 
     def numVertices(g: Graph):
         return g.num_vertices
 
-    incidence_and_vertex_list_graph_tuple = (
+    incidence_and_vertex_list_and_edge_list_graph_tuple = (
         namedtuple('incidence_and_vertex_list_graph',
                    ['Edge', 'EdgeDescriptor', 'EdgeIterator', 'Graph',
-                    'Vertex', 'VertexCount', 'VertexDescriptor',
-                    'VertexIterator', 'edgeIterEnd', 'edgeIterNext',
-                    'edgeIterUnpack', 'makeEdge', 'outDegree', 'outEdges',
+                    'OutEdgeIterator', 'Vertex', 'VertexCount',
+                    'VertexDescriptor', 'VertexIterator', 'edgeIterEnd',
+                    'edgeIterNext', 'edgeIterUnpack', 'edges',
+                    'makeEdge', 'outDegree', 'outEdgeIterEnd',
+                    'outEdgeIterNext', 'outEdgeIterUnpack', 'outEdges',
                     'src', 'tgt', 'toEdgeDescriptor', 'toVertexDescriptor',
                     'vertexIterEnd', 'vertexIterNext', 'vertexIterUnpack',
                     'vertices']))
 
-    return incidence_and_vertex_list_graph_tuple(
-        Edge, EdgeDescriptor, EdgeIterator, Graph, Vertex, VertexCount,
-        VertexDescriptor, VertexIterator, edgeIterEnd, edgeIterNext,
-        edgeIterUnpack, makeEdge, outDegree, outEdges, src, tgt,
+    return incidence_and_vertex_list_and_edge_list_graph_tuple(
+        Edge, EdgeDescriptor, EdgeIterator, Graph, OutEdgeIterator, Vertex,
+        VertexCount, VertexDescriptor, VertexIterator,
+        edgeIterEnd, edgeIterNext, edgeIterUnpack, edges, makeEdge, outDegree,
+        outEdgeIterEnd, outEdgeIterNext, outEdgeIterUnpack, outEdges, src, tgt,
         toEdgeDescriptor, toVertexDescriptor, vertexIterEnd, vertexIterNext,
         vertexIterUnpack, vertices)
 
@@ -759,6 +812,26 @@ def for_iterator_loop(Context, Iterator, State, iterEnd, iterNext, step):
     return for_iterator_loop_tuple(Context, Iterator, State, iterEnd, iterNext,
                                    step, forLoopRepeat)
 
+
+def for_iterator_loop2_3(Context1, Context2, Context3, Iterator,
+                         State1, State2, iterEnd, iterNext, step):
+
+    def forLoopRepeat(in_itr: Iterator, s1: State1, s2: State2,
+                      ctx1: Context1, ctx2: Context2, ctx3: Context3):
+        itr = copy(in_itr)
+        while not iterEnd(itr):
+            step(itr, s1, s2, ctx1, ctx2, ctx3)
+            iterNext(itr)
+
+    for_iterator_loop2_3_tuple = namedtuple('for_iterator_loop2_3',
+        ['Context1', 'Context2', 'Context3', 'Iterator',
+         'State1', 'State2', 'iterEnd', 'iterNext', 'step',
+         'forLoopRepeat'])
+
+    return for_iterator_loop2_3_tuple(Context1, Context2, Context3, Iterator,
+        State1, State2, iterEnd, iterNext, step, forLoopRepeat)
+
+
 def for_iterator_loop3_2(Context1, Context2, Iterator,
                          State1, State2, State3, iterEnd, iterNext, step):
 
@@ -813,3 +886,43 @@ def while_loop3(Context, State1, State2, State3, cond, step):
     while_loop_tuple = namedtuple('while_loop',
         ['Context', 'State1', 'State2', 'State3', 'cond', 'step', 'repeat'])
     return while_loop_tuple(Context, State1, State2, State3, cond, step, repeat)
+
+def base_bool():
+    class Bool:
+        val: bool
+
+        def __init__(self, *args):
+            if len(args) == 0:
+                self.val = False
+            else:
+                self.val = args[0]
+
+        def mutate(self, other):
+            self.val = other.val
+
+        def __eq__(self, other):
+            return self.val == other.val
+
+    def bfalse():
+        return Bool(False)
+
+    def btrue():
+        return Bool(True)
+
+    base_bool_tuple = namedtuple('base_bool', ['Bool', 'bfalse', 'btrue'])
+    return base_bool_tuple(Bool, bfalse, btrue)
+
+def base_unit():
+    class Unit:
+        def __init__(self):
+            pass
+
+        def __eq__(self, other):
+            return True
+
+    def unit():
+        return Unit()
+
+    base_unit_tuple = namedtuple('base_tuple', ['Unit', 'unit'])
+    return base_unit_tuple(Unit, unit)
+

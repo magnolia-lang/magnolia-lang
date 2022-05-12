@@ -5,7 +5,7 @@ concept EdgeWithoutDescriptor = {
     require type Vertex;
 
     type Edge;
-    
+
     function src(e: Edge): Vertex;
     function tgt(e: Edge): Vertex;
 
@@ -29,10 +29,10 @@ concept IncidenceGraph = {
     require type Vertex;
 
     type EdgeDescriptor;
-    type EdgeIterator;
-    procedure edgeIterNext(upd ei: EdgeIterator);
-    function edgeIterUnpack(ei: EdgeIterator): EdgeDescriptor;
-    predicate edgeIterEnd(ei: EdgeIterator);
+    type OutEdgeIterator;
+    procedure outEdgeIterNext(upd ei: OutEdgeIterator);
+    function outEdgeIterUnpack(ei: OutEdgeIterator): EdgeDescriptor;
+    predicate outEdgeIterEnd(ei: OutEdgeIterator);
 
     type Graph;
     type VertexCount;
@@ -40,7 +40,7 @@ concept IncidenceGraph = {
 
     procedure outEdges(obs v: VertexDescriptor,
                        obs g: Graph,
-                       out itr: EdgeIterator);
+                       out itr: OutEdgeIterator);
     function outDegree(v: VertexDescriptor, g: Graph): VertexCount;
 
     // TODO: add axioms such that outDegree(v, g) <= count(outEdges(v, g))?
@@ -52,12 +52,25 @@ concept VertexListGraph = {
     type VertexCount;
     type VertexDescriptor;
     type VertexIterator;
-    
+
     procedure vertexIterNext(upd ei: VertexIterator);
     function vertexIterUnpack(ei: VertexIterator): VertexDescriptor;
     predicate vertexIterEnd(ei: VertexIterator);
 
-    procedure vertices(obs g: Graph,
-                       out itr: VertexIterator);
+    procedure vertices(obs g: Graph, out itr: VertexIterator);
     function numVertices(g: Graph): VertexCount;
+}
+
+concept EdgeListGraph = {
+    require type Vertex;
+
+    type EdgeDescriptor;
+    type EdgeIterator;
+    procedure edgeIterNext(upd ei: EdgeIterator);
+    function edgeIterUnpack(ei: EdgeIterator): EdgeDescriptor;
+    predicate edgeIterEnd(ei: EdgeIterator);
+
+    type Graph;
+
+    procedure edges(obs g: Graph, out itr: EdgeIterator);
 }

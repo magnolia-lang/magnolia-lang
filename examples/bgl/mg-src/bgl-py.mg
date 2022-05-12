@@ -1,5 +1,6 @@
 package examples.bgl.mg-src.bgl-py
-    imports examples.bgl.mg-src.bfs_utils
+    imports examples.bgl.mg-src.bellman_ford_utils
+          , examples.bgl.mg-src.bfs_utils
           , examples.bgl.mg-src.dfs_utils
           , examples.bgl.mg-src.dijkstra_utils
           , examples.bgl.mg-src.prim_utils
@@ -21,14 +22,14 @@ program PyBFSTestVisitor = {
                      , repeat => bfsOuterLoopRepeat
                      ];
 
-    use PyForIteratorLoop3_2[ Iterator => EdgeIterator
+    use PyForIteratorLoop3_2[ Iterator => OutEdgeIterator
                              , Context1 => Graph
                              , Context2 => VertexDescriptor
                              , State1 => VertexVector
                              , State2 => FIFOQueue
                              , State3 => ColorPropertyMap
-                             , iterEnd => edgeIterEnd
-                             , iterNext => edgeIterNext
+                             , iterEnd => outEdgeIterEnd
+                             , iterNext => outEdgeIterNext
                              , step => bfsInnerLoopStep
                              , forLoopRepeat => bfsInnerLoopRepeat
                              ];
@@ -43,16 +44,16 @@ program PyBFSTestVisitor = {
 
     use PyBaseTypes;
 
-    // PyIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
+    // PyIncidenceAndVertexListAndEdgeListGraph exposes the API of both IncidenceGraph
     // and VertexListGraph.
-    use PyIncidenceAndVertexListGraph;
+    use PyIncidenceAndVertexListAndEdgeListGraph;
 
-    use PyPair[ A => EdgeIterator
-               , B => EdgeIterator
-               , Pair => EdgeIteratorRange
+    use PyPair[ A => OutEdgeIterator
+               , B => OutEdgeIterator
+               , Pair => OutEdgeIteratorRange
                , first => iterRangeBegin
                , second => iterRangeEnd
-               , makePair => makeEdgeIteratorRange
+               , makePair => makeOutEdgeIteratorRange
                ];
 
     use PyVector[ A => VertexDescriptor
@@ -78,14 +79,14 @@ program PyDFSTestVisitor = {
                      , repeat => bfsOuterLoopRepeat
                      ];
 
-    use PyForIteratorLoop3_2[ Iterator => EdgeIterator
+    use PyForIteratorLoop3_2[ Iterator => OutEdgeIterator
                              , Context1 => Graph
                              , Context2 => VertexDescriptor
                              , State1 => VertexVector
                              , State2 => Stack
                              , State3 => ColorPropertyMap
-                             , iterEnd => edgeIterEnd
-                             , iterNext => edgeIterNext
+                             , iterEnd => outEdgeIterEnd
+                             , iterNext => outEdgeIterNext
                              , step => bfsInnerLoopStep
                              , forLoopRepeat => bfsInnerLoopRepeat
                              ];
@@ -100,16 +101,16 @@ program PyDFSTestVisitor = {
 
     use PyBaseTypes;
 
-    // PyIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
+    // PyIncidenceAndVertexListAndEdgeListGraph exposes the API of both IncidenceGraph
     // and VertexListGraph.
-    use PyIncidenceAndVertexListGraph;
+    use PyIncidenceAndVertexListAndEdgeListGraph;
 
-    use PyPair[ A => EdgeIterator
-               , B => EdgeIterator
-               , Pair => EdgeIteratorRange
+    use PyPair[ A => OutEdgeIterator
+               , B => OutEdgeIterator
+               , Pair => OutEdgeIteratorRange
                , first => iterRangeBegin
                , second => iterRangeEnd
-               , makePair => makeEdgeIteratorRange
+               , makePair => makeOutEdgeIteratorRange
                ];
 
     use PyVector[ A => VertexDescriptor
@@ -139,15 +140,15 @@ program PyParallelBFSTestVisitor = {
     // practice, for the sake of the example, we use openmp in the backend for
     // our example, which requires the ability to write ++itr instead of
     // iterNext(itr).
-    use PyForParallelIteratorLoop3_2[ Iterator => EdgeIterator
+    use PyForParallelIteratorLoop3_2[ Iterator => OutEdgeIterator
                                      , Context1 => Graph
                                      , Context2 => VertexDescriptor
                                      , State1 => VertexVector
                                      , State2 => FIFOQueue
                                      , State3 => ColorPropertyMap
-                                     , iterEnd => edgeIterEnd
+                                     , iterEnd => outEdgeIterEnd
                                      // must be equivalent to incrementation
-                                     , iterNext => edgeIterNext
+                                     , iterNext => outEdgeIterNext
                                      , step => bfsInnerLoopStep
                                      , forLoopRepeat => bfsInnerLoopRepeat
                                      ];
@@ -162,16 +163,16 @@ program PyParallelBFSTestVisitor = {
 
     use PyBaseTypes;
 
-    // PyIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
+    // PyIncidenceAndVertexListAndEdgeListGraph exposes the API of both IncidenceGraph
     // and VertexListGraph.
-    use PyIncidenceAndVertexListGraph;
+    use PyIncidenceAndVertexListAndEdgeListGraph;
 
-    use PyPair[ A => EdgeIterator
-               , B => EdgeIterator
-               , Pair => EdgeIteratorRange
+    use PyPair[ A => OutEdgeIterator
+               , B => OutEdgeIterator
+               , Pair => OutEdgeIteratorRange
                , first => iterRangeBegin
                , second => iterRangeEnd
-               , makePair => makeEdgeIteratorRange
+               , makePair => makeOutEdgeIteratorRange
                ];
 
     use PyThreadSafeVector[ A => VertexDescriptor
@@ -203,14 +204,14 @@ program PyDijkstraVisitor = {
                      , repeat => bfsOuterLoopRepeat
                      ];
 
-    use PyForIteratorLoop3_2[ Iterator => EdgeIterator
+    use PyForIteratorLoop3_2[ Iterator => OutEdgeIterator
                              , Context1 => Graph
                              , Context2 => VertexDescriptor
                              , State1 => StateWithMaps
                              , State2 => PriorityQueue
                              , State3 => ColorPropertyMap
-                             , iterEnd => edgeIterEnd
-                             , iterNext => edgeIterNext
+                             , iterEnd => outEdgeIterEnd
+                             , iterNext => outEdgeIterNext
                              , step => bfsInnerLoopStep
                              , forLoopRepeat => bfsInnerLoopRepeat
                              ];
@@ -233,13 +234,13 @@ program PyDijkstraVisitor = {
 
 
     use PyReadWritePropertyMapWithInitList[ Key => EdgeDescriptor
-                                           , KeyListIterator => EdgeIterator
+                                           , KeyListIterator => OutEdgeIterator
                                            , Value => Cost
                                            , PropertyMap => EdgeCostMap
                                            , emptyMap => emptyECMap
-                                           , iterEnd => edgeIterEnd
-                                           , iterNext => edgeIterNext
-                                           , iterUnpack => edgeIterUnpack
+                                           , iterEnd => outEdgeIterEnd
+                                           , iterNext => outEdgeIterNext
+                                           , iterUnpack => outEdgeIterUnpack
                                            ];
 
     use PyReadWritePropertyMapWithInitList[ Key => VertexDescriptor
@@ -274,16 +275,16 @@ program PyDijkstraVisitor = {
 
     use PyBaseTypes;
 
-    // PyIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
+    // PyIncidenceAndVertexListAndEdgeListGraph exposes the API of both IncidenceGraph
     // and VertexListGraph.
-    use PyIncidenceAndVertexListGraph;
+    use PyIncidenceAndVertexListAndEdgeListGraph;
 
-    use PyPair[ A => EdgeIterator
-               , B => EdgeIterator
-               , Pair => EdgeIteratorRange
+    use PyPair[ A => OutEdgeIterator
+               , B => OutEdgeIterator
+               , Pair => OutEdgeIteratorRange
                , first => iterRangeBegin
                , second => iterRangeEnd
-               , makePair => makeEdgeIteratorRange
+               , makePair => makeOutEdgeIteratorRange
                ];
 
     use PyVector[ A => VertexDescriptor
@@ -299,106 +300,194 @@ program PyPrimVisitor = {
     use PyBaseFloatOps[ Float => Cost ];
 
     use PyUpdateablePriorityQueue[ A => VertexDescriptor
-                                  , Priority => Cost
-                                  , PriorityMap => VertexCostMap
-                                  , empty => emptyPriorityQueue
-                                  , isEmpty => isEmptyQueue
-                                  ];
+                                 , Priority => Cost
+                                 , PriorityMap => VertexCostMap
+                                 , empty => emptyPriorityQueue
+                                 , isEmpty => isEmptyQueue
+                                 ];
 
     use PyWhileLoop3[ Context => Graph
-                     , State1 => StateWithMaps
-                     , State2 => PriorityQueue
-                     , State3 => ColorPropertyMap
-                     , cond => bfsOuterLoopCond
-                     , step => bfsOuterLoopStep
-                     , repeat => bfsOuterLoopRepeat
-                     ];
+                    , State1 => StateWithMaps
+                    , State2 => PriorityQueue
+                    , State3 => ColorPropertyMap
+                    , cond => bfsOuterLoopCond
+                    , step => bfsOuterLoopStep
+                    , repeat => bfsOuterLoopRepeat
+                    ];
 
-    use PyForIteratorLoop3_2[ Iterator => EdgeIterator
-                             , Context1 => Graph
-                             , Context2 => VertexDescriptor
-                             , State1 => StateWithMaps
-                             , State2 => PriorityQueue
-                             , State3 => ColorPropertyMap
-                             , iterEnd => edgeIterEnd
-                             , iterNext => edgeIterNext
-                             , step => bfsInnerLoopStep
-                             , forLoopRepeat => bfsInnerLoopRepeat
-                             ];
+    use PyForIteratorLoop3_2[ Iterator => OutEdgeIterator
+                            , Context1 => Graph
+                            , Context2 => VertexDescriptor
+                            , State1 => StateWithMaps
+                            , State2 => PriorityQueue
+                            , State3 => ColorPropertyMap
+                            , iterEnd => outEdgeIterEnd
+                            , iterNext => outEdgeIterNext
+                            , step => bfsInnerLoopStep
+                            , forLoopRepeat => bfsInnerLoopRepeat
+                            ];
 
     use PyForIteratorLoop[ Context => VertexDescriptor
-                          , Iterator => VertexIterator
-                          , State => VertexPredecessorMap
-                          , iterEnd => vertexIterEnd
-                          , iterNext => vertexIterNext
-                          , step => populateVPMapLoopStep
-                          , forLoopRepeat => populateVPMapLoopRepeat
-                          ];
+                         , Iterator => VertexIterator
+                         , State => VertexPredecessorMap
+                         , iterEnd => vertexIterEnd
+                         , iterNext => vertexIterNext
+                         , step => populateVPMapLoopStep
+                         , forLoopRepeat => populateVPMapLoopRepeat
+                         ];
 
     use PyReadWriteColorMapWithInitList[ Key => VertexDescriptor
-                                        , KeyListIterator => VertexIterator
-                                        , iterEnd => vertexIterEnd
-                                        , iterNext => vertexIterNext
-                                        , iterUnpack => vertexIterUnpack
-                                        ];
+                                       , KeyListIterator => VertexIterator
+                                       , iterEnd => vertexIterEnd
+                                       , iterNext => vertexIterNext
+                                       , iterUnpack => vertexIterUnpack
+                                       ];
 
 
     use PyReadWritePropertyMapWithInitList[ Key => EdgeDescriptor
-                                           , KeyListIterator => EdgeIterator
-                                           , Value => Cost
-                                           , PropertyMap => EdgeCostMap
-                                           , emptyMap => emptyECMap
-                                           , iterEnd => edgeIterEnd
-                                           , iterNext => edgeIterNext
-                                           , iterUnpack => edgeIterUnpack
-                                           ];
+                                          , KeyListIterator => OutEdgeIterator
+                                          , Value => Cost
+                                          , PropertyMap => EdgeCostMap
+                                          , emptyMap => emptyECMap
+                                          , iterEnd => outEdgeIterEnd
+                                          , iterNext => outEdgeIterNext
+                                          , iterUnpack => outEdgeIterUnpack
+                                          ];
 
     use PyReadWritePropertyMapWithInitList[ Key => VertexDescriptor
-                                           , KeyListIterator => VertexIterator
-                                           , Value => VertexDescriptor
-                                           , PropertyMap => VertexPredecessorMap
-                                           , emptyMap => emptyVPMap
-                                           , iterEnd => vertexIterEnd
-                                           , iterNext => vertexIterNext
-                                           , iterUnpack => vertexIterUnpack
-                                           ];
+                                          , KeyListIterator => VertexIterator
+                                          , Value => VertexDescriptor
+                                          , PropertyMap => VertexPredecessorMap
+                                          , emptyMap => emptyVPMap
+                                          , iterEnd => vertexIterEnd
+                                          , iterNext => vertexIterNext
+                                          , iterUnpack => vertexIterUnpack
+                                          ];
 
     use PyReadWritePropertyMapWithInitList[ Key => VertexDescriptor
-                                           , KeyListIterator => VertexIterator
-                                           , Value => Cost
-                                           , PropertyMap => VertexCostMap
-                                           , emptyMap => emptyVCMap
-                                           , iterEnd => vertexIterEnd
-                                           , iterNext => vertexIterNext
-                                           , iterUnpack => vertexIterUnpack
-                                           ];
+                                          , KeyListIterator => VertexIterator
+                                          , Value => Cost
+                                          , PropertyMap => VertexCostMap
+                                          , emptyMap => emptyVCMap
+                                          , iterEnd => vertexIterEnd
+                                          , iterNext => vertexIterNext
+                                          , iterUnpack => vertexIterUnpack
+                                          ];
 
     use PyTriplet[ A => VertexCostMap
-                  , B => VertexPredecessorMap
-                  , C => EdgeCostMap
-                  , Triplet => StateWithMaps
-                  , makeTriplet => makeStateWithMaps
-                  , first => getVertexCostMap
-                  , second => getVertexPredecessorMap
-                  , third => getEdgeCostMap
-                  ];
+                 , B => VertexPredecessorMap
+                 , C => EdgeCostMap
+                 , Triplet => StateWithMaps
+                 , makeTriplet => makeStateWithMaps
+                 , first => getVertexCostMap
+                 , second => getVertexPredecessorMap
+                 , third => getEdgeCostMap
+                 ];
 
     use PyBaseTypes;
 
-    // PyIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
+    // PyIncidenceAndVertexListAndEdgeListGraph exposes the API of both IncidenceGraph
     // and VertexListGraph.
-    use PyIncidenceAndVertexListGraph;
+    use PyIncidenceAndVertexListAndEdgeListGraph;
 
-    use PyPair[ A => EdgeIterator
-               , B => EdgeIterator
-               , Pair => EdgeIteratorRange
-               , first => iterRangeBegin
-               , second => iterRangeEnd
-               , makePair => makeEdgeIteratorRange
-               ];
+    use PyPair[ A => OutEdgeIterator
+              , B => OutEdgeIterator
+              , Pair => OutEdgeIteratorRange
+              , first => iterRangeBegin
+              , second => iterRangeEnd
+              , makePair => makeOutEdgeIteratorRange
+              ];
 
     use PyVector[ A => VertexDescriptor
-                 , Vector => VertexVector
-                 , empty => emptyVertexVector
-                 ];
+                , Vector => VertexVector
+                , empty => emptyVertexVector
+                ];
 };
+
+program PyBellmanFord = {
+    use GenericBellmanFord;
+
+    use PyBaseFloatOps[ Float => Cost ];
+
+    use PyForIteratorLoop[ Context => Unit
+                         , Iterator => VertexIterator
+                         , State => VertexPredecessorMap
+                         , iterEnd => vertexIterEnd
+                         , iterNext => vertexIterNext
+                         , step => populateVPMapLoopStep
+                         , forLoopRepeat => populateVPMapLoopRepeat
+                         ];
+
+    use PyForIteratorLoop3_2[ Context1 => EdgeCostMap
+                            , Context2 => Graph
+                            , Iterator => VertexIterator
+                            , State1 => Unit
+                            , State2 => VertexCostMap
+                            , State3 => VertexPredecessorMap
+                            , iterEnd => vertexIterEnd
+                            , iterNext => vertexIterNext
+                            , step => edgeRelaxationOuterLoopStep
+                            , forLoopRepeat => edgeRelaxationOuterLoopRepeat
+                            ];
+
+    use PyForIteratorLoop3_2[ Context1 => EdgeCostMap
+                            , Context2 => Graph
+                            , Iterator => EdgeIterator
+                            , State1 => Unit
+                            , State2 => VertexCostMap
+                            , State3 => VertexPredecessorMap
+                            , iterEnd => edgeIterEnd
+                            , iterNext => edgeIterNext
+                            , step => edgeRelaxationInnerLoopStep
+                            , forLoopRepeat => edgeRelaxationInnerLoopRepeat
+                            ];
+
+    use PyForIteratorLoop2_3[ Context1 => VertexCostMap
+                            , Context2 => EdgeCostMap
+                            , Context3 => Graph
+                            , Iterator => EdgeIterator
+                            , State1 => Unit
+                            , State2 => Bool
+                            , iterEnd => edgeIterEnd
+                            , iterNext => edgeIterNext
+                            , step => checkNegativeCycleLoopStep
+                            , forLoopRepeat => checkNegativeCycleLoopRepeat
+                            ];
+
+    use PyReadWritePropertyMapWithInitList[ Key => EdgeDescriptor
+                                          , KeyListIterator => OutEdgeIterator
+                                          , Value => Cost
+                                          , PropertyMap => EdgeCostMap
+                                          , emptyMap => emptyECMap
+                                          , iterEnd => outEdgeIterEnd
+                                          , iterNext => outEdgeIterNext
+                                          , iterUnpack => outEdgeIterUnpack
+                                          ];
+
+    use PyReadWritePropertyMapWithInitList[ Key => VertexDescriptor
+                                          , KeyListIterator => VertexIterator
+                                          , Value => VertexDescriptor
+                                          , PropertyMap => VertexPredecessorMap
+                                          , emptyMap => emptyVPMap
+                                          , iterEnd => vertexIterEnd
+                                          , iterNext => vertexIterNext
+                                          , iterUnpack => vertexIterUnpack
+                                          ];
+
+    use PyReadWritePropertyMapWithInitList[ Key => VertexDescriptor
+                                          , KeyListIterator => VertexIterator
+                                          , Value => Cost
+                                          , PropertyMap => VertexCostMap
+                                          , emptyMap => emptyVCMap
+                                          , iterEnd => vertexIterEnd
+                                          , iterNext => vertexIterNext
+                                          , iterUnpack => vertexIterUnpack
+                                          ];
+
+    use PyBaseTypes;
+
+    use PyIncidenceAndVertexListAndEdgeListGraph;
+
+    use PyBool;
+    use PyUnit;
+}

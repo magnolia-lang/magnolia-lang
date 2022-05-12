@@ -83,10 +83,10 @@ struct edge {
     }
 };
 
-template <typename _Edge, typename _EdgeIterator, typename _EdgeList,
+template <typename _Edge, typename _OutEdgeIterator, typename _EdgeList,
           typename _Vertex, typename _VertexIterator, typename _VertexList,
-          class _consEdgeList, class _consVertexList, class _edgeIterBegin,
-          class _edgeIterEnd, class _edgeIterNext, class _edgeIterUnpack,
+          class _consEdgeList, class _consVertexList, class _outEdgeIterBegin,
+          class _outEdgeIterEnd, class _outEdgeIterNext, class _outEdgeIterUnpack,
           class _emptyEdgeList, class _emptyVertexList, class _headEdgeList,
           class _headVertexList, class _isEmptyEdgeList,
           class _isEmptyVertexList, class _makeEdge, class _src,
@@ -95,7 +95,7 @@ template <typename _Edge, typename _EdgeIterator, typename _EdgeList,
           class _vertexIterUnpack>
 struct incidence_and_vertex_list_graph {
     typedef _Edge Edge;
-    typedef _EdgeIterator EdgeIterator;
+    typedef _OutEdgeIterator OutEdgeIterator;
     typedef _EdgeList EdgeList;
     typedef _Vertex Vertex;
     typedef _VertexIterator VertexIterator;
@@ -139,10 +139,10 @@ struct incidence_and_vertex_list_graph {
 
     static inline _consEdgeList consEdgeList;
     static inline _consVertexList consVertexList;
-    static inline _edgeIterBegin edgeIterBegin;
-    static inline _edgeIterEnd edgeIterEnd;
-    static inline _edgeIterNext edgeIterNext;
-    static inline _edgeIterUnpack edgeIterUnpack;
+    static inline _outEdgeIterBegin outEdgeIterBegin;
+    static inline _outEdgeIterEnd outEdgeIterEnd;
+    static inline _outEdgeIterNext outEdgeIterNext;
+    static inline _outEdgeIterUnpack outEdgeIterUnpack;
     static inline _emptyEdgeList emptyEdgeList;
     static inline _emptyVertexList emptyVertexList;
     static inline _headEdgeList headEdgeList;
@@ -159,9 +159,9 @@ struct incidence_and_vertex_list_graph {
     static inline _vertexIterNext vertexIterNext;
     static inline _vertexIterUnpack vertexIterUnpack;
 
-    inline void outEdges(const Vertex &v, const Graph &g, EdgeIterator &it_begin, EdgeIterator &it_end) {
-        it_begin = edgeIterBegin(g.edges[v]);
-        it_end = edgeIterEnd(g.edges[v]);
+    inline void outEdges(const Vertex &v, const Graph &g, OutEdgeIterator &it_begin, OutEdgeIterator &it_end) {
+        it_begin = outEdgeIterBegin(g.edges[v]);
+        it_end = outEdgeIterEnd(g.edges[v]);
     }
 
     inline VertexCount outDegree(const Vertex &v, const Graph &g) {

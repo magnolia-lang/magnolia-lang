@@ -12,7 +12,7 @@ package examples.bgl.mg-src.bfs
 
 
 concept BFSVisitor = {
-    
+
     // Graph components
     type Graph;
     type Edge;
@@ -44,7 +44,7 @@ concept BFSVisitor = {
                        obs g: Graph,
                        upd q: Queue,
                        upd a: A);
-    
+
     procedure nonTreeEdge(obs e: Edge,
                           obs g: Graph,
                           upd q: Queue,
@@ -54,7 +54,7 @@ concept BFSVisitor = {
                          obs g: Graph,
                          upd q: Queue,
                          upd a: A);
-    
+
     procedure blackTarget(obs e: Edge,
                           obs g: Graph,
                           upd q: Queue,
@@ -120,11 +120,11 @@ implementation BFSVisit = {
                   , Context => Graph
                   ];
 
-    use ForIteratorLoop3_2[ iterEnd => edgeIterEnd
-                          , iterNext => edgeIterNext
+    use ForIteratorLoop3_2[ iterEnd => outEdgeIterEnd
+                          , iterNext => outEdgeIterNext
                           , forLoopRepeat => bfsInnerLoopRepeat
                           , step => bfsInnerLoopStep
-                          , Iterator => EdgeIterator
+                          , Iterator => OutEdgeIterator
                           , State1 => A
                           , State2 => Queue
                           , State3 => ColorPropertyMap
@@ -145,8 +145,8 @@ implementation BFSVisit = {
 
         call examineVertex(u, g, q, x);
 
-        var edgeItr: EdgeIterator;
-        
+        var edgeItr: OutEdgeIterator;
+
         call outEdges(u, g, edgeItr);
 
         call bfsInnerLoopRepeat(edgeItr, x, q, c, g, u);
@@ -155,18 +155,18 @@ implementation BFSVisit = {
         call finishVertex(u, g, q, x);
     }
 
-    type EdgeIterator;
-    require procedure edgeIterNext(upd ei: EdgeIterator);
-    require function edgeIterUnpack(ei: EdgeIterator): EdgeDescriptor;
+    type OutEdgeIterator;
+    require procedure outEdgeIterNext(upd ei: OutEdgeIterator);
+    require function outEdgeIterUnpack(ei: OutEdgeIterator): EdgeDescriptor;
     require function tgt(ed: EdgeDescriptor, g: Graph): VertexDescriptor;
 
-    procedure bfsInnerLoopStep(obs edgeItr: EdgeIterator,
+    procedure bfsInnerLoopStep(obs edgeItr: OutEdgeIterator,
                                upd x: A,
                                upd q: Queue,
                                upd c: ColorPropertyMap,
                                obs g: Graph,
                                obs u: VertexDescriptor) {
-        var e = edgeIterUnpack(edgeItr);
+        var e = outEdgeIterUnpack(edgeItr);
 
         var v = tgt(e, g);
 
@@ -182,7 +182,7 @@ implementation BFSVisit = {
 
         } else if vc == gray() then {
             call grayTarget(e, g, q, x);
-                                      
+
         } else { // vc == black();
             call blackTarget(e, g, q, x);
         };
@@ -192,7 +192,7 @@ implementation BFSVisit = {
 implementation BFSOrDFS = {
     use BFSVisit;
     require function empty(): Queue;
-    
+
     function search(g: Graph,
                     start: VertexDescriptor,
                     init: A): A = {

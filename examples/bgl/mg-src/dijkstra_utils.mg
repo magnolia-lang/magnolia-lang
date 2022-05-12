@@ -45,9 +45,9 @@ implementation DijkstraVisitorBase = {
                                        ecm: EdgeCostMap): StateWithMaps;
 
     procedure examineEdge(obs e: EdgeDescriptor,
-                         obs g: Graph,
-                         upd pq: PriorityQueue,
-                         upd swm: StateWithMaps) {
+                          obs g: Graph,
+                          upd pq: PriorityQueue,
+                          upd swm: StateWithMaps) {
         var origVcm = getVertexCostMap(swm);
         var vpm = getVertexPredecessorMap(swm);
         var ecm = getEdgeCostMap(swm);

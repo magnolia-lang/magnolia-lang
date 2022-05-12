@@ -33,7 +33,29 @@ namespace bgl_cpp {
 
     CppBFSTestVisitor::_vertexIterUnpack CppBFSTestVisitor::vertexIterUnpack;
 
-    incidence_and_vertex_list_graph<CppBFSTestVisitor::Vertex> CppBFSTestVisitor::__incidence_and_vertex_list_graph;
+    incidence_and_vertex_list_and_edge_list_graph<CppBFSTestVisitor::Vertex> CppBFSTestVisitor::__incidence_and_vertex_list_and_edge_list_graph;
+
+    pair<CppBFSTestVisitor::OutEdgeIterator, CppBFSTestVisitor::OutEdgeIterator> CppBFSTestVisitor::__pair;
+
+
+
+    CppBFSTestVisitor::_iterRangeBegin CppBFSTestVisitor::iterRangeBegin;
+
+
+
+    CppBFSTestVisitor::_iterRangeEnd CppBFSTestVisitor::iterRangeEnd;
+
+
+
+    CppBFSTestVisitor::_makeOutEdgeIteratorRange CppBFSTestVisitor::makeOutEdgeIteratorRange;
+
+
+
+    CppBFSTestVisitor::_outEdgeIterEnd CppBFSTestVisitor::outEdgeIterEnd;
+
+
+
+    CppBFSTestVisitor::_outEdgeIterNext CppBFSTestVisitor::outEdgeIterNext;
 
 
 
@@ -46,6 +68,10 @@ namespace bgl_cpp {
 
 
     CppBFSTestVisitor::_outDegree CppBFSTestVisitor::outDegree;
+
+
+
+    CppBFSTestVisitor::_outEdges CppBFSTestVisitor::outEdges;
 
 
 
@@ -83,8 +109,6 @@ namespace bgl_cpp {
 
     CppBFSTestVisitor::_pushPopBehavior CppBFSTestVisitor::pushPopBehavior;
 
-    pair<CppBFSTestVisitor::EdgeIterator, CppBFSTestVisitor::EdgeIterator> CppBFSTestVisitor::__pair;
-
 
 
     CppBFSTestVisitor::_edgeIterEnd CppBFSTestVisitor::edgeIterEnd;
@@ -95,19 +119,7 @@ namespace bgl_cpp {
 
 
 
-    CppBFSTestVisitor::_iterRangeBegin CppBFSTestVisitor::iterRangeBegin;
-
-
-
-    CppBFSTestVisitor::_iterRangeEnd CppBFSTestVisitor::iterRangeEnd;
-
-
-
-    CppBFSTestVisitor::_makeEdgeIteratorRange CppBFSTestVisitor::makeEdgeIteratorRange;
-
-
-
-    CppBFSTestVisitor::_outEdges CppBFSTestVisitor::outEdges;
+    CppBFSTestVisitor::_edges CppBFSTestVisitor::edges;
 
 
 
@@ -116,6 +128,10 @@ namespace bgl_cpp {
 
 
     CppBFSTestVisitor::_edgeIterUnpack CppBFSTestVisitor::edgeIterUnpack;
+
+
+
+    CppBFSTestVisitor::_outEdgeIterUnpack CppBFSTestVisitor::outEdgeIterUnpack;
 
 
 
@@ -139,7 +155,7 @@ namespace bgl_cpp {
 
 
 
-    for_iterator_loop3_2<CppBFSTestVisitor::Graph, CppBFSTestVisitor::VertexDescriptor, CppBFSTestVisitor::EdgeIterator, CppBFSTestVisitor::VertexVector, CppBFSTestVisitor::FIFOQueue, CppBFSTestVisitor::ColorPropertyMap, CppBFSTestVisitor::_edgeIterEnd, CppBFSTestVisitor::_edgeIterNext, CppBFSTestVisitor::_bfsInnerLoopStep> CppBFSTestVisitor::__for_iterator_loop3_2;
+    for_iterator_loop3_2<CppBFSTestVisitor::Graph, CppBFSTestVisitor::VertexDescriptor, CppBFSTestVisitor::OutEdgeIterator, CppBFSTestVisitor::VertexVector, CppBFSTestVisitor::FIFOQueue, CppBFSTestVisitor::ColorPropertyMap, CppBFSTestVisitor::_outEdgeIterEnd, CppBFSTestVisitor::_outEdgeIterNext, CppBFSTestVisitor::_bfsInnerLoopStep> CppBFSTestVisitor::__for_iterator_loop3_2;
 
     CppBFSTestVisitor::_bfsInnerLoopStep CppBFSTestVisitor::bfsInnerLoopStep;
 
@@ -184,6 +200,227 @@ namespace bgl_cpp {
 
 
     CppBFSTestVisitor::_white CppBFSTestVisitor::white;
+
+} // examples
+} // bgl
+} // mg_src
+} // bgl_cpp
+
+namespace examples {
+namespace bgl {
+namespace mg_src {
+namespace bgl_cpp {
+    base_unit CppBellmanFord::__base_unit;
+
+    base_types CppBellmanFord::__base_types;
+
+    base_float_ops CppBellmanFord::__base_float_ops;
+
+    base_bool CppBellmanFord::__base_bool;
+
+
+
+    CppBellmanFord::_vertexIterEnd CppBellmanFord::vertexIterEnd;
+
+
+
+    CppBellmanFord::_vertexIterNext CppBellmanFord::vertexIterNext;
+
+
+
+
+
+    CppBellmanFord::_emptyVPMap CppBellmanFord::emptyVPMap;
+
+    read_write_property_map<CppBellmanFord::VertexDescriptor, CppBellmanFord::VertexIterator, CppBellmanFord::VertexDescriptor, CppBellmanFord::_vertexIterEnd, CppBellmanFord::_vertexIterNext, CppBellmanFord::_vertexIterUnpack> CppBellmanFord::__read_write_property_map1;
+
+    CppBellmanFord::_vertexIterUnpack CppBellmanFord::vertexIterUnpack;
+
+    incidence_and_vertex_list_and_edge_list_graph<CppBellmanFord::Vertex> CppBellmanFord::__incidence_and_vertex_list_and_edge_list_graph;
+
+
+
+    CppBellmanFord::_forIterationEnd CppBellmanFord::forIterationEnd;
+
+
+
+    CppBellmanFord::_populateVPMapLoopRepeat CppBellmanFord::populateVPMapLoopRepeat;
+
+
+
+    for_iterator_loop<CppBellmanFord::Unit, CppBellmanFord::VertexIterator, CppBellmanFord::VertexPredecessorMap, CppBellmanFord::_vertexIterEnd, CppBellmanFord::_vertexIterNext, CppBellmanFord::_populateVPMapLoopStep> CppBellmanFord::__for_iterator_loop;
+
+    CppBellmanFord::_populateVPMapLoopStep CppBellmanFord::populateVPMapLoopStep;
+
+
+
+    CppBellmanFord::_unit CppBellmanFord::unit;
+
+
+
+    CppBellmanFord::_outEdgeIterEnd CppBellmanFord::outEdgeIterEnd;
+
+
+
+    CppBellmanFord::_outEdgeIterNext CppBellmanFord::outEdgeIterNext;
+
+
+
+    CppBellmanFord::_numVertices CppBellmanFord::numVertices;
+
+
+
+    CppBellmanFord::_outDegree CppBellmanFord::outDegree;
+
+
+
+    CppBellmanFord::_outEdges CppBellmanFord::outEdges;
+
+
+
+    CppBellmanFord::_toVertexDescriptor CppBellmanFord::toVertexDescriptor;
+
+
+
+    CppBellmanFord::_vertices CppBellmanFord::vertices;
+
+
+
+    CppBellmanFord::_edgeIterEnd CppBellmanFord::edgeIterEnd;
+
+
+
+    CppBellmanFord::_edgeIterNext CppBellmanFord::edgeIterNext;
+
+
+
+    CppBellmanFord::_edges CppBellmanFord::edges;
+
+
+
+    CppBellmanFord::_edgeIterUnpack CppBellmanFord::edgeIterUnpack;
+
+
+
+    CppBellmanFord::_edgeMinimized CppBellmanFord::edgeMinimized;
+
+
+
+    CppBellmanFord::_edgeNotMinimized CppBellmanFord::edgeNotMinimized;
+
+
+
+    CppBellmanFord::_edgeNotRelaxed CppBellmanFord::edgeNotRelaxed;
+
+
+
+    CppBellmanFord::_edgeRelaxed CppBellmanFord::edgeRelaxed;
+
+
+
+    CppBellmanFord::_examineEdge CppBellmanFord::examineEdge;
+
+
+
+    CppBellmanFord::_outEdgeIterUnpack CppBellmanFord::outEdgeIterUnpack;
+
+
+
+    CppBellmanFord::_src CppBellmanFord::src;
+
+
+
+    CppBellmanFord::_tgt CppBellmanFord::tgt;
+
+
+
+    CppBellmanFord::_toEdgeDescriptor CppBellmanFord::toEdgeDescriptor;
+
+
+
+    CppBellmanFord::_makeEdge CppBellmanFord::makeEdge;
+
+
+
+    CppBellmanFord::_emptyECMap CppBellmanFord::emptyECMap;
+
+
+
+    CppBellmanFord::_edgeRelaxationInnerLoopRepeat CppBellmanFord::edgeRelaxationInnerLoopRepeat;
+
+
+
+    for_iterator_loop3_2<CppBellmanFord::EdgeCostMap, CppBellmanFord::Graph, CppBellmanFord::EdgeIterator, CppBellmanFord::Unit, CppBellmanFord::VertexCostMap, CppBellmanFord::VertexPredecessorMap, CppBellmanFord::_edgeIterEnd, CppBellmanFord::_edgeIterNext, CppBellmanFord::_edgeRelaxationInnerLoopStep> CppBellmanFord::__for_iterator_loop3_2;
+
+    CppBellmanFord::_edgeRelaxationInnerLoopStep CppBellmanFord::edgeRelaxationInnerLoopStep;
+
+
+
+    CppBellmanFord::_edgeRelaxationOuterLoopRepeat CppBellmanFord::edgeRelaxationOuterLoopRepeat;
+
+
+
+    for_iterator_loop3_2<CppBellmanFord::EdgeCostMap, CppBellmanFord::Graph, CppBellmanFord::VertexIterator, CppBellmanFord::Unit, CppBellmanFord::VertexCostMap, CppBellmanFord::VertexPredecessorMap, CppBellmanFord::_vertexIterEnd, CppBellmanFord::_vertexIterNext, CppBellmanFord::_edgeRelaxationOuterLoopStep> CppBellmanFord::__for_iterator_loop3_20;
+
+    CppBellmanFord::_edgeRelaxationOuterLoopStep CppBellmanFord::edgeRelaxationOuterLoopStep;
+
+
+
+    CppBellmanFord::_emptyVCMap CppBellmanFord::emptyVCMap;
+
+
+
+    CppBellmanFord::_relax CppBellmanFord::relax;
+
+    read_write_property_map<CppBellmanFord::EdgeDescriptor, CppBellmanFord::OutEdgeIterator, CppBellmanFord::Cost, CppBellmanFord::_outEdgeIterEnd, CppBellmanFord::_outEdgeIterNext, CppBellmanFord::_outEdgeIterUnpack> CppBellmanFord::__read_write_property_map;
+
+    read_write_property_map<CppBellmanFord::VertexDescriptor, CppBellmanFord::VertexIterator, CppBellmanFord::Cost, CppBellmanFord::_vertexIterEnd, CppBellmanFord::_vertexIterNext, CppBellmanFord::_vertexIterUnpack> CppBellmanFord::__read_write_property_map0;
+
+
+
+    CppBellmanFord::_get CppBellmanFord::get;
+
+
+
+    CppBellmanFord::_initMap CppBellmanFord::initMap;
+
+
+
+    CppBellmanFord::_less CppBellmanFord::less;
+
+
+
+    CppBellmanFord::_plus CppBellmanFord::plus;
+
+
+
+    CppBellmanFord::_put CppBellmanFord::put;
+
+
+
+    CppBellmanFord::_bellmanFordShortestPaths CppBellmanFord::bellmanFordShortestPaths;
+
+
+
+    CppBellmanFord::_bfalse CppBellmanFord::bfalse;
+
+
+
+    CppBellmanFord::_btrue CppBellmanFord::btrue;
+
+
+
+    CppBellmanFord::_checkNegativeCycleLoopRepeat CppBellmanFord::checkNegativeCycleLoopRepeat;
+
+
+
+    for_iterator_loop2_3<CppBellmanFord::VertexCostMap, CppBellmanFord::EdgeCostMap, CppBellmanFord::Graph, CppBellmanFord::EdgeIterator, CppBellmanFord::Unit, CppBellmanFord::Bool, CppBellmanFord::_edgeIterEnd, CppBellmanFord::_edgeIterNext, CppBellmanFord::_checkNegativeCycleLoopStep> CppBellmanFord::__for_iterator_loop2_3;
+
+    CppBellmanFord::_checkNegativeCycleLoopStep CppBellmanFord::checkNegativeCycleLoopStep;
+
+
+
+    CppBellmanFord::_holds CppBellmanFord::holds;
 
 } // examples
 } // bgl
@@ -258,8 +495,6 @@ namespace bgl_cpp {
 
     CppCustomGraphTypeBFSTestVisitor::_pushPopBehavior CppCustomGraphTypeBFSTestVisitor::pushPopBehavior;
 
-    pair<CppCustomGraphTypeBFSTestVisitor::EdgeIterator, CppCustomGraphTypeBFSTestVisitor::EdgeIterator> CppCustomGraphTypeBFSTestVisitor::__pair;
-
 
 
     CppCustomGraphTypeBFSTestVisitor::_edgeIterEnd CppCustomGraphTypeBFSTestVisitor::edgeIterEnd;
@@ -267,18 +502,6 @@ namespace bgl_cpp {
 
 
     CppCustomGraphTypeBFSTestVisitor::_edgeIterNext CppCustomGraphTypeBFSTestVisitor::edgeIterNext;
-
-
-
-    CppCustomGraphTypeBFSTestVisitor::_iterRangeBegin CppCustomGraphTypeBFSTestVisitor::iterRangeBegin;
-
-
-
-    CppCustomGraphTypeBFSTestVisitor::_iterRangeEnd CppCustomGraphTypeBFSTestVisitor::iterRangeEnd;
-
-
-
-    CppCustomGraphTypeBFSTestVisitor::_makeEdgeIteratorRange CppCustomGraphTypeBFSTestVisitor::makeEdgeIteratorRange;
 
 
 
@@ -295,6 +518,32 @@ namespace bgl_cpp {
 
 
     CppCustomGraphTypeBFSTestVisitor::_tail CppCustomGraphTypeBFSTestVisitor::tail;
+
+    pair<CppCustomGraphTypeBFSTestVisitor::OutEdgeIterator, CppCustomGraphTypeBFSTestVisitor::OutEdgeIterator> CppCustomGraphTypeBFSTestVisitor::__pair;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_getOutEdgeIterator CppCustomGraphTypeBFSTestVisitor::getOutEdgeIterator;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_iterRangeBegin CppCustomGraphTypeBFSTestVisitor::iterRangeBegin;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_iterRangeEnd CppCustomGraphTypeBFSTestVisitor::iterRangeEnd;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_makeOutEdgeIteratorRange CppCustomGraphTypeBFSTestVisitor::makeOutEdgeIteratorRange;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_outEdgeIterEnd CppCustomGraphTypeBFSTestVisitor::outEdgeIterEnd;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_outEdgeIterNext CppCustomGraphTypeBFSTestVisitor::outEdgeIterNext;
 
     iterable_list<CppCustomGraphTypeBFSTestVisitor::Edge> CppCustomGraphTypeBFSTestVisitor::__iterable_list;
 
@@ -316,6 +565,10 @@ namespace bgl_cpp {
 
 
 
+    CppCustomGraphTypeBFSTestVisitor::_outEdgeIterUnpack CppCustomGraphTypeBFSTestVisitor::outEdgeIterUnpack;
+
+
+
     CppCustomGraphTypeBFSTestVisitor::_srcPlainEdge CppCustomGraphTypeBFSTestVisitor::srcPlainEdge;
 
 
@@ -327,6 +580,10 @@ namespace bgl_cpp {
 
 
     CppCustomGraphTypeBFSTestVisitor::_defaultAction CppCustomGraphTypeBFSTestVisitor::defaultAction;
+
+
+
+    CppCustomGraphTypeBFSTestVisitor::_edges CppCustomGraphTypeBFSTestVisitor::edges;
 
 
 
@@ -356,7 +613,7 @@ namespace bgl_cpp {
 
     CppCustomGraphTypeBFSTestVisitor::_outDegree CppCustomGraphTypeBFSTestVisitor::outDegree;
 
-    custom_incidence_and_vertex_list_graph<CppCustomGraphTypeBFSTestVisitor::Edge, CppCustomGraphTypeBFSTestVisitor::EdgeIterator, CppCustomGraphTypeBFSTestVisitor::EdgeList, CppCustomGraphTypeBFSTestVisitor::Vertex, CppCustomGraphTypeBFSTestVisitor::VertexIterator, CppCustomGraphTypeBFSTestVisitor::VertexList, CppCustomGraphTypeBFSTestVisitor::_cons, CppCustomGraphTypeBFSTestVisitor::_cons, CppCustomGraphTypeBFSTestVisitor::_edgeIterEnd, CppCustomGraphTypeBFSTestVisitor::_edgeIterNext, CppCustomGraphTypeBFSTestVisitor::_edgeIterUnpack, CppCustomGraphTypeBFSTestVisitor::_emptyEdgeList, CppCustomGraphTypeBFSTestVisitor::_emptyVertexList, CppCustomGraphTypeBFSTestVisitor::_getEdgeIterator, CppCustomGraphTypeBFSTestVisitor::_getVertexIterator, CppCustomGraphTypeBFSTestVisitor::_head, CppCustomGraphTypeBFSTestVisitor::_head, CppCustomGraphTypeBFSTestVisitor::_isEmpty, CppCustomGraphTypeBFSTestVisitor::_isEmpty, CppCustomGraphTypeBFSTestVisitor::_makeEdge, CppCustomGraphTypeBFSTestVisitor::_srcPlainEdge, CppCustomGraphTypeBFSTestVisitor::_tail, CppCustomGraphTypeBFSTestVisitor::_tail, CppCustomGraphTypeBFSTestVisitor::_tgtPlainEdge, CppCustomGraphTypeBFSTestVisitor::_vertexIterEnd, CppCustomGraphTypeBFSTestVisitor::_vertexIterNext, CppCustomGraphTypeBFSTestVisitor::_vertexIterUnpack> CppCustomGraphTypeBFSTestVisitor::__custom_incidence_and_vertex_list_graph;
+    custom_incidence_and_vertex_list_and_edge_list_graph<CppCustomGraphTypeBFSTestVisitor::Edge, CppCustomGraphTypeBFSTestVisitor::EdgeIterator, CppCustomGraphTypeBFSTestVisitor::EdgeList, CppCustomGraphTypeBFSTestVisitor::OutEdgeIterator, CppCustomGraphTypeBFSTestVisitor::Vertex, CppCustomGraphTypeBFSTestVisitor::VertexIterator, CppCustomGraphTypeBFSTestVisitor::VertexList, CppCustomGraphTypeBFSTestVisitor::_cons, CppCustomGraphTypeBFSTestVisitor::_cons, CppCustomGraphTypeBFSTestVisitor::_edgeIterEnd, CppCustomGraphTypeBFSTestVisitor::_edgeIterNext, CppCustomGraphTypeBFSTestVisitor::_edgeIterUnpack, CppCustomGraphTypeBFSTestVisitor::_emptyEdgeList, CppCustomGraphTypeBFSTestVisitor::_emptyVertexList, CppCustomGraphTypeBFSTestVisitor::_getEdgeIterator, CppCustomGraphTypeBFSTestVisitor::_getOutEdgeIterator, CppCustomGraphTypeBFSTestVisitor::_getVertexIterator, CppCustomGraphTypeBFSTestVisitor::_head, CppCustomGraphTypeBFSTestVisitor::_head, CppCustomGraphTypeBFSTestVisitor::_isEmpty, CppCustomGraphTypeBFSTestVisitor::_isEmpty, CppCustomGraphTypeBFSTestVisitor::_makeEdge, CppCustomGraphTypeBFSTestVisitor::_outEdgeIterEnd, CppCustomGraphTypeBFSTestVisitor::_outEdgeIterNext, CppCustomGraphTypeBFSTestVisitor::_outEdgeIterUnpack, CppCustomGraphTypeBFSTestVisitor::_srcPlainEdge, CppCustomGraphTypeBFSTestVisitor::_tail, CppCustomGraphTypeBFSTestVisitor::_tail, CppCustomGraphTypeBFSTestVisitor::_tgtPlainEdge, CppCustomGraphTypeBFSTestVisitor::_vertexIterEnd, CppCustomGraphTypeBFSTestVisitor::_vertexIterNext, CppCustomGraphTypeBFSTestVisitor::_vertexIterUnpack> CppCustomGraphTypeBFSTestVisitor::__custom_incidence_and_vertex_list_and_edge_list_graph;
 
     CppCustomGraphTypeBFSTestVisitor::_tgtPlainEdge CppCustomGraphTypeBFSTestVisitor::tgtPlainEdge;
 
@@ -366,7 +623,7 @@ namespace bgl_cpp {
 
 
 
-    for_iterator_loop3_2<CppCustomGraphTypeBFSTestVisitor::Graph, CppCustomGraphTypeBFSTestVisitor::Vertex, CppCustomGraphTypeBFSTestVisitor::EdgeIterator, CppCustomGraphTypeBFSTestVisitor::VertexVector, CppCustomGraphTypeBFSTestVisitor::FIFOQueue, CppCustomGraphTypeBFSTestVisitor::ColorPropertyMap, CppCustomGraphTypeBFSTestVisitor::_edgeIterEnd, CppCustomGraphTypeBFSTestVisitor::_edgeIterNext, CppCustomGraphTypeBFSTestVisitor::_bfsInnerLoopStep> CppCustomGraphTypeBFSTestVisitor::__for_iterator_loop3_2;
+    for_iterator_loop3_2<CppCustomGraphTypeBFSTestVisitor::Graph, CppCustomGraphTypeBFSTestVisitor::Vertex, CppCustomGraphTypeBFSTestVisitor::OutEdgeIterator, CppCustomGraphTypeBFSTestVisitor::VertexVector, CppCustomGraphTypeBFSTestVisitor::FIFOQueue, CppCustomGraphTypeBFSTestVisitor::ColorPropertyMap, CppCustomGraphTypeBFSTestVisitor::_outEdgeIterEnd, CppCustomGraphTypeBFSTestVisitor::_outEdgeIterNext, CppCustomGraphTypeBFSTestVisitor::_bfsInnerLoopStep> CppCustomGraphTypeBFSTestVisitor::__for_iterator_loop3_2;
 
     CppCustomGraphTypeBFSTestVisitor::_bfsInnerLoopStep CppCustomGraphTypeBFSTestVisitor::bfsInnerLoopStep;
 
@@ -453,7 +710,7 @@ namespace bgl_cpp {
 
     CppDFSTestVisitor::_vertexIterUnpack CppDFSTestVisitor::vertexIterUnpack;
 
-    incidence_and_vertex_list_graph<CppDFSTestVisitor::Vertex> CppDFSTestVisitor::__incidence_and_vertex_list_graph;
+    incidence_and_vertex_list_and_edge_list_graph<CppDFSTestVisitor::Vertex> CppDFSTestVisitor::__incidence_and_vertex_list_and_edge_list_graph;
 
 
 
@@ -479,6 +736,28 @@ namespace bgl_cpp {
 
     CppDFSTestVisitor::_top CppDFSTestVisitor::top;
 
+    pair<CppDFSTestVisitor::OutEdgeIterator, CppDFSTestVisitor::OutEdgeIterator> CppDFSTestVisitor::__pair;
+
+
+
+    CppDFSTestVisitor::_iterRangeBegin CppDFSTestVisitor::iterRangeBegin;
+
+
+
+    CppDFSTestVisitor::_iterRangeEnd CppDFSTestVisitor::iterRangeEnd;
+
+
+
+    CppDFSTestVisitor::_makeOutEdgeIteratorRange CppDFSTestVisitor::makeOutEdgeIteratorRange;
+
+
+
+    CppDFSTestVisitor::_outEdgeIterEnd CppDFSTestVisitor::outEdgeIterEnd;
+
+
+
+    CppDFSTestVisitor::_outEdgeIterNext CppDFSTestVisitor::outEdgeIterNext;
+
 
 
     CppDFSTestVisitor::_depthFirstSearch CppDFSTestVisitor::depthFirstSearch;
@@ -497,13 +776,15 @@ namespace bgl_cpp {
 
 
 
+    CppDFSTestVisitor::_outEdges CppDFSTestVisitor::outEdges;
+
+
+
     CppDFSTestVisitor::_toVertexDescriptor CppDFSTestVisitor::toVertexDescriptor;
 
 
 
     CppDFSTestVisitor::_vertices CppDFSTestVisitor::vertices;
-
-    pair<CppDFSTestVisitor::EdgeIterator, CppDFSTestVisitor::EdgeIterator> CppDFSTestVisitor::__pair;
 
 
 
@@ -515,19 +796,7 @@ namespace bgl_cpp {
 
 
 
-    CppDFSTestVisitor::_iterRangeBegin CppDFSTestVisitor::iterRangeBegin;
-
-
-
-    CppDFSTestVisitor::_iterRangeEnd CppDFSTestVisitor::iterRangeEnd;
-
-
-
-    CppDFSTestVisitor::_makeEdgeIteratorRange CppDFSTestVisitor::makeEdgeIteratorRange;
-
-
-
-    CppDFSTestVisitor::_outEdges CppDFSTestVisitor::outEdges;
+    CppDFSTestVisitor::_edges CppDFSTestVisitor::edges;
 
 
 
@@ -536,6 +805,10 @@ namespace bgl_cpp {
 
 
     CppDFSTestVisitor::_edgeIterUnpack CppDFSTestVisitor::edgeIterUnpack;
+
+
+
+    CppDFSTestVisitor::_outEdgeIterUnpack CppDFSTestVisitor::outEdgeIterUnpack;
 
 
 
@@ -559,7 +832,7 @@ namespace bgl_cpp {
 
 
 
-    for_iterator_loop3_2<CppDFSTestVisitor::Graph, CppDFSTestVisitor::VertexDescriptor, CppDFSTestVisitor::EdgeIterator, CppDFSTestVisitor::VertexVector, CppDFSTestVisitor::Stack, CppDFSTestVisitor::ColorPropertyMap, CppDFSTestVisitor::_edgeIterEnd, CppDFSTestVisitor::_edgeIterNext, CppDFSTestVisitor::_bfsInnerLoopStep> CppDFSTestVisitor::__for_iterator_loop3_2;
+    for_iterator_loop3_2<CppDFSTestVisitor::Graph, CppDFSTestVisitor::VertexDescriptor, CppDFSTestVisitor::OutEdgeIterator, CppDFSTestVisitor::VertexVector, CppDFSTestVisitor::Stack, CppDFSTestVisitor::ColorPropertyMap, CppDFSTestVisitor::_outEdgeIterEnd, CppDFSTestVisitor::_outEdgeIterNext, CppDFSTestVisitor::_bfsInnerLoopStep> CppDFSTestVisitor::__for_iterator_loop3_2;
 
     CppDFSTestVisitor::_bfsInnerLoopStep CppDFSTestVisitor::bfsInnerLoopStep;
 
@@ -662,33 +935,9 @@ namespace bgl_cpp {
 
     CppDijkstraVisitor::_vertexIterUnpack CppDijkstraVisitor::vertexIterUnpack;
 
-    incidence_and_vertex_list_graph<CppDijkstraVisitor::Vertex> CppDijkstraVisitor::__incidence_and_vertex_list_graph;
+    incidence_and_vertex_list_and_edge_list_graph<CppDijkstraVisitor::Vertex> CppDijkstraVisitor::__incidence_and_vertex_list_and_edge_list_graph;
 
-
-
-    CppDijkstraVisitor::_numVertices CppDijkstraVisitor::numVertices;
-
-
-
-    CppDijkstraVisitor::_outDegree CppDijkstraVisitor::outDegree;
-
-
-
-    CppDijkstraVisitor::_toVertexDescriptor CppDijkstraVisitor::toVertexDescriptor;
-
-
-
-    CppDijkstraVisitor::_vertices CppDijkstraVisitor::vertices;
-
-    pair<CppDijkstraVisitor::EdgeIterator, CppDijkstraVisitor::EdgeIterator> CppDijkstraVisitor::__pair;
-
-
-
-    CppDijkstraVisitor::_edgeIterEnd CppDijkstraVisitor::edgeIterEnd;
-
-
-
-    CppDijkstraVisitor::_edgeIterNext CppDijkstraVisitor::edgeIterNext;
+    pair<CppDijkstraVisitor::OutEdgeIterator, CppDijkstraVisitor::OutEdgeIterator> CppDijkstraVisitor::__pair;
 
 
 
@@ -700,7 +949,23 @@ namespace bgl_cpp {
 
 
 
-    CppDijkstraVisitor::_makeEdgeIteratorRange CppDijkstraVisitor::makeEdgeIteratorRange;
+    CppDijkstraVisitor::_makeOutEdgeIteratorRange CppDijkstraVisitor::makeOutEdgeIteratorRange;
+
+
+
+    CppDijkstraVisitor::_outEdgeIterEnd CppDijkstraVisitor::outEdgeIterEnd;
+
+
+
+    CppDijkstraVisitor::_outEdgeIterNext CppDijkstraVisitor::outEdgeIterNext;
+
+
+
+    CppDijkstraVisitor::_numVertices CppDijkstraVisitor::numVertices;
+
+
+
+    CppDijkstraVisitor::_outDegree CppDijkstraVisitor::outDegree;
 
 
 
@@ -708,7 +973,31 @@ namespace bgl_cpp {
 
 
 
+    CppDijkstraVisitor::_toVertexDescriptor CppDijkstraVisitor::toVertexDescriptor;
+
+
+
+    CppDijkstraVisitor::_vertices CppDijkstraVisitor::vertices;
+
+
+
+    CppDijkstraVisitor::_edgeIterEnd CppDijkstraVisitor::edgeIterEnd;
+
+
+
+    CppDijkstraVisitor::_edgeIterNext CppDijkstraVisitor::edgeIterNext;
+
+
+
+    CppDijkstraVisitor::_edges CppDijkstraVisitor::edges;
+
+
+
     CppDijkstraVisitor::_edgeIterUnpack CppDijkstraVisitor::edgeIterUnpack;
+
+
+
+    CppDijkstraVisitor::_outEdgeIterUnpack CppDijkstraVisitor::outEdgeIterUnpack;
 
 
 
@@ -764,7 +1053,7 @@ namespace bgl_cpp {
 
     CppDijkstraVisitor::_relax CppDijkstraVisitor::relax;
 
-    read_write_property_map<CppDijkstraVisitor::EdgeDescriptor, CppDijkstraVisitor::EdgeIterator, CppDijkstraVisitor::Cost, CppDijkstraVisitor::_edgeIterEnd, CppDijkstraVisitor::_edgeIterNext, CppDijkstraVisitor::_edgeIterUnpack> CppDijkstraVisitor::__read_write_property_map;
+    read_write_property_map<CppDijkstraVisitor::EdgeDescriptor, CppDijkstraVisitor::OutEdgeIterator, CppDijkstraVisitor::Cost, CppDijkstraVisitor::_outEdgeIterEnd, CppDijkstraVisitor::_outEdgeIterNext, CppDijkstraVisitor::_outEdgeIterUnpack> CppDijkstraVisitor::__read_write_property_map;
 
     read_write_property_map<CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::VertexIterator, CppDijkstraVisitor::Cost, CppDijkstraVisitor::_vertexIterEnd, CppDijkstraVisitor::_vertexIterNext, CppDijkstraVisitor::_vertexIterUnpack> CppDijkstraVisitor::__read_write_property_map0;
 
@@ -792,7 +1081,7 @@ namespace bgl_cpp {
 
 
 
-    for_iterator_loop3_2<CppDijkstraVisitor::Graph, CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::EdgeIterator, CppDijkstraVisitor::StateWithMaps, CppDijkstraVisitor::PriorityQueue, CppDijkstraVisitor::ColorPropertyMap, CppDijkstraVisitor::_edgeIterEnd, CppDijkstraVisitor::_edgeIterNext, CppDijkstraVisitor::_bfsInnerLoopStep> CppDijkstraVisitor::__for_iterator_loop3_2;
+    for_iterator_loop3_2<CppDijkstraVisitor::Graph, CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::OutEdgeIterator, CppDijkstraVisitor::StateWithMaps, CppDijkstraVisitor::PriorityQueue, CppDijkstraVisitor::ColorPropertyMap, CppDijkstraVisitor::_outEdgeIterEnd, CppDijkstraVisitor::_outEdgeIterNext, CppDijkstraVisitor::_bfsInnerLoopStep> CppDijkstraVisitor::__for_iterator_loop3_2;
 
     CppDijkstraVisitor::_bfsInnerLoopStep CppDijkstraVisitor::bfsInnerLoopStep;
 
@@ -927,7 +1216,29 @@ namespace bgl_cpp {
 
     CppParallelBFSTestVisitor::_vertexIterUnpack CppParallelBFSTestVisitor::vertexIterUnpack;
 
-    incidence_and_vertex_list_graph<CppParallelBFSTestVisitor::Vertex> CppParallelBFSTestVisitor::__incidence_and_vertex_list_graph;
+    incidence_and_vertex_list_and_edge_list_graph<CppParallelBFSTestVisitor::Vertex> CppParallelBFSTestVisitor::__incidence_and_vertex_list_and_edge_list_graph;
+
+    pair<CppParallelBFSTestVisitor::OutEdgeIterator, CppParallelBFSTestVisitor::OutEdgeIterator> CppParallelBFSTestVisitor::__pair;
+
+
+
+    CppParallelBFSTestVisitor::_iterRangeBegin CppParallelBFSTestVisitor::iterRangeBegin;
+
+
+
+    CppParallelBFSTestVisitor::_iterRangeEnd CppParallelBFSTestVisitor::iterRangeEnd;
+
+
+
+    CppParallelBFSTestVisitor::_makeOutEdgeIteratorRange CppParallelBFSTestVisitor::makeOutEdgeIteratorRange;
+
+
+
+    CppParallelBFSTestVisitor::_outEdgeIterEnd CppParallelBFSTestVisitor::outEdgeIterEnd;
+
+
+
+    CppParallelBFSTestVisitor::_outEdgeIterNext CppParallelBFSTestVisitor::outEdgeIterNext;
 
 
 
@@ -940,6 +1251,10 @@ namespace bgl_cpp {
 
 
     CppParallelBFSTestVisitor::_outDegree CppParallelBFSTestVisitor::outDegree;
+
+
+
+    CppParallelBFSTestVisitor::_outEdges CppParallelBFSTestVisitor::outEdges;
 
 
 
@@ -977,8 +1292,6 @@ namespace bgl_cpp {
 
     CppParallelBFSTestVisitor::_pushPopBehavior CppParallelBFSTestVisitor::pushPopBehavior;
 
-    pair<CppParallelBFSTestVisitor::EdgeIterator, CppParallelBFSTestVisitor::EdgeIterator> CppParallelBFSTestVisitor::__pair;
-
 
 
     CppParallelBFSTestVisitor::_edgeIterEnd CppParallelBFSTestVisitor::edgeIterEnd;
@@ -989,19 +1302,7 @@ namespace bgl_cpp {
 
 
 
-    CppParallelBFSTestVisitor::_iterRangeBegin CppParallelBFSTestVisitor::iterRangeBegin;
-
-
-
-    CppParallelBFSTestVisitor::_iterRangeEnd CppParallelBFSTestVisitor::iterRangeEnd;
-
-
-
-    CppParallelBFSTestVisitor::_makeEdgeIteratorRange CppParallelBFSTestVisitor::makeEdgeIteratorRange;
-
-
-
-    CppParallelBFSTestVisitor::_outEdges CppParallelBFSTestVisitor::outEdges;
+    CppParallelBFSTestVisitor::_edges CppParallelBFSTestVisitor::edges;
 
 
 
@@ -1010,6 +1311,10 @@ namespace bgl_cpp {
 
 
     CppParallelBFSTestVisitor::_edgeIterUnpack CppParallelBFSTestVisitor::edgeIterUnpack;
+
+
+
+    CppParallelBFSTestVisitor::_outEdgeIterUnpack CppParallelBFSTestVisitor::outEdgeIterUnpack;
 
 
 
@@ -1033,7 +1338,7 @@ namespace bgl_cpp {
 
 
 
-    for_parallel_iterator_loop3_2<CppParallelBFSTestVisitor::Graph, CppParallelBFSTestVisitor::VertexDescriptor, CppParallelBFSTestVisitor::EdgeIterator, CppParallelBFSTestVisitor::VertexVector, CppParallelBFSTestVisitor::FIFOQueue, CppParallelBFSTestVisitor::ColorPropertyMap, CppParallelBFSTestVisitor::_edgeIterEnd, CppParallelBFSTestVisitor::_edgeIterNext, CppParallelBFSTestVisitor::_bfsInnerLoopStep> CppParallelBFSTestVisitor::__for_parallel_iterator_loop3_2;
+    for_parallel_iterator_loop3_2<CppParallelBFSTestVisitor::Graph, CppParallelBFSTestVisitor::VertexDescriptor, CppParallelBFSTestVisitor::OutEdgeIterator, CppParallelBFSTestVisitor::VertexVector, CppParallelBFSTestVisitor::FIFOQueue, CppParallelBFSTestVisitor::ColorPropertyMap, CppParallelBFSTestVisitor::_outEdgeIterEnd, CppParallelBFSTestVisitor::_outEdgeIterNext, CppParallelBFSTestVisitor::_bfsInnerLoopStep> CppParallelBFSTestVisitor::__for_parallel_iterator_loop3_2;
 
     CppParallelBFSTestVisitor::_bfsInnerLoopStep CppParallelBFSTestVisitor::bfsInnerLoopStep;
 
@@ -1136,33 +1441,9 @@ namespace bgl_cpp {
 
     CppPrimVisitor::_vertexIterUnpack CppPrimVisitor::vertexIterUnpack;
 
-    incidence_and_vertex_list_graph<CppPrimVisitor::Vertex> CppPrimVisitor::__incidence_and_vertex_list_graph;
+    incidence_and_vertex_list_and_edge_list_graph<CppPrimVisitor::Vertex> CppPrimVisitor::__incidence_and_vertex_list_and_edge_list_graph;
 
-
-
-    CppPrimVisitor::_numVertices CppPrimVisitor::numVertices;
-
-
-
-    CppPrimVisitor::_outDegree CppPrimVisitor::outDegree;
-
-
-
-    CppPrimVisitor::_toVertexDescriptor CppPrimVisitor::toVertexDescriptor;
-
-
-
-    CppPrimVisitor::_vertices CppPrimVisitor::vertices;
-
-    pair<CppPrimVisitor::EdgeIterator, CppPrimVisitor::EdgeIterator> CppPrimVisitor::__pair;
-
-
-
-    CppPrimVisitor::_edgeIterEnd CppPrimVisitor::edgeIterEnd;
-
-
-
-    CppPrimVisitor::_edgeIterNext CppPrimVisitor::edgeIterNext;
+    pair<CppPrimVisitor::OutEdgeIterator, CppPrimVisitor::OutEdgeIterator> CppPrimVisitor::__pair;
 
 
 
@@ -1174,7 +1455,23 @@ namespace bgl_cpp {
 
 
 
-    CppPrimVisitor::_makeEdgeIteratorRange CppPrimVisitor::makeEdgeIteratorRange;
+    CppPrimVisitor::_makeOutEdgeIteratorRange CppPrimVisitor::makeOutEdgeIteratorRange;
+
+
+
+    CppPrimVisitor::_outEdgeIterEnd CppPrimVisitor::outEdgeIterEnd;
+
+
+
+    CppPrimVisitor::_outEdgeIterNext CppPrimVisitor::outEdgeIterNext;
+
+
+
+    CppPrimVisitor::_numVertices CppPrimVisitor::numVertices;
+
+
+
+    CppPrimVisitor::_outDegree CppPrimVisitor::outDegree;
 
 
 
@@ -1182,7 +1479,31 @@ namespace bgl_cpp {
 
 
 
+    CppPrimVisitor::_toVertexDescriptor CppPrimVisitor::toVertexDescriptor;
+
+
+
+    CppPrimVisitor::_vertices CppPrimVisitor::vertices;
+
+
+
+    CppPrimVisitor::_edgeIterEnd CppPrimVisitor::edgeIterEnd;
+
+
+
+    CppPrimVisitor::_edgeIterNext CppPrimVisitor::edgeIterNext;
+
+
+
+    CppPrimVisitor::_edges CppPrimVisitor::edges;
+
+
+
     CppPrimVisitor::_edgeIterUnpack CppPrimVisitor::edgeIterUnpack;
+
+
+
+    CppPrimVisitor::_outEdgeIterUnpack CppPrimVisitor::outEdgeIterUnpack;
 
 
 
@@ -1238,7 +1559,7 @@ namespace bgl_cpp {
 
     CppPrimVisitor::_relax CppPrimVisitor::relax;
 
-    read_write_property_map<CppPrimVisitor::EdgeDescriptor, CppPrimVisitor::EdgeIterator, CppPrimVisitor::Cost, CppPrimVisitor::_edgeIterEnd, CppPrimVisitor::_edgeIterNext, CppPrimVisitor::_edgeIterUnpack> CppPrimVisitor::__read_write_property_map;
+    read_write_property_map<CppPrimVisitor::EdgeDescriptor, CppPrimVisitor::OutEdgeIterator, CppPrimVisitor::Cost, CppPrimVisitor::_outEdgeIterEnd, CppPrimVisitor::_outEdgeIterNext, CppPrimVisitor::_outEdgeIterUnpack> CppPrimVisitor::__read_write_property_map;
 
     read_write_property_map<CppPrimVisitor::VertexDescriptor, CppPrimVisitor::VertexIterator, CppPrimVisitor::Cost, CppPrimVisitor::_vertexIterEnd, CppPrimVisitor::_vertexIterNext, CppPrimVisitor::_vertexIterUnpack> CppPrimVisitor::__read_write_property_map0;
 
@@ -1270,7 +1591,7 @@ namespace bgl_cpp {
 
 
 
-    for_iterator_loop3_2<CppPrimVisitor::Graph, CppPrimVisitor::VertexDescriptor, CppPrimVisitor::EdgeIterator, CppPrimVisitor::StateWithMaps, CppPrimVisitor::PriorityQueue, CppPrimVisitor::ColorPropertyMap, CppPrimVisitor::_edgeIterEnd, CppPrimVisitor::_edgeIterNext, CppPrimVisitor::_bfsInnerLoopStep> CppPrimVisitor::__for_iterator_loop3_2;
+    for_iterator_loop3_2<CppPrimVisitor::Graph, CppPrimVisitor::VertexDescriptor, CppPrimVisitor::OutEdgeIterator, CppPrimVisitor::StateWithMaps, CppPrimVisitor::PriorityQueue, CppPrimVisitor::ColorPropertyMap, CppPrimVisitor::_outEdgeIterEnd, CppPrimVisitor::_outEdgeIterNext, CppPrimVisitor::_bfsInnerLoopStep> CppPrimVisitor::__for_iterator_loop3_2;
 
     CppPrimVisitor::_bfsInnerLoopStep CppPrimVisitor::bfsInnerLoopStep;
 

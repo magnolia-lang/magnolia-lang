@@ -1,5 +1,6 @@
 package examples.bgl.mg-src.bgl-cpp
-    imports examples.bgl.mg-src.bfs_utils
+    imports examples.bgl.mg-src.bellman_ford_utils
+          , examples.bgl.mg-src.bfs_utils
           , examples.bgl.mg-src.dfs_utils
           , examples.bgl.mg-src.dijkstra_utils
           , examples.bgl.mg-src.prim_utils
@@ -21,14 +22,14 @@ program CppBFSTestVisitor = {
                      , repeat => bfsOuterLoopRepeat
                      ];
 
-    use CppForIteratorLoop3_2[ Iterator => EdgeIterator
+    use CppForIteratorLoop3_2[ Iterator => OutEdgeIterator
                              , Context1 => Graph
                              , Context2 => VertexDescriptor
                              , State1 => VertexVector
                              , State2 => FIFOQueue
                              , State3 => ColorPropertyMap
-                             , iterEnd => edgeIterEnd
-                             , iterNext => edgeIterNext
+                             , iterEnd => outEdgeIterEnd
+                             , iterNext => outEdgeIterNext
                              , step => bfsInnerLoopStep
                              , forLoopRepeat => bfsInnerLoopRepeat
                              ];
@@ -43,16 +44,16 @@ program CppBFSTestVisitor = {
 
     use CppBaseTypes;
 
-    // CppIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
+    // CppIncidenceAndVertexListAndEdgeListGraph exposes the API of both IncidenceGraph
     // and VertexListGraph.
-    use CppIncidenceAndVertexListGraph;
+    use CppIncidenceAndVertexListAndEdgeListGraph;
 
-    use CppPair[ A => EdgeIterator
-               , B => EdgeIterator
-               , Pair => EdgeIteratorRange
+    use CppPair[ A => OutEdgeIterator
+               , B => OutEdgeIterator
+               , Pair => OutEdgeIteratorRange
                , first => iterRangeBegin
                , second => iterRangeEnd
-               , makePair => makeEdgeIteratorRange
+               , makePair => makeOutEdgeIteratorRange
                ];
 
     use CppVector[ A => VertexDescriptor
@@ -78,14 +79,14 @@ program CppDFSTestVisitor = {
                      , repeat => bfsOuterLoopRepeat
                      ];
 
-    use CppForIteratorLoop3_2[ Iterator => EdgeIterator
+    use CppForIteratorLoop3_2[ Iterator => OutEdgeIterator
                              , Context1 => Graph
                              , Context2 => VertexDescriptor
                              , State1 => VertexVector
                              , State2 => Stack
                              , State3 => ColorPropertyMap
-                             , iterEnd => edgeIterEnd
-                             , iterNext => edgeIterNext
+                             , iterEnd => outEdgeIterEnd
+                             , iterNext => outEdgeIterNext
                              , step => bfsInnerLoopStep
                              , forLoopRepeat => bfsInnerLoopRepeat
                              ];
@@ -100,16 +101,16 @@ program CppDFSTestVisitor = {
 
     use CppBaseTypes;
 
-    // CppIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
+    // CppIncidenceAndVertexListAndEdgeListGraph exposes the API of both IncidenceGraph
     // and VertexListGraph.
-    use CppIncidenceAndVertexListGraph;
+    use CppIncidenceAndVertexListAndEdgeListGraph;
 
-    use CppPair[ A => EdgeIterator
-               , B => EdgeIterator
-               , Pair => EdgeIteratorRange
+    use CppPair[ A => OutEdgeIterator
+               , B => OutEdgeIterator
+               , Pair => OutEdgeIteratorRange
                , first => iterRangeBegin
                , second => iterRangeEnd
-               , makePair => makeEdgeIteratorRange
+               , makePair => makeOutEdgeIteratorRange
                ];
 
     use CppVector[ A => VertexDescriptor
@@ -139,15 +140,15 @@ program CppParallelBFSTestVisitor = {
     // practice, for the sake of the example, we use openmp in the backend for
     // our example, which requires the ability to write ++itr instead of
     // iterNext(itr).
-    use CppForParallelIteratorLoop3_2[ Iterator => EdgeIterator
+    use CppForParallelIteratorLoop3_2[ Iterator => OutEdgeIterator
                                      , Context1 => Graph
                                      , Context2 => VertexDescriptor
                                      , State1 => VertexVector
                                      , State2 => FIFOQueue
                                      , State3 => ColorPropertyMap
-                                     , iterEnd => edgeIterEnd
+                                     , iterEnd => outEdgeIterEnd
                                      // must be equivalent to incrementation
-                                     , iterNext => edgeIterNext
+                                     , iterNext => outEdgeIterNext
                                      , step => bfsInnerLoopStep
                                      , forLoopRepeat => bfsInnerLoopRepeat
                                      ];
@@ -162,16 +163,16 @@ program CppParallelBFSTestVisitor = {
 
     use CppBaseTypes;
 
-    // CppIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
+    // CppIncidenceAndVertexListAndEdgeListGraph exposes the API of both IncidenceGraph
     // and VertexListGraph.
-    use CppIncidenceAndVertexListGraph;
+    use CppIncidenceAndVertexListAndEdgeListGraph;
 
-    use CppPair[ A => EdgeIterator
-               , B => EdgeIterator
-               , Pair => EdgeIteratorRange
+    use CppPair[ A => OutEdgeIterator
+               , B => OutEdgeIterator
+               , Pair => OutEdgeIteratorRange
                , first => iterRangeBegin
                , second => iterRangeEnd
-               , makePair => makeEdgeIteratorRange
+               , makePair => makeOutEdgeIteratorRange
                ];
 
     use CppThreadSafeVector[ A => VertexDescriptor
@@ -198,13 +199,13 @@ program CppParallelBFSTestVisitor = {
                      , repeat => bfsOuterLoopRepeat
                      ];
 
-    use CppForParallelIteratorLoop3_2[ Iterator => EdgeIterator
+    use CppForParallelIteratorLoop3_2[ Iterator => OutEdgeIterator
                                      , Context1 => Graph
                                      , Context2 => VertexDescriptor
                                      , State1 => VertexVector
                                      , State2 => FIFOQueue
                                      , State3 => ColorPropertyMap
-                                     , iterNext => edgeIterNext
+                                     , iterNext => outEdgeIterNext
                                      , step => bfsInnerLoopStep
                                      , forLoopRepeat => bfsInnerLoopRepeat
                                      ];
@@ -218,16 +219,16 @@ program CppParallelBFSTestVisitor = {
 
     use CppBaseTypes;
 
-    // CppIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
+    // CppIncidenceAndVertexListAndEdgeListGraph exposes the API of both IncidenceGraph
     // and VertexListGraph.
-    use CppIncidenceAndVertexListGraph;
+    use CppIncidenceAndVertexListAndEdgeListGraph;
 
-    use CppPair[ A => EdgeIterator
-               , B => EdgeIterator
-               , Pair => EdgeIteratorRange
+    use CppPair[ A => OutEdgeIterator
+               , B => OutEdgeIterator
+               , Pair => OutEdgeIteratorRange
                , first => iterRangeBegin
                , second => iterRangeEnd
-               , makePair => makeEdgeIteratorRange
+               , makePair => makeOutEdgeIteratorRange
                ];
 
     use CppVector[ A => VertexDescriptor
@@ -259,14 +260,14 @@ program CppDijkstraVisitor = {
                      , repeat => bfsOuterLoopRepeat
                      ];
 
-    use CppForIteratorLoop3_2[ Iterator => EdgeIterator
+    use CppForIteratorLoop3_2[ Iterator => OutEdgeIterator
                              , Context1 => Graph
                              , Context2 => VertexDescriptor
                              , State1 => StateWithMaps
                              , State2 => PriorityQueue
                              , State3 => ColorPropertyMap
-                             , iterEnd => edgeIterEnd
-                             , iterNext => edgeIterNext
+                             , iterEnd => outEdgeIterEnd
+                             , iterNext => outEdgeIterNext
                              , step => bfsInnerLoopStep
                              , forLoopRepeat => bfsInnerLoopRepeat
                              ];
@@ -289,13 +290,13 @@ program CppDijkstraVisitor = {
 
 
     use CppReadWritePropertyMapWithInitList[ Key => EdgeDescriptor
-                                           , KeyListIterator => EdgeIterator
+                                           , KeyListIterator => OutEdgeIterator
                                            , Value => Cost
                                            , PropertyMap => EdgeCostMap
                                            , emptyMap => emptyECMap
-                                           , iterEnd => edgeIterEnd
-                                           , iterNext => edgeIterNext
-                                           , iterUnpack => edgeIterUnpack
+                                           , iterEnd => outEdgeIterEnd
+                                           , iterNext => outEdgeIterNext
+                                           , iterUnpack => outEdgeIterUnpack
                                            ];
 
     use CppReadWritePropertyMapWithInitList[ Key => VertexDescriptor
@@ -330,16 +331,16 @@ program CppDijkstraVisitor = {
 
     use CppBaseTypes;
 
-    // CppIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
+    // CppIncidenceAndVertexListAndEdgeListGraph exposes the API of both IncidenceGraph
     // and VertexListGraph.
-    use CppIncidenceAndVertexListGraph;
+    use CppIncidenceAndVertexListAndEdgeListGraph;
 
-    use CppPair[ A => EdgeIterator
-               , B => EdgeIterator
-               , Pair => EdgeIteratorRange
+    use CppPair[ A => OutEdgeIterator
+               , B => OutEdgeIterator
+               , Pair => OutEdgeIteratorRange
                , first => iterRangeBegin
                , second => iterRangeEnd
-               , makePair => makeEdgeIteratorRange
+               , makePair => makeOutEdgeIteratorRange
                ];
 
     use CppVector[ A => VertexDescriptor
@@ -354,12 +355,12 @@ program CppDijkstraVisitor = {
 
     use CppIterableList[ A => Edge
                        , List => EdgeList
-                       , ListIterator => EdgeIterator
+                       , ListIterator => OutEdgeIterator
                        , empty => emptyEdgeList
-                       , iterBegin => edgeIterBegin
-                       , iterEnd => edgeIterEnd
-                       , iterNext => edgeIterNext
-                       , iterUnpack => edgeIterUnpack
+                       , iterBegin => outEdgeIterBegin
+                       , iterEnd => outEdgeIterEnd
+                       , iterNext => outEdgeIterNext
+                       , iterUnpack => outEdgeIterUnpack
                        ];
     use CppIterableList[ A => Vertex
                        , List => VertexList
@@ -432,13 +433,13 @@ program CppDijkstraVisitor = {
                      , repeat => bfsOuterLoopRepeat
                     ];
 
-    use CppForIteratorLoop3_2[ Iterator => EdgeIterator
+    use CppForIteratorLoop3_2[ Iterator => OutEdgeIterator
                              , Context1 => Graph
                              , Context2 => Vertex
                              , State1 => StateWithMaps
                              , State2 => PriorityQueue
                              , State3 => ColorPropertyMap
-                             , iterNext => edgeIterNext
+                             , iterNext => outEdgeIterNext
                              , step => bfsInnerLoopStep
                              , forLoopRepeat => bfsInnerLoopRepeat
                              ];
@@ -463,15 +464,15 @@ program CppDijkstraVisitor = {
 
     use CppReadWritePropertyMapWithInitList[ Key => Edge
                                            , KeyList => EdgeList
-                                           , KeyListIterator => EdgeIterator
+                                           , KeyListIterator => OutEdgeIterator
                                            , Value => Cost
                                            , PropertyMap => EdgeCostMap
                                            , emptyKeyList => emptyEdgeList
                                            , emptyMap => emptyECMap
-                                           , iterBegin => edgeIterBegin
-                                           , iterEnd => edgeIterEnd
-                                           , iterNext => edgeIterNext
-                                           , iterUnpack => edgeIterUnpack
+                                           , iterBegin => outEdgeIterBegin
+                                           , iterEnd => outEdgeIterEnd
+                                           , iterNext => outEdgeIterNext
+                                           , iterUnpack => outEdgeIterUnpack
                                            ];
 
     use CppReadWritePropertyMapWithInitList[ Key => Vertex
@@ -503,9 +504,9 @@ program CppDijkstraVisitor = {
     use CppBaseTypes;
     use CppBaseFloatOps[ Float => Cost ];
     use CppEdge;
-    // CppIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
+    // CppIncidenceAndVertexListAndEdgeListGraph exposes the API of both IncidenceGraph
     // and VertexListGraph.
-    use CppIncidenceAndVertexListGraph[ consEdgeList => cons
+    use CppIncidenceAndVertexListAndEdgeListGraph[ consEdgeList => cons
                                       , consVertexList => cons
                                       , headEdgeList => head
                                       , headVertexList => head
@@ -514,12 +515,12 @@ program CppDijkstraVisitor = {
                                       , tailEdgeList => tail
                                       , tailVertexList => tail
                                       ];
-    use CppPair[ A => EdgeIterator
-               , B => EdgeIterator
-               , Pair => EdgeIteratorRange
+    use CppPair[ A => OutEdgeIterator
+               , B => OutEdgeIterator
+               , Pair => OutEdgeIteratorRange
                , first => iterRangeBegin
                , second => iterRangeEnd
-               , makePair => makeEdgeIteratorRange
+               , makePair => makeOutEdgeIteratorRange
                ];
 }
 */
@@ -531,12 +532,12 @@ program CppBFSParallelTestVisitor = {
     //use CppColorMarker;
     use CppIterableList[ A => Edge
                        , List => EdgeList
-                       , ListIterator => EdgeIterator
+                       , ListIterator => OutEdgeIterator
                        , empty => emptyEdgeList
-                       , iterBegin => edgeIterBegin
-                       , iterEnd => edgeIterEnd
-                       , iterNext => edgeIterNext
-                       , iterUnpack => edgeIterUnpack
+                       , iterBegin => outEdgeIterBegin
+                       , iterEnd => outEdgeIterEnd
+                       , iterNext => outEdgeIterNext
+                       , iterUnpack => outEdgeIterUnpack
                        ];
     use CppIterableList[ A => Vertex
                        , List => VertexList
@@ -561,13 +562,13 @@ program CppBFSParallelTestVisitor = {
                      , repeat => bfsOuterLoopRepeat
                      ];
 
-    use CppForParallelIteratorLoop3_2[ Iterator => EdgeIterator
+    use CppForParallelIteratorLoop3_2[ Iterator => OutEdgeIterator
                                      , Context1 => Graph
                                      , Context2 => Vertex
                                      , State1 => VertexVector
                                      , State2 => FIFOQueue
                                      , State3 => ColorPropertyMap
-                                     , iterNext => edgeIterNext
+                                     , iterNext => outEdgeIterNext
                                      , step => bfsInnerLoopStep
                                      , forLoopRepeat => bfsInnerLoopRepeat
                                      ];
@@ -585,9 +586,9 @@ program CppBFSParallelTestVisitor = {
 
     use CppBaseTypes;
     use CppEdge;
-    // CppIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
+    // CppIncidenceAndVertexListAndEdgeListGraph exposes the API of both IncidenceGraph
     // and VertexListGraph.
-    use CppIncidenceAndVertexListGraph[ consEdgeList => cons
+    use CppIncidenceAndVertexListAndEdgeListGraph[ consEdgeList => cons
                                       , consVertexList => cons
                                       , headEdgeList => head
                                       , headVertexList => head
@@ -596,12 +597,12 @@ program CppBFSParallelTestVisitor = {
                                       , tailEdgeList => tail
                                       , tailVertexList => tail
                                       ];
-    use CppPair[ A => EdgeIterator
-               , B => EdgeIterator
-               , Pair => EdgeIteratorRange
+    use CppPair[ A => OutEdgeIterator
+               , B => OutEdgeIterator
+               , Pair => OutEdgeIteratorRange
                , first => iterRangeBegin
                , second => iterRangeEnd
-               , makePair => makeEdgeIteratorRange
+               , makePair => makeOutEdgeIteratorRange
                ];
 
     use CppThreadSafeVector[ A => Vertex
@@ -616,6 +617,15 @@ program CppCustomGraphTypeBFSTestVisitor = {
                              ];
 
     //use CppColorMarker;
+    use CppIterableList[ A => Edge
+                       , List => EdgeList
+                       , ListIterator => OutEdgeIterator
+                       , empty => emptyEdgeList
+                       , getIterator => getOutEdgeIterator
+                       , iterEnd => outEdgeIterEnd
+                       , iterNext => outEdgeIterNext
+                       , iterUnpack => outEdgeIterUnpack
+                       ];
     use CppIterableList[ A => Edge
                        , List => EdgeList
                        , ListIterator => EdgeIterator
@@ -648,14 +658,14 @@ program CppCustomGraphTypeBFSTestVisitor = {
                      , repeat => bfsOuterLoopRepeat
                      ];
 
-    use CppForIteratorLoop3_2[ Iterator => EdgeIterator
+    use CppForIteratorLoop3_2[ Iterator => OutEdgeIterator
                              , Context1 => Graph
                              , Context2 => Vertex
                              , State1 => VertexVector
                              , State2 => FIFOQueue
                              , State3 => ColorPropertyMap
-                             , iterEnd => edgeIterEnd
-                             , iterNext => edgeIterNext
+                             , iterEnd => outEdgeIterEnd
+                             , iterNext => outEdgeIterNext
                              , step => bfsInnerLoopStep
                              , forLoopRepeat => bfsInnerLoopRepeat
                              ];
@@ -669,7 +679,7 @@ program CppCustomGraphTypeBFSTestVisitor = {
 
     use CppBaseTypes;
     use CppEdgeWithoutDescriptor;
-    // CppIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
+    // CppIncidenceAndVertexListAndEdgeListGraph exposes the API of both IncidenceGraph
     // and VertexListGraph.
     use CppCustomIncidenceAndVertexListGraph[ consEdgeList => cons
                                             , consVertexList => cons
@@ -680,12 +690,12 @@ program CppCustomGraphTypeBFSTestVisitor = {
                                             , tailEdgeList => tail
                                             , tailVertexList => tail
                                             ];
-    use CppPair[ A => EdgeIterator
-               , B => EdgeIterator
-               , Pair => EdgeIteratorRange
+    use CppPair[ A => OutEdgeIterator
+               , B => OutEdgeIterator
+               , Pair => OutEdgeIteratorRange
                , first => iterRangeBegin
                , second => iterRangeEnd
-               , makePair => makeEdgeIteratorRange
+               , makePair => makeOutEdgeIteratorRange
                ];
 
     use CppVector[ A => Vertex
@@ -715,14 +725,14 @@ program CppPrimVisitor = {
                      , repeat => bfsOuterLoopRepeat
                      ];
 
-    use CppForIteratorLoop3_2[ Iterator => EdgeIterator
+    use CppForIteratorLoop3_2[ Iterator => OutEdgeIterator
                              , Context1 => Graph
                              , Context2 => VertexDescriptor
                              , State1 => StateWithMaps
                              , State2 => PriorityQueue
                              , State3 => ColorPropertyMap
-                             , iterEnd => edgeIterEnd
-                             , iterNext => edgeIterNext
+                             , iterEnd => outEdgeIterEnd
+                             , iterNext => outEdgeIterNext
                              , step => bfsInnerLoopStep
                              , forLoopRepeat => bfsInnerLoopRepeat
                              ];
@@ -745,13 +755,13 @@ program CppPrimVisitor = {
 
 
     use CppReadWritePropertyMapWithInitList[ Key => EdgeDescriptor
-                                           , KeyListIterator => EdgeIterator
+                                           , KeyListIterator => OutEdgeIterator
                                            , Value => Cost
                                            , PropertyMap => EdgeCostMap
                                            , emptyMap => emptyECMap
-                                           , iterEnd => edgeIterEnd
-                                           , iterNext => edgeIterNext
-                                           , iterUnpack => edgeIterUnpack
+                                           , iterEnd => outEdgeIterEnd
+                                           , iterNext => outEdgeIterNext
+                                           , iterUnpack => outEdgeIterUnpack
                                            ];
 
     use CppReadWritePropertyMapWithInitList[ Key => VertexDescriptor
@@ -786,16 +796,16 @@ program CppPrimVisitor = {
 
     use CppBaseTypes;
 
-    // CppIncidenceAndVertexListGraph exposes the API of both IncidenceGraph
+    // CppIncidenceAndVertexListAndEdgeListGraph exposes the API of both IncidenceGraph
     // and VertexListGraph.
-    use CppIncidenceAndVertexListGraph;
+    use CppIncidenceAndVertexListAndEdgeListGraph;
 
-    use CppPair[ A => EdgeIterator
-               , B => EdgeIterator
-               , Pair => EdgeIteratorRange
+    use CppPair[ A => OutEdgeIterator
+               , B => OutEdgeIterator
+               , Pair => OutEdgeIteratorRange
                , first => iterRangeBegin
                , second => iterRangeEnd
-               , makePair => makeEdgeIteratorRange
+               , makePair => makeOutEdgeIteratorRange
                ];
 
     use CppVector[ A => VertexDescriptor
@@ -803,3 +813,91 @@ program CppPrimVisitor = {
                  , empty => emptyVertexVector
                  ];
 };
+
+program CppBellmanFord = {
+    use GenericBellmanFord;
+
+    use CppBaseFloatOps[ Float => Cost ];
+
+    use CppForIteratorLoop[ Context => Unit
+                          , Iterator => VertexIterator
+                          , State => VertexPredecessorMap
+                          , iterEnd => vertexIterEnd
+                          , iterNext => vertexIterNext
+                          , step => populateVPMapLoopStep
+                          , forLoopRepeat => populateVPMapLoopRepeat
+                          ];
+
+    use CppForIteratorLoop3_2[ Context1 => EdgeCostMap
+                             , Context2 => Graph
+                             , Iterator => VertexIterator
+                             , State1 => Unit
+                             , State2 => VertexCostMap
+                             , State3 => VertexPredecessorMap
+                             , iterEnd => vertexIterEnd
+                             , iterNext => vertexIterNext
+                             , step => edgeRelaxationOuterLoopStep
+                             , forLoopRepeat => edgeRelaxationOuterLoopRepeat
+                             ];
+
+    use CppForIteratorLoop3_2[ Context1 => EdgeCostMap
+                             , Context2 => Graph
+                             , Iterator => EdgeIterator
+                             , State1 => Unit
+                             , State2 => VertexCostMap
+                             , State3 => VertexPredecessorMap
+                             , iterEnd => edgeIterEnd
+                             , iterNext => edgeIterNext
+                             , step => edgeRelaxationInnerLoopStep
+                             , forLoopRepeat => edgeRelaxationInnerLoopRepeat
+                             ];
+
+    use CppForIteratorLoop2_3[ Context1 => VertexCostMap
+                             , Context2 => EdgeCostMap
+                             , Context3 => Graph
+                             , Iterator => EdgeIterator
+                             , State1 => Unit
+                             , State2 => Bool
+                             , iterEnd => edgeIterEnd
+                             , iterNext => edgeIterNext
+                             , step => checkNegativeCycleLoopStep
+                             , forLoopRepeat => checkNegativeCycleLoopRepeat
+                             ];
+
+    use CppReadWritePropertyMapWithInitList[ Key => EdgeDescriptor
+                                           , KeyListIterator => OutEdgeIterator
+                                           , Value => Cost
+                                           , PropertyMap => EdgeCostMap
+                                           , emptyMap => emptyECMap
+                                           , iterEnd => outEdgeIterEnd
+                                           , iterNext => outEdgeIterNext
+                                           , iterUnpack => outEdgeIterUnpack
+                                           ];
+
+    use CppReadWritePropertyMapWithInitList[ Key => VertexDescriptor
+                                           , KeyListIterator => VertexIterator
+                                           , Value => VertexDescriptor
+                                           , PropertyMap => VertexPredecessorMap
+                                           , emptyMap => emptyVPMap
+                                           , iterEnd => vertexIterEnd
+                                           , iterNext => vertexIterNext
+                                           , iterUnpack => vertexIterUnpack
+                                           ];
+
+    use CppReadWritePropertyMapWithInitList[ Key => VertexDescriptor
+                                           , KeyListIterator => VertexIterator
+                                           , Value => Cost
+                                           , PropertyMap => VertexCostMap
+                                           , emptyMap => emptyVCMap
+                                           , iterEnd => vertexIterEnd
+                                           , iterNext => vertexIterNext
+                                           , iterUnpack => vertexIterUnpack
+                                           ];
+
+    use CppBaseTypes;
+
+    use CppIncidenceAndVertexListAndEdgeListGraph;
+
+    use CppBool;
+    use CppUnit;
+}

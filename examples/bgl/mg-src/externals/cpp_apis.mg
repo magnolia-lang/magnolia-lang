@@ -16,9 +16,9 @@ implementation CppEdgeWithoutDescriptor = external C++ base.edge_without_descrip
                             , tgt => tgtPlainEdge
                             ];
 implementation CppCustomIncidenceAndVertexListGraph =
-    external C++ base.custom_incidence_and_vertex_list_graph
-        ExtCustomIncidenceAndVertexListGraph;
-implementation CppIncidenceAndVertexListGraph = external C++ base.incidence_and_vertex_list_graph ExtIncidenceAndVertexListGraph;
+    external C++ base.custom_incidence_and_vertex_list_and_edge_list_graph
+        ExtCustomIncidenceAndVertexListAndEdgeListGraph;
+implementation CppIncidenceAndVertexListAndEdgeListGraph = external C++ base.incidence_and_vertex_list_and_edge_list_graph ExtIncidenceAndVertexListAndEdgeListGraph;
 implementation CppFIFOQueue = external C++ base.fifo_queue ExtFIFOQueue;
 implementation CppThreadSafeFIFOQueue =
     external C++ base.thread_safe_fifo_queue ExtFIFOQueue;
@@ -31,6 +31,8 @@ implementation CppThreadSafeVector =
     external C++ base.thread_safe_vector ExtVector;
 implementation CppForIteratorLoop =
     external C++ base.for_iterator_loop ExtForIteratorLoop;
+implementation CppForIteratorLoop2_3 =
+    external C++ base.for_iterator_loop2_3 ExtForIteratorLoop2_3;
 implementation CppForIteratorLoop3_2 =
     external C++ base.for_iterator_loop3_2 ExtForIteratorLoop3_2;
 implementation CppForParallelIteratorLoop3_2 =
@@ -38,3 +40,6 @@ implementation CppForParallelIteratorLoop3_2 =
 implementation CppWhileLoop = external C++ base.while_loop ExtWhileLoop;
 implementation CppWhileLoop3 = external C++ base.while_loop3 ExtWhileLoop3;
 implementation CppWhileLoop4_3 = external C++ base.while_loop4_3 ExtWhileLoop4_3;
+
+implementation CppBool = external C++ base.base_bool ExtBool;
+implementation CppUnit = external C++ base.base_unit ExtUnit;

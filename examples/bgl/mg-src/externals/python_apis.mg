@@ -12,7 +12,9 @@ implementation PyReadWritePropertyMapWithInitList = external Python base.read_wr
 implementation PyPair = external Python base.pair ExtPair;
 implementation PyTriplet = external Python base.triplet ExtTriplet;
 //implementation PyEdge = external Python base.edge ExtEdge;
-implementation PyIncidenceAndVertexListGraph = external Python base.incidence_and_vertex_list_graph ExtIncidenceAndVertexListGraph;
+implementation PyIncidenceAndVertexListAndEdgeListGraph =
+    external Python base.incidence_and_vertex_list_and_edge_list_graph
+        ExtIncidenceAndVertexListAndEdgeListGraph;
 implementation PyFIFOQueue = external Python base.fifo_queue ExtFIFOQueue;
 //implementation PyThreadSafeFIFOQueue =
 //    external Python base.thread_safe_fifo_queue ExtFIFOQueue;
@@ -24,6 +26,8 @@ implementation PyVector = external Python base.vector ExtVector;
 //    external Python base.thread_safe_vector ExtVector;
 implementation PyForIteratorLoop =
     external Python base.for_iterator_loop ExtForIteratorLoop;
+implementation PyForIteratorLoop2_3 =
+    external Python base.for_iterator_loop2_3 ExtForIteratorLoop2_3;
 implementation PyForIteratorLoop3_2 =
     external Python base.for_iterator_loop3_2 ExtForIteratorLoop3_2;
 implementation PyForParallelIteratorLoop3_2 =
@@ -31,3 +35,6 @@ implementation PyForParallelIteratorLoop3_2 =
 implementation PyWhileLoop = external Python base.while_loop ExtWhileLoop;
 implementation PyWhileLoop3 = external Python base.while_loop3 ExtWhileLoop3;
 //implementation PyWhileLoop4_3 = external Python base.while_loop4_3 ExtWhileLoop4_3;
+
+implementation PyBool = external Python base.base_bool ExtBool;
+implementation PyUnit = external Python base.base_unit ExtUnit;

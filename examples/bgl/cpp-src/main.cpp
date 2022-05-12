@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "bellman_ford_test.hpp"
 #include "bfs_custom_test.hpp"
 #include "bfs_test.hpp"
 #include "bfs_parallel_test.hpp"
@@ -13,6 +14,7 @@ int main() {
     dfs::dfsTest();
     bfs_custom::bfsTest();
     dijkstra::dijkstraTest();
+    bellmanFord::bellmanFordTest();
     prim::primTest();
     bfs::bfsPerfTest();
     bfs_custom::bfsPerfTest();
