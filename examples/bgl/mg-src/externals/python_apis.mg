@@ -26,6 +26,10 @@ implementation PyVector = external Python base.vector ExtVector;
 //    external Python base.thread_safe_vector ExtVector;
 implementation PyForIteratorLoop =
     external Python base.for_iterator_loop ExtForIteratorLoop;
+implementation PyForIteratorLoop1_2 =
+    external Python base.for_iterator_loop1_2 ExtForIteratorLoop1_2;
+implementation PyForIteratorLoop1_3 =
+    external Python base.for_iterator_loop1_3 ExtForIteratorLoop1_3;
 implementation PyForIteratorLoop2_3 =
     external Python base.for_iterator_loop2_3 ExtForIteratorLoop2_3;
 implementation PyForIteratorLoop3_2 =

@@ -3,6 +3,7 @@ package examples.bgl.mg-src.bgl-py
           , examples.bgl.mg-src.bfs_utils
           , examples.bgl.mg-src.dfs_utils
           , examples.bgl.mg-src.dijkstra_utils
+          , examples.bgl.mg-src.johnson_utils
           , examples.bgl.mg-src.prim_utils
           , examples.bgl.mg-src.externals.python_apis;
 
@@ -490,4 +491,69 @@ program PyBellmanFord = {
 
     use PyBool;
     use PyUnit;
+}
+
+program PyJohnson = {
+    use GenericJohnson[ WriteableEdgeCostMap => EdgeCostMap
+                      , emptyWECMap => emptyECMap
+                      ];
+
+    use PyDijkstraVisitor;
+    use PyBellmanFord;
+
+    // VertexCostMatrix
+    use PyReadWritePropertyMapWithInitList[ Key => VertexDescriptor
+                                          , KeyListIterator => VertexIterator
+                                          , Value => VertexCostMap
+                                          , PropertyMap => VertexCostMatrix
+                                          , emptyMap => emptyVCMatrix
+                                          , iterEnd => vertexIterEnd
+                                          , iterNext => vertexIterNext
+                                          , iterUnpack => vertexIterUnpack
+                                          ];
+
+    // Vertex cost initialization
+    use PyForIteratorLoop[ Context => Cost
+                         , Iterator => VertexIterator
+                         , State => VertexCostMap
+                         , iterEnd => vertexIterEnd
+                         , iterNext => vertexIterNext
+                         , step => initializeVertexCostMapLoopStep
+                         , forLoopRepeat => initializeVertexCostMapLoopRepeat
+                         ];
+
+    // Reweighting
+    use PyForIteratorLoop1_3[ Context1 => EdgeCostMap
+                            , Context2 => VertexCostMap
+                            , Context3 => Graph
+                            , Iterator => EdgeIterator
+                            , State => EdgeCostMap
+                            , iterEnd => edgeIterEnd
+                            , iterNext => edgeIterNext
+                            , step => reweightEdgeLoopStep
+                            , forLoopRepeat => reweightEdgeLoopRepeat
+                            ];
+
+    // Dijkstra loop
+    use PyForIteratorLoop1_3[ Context1 => EdgeCostMap
+                            , Context2 => VertexCostMap
+                            , Context3 => Graph
+                            , Iterator => VertexIterator
+                            , State => VertexCostMatrix
+                            , iterEnd => vertexIterEnd
+                            , iterNext => vertexIterNext
+                            , step => dijkstraAndAdjustLoopStep
+                            , forLoopRepeat => dijkstraAndAdjustLoopRepeat
+                            ];
+
+    // Adjust loop
+    use PyForIteratorLoop1_2[ Context1 => VertexDescriptor
+                            , Context2 => VertexCostMap
+                            , Iterator => VertexIterator
+                            , State => VertexCostMap
+                            , iterEnd => vertexIterEnd
+                            , iterNext => vertexIterNext
+                            , step => adjustVertexLoopStep
+                            , forLoopRepeat => adjustVertexLoopRepeat
+                            ];
 }

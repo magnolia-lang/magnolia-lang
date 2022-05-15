@@ -746,6 +746,13 @@ public:
     };
 
     static CppBellmanFord::_get get;
+    struct _inf {
+        inline CppBellmanFord::Cost operator()() {
+            return __base_float_ops.inf();
+        };
+    };
+
+    static CppBellmanFord::_inf inf;
     struct _initMap {
         inline CppBellmanFord::VertexCostMap operator()(const CppBellmanFord::VertexIterator& kli, const CppBellmanFord::Cost& v) {
             return __read_write_property_map0.initMap(kli, v);
@@ -2113,6 +2120,13 @@ public:
     };
 
     static CppDijkstraVisitor::_dijkstraShortestPaths dijkstraShortestPaths;
+    struct _inf {
+        inline CppDijkstraVisitor::Cost operator()() {
+            return __base_float_ops.inf();
+        };
+    };
+
+    static CppDijkstraVisitor::_inf inf;
     struct _less {
         inline bool operator()(const CppDijkstraVisitor::Cost& i1, const CppDijkstraVisitor::Cost& i2) {
             return __base_float_ops.less(i1, i2);
@@ -2413,16 +2427,6 @@ namespace bgl {
 namespace mg_src {
 namespace bgl_cpp {
 struct CppJohnson {
-    struct _emptyVCMap {
-        template <typename T>
-        inline T operator()() {
-            T o;
-            CppJohnson::emptyVCMap0(o);
-            return o;
-        };
-    };
-
-    static CppJohnson::_emptyVCMap emptyVCMap;
 private:
     static base_unit __base_unit;
     static base_types __base_types;
@@ -2749,10 +2753,14 @@ public:
 
     static CppJohnson::_putVertexPredecessorMap putVertexPredecessorMap;
     typedef read_write_property_map<CppJohnson::VertexDescriptor, CppJohnson::VertexIterator, CppJohnson::VertexCostMap, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_vertexIterUnpack>::PropertyMap VertexCostMatrix;
-private:
-    static inline void emptyVCMap0(CppJohnson::VertexCostMatrix& o) {
-        o = __read_write_property_map1.emptyMap();
+    struct _emptyVCMatrix {
+        inline CppJohnson::VertexCostMatrix operator()() {
+            return __read_write_property_map1.emptyMap();
+        };
     };
+
+    static CppJohnson::_emptyVCMatrix emptyVCMatrix;
+private:
     static read_write_property_map<CppJohnson::VertexDescriptor, CppJohnson::VertexIterator, CppJohnson::VertexCostMap, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_vertexIterUnpack> __read_write_property_map1;
     static triplet<CppJohnson::VertexCostMap, CppJohnson::VertexPredecessorMap, CppJohnson::EdgeCostMap> __triplet;
 public:
@@ -2764,9 +2772,9 @@ public:
 
     static CppJohnson::_adjustVertexLoopRepeat adjustVertexLoopRepeat;
     struct _adjustVertexLoopStep {
-        inline void operator()(const CppJohnson::VertexIterator& vertexItr, CppJohnson::VertexCostMap& vcmReweighted, const CppJohnson::VertexDescriptor& srcVertex, const CppJohnson::VertexCostMap& vcm) {
+        inline void operator()(const CppJohnson::VertexIterator& vertexItr, CppJohnson::VertexCostMap& vcmResult, const CppJohnson::VertexDescriptor& srcVertex, const CppJohnson::VertexCostMap& vcm) {
             CppJohnson::VertexDescriptor currentVertex = CppJohnson::vertexIterUnpack(vertexItr);
-            CppJohnson::put(vcmReweighted, currentVertex, CppJohnson::plus(CppJohnson::plus(CppJohnson::get(vcmReweighted, currentVertex), CppJohnson::get(vcm, currentVertex)), CppJohnson::negate(CppJohnson::get(vcm, srcVertex))));
+            CppJohnson::put(vcmResult, currentVertex, CppJohnson::plus(CppJohnson::plus(CppJohnson::get(vcmResult, currentVertex), CppJohnson::get(vcm, currentVertex)), CppJohnson::negate(CppJohnson::get(vcm, srcVertex))));
         };
     };
 
@@ -2784,13 +2792,13 @@ public:
     struct _dijkstraAndAdjustLoopStep {
         inline void operator()(const CppJohnson::VertexIterator& vertexItr, CppJohnson::VertexCostMatrix& vcmat, const CppJohnson::EdgeCostMap& wecm, const CppJohnson::VertexCostMap& vcm, const CppJohnson::Graph& g) {
             CppJohnson::VertexDescriptor currentVertex = CppJohnson::vertexIterUnpack(vertexItr);
-            CppJohnson::VertexCostMap vcmReweighted = CppJohnson::get(vcmat, currentVertex);
             CppJohnson::VertexPredecessorMap vpm;
-            CppJohnson::dijkstraShortestPaths(g, currentVertex, vcmReweighted, wecm, CppJohnson::zero(), vpm);
             CppJohnson::VertexIterator innerVertexItr;
             CppJohnson::vertices(g, innerVertexItr);
-            CppJohnson::adjustVertexLoopRepeat(innerVertexItr, vcmReweighted, currentVertex, vcm);
-            CppJohnson::put(vcmat, currentVertex, vcmReweighted);
+            CppJohnson::VertexCostMap vcmResult = CppJohnson::initMap(innerVertexItr, CppJohnson::inf());
+            CppJohnson::dijkstraShortestPaths(g, currentVertex, vcmResult, wecm, CppJohnson::zero(), vpm);
+            CppJohnson::adjustVertexLoopRepeat(innerVertexItr, vcmResult, currentVertex, vcm);
+            CppJohnson::put(vcmat, currentVertex, vcmResult);
         };
     };
 
@@ -2840,6 +2848,13 @@ private:
     static for_iterator_loop3_2<CppJohnson::EdgeCostMap, CppJohnson::Graph, CppJohnson::VertexIterator, CppJohnson::Unit, CppJohnson::VertexCostMap, CppJohnson::VertexPredecessorMap, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_edgeRelaxationOuterLoopStep> __for_iterator_loop3_20;
 public:
     static CppJohnson::_edgeRelaxationOuterLoopStep edgeRelaxationOuterLoopStep;
+    struct _emptyVCMap {
+        inline CppJohnson::VertexCostMap operator()() {
+            return __read_write_property_map0.emptyMap();
+        };
+    };
+
+    static CppJohnson::_emptyVCMap emptyVCMap;
     struct _getVertexCostMap {
         inline CppJohnson::VertexCostMap operator()(const CppJohnson::StateWithMaps& p) {
             return __triplet.first(p);
@@ -2898,9 +2913,6 @@ private:
 public:
     static CppJohnson::_reweightEdgeLoopStep reweightEdgeLoopStep;
 private:
-    static inline void emptyVCMap0(CppJohnson::VertexCostMap& o) {
-        o = __read_write_property_map0.emptyMap();
-    };
     static read_write_property_map<CppJohnson::EdgeDescriptor, CppJohnson::OutEdgeIterator, CppJohnson::Cost, CppJohnson::_outEdgeIterEnd, CppJohnson::_outEdgeIterNext, CppJohnson::_outEdgeIterUnpack> __read_write_property_map;
     static read_write_property_map<CppJohnson::VertexDescriptor, CppJohnson::VertexIterator, CppJohnson::Cost, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_vertexIterUnpack> __read_write_property_map0;
 public:
@@ -2921,6 +2933,13 @@ public:
     };
 
     static CppJohnson::_dijkstraShortestPaths dijkstraShortestPaths;
+    struct _inf {
+        inline CppJohnson::Cost operator()() {
+            return __base_float_ops.inf();
+        };
+    };
+
+    static CppJohnson::_inf inf;
     struct _initializeVertexCostMapLoopRepeat {
         inline void operator()(const CppJohnson::VertexIterator& itr, CppJohnson::VertexCostMap& state, const CppJohnson::Cost& ctx) {
             return __for_iterator_loop.forLoopRepeat(itr, state, ctx);
@@ -3310,7 +3329,7 @@ public:
         inline void operator()(const CppJohnson::Graph& g, const CppJohnson::EdgeCostMap& ecm, CppJohnson::Unit& a, CppJohnson::VertexCostMatrix& vcmat, CppJohnson::Bool& succeeded) {
             CppJohnson::VertexIterator vertexItr;
             CppJohnson::vertices(g, vertexItr);
-            CppJohnson::VertexCostMap vcm = CppJohnson::emptyVCMap.operator()<VertexCostMap>();
+            CppJohnson::VertexCostMap vcm = CppJohnson::emptyVCMap();
             CppJohnson::initializeVertexCostMapLoopRepeat(vertexItr, vcm, CppJohnson::zero());
             CppJohnson::VertexPredecessorMap vpm;
             CppJohnson::bellmanFordShortestPaths(g, vcm, ecm, a, vpm, succeeded);
@@ -4066,6 +4085,13 @@ private:
     static read_write_property_map<CppPrimVisitor::EdgeDescriptor, CppPrimVisitor::OutEdgeIterator, CppPrimVisitor::Cost, CppPrimVisitor::_outEdgeIterEnd, CppPrimVisitor::_outEdgeIterNext, CppPrimVisitor::_outEdgeIterUnpack> __read_write_property_map;
     static read_write_property_map<CppPrimVisitor::VertexDescriptor, CppPrimVisitor::VertexIterator, CppPrimVisitor::Cost, CppPrimVisitor::_vertexIterEnd, CppPrimVisitor::_vertexIterNext, CppPrimVisitor::_vertexIterUnpack> __read_write_property_map0;
 public:
+    struct _inf {
+        inline CppPrimVisitor::Cost operator()() {
+            return __base_float_ops.inf();
+        };
+    };
+
+    static CppPrimVisitor::_inf inf;
     struct _less {
         inline bool operator()(const CppPrimVisitor::Cost& i1, const CppPrimVisitor::Cost& i2) {
             return __base_float_ops.less(i1, i2);

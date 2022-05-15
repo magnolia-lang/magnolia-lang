@@ -382,6 +382,10 @@ namespace bgl_cpp {
 
 
 
+    CppBellmanFord::_inf CppBellmanFord::inf;
+
+
+
     CppBellmanFord::_initMap CppBellmanFord::initMap;
 
 
@@ -1071,6 +1075,10 @@ namespace bgl_cpp {
 
 
 
+    CppDijkstraVisitor::_inf CppDijkstraVisitor::inf;
+
+
+
     CppDijkstraVisitor::_less CppDijkstraVisitor::less;
 
 
@@ -1204,10 +1212,6 @@ namespace examples {
 namespace bgl {
 namespace mg_src {
 namespace bgl_cpp {
-
-
-    CppJohnson::_emptyVCMap CppJohnson::emptyVCMap;
-
     base_unit CppJohnson::__base_unit;
 
     base_types CppJohnson::__base_types;
@@ -1378,6 +1382,10 @@ namespace bgl_cpp {
 
     CppJohnson::_putVertexPredecessorMap CppJohnson::putVertexPredecessorMap;
 
+
+
+    CppJohnson::_emptyVCMatrix CppJohnson::emptyVCMatrix;
+
     read_write_property_map<CppJohnson::VertexDescriptor, CppJohnson::VertexIterator, CppJohnson::VertexCostMap, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_vertexIterUnpack> CppJohnson::__read_write_property_map1;
 
     triplet<CppJohnson::VertexCostMap, CppJohnson::VertexPredecessorMap, CppJohnson::EdgeCostMap> CppJohnson::__triplet;
@@ -1424,6 +1432,10 @@ namespace bgl_cpp {
 
 
 
+    CppJohnson::_emptyVCMap CppJohnson::emptyVCMap;
+
+
+
     CppJohnson::_getVertexCostMap CppJohnson::getVertexCostMap;
 
 
@@ -1455,6 +1467,10 @@ namespace bgl_cpp {
 
 
     CppJohnson::_dijkstraShortestPaths CppJohnson::dijkstraShortestPaths;
+
+
+
+    CppJohnson::_inf CppJohnson::inf;
 
 
 
@@ -2005,6 +2021,10 @@ namespace bgl_cpp {
     read_write_property_map<CppPrimVisitor::EdgeDescriptor, CppPrimVisitor::OutEdgeIterator, CppPrimVisitor::Cost, CppPrimVisitor::_outEdgeIterEnd, CppPrimVisitor::_outEdgeIterNext, CppPrimVisitor::_outEdgeIterUnpack> CppPrimVisitor::__read_write_property_map;
 
     read_write_property_map<CppPrimVisitor::VertexDescriptor, CppPrimVisitor::VertexIterator, CppPrimVisitor::Cost, CppPrimVisitor::_vertexIterEnd, CppPrimVisitor::_vertexIterNext, CppPrimVisitor::_vertexIterUnpack> CppPrimVisitor::__read_write_property_map0;
+
+
+
+    CppPrimVisitor::_inf CppPrimVisitor::inf;
 
 
 

@@ -13,6 +13,7 @@ implementation JohnsonBase = {
   require function emptyVCMap(): VertexCostMap;
   require function emptyWECMap(): WriteableEdgeCostMap;
   require function zero(): Cost;
+  require function inf(): Cost;
 
   use ReadWritePropertyMap[ Key => EdgeDescriptor
                           , Value => Cost
@@ -23,6 +24,8 @@ implementation JohnsonBase = {
                           , Value => VertexCostMap
                           , PropertyMap => VertexCostMatrix
                           ];
+
+  require function initMap(vitr: VertexIterator, c: Cost): VertexCostMap;
 
   procedure johnsonAllPairsShortestPaths(obs g: Graph,
                                          obs ecm: EdgeCostMap,
@@ -119,20 +122,23 @@ implementation JohnsonBase = {
                                       obs vcm: VertexCostMap,
                                       obs g: Graph) {
     var currentVertex = vertexIterUnpack(vertexItr);
-    var vcmReweighted = get(vcmat, currentVertex);
     var vpm: VertexPredecessorMap;
 
-    // Call to Dijkstra
-    call dijkstraShortestPaths(g, currentVertex, vcmReweighted, wecm, zero(), vpm);
-
-    // Adjust
+    // Initalize vcm
     var innerVertexItr: VertexIterator;
     call vertices(g, innerVertexItr);
-    call adjustVertexLoopRepeat(innerVertexItr, vcmReweighted, currentVertex,
+
+    var vcmResult = initMap(innerVertexItr, inf());
+
+    // Call to Dijkstra
+    call dijkstraShortestPaths(g, currentVertex, vcmResult, wecm, zero(), vpm);
+
+    // Adjust
+    call adjustVertexLoopRepeat(innerVertexItr, vcmResult, currentVertex,
                                 vcm);
 
     // Set the new vertex cost matrix line
-    call put(vcmat, currentVertex, vcmReweighted);
+    call put(vcmat, currentVertex, vcmResult);
   }
 
   // Adjust utils
@@ -147,12 +153,12 @@ implementation JohnsonBase = {
                             ];
 
   procedure adjustVertexLoopStep(obs vertexItr: VertexIterator,
-                                 upd vcmReweighted: VertexCostMap,
+                                 upd vcmResult: VertexCostMap,
                                  obs srcVertex: VertexDescriptor,
                                  obs vcm: VertexCostMap) {
     var currentVertex = vertexIterUnpack(vertexItr);
-    call put(vcmReweighted, currentVertex,
-             plus(plus(get(vcmReweighted, currentVertex),
+    call put(vcmResult, currentVertex,
+             plus(plus(get(vcmResult, currentVertex),
                        get(vcm, currentVertex)),
                   negate(get(vcm, srcVertex))));
   }

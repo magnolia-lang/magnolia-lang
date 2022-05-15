@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include <math.h>
 #include <omp.h>
 #include <stdlib.h>
 
@@ -63,6 +64,7 @@ struct base_float_ops {
     inline bool less(const Float &i1, const Float &i2) const { return i1 < i2; }
     inline Float negate(const Float &f) { return -f; }
     inline Float zero() { return 0; }
+    inline Float inf() { return INFINITY; }
 };
 
 // color_marker_cpp

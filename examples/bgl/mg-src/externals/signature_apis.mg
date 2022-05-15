@@ -23,6 +23,7 @@ implementation ExtBaseFloatOps = {
     predicate less(i1: Float, i2: Float);
     function negate(f: Float): Float;
     function zero(): Float;
+    function inf(): Float;
 }
 
 implementation ExtColorMarker = signature(ColorMarker);

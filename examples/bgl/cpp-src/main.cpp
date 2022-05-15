@@ -7,6 +7,7 @@
 #include "bgl_test.hpp"
 #include "dfs_test.hpp"
 #include "dijkstra_test.hpp"
+#include "johnson_test.hpp"
 #include "prim_test.hpp"
 
 int main() {
@@ -16,6 +17,7 @@ int main() {
     dijkstra::dijkstraTest();
     bellmanFord::bellmanFordTest();
     prim::primTest();
+    johnson::johnsonTest();
     bfs::bfsPerfTest();
     bfs_custom::bfsPerfTest();
     //bfsParallel::bfsParallelPerfTest();
