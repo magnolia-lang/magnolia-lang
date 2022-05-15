@@ -27,6 +27,50 @@ concept ForIteratorLoop = {
     }
 }
 
+concept ForIteratorLoop1_2 = {
+    require type Context1;
+    require type Context2;
+    require type State;
+
+    require type Iterator;
+
+    require predicate iterEnd(itr: Iterator);
+    require procedure iterNext(upd itr: Iterator);
+    require procedure step(obs itr: Iterator,
+                           upd s1: State,
+                           obs ctx1: Context1,
+                           obs ctx2: Context2);
+
+    procedure forLoopRepeat(obs itr: Iterator,
+                            upd s1: State,
+                            obs ctx1: Context1,
+                            obs ctx2: Context2);
+}
+
+concept ForIteratorLoop1_3 = {
+    require type Context1;
+    require type Context2;
+    require type Context3;
+    require type State;
+
+    require type Iterator;
+
+    require predicate iterEnd(itr: Iterator);
+    require procedure iterNext(upd itr: Iterator);
+    require procedure step(obs itr: Iterator,
+                           upd s1: State,
+                           obs ctx1: Context1,
+                           obs ctx2: Context2,
+                           obs ctx3: Context3);
+
+    procedure forLoopRepeat(obs itr: Iterator,
+                            upd s1: State,
+                            obs ctx1: Context1,
+                            obs ctx2: Context2,
+                            obs ctx3: Context3);
+}
+
+
 concept ForIteratorLoop2_3 = {
     require type Context1;
     require type Context2;

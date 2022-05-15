@@ -31,6 +31,10 @@ implementation CppThreadSafeVector =
     external C++ base.thread_safe_vector ExtVector;
 implementation CppForIteratorLoop =
     external C++ base.for_iterator_loop ExtForIteratorLoop;
+implementation CppForIteratorLoop1_2 =
+    external C++ base.for_iterator_loop1_2 ExtForIteratorLoop1_2;
+implementation CppForIteratorLoop1_3 =
+    external C++ base.for_iterator_loop1_3 ExtForIteratorLoop1_3;
 implementation CppForIteratorLoop2_3 =
     external C++ base.for_iterator_loop2_3 ExtForIteratorLoop2_3;
 implementation CppForIteratorLoop3_2 =

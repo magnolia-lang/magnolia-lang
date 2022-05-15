@@ -85,6 +85,7 @@ implementation DijkstraVisitorBase = {
 
     require function emptyVPMap(): VertexPredecessorMap;
 
+    // TODO: add 'A' type parameter, for potential event points (?)
     procedure dijkstraShortestPaths(obs g: Graph,
                                     obs start: VertexDescriptor,
                                     upd vcm: VertexCostMap,

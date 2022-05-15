@@ -21,6 +21,8 @@ implementation ExtBaseFloatOps = {
     type Float;
     function plus(i1: Float, i2: Float): Float;
     predicate less(i1: Float, i2: Float);
+    function negate(f: Float): Float;
+    function zero(): Float;
 }
 
 implementation ExtColorMarker = signature(ColorMarker);
@@ -163,6 +165,8 @@ implementation ExtTriplet = signature(Triplet);
 implementation ExtVector = signature(Vector);
 
 implementation ExtForIteratorLoop = signature(ForIteratorLoop);
+implementation ExtForIteratorLoop1_2 = signature(ForIteratorLoop1_2);
+implementation ExtForIteratorLoop1_3 = signature(ForIteratorLoop1_3);
 implementation ExtForIteratorLoop2_3 = signature(ForIteratorLoop2_3);
 implementation ExtForIteratorLoop3_2 = signature(ForIteratorLoop3_2);
 
