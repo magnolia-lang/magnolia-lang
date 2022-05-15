@@ -390,11 +390,19 @@ namespace bgl_cpp {
 
 
 
+    CppBellmanFord::_negate CppBellmanFord::negate;
+
+
+
     CppBellmanFord::_plus CppBellmanFord::plus;
 
 
 
     CppBellmanFord::_put CppBellmanFord::put;
+
+
+
+    CppBellmanFord::_zero CppBellmanFord::zero;
 
 
 
@@ -1067,7 +1075,15 @@ namespace bgl_cpp {
 
 
 
+    CppDijkstraVisitor::_negate CppDijkstraVisitor::negate;
+
+
+
     CppDijkstraVisitor::_plus CppDijkstraVisitor::plus;
+
+
+
+    CppDijkstraVisitor::_zero CppDijkstraVisitor::zero;
 
 
 
@@ -1178,6 +1194,433 @@ namespace bgl_cpp {
 
 
     CppDijkstraVisitor::_white CppDijkstraVisitor::white;
+
+} // examples
+} // bgl
+} // mg_src
+} // bgl_cpp
+
+namespace examples {
+namespace bgl {
+namespace mg_src {
+namespace bgl_cpp {
+
+
+    CppJohnson::_emptyVCMap CppJohnson::emptyVCMap;
+
+    base_unit CppJohnson::__base_unit;
+
+    base_types CppJohnson::__base_types;
+
+    base_float_ops CppJohnson::__base_float_ops;
+
+    base_bool CppJohnson::__base_bool;
+
+
+
+    CppJohnson::_emptyVertexVector CppJohnson::emptyVertexVector;
+
+    vector<CppJohnson::VertexDescriptor> CppJohnson::__vector;
+
+
+
+    CppJohnson::_pushBack CppJohnson::pushBack;
+
+
+
+    CppJohnson::_vertexIterEnd CppJohnson::vertexIterEnd;
+
+
+
+    CppJohnson::_vertexIterNext CppJohnson::vertexIterNext;
+
+
+
+
+
+    CppJohnson::_emptyVPMap CppJohnson::emptyVPMap;
+
+    read_write_property_map<CppJohnson::VertexDescriptor, CppJohnson::VertexIterator, CppJohnson::VertexDescriptor, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_vertexIterUnpack> CppJohnson::__read_write_property_map2;
+
+    two_bit_color_map<CppJohnson::VertexDescriptor, CppJohnson::VertexIterator, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_vertexIterUnpack> CppJohnson::__two_bit_color_map;
+
+    CppJohnson::_vertexIterUnpack CppJohnson::vertexIterUnpack;
+
+    incidence_and_vertex_list_and_edge_list_graph<CppJohnson::Vertex> CppJohnson::__incidence_and_vertex_list_and_edge_list_graph;
+
+
+
+    CppJohnson::_forIterationEnd CppJohnson::forIterationEnd;
+
+
+
+    CppJohnson::_populateVPMapLoopRepeat CppJohnson::populateVPMapLoopRepeat;
+
+
+
+    for_iterator_loop<CppJohnson::Unit, CppJohnson::VertexIterator, CppJohnson::VertexPredecessorMap, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_populateVPMapLoopStep> CppJohnson::__for_iterator_loop0;
+
+    for_iterator_loop<CppJohnson::VertexDescriptor, CppJohnson::VertexIterator, CppJohnson::VertexPredecessorMap, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_populateVPMapLoopStep> CppJohnson::__for_iterator_loop1;
+
+    CppJohnson::_populateVPMapLoopStep CppJohnson::populateVPMapLoopStep;
+
+
+
+    CppJohnson::_unit CppJohnson::unit;
+
+    pair<CppJohnson::OutEdgeIterator, CppJohnson::OutEdgeIterator> CppJohnson::__pair;
+
+
+
+    CppJohnson::_iterRangeBegin CppJohnson::iterRangeBegin;
+
+
+
+    CppJohnson::_iterRangeEnd CppJohnson::iterRangeEnd;
+
+
+
+    CppJohnson::_makeOutEdgeIteratorRange CppJohnson::makeOutEdgeIteratorRange;
+
+
+
+    CppJohnson::_outEdgeIterEnd CppJohnson::outEdgeIterEnd;
+
+
+
+    CppJohnson::_outEdgeIterNext CppJohnson::outEdgeIterNext;
+
+
+
+    CppJohnson::_numVertices CppJohnson::numVertices;
+
+
+
+    CppJohnson::_outDegree CppJohnson::outDegree;
+
+
+
+    CppJohnson::_outEdges CppJohnson::outEdges;
+
+
+
+    CppJohnson::_toVertexDescriptor CppJohnson::toVertexDescriptor;
+
+
+
+    CppJohnson::_vertices CppJohnson::vertices;
+
+
+
+    CppJohnson::_edgeIterEnd CppJohnson::edgeIterEnd;
+
+
+
+    CppJohnson::_edgeIterNext CppJohnson::edgeIterNext;
+
+
+
+    CppJohnson::_edges CppJohnson::edges;
+
+
+
+    CppJohnson::_edgeIterUnpack CppJohnson::edgeIterUnpack;
+
+
+
+    CppJohnson::_edgeMinimized CppJohnson::edgeMinimized;
+
+
+
+    CppJohnson::_edgeNotMinimized CppJohnson::edgeNotMinimized;
+
+
+
+    CppJohnson::_edgeNotRelaxed CppJohnson::edgeNotRelaxed;
+
+
+
+    CppJohnson::_edgeRelaxed CppJohnson::edgeRelaxed;
+
+
+
+    CppJohnson::_outEdgeIterUnpack CppJohnson::outEdgeIterUnpack;
+
+
+
+    CppJohnson::_src CppJohnson::src;
+
+
+
+    CppJohnson::_tgt CppJohnson::tgt;
+
+
+
+    CppJohnson::_toEdgeDescriptor CppJohnson::toEdgeDescriptor;
+
+
+
+    CppJohnson::_makeEdge CppJohnson::makeEdge;
+
+
+
+    CppJohnson::_emptyECMap CppJohnson::emptyECMap;
+
+
+
+    CppJohnson::_getEdgeCostMap CppJohnson::getEdgeCostMap;
+
+
+
+    CppJohnson::_getVertexPredecessorMap CppJohnson::getVertexPredecessorMap;
+
+
+
+    CppJohnson::_putVertexPredecessorMap CppJohnson::putVertexPredecessorMap;
+
+    read_write_property_map<CppJohnson::VertexDescriptor, CppJohnson::VertexIterator, CppJohnson::VertexCostMap, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_vertexIterUnpack> CppJohnson::__read_write_property_map1;
+
+    triplet<CppJohnson::VertexCostMap, CppJohnson::VertexPredecessorMap, CppJohnson::EdgeCostMap> CppJohnson::__triplet;
+
+
+
+    CppJohnson::_adjustVertexLoopRepeat CppJohnson::adjustVertexLoopRepeat;
+
+
+
+    for_iterator_loop1_2<CppJohnson::VertexDescriptor, CppJohnson::VertexCostMap, CppJohnson::VertexIterator, CppJohnson::VertexCostMap, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_adjustVertexLoopStep> CppJohnson::__for_iterator_loop1_2;
+
+    CppJohnson::_adjustVertexLoopStep CppJohnson::adjustVertexLoopStep;
+
+
+
+    CppJohnson::_dijkstraAndAdjustLoopRepeat CppJohnson::dijkstraAndAdjustLoopRepeat;
+
+
+
+    for_iterator_loop1_3<CppJohnson::EdgeCostMap, CppJohnson::VertexCostMap, CppJohnson::Graph, CppJohnson::VertexIterator, CppJohnson::VertexCostMatrix, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_dijkstraAndAdjustLoopStep> CppJohnson::__for_iterator_loop1_30;
+
+    CppJohnson::_dijkstraAndAdjustLoopStep CppJohnson::dijkstraAndAdjustLoopStep;
+
+
+
+    CppJohnson::_edgeRelaxationInnerLoopRepeat CppJohnson::edgeRelaxationInnerLoopRepeat;
+
+
+
+    for_iterator_loop3_2<CppJohnson::EdgeCostMap, CppJohnson::Graph, CppJohnson::EdgeIterator, CppJohnson::Unit, CppJohnson::VertexCostMap, CppJohnson::VertexPredecessorMap, CppJohnson::_edgeIterEnd, CppJohnson::_edgeIterNext, CppJohnson::_edgeRelaxationInnerLoopStep> CppJohnson::__for_iterator_loop3_2;
+
+    CppJohnson::_edgeRelaxationInnerLoopStep CppJohnson::edgeRelaxationInnerLoopStep;
+
+
+
+    CppJohnson::_edgeRelaxationOuterLoopRepeat CppJohnson::edgeRelaxationOuterLoopRepeat;
+
+
+
+    for_iterator_loop3_2<CppJohnson::EdgeCostMap, CppJohnson::Graph, CppJohnson::VertexIterator, CppJohnson::Unit, CppJohnson::VertexCostMap, CppJohnson::VertexPredecessorMap, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_edgeRelaxationOuterLoopStep> CppJohnson::__for_iterator_loop3_20;
+
+    CppJohnson::_edgeRelaxationOuterLoopStep CppJohnson::edgeRelaxationOuterLoopStep;
+
+
+
+    CppJohnson::_getVertexCostMap CppJohnson::getVertexCostMap;
+
+
+
+    CppJohnson::_makeStateWithMaps CppJohnson::makeStateWithMaps;
+
+
+
+    CppJohnson::_putVertexCostMap CppJohnson::putVertexCostMap;
+
+
+
+    CppJohnson::_relax CppJohnson::relax;
+
+
+
+    CppJohnson::_reweightEdgeLoopRepeat CppJohnson::reweightEdgeLoopRepeat;
+
+
+
+    for_iterator_loop1_3<CppJohnson::EdgeCostMap, CppJohnson::VertexCostMap, CppJohnson::Graph, CppJohnson::EdgeIterator, CppJohnson::EdgeCostMap, CppJohnson::_edgeIterEnd, CppJohnson::_edgeIterNext, CppJohnson::_reweightEdgeLoopStep> CppJohnson::__for_iterator_loop1_3;
+
+    CppJohnson::_reweightEdgeLoopStep CppJohnson::reweightEdgeLoopStep;
+
+    read_write_property_map<CppJohnson::EdgeDescriptor, CppJohnson::OutEdgeIterator, CppJohnson::Cost, CppJohnson::_outEdgeIterEnd, CppJohnson::_outEdgeIterNext, CppJohnson::_outEdgeIterUnpack> CppJohnson::__read_write_property_map;
+
+    read_write_property_map<CppJohnson::VertexDescriptor, CppJohnson::VertexIterator, CppJohnson::Cost, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_vertexIterUnpack> CppJohnson::__read_write_property_map0;
+
+
+
+    CppJohnson::_dijkstraShortestPaths CppJohnson::dijkstraShortestPaths;
+
+
+
+    CppJohnson::_initializeVertexCostMapLoopRepeat CppJohnson::initializeVertexCostMapLoopRepeat;
+
+
+
+    for_iterator_loop<CppJohnson::Cost, CppJohnson::VertexIterator, CppJohnson::VertexCostMap, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_initializeVertexCostMapLoopStep> CppJohnson::__for_iterator_loop;
+
+    CppJohnson::_initializeVertexCostMapLoopStep CppJohnson::initializeVertexCostMapLoopStep;
+
+
+
+    CppJohnson::_less CppJohnson::less;
+
+
+
+    CppJohnson::_negate CppJohnson::negate;
+
+
+
+    CppJohnson::_plus CppJohnson::plus;
+
+
+
+    CppJohnson::_zero CppJohnson::zero;
+
+
+
+    CppJohnson::_black CppJohnson::black;
+
+
+
+
+
+    CppJohnson::_bfsInnerLoopRepeat CppJohnson::bfsInnerLoopRepeat;
+
+
+
+    for_iterator_loop3_2<CppJohnson::Graph, CppJohnson::VertexDescriptor, CppJohnson::OutEdgeIterator, CppJohnson::StateWithMaps, CppJohnson::PriorityQueue, CppJohnson::ColorPropertyMap, CppJohnson::_outEdgeIterEnd, CppJohnson::_outEdgeIterNext, CppJohnson::_bfsInnerLoopStep> CppJohnson::__for_iterator_loop3_21;
+
+    CppJohnson::_bfsInnerLoopStep CppJohnson::bfsInnerLoopStep;
+
+
+
+    CppJohnson::_bfsOuterLoopCond CppJohnson::bfsOuterLoopCond;
+
+
+
+    CppJohnson::_bfsOuterLoopRepeat CppJohnson::bfsOuterLoopRepeat;
+
+
+
+    while_loop3<CppJohnson::Graph, CppJohnson::StateWithMaps, CppJohnson::PriorityQueue, CppJohnson::ColorPropertyMap, CppJohnson::_bfsOuterLoopCond, CppJohnson::_bfsOuterLoopStep> CppJohnson::__while_loop3;
+
+    CppJohnson::_bfsOuterLoopStep CppJohnson::bfsOuterLoopStep;
+
+
+
+    CppJohnson::_blackTarget CppJohnson::blackTarget;
+
+
+
+    CppJohnson::_breadthFirstVisit CppJohnson::breadthFirstVisit;
+
+
+
+    CppJohnson::_discoverVertex CppJohnson::discoverVertex;
+
+
+
+    CppJohnson::_emptyPriorityQueue CppJohnson::emptyPriorityQueue;
+
+
+
+    CppJohnson::_examineEdge CppJohnson::examineEdge;
+
+
+
+    CppJohnson::_examineVertex CppJohnson::examineVertex;
+
+
+
+    CppJohnson::_finishVertex CppJohnson::finishVertex;
+
+
+
+    CppJohnson::_front CppJohnson::front;
+
+
+
+    CppJohnson::_grayTarget CppJohnson::grayTarget;
+
+
+
+    CppJohnson::_isEmptyQueue CppJohnson::isEmptyQueue;
+
+
+
+    CppJohnson::_nonTreeEdge CppJohnson::nonTreeEdge;
+
+
+
+    CppJohnson::_pop CppJohnson::pop;
+
+
+
+    CppJohnson::_push CppJohnson::push;
+
+
+
+    CppJohnson::_treeEdge CppJohnson::treeEdge;
+
+
+
+    CppJohnson::_update CppJohnson::update;
+
+    priority_queue<CppJohnson::VertexDescriptor, CppJohnson::Cost, CppJohnson::VertexCostMap, CppJohnson::_get> CppJohnson::__priority_queue;
+
+    CppJohnson::_get CppJohnson::get;
+
+
+
+    CppJohnson::_gray CppJohnson::gray;
+
+
+
+    CppJohnson::_initMap CppJohnson::initMap;
+
+
+
+    CppJohnson::_put CppJohnson::put;
+
+
+
+    CppJohnson::_white CppJohnson::white;
+
+
+
+    CppJohnson::_bellmanFordShortestPaths CppJohnson::bellmanFordShortestPaths;
+
+
+
+    CppJohnson::_bfalse CppJohnson::bfalse;
+
+
+
+    CppJohnson::_btrue CppJohnson::btrue;
+
+
+
+    CppJohnson::_checkNegativeCycleLoopRepeat CppJohnson::checkNegativeCycleLoopRepeat;
+
+
+
+    for_iterator_loop2_3<CppJohnson::VertexCostMap, CppJohnson::EdgeCostMap, CppJohnson::Graph, CppJohnson::EdgeIterator, CppJohnson::Unit, CppJohnson::Bool, CppJohnson::_edgeIterEnd, CppJohnson::_edgeIterNext, CppJohnson::_checkNegativeCycleLoopStep> CppJohnson::__for_iterator_loop2_3;
+
+    CppJohnson::_checkNegativeCycleLoopStep CppJohnson::checkNegativeCycleLoopStep;
+
+
+
+    CppJohnson::_holds CppJohnson::holds;
+
+
+
+    CppJohnson::_johnsonAllPairsShortestPaths CppJohnson::johnsonAllPairsShortestPaths;
 
 } // examples
 } // bgl
@@ -1569,6 +2012,10 @@ namespace bgl_cpp {
 
 
 
+    CppPrimVisitor::_negate CppPrimVisitor::negate;
+
+
+
     CppPrimVisitor::_plus CppPrimVisitor::plus;
 
 
@@ -1578,6 +2025,10 @@ namespace bgl_cpp {
 
 
     CppPrimVisitor::_second CppPrimVisitor::second;
+
+
+
+    CppPrimVisitor::_zero CppPrimVisitor::zero;
 
 
 

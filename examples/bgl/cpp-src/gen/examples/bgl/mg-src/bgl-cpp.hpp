@@ -766,6 +766,13 @@ public:
     };
 
     static CppBellmanFord::_less less;
+    struct _negate {
+        inline CppBellmanFord::Cost operator()(const CppBellmanFord::Cost& f) {
+            return __base_float_ops.negate(f);
+        };
+    };
+
+    static CppBellmanFord::_negate negate;
     struct _plus {
         inline CppBellmanFord::Cost operator()(const CppBellmanFord::Cost& i1, const CppBellmanFord::Cost& i2) {
             return __base_float_ops.plus(i1, i2);
@@ -786,6 +793,13 @@ public:
     };
 
     static CppBellmanFord::_put put;
+    struct _zero {
+        inline CppBellmanFord::Cost operator()() {
+            return __base_float_ops.zero();
+        };
+    };
+
+    static CppBellmanFord::_zero zero;
     typedef base_bool::Bool Bool;
     struct _bellmanFordShortestPaths {
         inline void operator()(const CppBellmanFord::Graph& g, CppBellmanFord::VertexCostMap& vcm, const CppBellmanFord::EdgeCostMap& ecm, CppBellmanFord::Unit& a, CppBellmanFord::VertexPredecessorMap& vpm, CppBellmanFord::Bool& allMinimized) {
@@ -2106,6 +2120,13 @@ public:
     };
 
     static CppDijkstraVisitor::_less less;
+    struct _negate {
+        inline CppDijkstraVisitor::Cost operator()(const CppDijkstraVisitor::Cost& f) {
+            return __base_float_ops.negate(f);
+        };
+    };
+
+    static CppDijkstraVisitor::_negate negate;
     struct _plus {
         inline CppDijkstraVisitor::Cost operator()(const CppDijkstraVisitor::Cost& i1, const CppDijkstraVisitor::Cost& i2) {
             return __base_float_ops.plus(i1, i2);
@@ -2113,6 +2134,13 @@ public:
     };
 
     static CppDijkstraVisitor::_plus plus;
+    struct _zero {
+        inline CppDijkstraVisitor::Cost operator()() {
+            return __base_float_ops.zero();
+        };
+    };
+
+    static CppDijkstraVisitor::_zero zero;
     typedef two_bit_color_map<CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::VertexIterator, CppDijkstraVisitor::_vertexIterEnd, CppDijkstraVisitor::_vertexIterNext, CppDijkstraVisitor::_vertexIterUnpack>::ColorPropertyMap ColorPropertyMap;
     typedef two_bit_color_map<CppDijkstraVisitor::VertexDescriptor, CppDijkstraVisitor::VertexIterator, CppDijkstraVisitor::_vertexIterEnd, CppDijkstraVisitor::_vertexIterNext, CppDijkstraVisitor::_vertexIterUnpack>::Color Color;
     struct _black {
@@ -2374,6 +2402,932 @@ public:
     };
 
     static CppDijkstraVisitor::_white white;
+};
+} // examples
+} // bgl
+} // mg_src
+} // bgl_cpp
+
+namespace examples {
+namespace bgl {
+namespace mg_src {
+namespace bgl_cpp {
+struct CppJohnson {
+    struct _emptyVCMap {
+        template <typename T>
+        inline T operator()() {
+            T o;
+            CppJohnson::emptyVCMap0(o);
+            return o;
+        };
+    };
+
+    static CppJohnson::_emptyVCMap emptyVCMap;
+private:
+    static base_unit __base_unit;
+    static base_types __base_types;
+    static base_float_ops __base_float_ops;
+    static base_bool __base_bool;
+public:
+    typedef base_types::Vertex Vertex;
+    typedef incidence_and_vertex_list_and_edge_list_graph<CppJohnson::Vertex>::VertexCount VertexCount;
+    typedef incidence_and_vertex_list_and_edge_list_graph<CppJohnson::Vertex>::VertexDescriptor VertexDescriptor;
+    typedef vector<CppJohnson::VertexDescriptor>::Vector VertexVector;
+    struct _emptyVertexVector {
+        inline CppJohnson::VertexVector operator()() {
+            return __vector.empty();
+        };
+    };
+
+    static CppJohnson::_emptyVertexVector emptyVertexVector;
+private:
+    static vector<CppJohnson::VertexDescriptor> __vector;
+public:
+    struct _pushBack {
+        inline void operator()(const CppJohnson::VertexDescriptor& a, CppJohnson::VertexVector& v) {
+            return __vector.pushBack(a, v);
+        };
+    };
+
+    static CppJohnson::_pushBack pushBack;
+    typedef incidence_and_vertex_list_and_edge_list_graph<CppJohnson::Vertex>::VertexIterator VertexIterator;
+    struct _vertexIterEnd {
+        inline bool operator()(const CppJohnson::VertexIterator& ei) {
+            return __incidence_and_vertex_list_and_edge_list_graph.vertexIterEnd(ei);
+        };
+    };
+
+    static CppJohnson::_vertexIterEnd vertexIterEnd;
+    struct _vertexIterNext {
+        inline void operator()(CppJohnson::VertexIterator& ei) {
+            return __incidence_and_vertex_list_and_edge_list_graph.vertexIterNext(ei);
+        };
+    };
+
+    static CppJohnson::_vertexIterNext vertexIterNext;
+    struct _vertexIterUnpack {
+        inline CppJohnson::VertexDescriptor operator()(const CppJohnson::VertexIterator& ei) {
+            return __incidence_and_vertex_list_and_edge_list_graph.vertexIterUnpack(ei);
+        };
+    };
+
+    typedef read_write_property_map<CppJohnson::VertexDescriptor, CppJohnson::VertexIterator, CppJohnson::VertexDescriptor, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_vertexIterUnpack>::PropertyMap VertexPredecessorMap;
+    struct _emptyVPMap {
+        inline CppJohnson::VertexPredecessorMap operator()() {
+            return __read_write_property_map2.emptyMap();
+        };
+    };
+
+    static CppJohnson::_emptyVPMap emptyVPMap;
+private:
+    static read_write_property_map<CppJohnson::VertexDescriptor, CppJohnson::VertexIterator, CppJohnson::VertexDescriptor, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_vertexIterUnpack> __read_write_property_map2;
+    static two_bit_color_map<CppJohnson::VertexDescriptor, CppJohnson::VertexIterator, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_vertexIterUnpack> __two_bit_color_map;
+public:
+    static CppJohnson::_vertexIterUnpack vertexIterUnpack;
+private:
+    static incidence_and_vertex_list_and_edge_list_graph<CppJohnson::Vertex> __incidence_and_vertex_list_and_edge_list_graph;
+public:
+    typedef base_unit::Unit Unit;
+    struct _forIterationEnd {
+        inline void operator()(const CppJohnson::VertexIterator& itr, const CppJohnson::VertexPredecessorMap& state, const CppJohnson::Unit& ctx) {
+            CppJohnson::VertexPredecessorMap mut_state = state;
+            if (CppJohnson::vertexIterEnd(itr))
+            {
+                CppJohnson::populateVPMapLoopRepeat(itr, mut_state, ctx);
+                assert((mut_state) == (state));
+            }
+            else
+                ;
+        };
+        inline void operator()(const CppJohnson::VertexIterator& itr, const CppJohnson::VertexPredecessorMap& state, const CppJohnson::VertexDescriptor& ctx) {
+            CppJohnson::VertexPredecessorMap mut_state = state;
+            if (CppJohnson::vertexIterEnd(itr))
+            {
+                CppJohnson::populateVPMapLoopRepeat(itr, mut_state, ctx);
+                assert((mut_state) == (state));
+            }
+            else
+                ;
+        };
+    };
+
+    static CppJohnson::_forIterationEnd forIterationEnd;
+    struct _populateVPMapLoopRepeat {
+        inline void operator()(const CppJohnson::VertexIterator& itr, CppJohnson::VertexPredecessorMap& state, const CppJohnson::Unit& ctx) {
+            return __for_iterator_loop0.forLoopRepeat(itr, state, ctx);
+        };
+        inline void operator()(const CppJohnson::VertexIterator& itr, CppJohnson::VertexPredecessorMap& state, const CppJohnson::VertexDescriptor& ctx) {
+            return __for_iterator_loop1.forLoopRepeat(itr, state, ctx);
+        };
+    };
+
+    static CppJohnson::_populateVPMapLoopRepeat populateVPMapLoopRepeat;
+    struct _populateVPMapLoopStep {
+        inline void operator()(const CppJohnson::VertexIterator& itr, CppJohnson::VertexPredecessorMap& vpm, const CppJohnson::Unit& u) {
+            CppJohnson::VertexDescriptor v = CppJohnson::vertexIterUnpack(itr);
+            CppJohnson::put(vpm, v, v);
+        };
+        inline void operator()(const CppJohnson::VertexIterator& itr, CppJohnson::VertexPredecessorMap& vpm, const CppJohnson::VertexDescriptor& vd) {
+            CppJohnson::VertexDescriptor v = CppJohnson::vertexIterUnpack(itr);
+            CppJohnson::put(vpm, v, v);
+        };
+    };
+
+private:
+    static for_iterator_loop<CppJohnson::Unit, CppJohnson::VertexIterator, CppJohnson::VertexPredecessorMap, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_populateVPMapLoopStep> __for_iterator_loop0;
+    static for_iterator_loop<CppJohnson::VertexDescriptor, CppJohnson::VertexIterator, CppJohnson::VertexPredecessorMap, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_populateVPMapLoopStep> __for_iterator_loop1;
+public:
+    static CppJohnson::_populateVPMapLoopStep populateVPMapLoopStep;
+    struct _unit {
+        inline CppJohnson::Unit operator()() {
+            return __base_unit.unit();
+        };
+    };
+
+    static CppJohnson::_unit unit;
+    typedef incidence_and_vertex_list_and_edge_list_graph<CppJohnson::Vertex>::OutEdgeIterator OutEdgeIterator;
+    typedef pair<CppJohnson::OutEdgeIterator, CppJohnson::OutEdgeIterator>::Pair OutEdgeIteratorRange;
+private:
+    static pair<CppJohnson::OutEdgeIterator, CppJohnson::OutEdgeIterator> __pair;
+public:
+    struct _iterRangeBegin {
+        inline CppJohnson::OutEdgeIterator operator()(const CppJohnson::OutEdgeIteratorRange& p) {
+            return __pair.first(p);
+        };
+    };
+
+    static CppJohnson::_iterRangeBegin iterRangeBegin;
+    struct _iterRangeEnd {
+        inline CppJohnson::OutEdgeIterator operator()(const CppJohnson::OutEdgeIteratorRange& p) {
+            return __pair.second(p);
+        };
+    };
+
+    static CppJohnson::_iterRangeEnd iterRangeEnd;
+    struct _makeOutEdgeIteratorRange {
+        inline CppJohnson::OutEdgeIteratorRange operator()(const CppJohnson::OutEdgeIterator& a, const CppJohnson::OutEdgeIterator& b) {
+            return __pair.makePair(a, b);
+        };
+    };
+
+    static CppJohnson::_makeOutEdgeIteratorRange makeOutEdgeIteratorRange;
+    struct _outEdgeIterEnd {
+        inline bool operator()(const CppJohnson::OutEdgeIterator& ei) {
+            return __incidence_and_vertex_list_and_edge_list_graph.outEdgeIterEnd(ei);
+        };
+    };
+
+    static CppJohnson::_outEdgeIterEnd outEdgeIterEnd;
+    struct _outEdgeIterNext {
+        inline void operator()(CppJohnson::OutEdgeIterator& ei) {
+            return __incidence_and_vertex_list_and_edge_list_graph.outEdgeIterNext(ei);
+        };
+    };
+
+    static CppJohnson::_outEdgeIterNext outEdgeIterNext;
+    typedef base_types::Int Int;
+    typedef incidence_and_vertex_list_and_edge_list_graph<CppJohnson::Vertex>::Graph Graph;
+    struct _numVertices {
+        inline CppJohnson::VertexCount operator()(const CppJohnson::Graph& g) {
+            return __incidence_and_vertex_list_and_edge_list_graph.numVertices(g);
+        };
+    };
+
+    static CppJohnson::_numVertices numVertices;
+    struct _outDegree {
+        inline CppJohnson::VertexCount operator()(const CppJohnson::VertexDescriptor& v, const CppJohnson::Graph& g) {
+            return __incidence_and_vertex_list_and_edge_list_graph.outDegree(v, g);
+        };
+    };
+
+    static CppJohnson::_outDegree outDegree;
+    struct _outEdges {
+        inline void operator()(const CppJohnson::VertexDescriptor& v, const CppJohnson::Graph& g, CppJohnson::OutEdgeIterator& itr) {
+            return __incidence_and_vertex_list_and_edge_list_graph.outEdges(v, g, itr);
+        };
+    };
+
+    static CppJohnson::_outEdges outEdges;
+    struct _toVertexDescriptor {
+        inline CppJohnson::VertexDescriptor operator()(const CppJohnson::Vertex& v, const CppJohnson::Graph& g) {
+            return __incidence_and_vertex_list_and_edge_list_graph.toVertexDescriptor(v, g);
+        };
+    };
+
+    static CppJohnson::_toVertexDescriptor toVertexDescriptor;
+    struct _vertices {
+        inline void operator()(const CppJohnson::Graph& g, CppJohnson::VertexIterator& itr) {
+            return __incidence_and_vertex_list_and_edge_list_graph.vertices(g, itr);
+        };
+    };
+
+    static CppJohnson::_vertices vertices;
+    typedef incidence_and_vertex_list_and_edge_list_graph<CppJohnson::Vertex>::EdgeIterator EdgeIterator;
+    struct _edgeIterEnd {
+        inline bool operator()(const CppJohnson::EdgeIterator& ei) {
+            return __incidence_and_vertex_list_and_edge_list_graph.edgeIterEnd(ei);
+        };
+    };
+
+    static CppJohnson::_edgeIterEnd edgeIterEnd;
+    struct _edgeIterNext {
+        inline void operator()(CppJohnson::EdgeIterator& ei) {
+            return __incidence_and_vertex_list_and_edge_list_graph.edgeIterNext(ei);
+        };
+    };
+
+    static CppJohnson::_edgeIterNext edgeIterNext;
+    struct _edges {
+        inline void operator()(const CppJohnson::Graph& g, CppJohnson::EdgeIterator& itr) {
+            return __incidence_and_vertex_list_and_edge_list_graph.edges(g, itr);
+        };
+    };
+
+    static CppJohnson::_edges edges;
+    typedef incidence_and_vertex_list_and_edge_list_graph<CppJohnson::Vertex>::EdgeDescriptor EdgeDescriptor;
+    struct _edgeIterUnpack {
+        inline CppJohnson::EdgeDescriptor operator()(const CppJohnson::EdgeIterator& ei) {
+            return __incidence_and_vertex_list_and_edge_list_graph.edgeIterUnpack(ei);
+        };
+    };
+
+    static CppJohnson::_edgeIterUnpack edgeIterUnpack;
+    struct _edgeMinimized {
+        inline void operator()(const CppJohnson::EdgeDescriptor& e, const CppJohnson::Graph& g, CppJohnson::Unit& a) {
+            ;
+        };
+    };
+
+    static CppJohnson::_edgeMinimized edgeMinimized;
+    struct _edgeNotMinimized {
+        inline void operator()(const CppJohnson::EdgeDescriptor& e, const CppJohnson::Graph& g, CppJohnson::Unit& a) {
+            ;
+        };
+    };
+
+    static CppJohnson::_edgeNotMinimized edgeNotMinimized;
+    struct _edgeNotRelaxed {
+        inline void operator()(const CppJohnson::EdgeDescriptor& e, const CppJohnson::Graph& g, CppJohnson::Unit& a) {
+            ;
+        };
+    };
+
+    static CppJohnson::_edgeNotRelaxed edgeNotRelaxed;
+    struct _edgeRelaxed {
+        inline void operator()(const CppJohnson::EdgeDescriptor& e, const CppJohnson::Graph& g, CppJohnson::Unit& a) {
+            ;
+        };
+    };
+
+    static CppJohnson::_edgeRelaxed edgeRelaxed;
+    struct _outEdgeIterUnpack {
+        inline CppJohnson::EdgeDescriptor operator()(const CppJohnson::OutEdgeIterator& ei) {
+            return __incidence_and_vertex_list_and_edge_list_graph.outEdgeIterUnpack(ei);
+        };
+    };
+
+    static CppJohnson::_outEdgeIterUnpack outEdgeIterUnpack;
+    struct _src {
+        inline CppJohnson::VertexDescriptor operator()(const CppJohnson::EdgeDescriptor& e, const CppJohnson::Graph& g) {
+            return __incidence_and_vertex_list_and_edge_list_graph.src(e, g);
+        };
+    };
+
+    static CppJohnson::_src src;
+    struct _tgt {
+        inline CppJohnson::VertexDescriptor operator()(const CppJohnson::EdgeDescriptor& e, const CppJohnson::Graph& g) {
+            return __incidence_and_vertex_list_and_edge_list_graph.tgt(e, g);
+        };
+    };
+
+    static CppJohnson::_tgt tgt;
+    struct _toEdgeDescriptor {
+        inline CppJohnson::EdgeDescriptor operator()(const CppJohnson::VertexDescriptor& v1, const CppJohnson::VertexDescriptor& v2, const CppJohnson::Graph& g) {
+            return __incidence_and_vertex_list_and_edge_list_graph.toEdgeDescriptor(v1, v2, g);
+        };
+    };
+
+    static CppJohnson::_toEdgeDescriptor toEdgeDescriptor;
+    typedef incidence_and_vertex_list_and_edge_list_graph<CppJohnson::Vertex>::Edge Edge;
+    struct _makeEdge {
+        inline CppJohnson::Edge operator()(const CppJohnson::Vertex& s, const CppJohnson::Vertex& t) {
+            return __incidence_and_vertex_list_and_edge_list_graph.makeEdge(s, t);
+        };
+    };
+
+    static CppJohnson::_makeEdge makeEdge;
+    typedef base_float_ops::Float Cost;
+    typedef read_write_property_map<CppJohnson::EdgeDescriptor, CppJohnson::OutEdgeIterator, CppJohnson::Cost, CppJohnson::_outEdgeIterEnd, CppJohnson::_outEdgeIterNext, CppJohnson::_outEdgeIterUnpack>::PropertyMap EdgeCostMap;
+    struct _emptyECMap {
+        inline CppJohnson::EdgeCostMap operator()() {
+            return __read_write_property_map.emptyMap();
+        };
+    };
+
+    static CppJohnson::_emptyECMap emptyECMap;
+    typedef read_write_property_map<CppJohnson::VertexDescriptor, CppJohnson::VertexIterator, CppJohnson::Cost, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_vertexIterUnpack>::PropertyMap VertexCostMap;
+    typedef triplet<CppJohnson::VertexCostMap, CppJohnson::VertexPredecessorMap, CppJohnson::EdgeCostMap>::Triplet StateWithMaps;
+    struct _getEdgeCostMap {
+        inline CppJohnson::EdgeCostMap operator()(const CppJohnson::StateWithMaps& p) {
+            return __triplet.third(p);
+        };
+    };
+
+    static CppJohnson::_getEdgeCostMap getEdgeCostMap;
+    struct _getVertexPredecessorMap {
+        inline CppJohnson::VertexPredecessorMap operator()(const CppJohnson::StateWithMaps& p) {
+            return __triplet.second(p);
+        };
+    };
+
+    static CppJohnson::_getVertexPredecessorMap getVertexPredecessorMap;
+    struct _putVertexPredecessorMap {
+        inline CppJohnson::StateWithMaps operator()(const CppJohnson::VertexPredecessorMap& vpm, const CppJohnson::StateWithMaps& swm) {
+            return CppJohnson::makeStateWithMaps(CppJohnson::getVertexCostMap(swm), vpm, CppJohnson::getEdgeCostMap(swm));
+        };
+    };
+
+    static CppJohnson::_putVertexPredecessorMap putVertexPredecessorMap;
+    typedef read_write_property_map<CppJohnson::VertexDescriptor, CppJohnson::VertexIterator, CppJohnson::VertexCostMap, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_vertexIterUnpack>::PropertyMap VertexCostMatrix;
+private:
+    static inline void emptyVCMap0(CppJohnson::VertexCostMatrix& o) {
+        o = __read_write_property_map1.emptyMap();
+    };
+    static read_write_property_map<CppJohnson::VertexDescriptor, CppJohnson::VertexIterator, CppJohnson::VertexCostMap, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_vertexIterUnpack> __read_write_property_map1;
+    static triplet<CppJohnson::VertexCostMap, CppJohnson::VertexPredecessorMap, CppJohnson::EdgeCostMap> __triplet;
+public:
+    struct _adjustVertexLoopRepeat {
+        inline void operator()(const CppJohnson::VertexIterator& itr, CppJohnson::VertexCostMap& s1, const CppJohnson::VertexDescriptor& ctx1, const CppJohnson::VertexCostMap& ctx2) {
+            return __for_iterator_loop1_2.forLoopRepeat(itr, s1, ctx1, ctx2);
+        };
+    };
+
+    static CppJohnson::_adjustVertexLoopRepeat adjustVertexLoopRepeat;
+    struct _adjustVertexLoopStep {
+        inline void operator()(const CppJohnson::VertexIterator& vertexItr, CppJohnson::VertexCostMap& vcmReweighted, const CppJohnson::VertexDescriptor& srcVertex, const CppJohnson::VertexCostMap& vcm) {
+            CppJohnson::VertexDescriptor currentVertex = CppJohnson::vertexIterUnpack(vertexItr);
+            CppJohnson::put(vcmReweighted, currentVertex, CppJohnson::plus(CppJohnson::plus(CppJohnson::get(vcmReweighted, currentVertex), CppJohnson::get(vcm, currentVertex)), CppJohnson::negate(CppJohnson::get(vcm, srcVertex))));
+        };
+    };
+
+private:
+    static for_iterator_loop1_2<CppJohnson::VertexDescriptor, CppJohnson::VertexCostMap, CppJohnson::VertexIterator, CppJohnson::VertexCostMap, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_adjustVertexLoopStep> __for_iterator_loop1_2;
+public:
+    static CppJohnson::_adjustVertexLoopStep adjustVertexLoopStep;
+    struct _dijkstraAndAdjustLoopRepeat {
+        inline void operator()(const CppJohnson::VertexIterator& itr, CppJohnson::VertexCostMatrix& s1, const CppJohnson::EdgeCostMap& ctx1, const CppJohnson::VertexCostMap& ctx2, const CppJohnson::Graph& ctx3) {
+            return __for_iterator_loop1_30.forLoopRepeat(itr, s1, ctx1, ctx2, ctx3);
+        };
+    };
+
+    static CppJohnson::_dijkstraAndAdjustLoopRepeat dijkstraAndAdjustLoopRepeat;
+    struct _dijkstraAndAdjustLoopStep {
+        inline void operator()(const CppJohnson::VertexIterator& vertexItr, CppJohnson::VertexCostMatrix& vcmat, const CppJohnson::EdgeCostMap& wecm, const CppJohnson::VertexCostMap& vcm, const CppJohnson::Graph& g) {
+            CppJohnson::VertexDescriptor currentVertex = CppJohnson::vertexIterUnpack(vertexItr);
+            CppJohnson::VertexCostMap vcmReweighted = CppJohnson::get(vcmat, currentVertex);
+            CppJohnson::VertexPredecessorMap vpm;
+            CppJohnson::dijkstraShortestPaths(g, currentVertex, vcmReweighted, wecm, CppJohnson::zero(), vpm);
+            CppJohnson::VertexIterator innerVertexItr;
+            CppJohnson::vertices(g, innerVertexItr);
+            CppJohnson::adjustVertexLoopRepeat(innerVertexItr, vcmReweighted, currentVertex, vcm);
+            CppJohnson::put(vcmat, currentVertex, vcmReweighted);
+        };
+    };
+
+private:
+    static for_iterator_loop1_3<CppJohnson::EdgeCostMap, CppJohnson::VertexCostMap, CppJohnson::Graph, CppJohnson::VertexIterator, CppJohnson::VertexCostMatrix, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_dijkstraAndAdjustLoopStep> __for_iterator_loop1_30;
+public:
+    static CppJohnson::_dijkstraAndAdjustLoopStep dijkstraAndAdjustLoopStep;
+    struct _edgeRelaxationInnerLoopRepeat {
+        inline void operator()(const CppJohnson::EdgeIterator& itr, CppJohnson::Unit& s1, CppJohnson::VertexCostMap& s2, CppJohnson::VertexPredecessorMap& s3, const CppJohnson::EdgeCostMap& ctx1, const CppJohnson::Graph& ctx2) {
+            return __for_iterator_loop3_2.forLoopRepeat(itr, s1, s2, s3, ctx1, ctx2);
+        };
+    };
+
+    static CppJohnson::_edgeRelaxationInnerLoopRepeat edgeRelaxationInnerLoopRepeat;
+    struct _edgeRelaxationInnerLoopStep {
+        inline void operator()(const CppJohnson::EdgeIterator& edgeItr, CppJohnson::Unit& a, CppJohnson::VertexCostMap& vcm, CppJohnson::VertexPredecessorMap& vpm, const CppJohnson::EdgeCostMap& ecm, const CppJohnson::Graph& g) {
+            CppJohnson::EdgeDescriptor currentEdge = CppJohnson::edgeIterUnpack(edgeItr);
+            CppJohnson::VertexCostMap origVcm = vcm;
+            CppJohnson::relax(currentEdge, g, ecm, vcm, vpm);
+            if ((vcm) == (origVcm))
+                CppJohnson::edgeRelaxed(currentEdge, g, a);
+            else
+                CppJohnson::edgeNotRelaxed(currentEdge, g, a);
+        };
+    };
+
+private:
+    static for_iterator_loop3_2<CppJohnson::EdgeCostMap, CppJohnson::Graph, CppJohnson::EdgeIterator, CppJohnson::Unit, CppJohnson::VertexCostMap, CppJohnson::VertexPredecessorMap, CppJohnson::_edgeIterEnd, CppJohnson::_edgeIterNext, CppJohnson::_edgeRelaxationInnerLoopStep> __for_iterator_loop3_2;
+public:
+    static CppJohnson::_edgeRelaxationInnerLoopStep edgeRelaxationInnerLoopStep;
+    struct _edgeRelaxationOuterLoopRepeat {
+        inline void operator()(const CppJohnson::VertexIterator& itr, CppJohnson::Unit& s1, CppJohnson::VertexCostMap& s2, CppJohnson::VertexPredecessorMap& s3, const CppJohnson::EdgeCostMap& ctx1, const CppJohnson::Graph& ctx2) {
+            return __for_iterator_loop3_20.forLoopRepeat(itr, s1, s2, s3, ctx1, ctx2);
+        };
+    };
+
+    static CppJohnson::_edgeRelaxationOuterLoopRepeat edgeRelaxationOuterLoopRepeat;
+    struct _edgeRelaxationOuterLoopStep {
+        inline void operator()(const CppJohnson::VertexIterator& vertexItr, CppJohnson::Unit& a, CppJohnson::VertexCostMap& vcm, CppJohnson::VertexPredecessorMap& vpm, const CppJohnson::EdgeCostMap& ecm, const CppJohnson::Graph& g) {
+            CppJohnson::EdgeIterator edgeItr;
+            CppJohnson::edges(g, edgeItr);
+            CppJohnson::edgeRelaxationInnerLoopRepeat(edgeItr, a, vcm, vpm, ecm, g);
+        };
+    };
+
+private:
+    static for_iterator_loop3_2<CppJohnson::EdgeCostMap, CppJohnson::Graph, CppJohnson::VertexIterator, CppJohnson::Unit, CppJohnson::VertexCostMap, CppJohnson::VertexPredecessorMap, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_edgeRelaxationOuterLoopStep> __for_iterator_loop3_20;
+public:
+    static CppJohnson::_edgeRelaxationOuterLoopStep edgeRelaxationOuterLoopStep;
+    struct _getVertexCostMap {
+        inline CppJohnson::VertexCostMap operator()(const CppJohnson::StateWithMaps& p) {
+            return __triplet.first(p);
+        };
+    };
+
+    static CppJohnson::_getVertexCostMap getVertexCostMap;
+    struct _makeStateWithMaps {
+        inline CppJohnson::StateWithMaps operator()(const CppJohnson::VertexCostMap& a, const CppJohnson::VertexPredecessorMap& b, const CppJohnson::EdgeCostMap& c) {
+            return __triplet.makeTriplet(a, b, c);
+        };
+    };
+
+    static CppJohnson::_makeStateWithMaps makeStateWithMaps;
+    struct _putVertexCostMap {
+        inline CppJohnson::StateWithMaps operator()(const CppJohnson::VertexCostMap& vcm, const CppJohnson::StateWithMaps& swm) {
+            return CppJohnson::makeStateWithMaps(vcm, CppJohnson::getVertexPredecessorMap(swm), CppJohnson::getEdgeCostMap(swm));
+        };
+    };
+
+    static CppJohnson::_putVertexCostMap putVertexCostMap;
+    struct _relax {
+        inline void operator()(const CppJohnson::EdgeDescriptor& e, const CppJohnson::Graph& g, const CppJohnson::EdgeCostMap& ecm, CppJohnson::VertexCostMap& vcm, CppJohnson::VertexPredecessorMap& vpm) {
+            CppJohnson::VertexDescriptor u = CppJohnson::src(e, g);
+            CppJohnson::VertexDescriptor v = CppJohnson::tgt(e, g);
+            CppJohnson::Cost uCost = CppJohnson::get(vcm, u);
+            CppJohnson::Cost vCost = CppJohnson::get(vcm, v);
+            CppJohnson::Cost edgeCost = CppJohnson::get(ecm, e);
+            if (CppJohnson::less(CppJohnson::plus(uCost, edgeCost), vCost))
+            {
+                CppJohnson::put(vcm, v, CppJohnson::plus(uCost, edgeCost));
+                CppJohnson::put(vpm, v, u);
+            }
+            else
+                ;
+        };
+    };
+
+    static CppJohnson::_relax relax;
+    struct _reweightEdgeLoopRepeat {
+        inline void operator()(const CppJohnson::EdgeIterator& itr, CppJohnson::EdgeCostMap& s1, const CppJohnson::EdgeCostMap& ctx1, const CppJohnson::VertexCostMap& ctx2, const CppJohnson::Graph& ctx3) {
+            return __for_iterator_loop1_3.forLoopRepeat(itr, s1, ctx1, ctx2, ctx3);
+        };
+    };
+
+    static CppJohnson::_reweightEdgeLoopRepeat reweightEdgeLoopRepeat;
+    struct _reweightEdgeLoopStep {
+        inline void operator()(const CppJohnson::EdgeIterator& edgeItr, CppJohnson::EdgeCostMap& newCosts, const CppJohnson::EdgeCostMap& ecm, const CppJohnson::VertexCostMap& vcm, const CppJohnson::Graph& g) {
+            CppJohnson::EdgeDescriptor currentEdge = CppJohnson::edgeIterUnpack(edgeItr);
+            CppJohnson::put(newCosts, currentEdge, CppJohnson::plus(CppJohnson::plus(CppJohnson::get(ecm, currentEdge), CppJohnson::get(vcm, CppJohnson::src(currentEdge, g))), CppJohnson::negate(CppJohnson::get(vcm, CppJohnson::tgt(currentEdge, g)))));
+        };
+    };
+
+private:
+    static for_iterator_loop1_3<CppJohnson::EdgeCostMap, CppJohnson::VertexCostMap, CppJohnson::Graph, CppJohnson::EdgeIterator, CppJohnson::EdgeCostMap, CppJohnson::_edgeIterEnd, CppJohnson::_edgeIterNext, CppJohnson::_reweightEdgeLoopStep> __for_iterator_loop1_3;
+public:
+    static CppJohnson::_reweightEdgeLoopStep reweightEdgeLoopStep;
+private:
+    static inline void emptyVCMap0(CppJohnson::VertexCostMap& o) {
+        o = __read_write_property_map0.emptyMap();
+    };
+    static read_write_property_map<CppJohnson::EdgeDescriptor, CppJohnson::OutEdgeIterator, CppJohnson::Cost, CppJohnson::_outEdgeIterEnd, CppJohnson::_outEdgeIterNext, CppJohnson::_outEdgeIterUnpack> __read_write_property_map;
+    static read_write_property_map<CppJohnson::VertexDescriptor, CppJohnson::VertexIterator, CppJohnson::Cost, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_vertexIterUnpack> __read_write_property_map0;
+public:
+    struct _dijkstraShortestPaths {
+        inline void operator()(const CppJohnson::Graph& g, const CppJohnson::VertexDescriptor& start, CppJohnson::VertexCostMap& vcm, const CppJohnson::EdgeCostMap& ecm, const CppJohnson::Cost& initialCost, CppJohnson::VertexPredecessorMap& vpm) {
+            CppJohnson::put(vcm, start, initialCost);
+            CppJohnson::VertexIterator vertexItr;
+            CppJohnson::vertices(g, vertexItr);
+            vpm = CppJohnson::emptyVPMap();
+            CppJohnson::populateVPMapLoopRepeat(vertexItr, vpm, start);
+            CppJohnson::PriorityQueue pq = CppJohnson::emptyPriorityQueue(vcm);
+            CppJohnson::StateWithMaps swm = CppJohnson::makeStateWithMaps(vcm, vpm, ecm);
+            CppJohnson::ColorPropertyMap c = CppJohnson::initMap(vertexItr, CppJohnson::white());
+            CppJohnson::breadthFirstVisit(g, start, swm, pq, c);
+            vcm = CppJohnson::getVertexCostMap(swm);
+            vpm = CppJohnson::getVertexPredecessorMap(swm);
+        };
+    };
+
+    static CppJohnson::_dijkstraShortestPaths dijkstraShortestPaths;
+    struct _initializeVertexCostMapLoopRepeat {
+        inline void operator()(const CppJohnson::VertexIterator& itr, CppJohnson::VertexCostMap& state, const CppJohnson::Cost& ctx) {
+            return __for_iterator_loop.forLoopRepeat(itr, state, ctx);
+        };
+    };
+
+    static CppJohnson::_initializeVertexCostMapLoopRepeat initializeVertexCostMapLoopRepeat;
+    struct _initializeVertexCostMapLoopStep {
+        inline void operator()(const CppJohnson::VertexIterator& vertexItr, CppJohnson::VertexCostMap& vcm, const CppJohnson::Cost& initialCost) {
+            CppJohnson::VertexDescriptor currentVertex = CppJohnson::vertexIterUnpack(vertexItr);
+            CppJohnson::put(vcm, currentVertex, initialCost);
+        };
+    };
+
+private:
+    static for_iterator_loop<CppJohnson::Cost, CppJohnson::VertexIterator, CppJohnson::VertexCostMap, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_initializeVertexCostMapLoopStep> __for_iterator_loop;
+public:
+    static CppJohnson::_initializeVertexCostMapLoopStep initializeVertexCostMapLoopStep;
+    struct _less {
+        inline bool operator()(const CppJohnson::Cost& i1, const CppJohnson::Cost& i2) {
+            return __base_float_ops.less(i1, i2);
+        };
+    };
+
+    static CppJohnson::_less less;
+    struct _negate {
+        inline CppJohnson::Cost operator()(const CppJohnson::Cost& f) {
+            return __base_float_ops.negate(f);
+        };
+    };
+
+    static CppJohnson::_negate negate;
+    struct _plus {
+        inline CppJohnson::Cost operator()(const CppJohnson::Cost& i1, const CppJohnson::Cost& i2) {
+            return __base_float_ops.plus(i1, i2);
+        };
+    };
+
+    static CppJohnson::_plus plus;
+    struct _zero {
+        inline CppJohnson::Cost operator()() {
+            return __base_float_ops.zero();
+        };
+    };
+
+    static CppJohnson::_zero zero;
+    typedef two_bit_color_map<CppJohnson::VertexDescriptor, CppJohnson::VertexIterator, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_vertexIterUnpack>::ColorPropertyMap ColorPropertyMap;
+    typedef two_bit_color_map<CppJohnson::VertexDescriptor, CppJohnson::VertexIterator, CppJohnson::_vertexIterEnd, CppJohnson::_vertexIterNext, CppJohnson::_vertexIterUnpack>::Color Color;
+    struct _black {
+        inline CppJohnson::Color operator()() {
+            return __two_bit_color_map.black();
+        };
+    };
+
+    static CppJohnson::_black black;
+    struct _get {
+        inline CppJohnson::VertexCostMap operator()(const CppJohnson::VertexCostMatrix& pm, const CppJohnson::VertexDescriptor& k) {
+            return __read_write_property_map1.get(pm, k);
+        };
+        inline CppJohnson::Cost operator()(const CppJohnson::EdgeCostMap& pm, const CppJohnson::EdgeDescriptor& k) {
+            return __read_write_property_map.get(pm, k);
+        };
+        inline CppJohnson::VertexDescriptor operator()(const CppJohnson::VertexPredecessorMap& pm, const CppJohnson::VertexDescriptor& k) {
+            return __read_write_property_map2.get(pm, k);
+        };
+        inline CppJohnson::Cost operator()(const CppJohnson::VertexCostMap& pm, const CppJohnson::VertexDescriptor& k) {
+            return __read_write_property_map0.get(pm, k);
+        };
+        inline CppJohnson::Color operator()(const CppJohnson::ColorPropertyMap& pm, const CppJohnson::VertexDescriptor& k) {
+            return __two_bit_color_map.get(pm, k);
+        };
+    };
+
+    typedef priority_queue<CppJohnson::VertexDescriptor, CppJohnson::Cost, CppJohnson::VertexCostMap, CppJohnson::_get>::PriorityQueue PriorityQueue;
+    struct _bfsInnerLoopRepeat {
+        inline void operator()(const CppJohnson::OutEdgeIterator& itr, CppJohnson::StateWithMaps& s1, CppJohnson::PriorityQueue& s2, CppJohnson::ColorPropertyMap& s3, const CppJohnson::Graph& ctx1, const CppJohnson::VertexDescriptor& ctx2) {
+            return __for_iterator_loop3_21.forLoopRepeat(itr, s1, s2, s3, ctx1, ctx2);
+        };
+    };
+
+    static CppJohnson::_bfsInnerLoopRepeat bfsInnerLoopRepeat;
+    struct _bfsInnerLoopStep {
+        inline void operator()(const CppJohnson::OutEdgeIterator& edgeItr, CppJohnson::StateWithMaps& x, CppJohnson::PriorityQueue& q, CppJohnson::ColorPropertyMap& c, const CppJohnson::Graph& g, const CppJohnson::VertexDescriptor& u) {
+            CppJohnson::EdgeDescriptor e = CppJohnson::outEdgeIterUnpack(edgeItr);
+            CppJohnson::VertexDescriptor v = CppJohnson::tgt(e, g);
+            CppJohnson::examineEdge(e, g, q, x);
+            CppJohnson::Color vc = CppJohnson::get(c, v);
+            if ((vc) == (CppJohnson::white()))
+            {
+                CppJohnson::treeEdge(e, g, q, x);
+                CppJohnson::put(c, v, CppJohnson::gray());
+                CppJohnson::discoverVertex(v, g, q, x);
+                CppJohnson::push(v, q);
+            }
+            else
+                if ((vc) == (CppJohnson::gray()))
+                {
+                    CppJohnson::grayTarget(e, g, q, x);
+                }
+                else
+                {
+                    CppJohnson::blackTarget(e, g, q, x);
+                }
+        };
+    };
+
+private:
+    static for_iterator_loop3_2<CppJohnson::Graph, CppJohnson::VertexDescriptor, CppJohnson::OutEdgeIterator, CppJohnson::StateWithMaps, CppJohnson::PriorityQueue, CppJohnson::ColorPropertyMap, CppJohnson::_outEdgeIterEnd, CppJohnson::_outEdgeIterNext, CppJohnson::_bfsInnerLoopStep> __for_iterator_loop3_21;
+public:
+    static CppJohnson::_bfsInnerLoopStep bfsInnerLoopStep;
+    struct _bfsOuterLoopCond {
+        inline bool operator()(const CppJohnson::StateWithMaps& a, const CppJohnson::PriorityQueue& q, const CppJohnson::ColorPropertyMap& c, const CppJohnson::Graph& g) {
+            return !CppJohnson::isEmptyQueue(q);
+        };
+    };
+
+    static CppJohnson::_bfsOuterLoopCond bfsOuterLoopCond;
+    struct _bfsOuterLoopRepeat {
+        inline void operator()(CppJohnson::StateWithMaps& s1, CppJohnson::PriorityQueue& s2, CppJohnson::ColorPropertyMap& s3, const CppJohnson::Graph& ctx) {
+            return __while_loop3.repeat(s1, s2, s3, ctx);
+        };
+    };
+
+    static CppJohnson::_bfsOuterLoopRepeat bfsOuterLoopRepeat;
+    struct _bfsOuterLoopStep {
+        inline void operator()(CppJohnson::StateWithMaps& x, CppJohnson::PriorityQueue& q, CppJohnson::ColorPropertyMap& c, const CppJohnson::Graph& g) {
+            CppJohnson::VertexDescriptor u = CppJohnson::front(q);
+            CppJohnson::pop(q);
+            CppJohnson::examineVertex(u, g, q, x);
+            CppJohnson::OutEdgeIterator edgeItr;
+            CppJohnson::outEdges(u, g, edgeItr);
+            CppJohnson::bfsInnerLoopRepeat(edgeItr, x, q, c, g, u);
+            CppJohnson::put(c, u, CppJohnson::black());
+            CppJohnson::finishVertex(u, g, q, x);
+        };
+    };
+
+private:
+    static while_loop3<CppJohnson::Graph, CppJohnson::StateWithMaps, CppJohnson::PriorityQueue, CppJohnson::ColorPropertyMap, CppJohnson::_bfsOuterLoopCond, CppJohnson::_bfsOuterLoopStep> __while_loop3;
+public:
+    static CppJohnson::_bfsOuterLoopStep bfsOuterLoopStep;
+    struct _blackTarget {
+        inline void operator()(const CppJohnson::EdgeDescriptor& edgeOrVertex, const CppJohnson::Graph& g, CppJohnson::PriorityQueue& q, CppJohnson::StateWithMaps& a) {
+            ;
+        };
+    };
+
+    static CppJohnson::_blackTarget blackTarget;
+    struct _breadthFirstVisit {
+        inline void operator()(const CppJohnson::Graph& g, const CppJohnson::VertexDescriptor& s, CppJohnson::StateWithMaps& a, CppJohnson::PriorityQueue& q, CppJohnson::ColorPropertyMap& c) {
+            CppJohnson::discoverVertex(s, g, q, a);
+            CppJohnson::push(s, q);
+            CppJohnson::put(c, s, CppJohnson::gray());
+            CppJohnson::bfsOuterLoopRepeat(a, q, c, g);
+        };
+    };
+
+    static CppJohnson::_breadthFirstVisit breadthFirstVisit;
+    struct _discoverVertex {
+        inline void operator()(const CppJohnson::VertexDescriptor& edgeOrVertex, const CppJohnson::Graph& g, CppJohnson::PriorityQueue& q, CppJohnson::StateWithMaps& a) {
+            ;
+        };
+    };
+
+    static CppJohnson::_discoverVertex discoverVertex;
+    struct _emptyPriorityQueue {
+        inline CppJohnson::PriorityQueue operator()(const CppJohnson::VertexCostMap& pm) {
+            return __priority_queue.empty(pm);
+        };
+    };
+
+    static CppJohnson::_emptyPriorityQueue emptyPriorityQueue;
+    struct _examineEdge {
+        inline void operator()(const CppJohnson::EdgeDescriptor& e, const CppJohnson::Graph& g, CppJohnson::Unit& a) {
+            ;
+        };
+        inline void operator()(const CppJohnson::EdgeDescriptor& e, const CppJohnson::Graph& g, CppJohnson::PriorityQueue& pq, CppJohnson::StateWithMaps& swm) {
+            CppJohnson::VertexCostMap origVcm = CppJohnson::getVertexCostMap(swm);
+            CppJohnson::VertexPredecessorMap vpm = CppJohnson::getVertexPredecessorMap(swm);
+            CppJohnson::EdgeCostMap ecm = CppJohnson::getEdgeCostMap(swm);
+            CppJohnson::VertexCostMap vcm = origVcm;
+            CppJohnson::relax(e, g, ecm, vcm, vpm);
+            if ((vcm) == (origVcm))
+                ;
+            else
+            {
+                swm = CppJohnson::putVertexPredecessorMap(vpm, CppJohnson::putVertexCostMap(vcm, swm));
+                pq = CppJohnson::update(vcm, CppJohnson::tgt(e, g), pq);
+            }
+        };
+    };
+
+    static CppJohnson::_examineEdge examineEdge;
+    struct _examineVertex {
+        inline void operator()(const CppJohnson::VertexDescriptor& edgeOrVertex, const CppJohnson::Graph& g, CppJohnson::PriorityQueue& q, CppJohnson::StateWithMaps& a) {
+            ;
+        };
+    };
+
+    static CppJohnson::_examineVertex examineVertex;
+    struct _finishVertex {
+        inline void operator()(const CppJohnson::VertexDescriptor& edgeOrVertex, const CppJohnson::Graph& g, CppJohnson::PriorityQueue& q, CppJohnson::StateWithMaps& a) {
+            ;
+        };
+    };
+
+    static CppJohnson::_finishVertex finishVertex;
+    struct _front {
+        inline CppJohnson::VertexDescriptor operator()(const CppJohnson::PriorityQueue& q) {
+            return __priority_queue.front(q);
+        };
+    };
+
+    static CppJohnson::_front front;
+    struct _grayTarget {
+        inline void operator()(const CppJohnson::EdgeDescriptor& edgeOrVertex, const CppJohnson::Graph& g, CppJohnson::PriorityQueue& q, CppJohnson::StateWithMaps& a) {
+            ;
+        };
+    };
+
+    static CppJohnson::_grayTarget grayTarget;
+    struct _isEmptyQueue {
+        inline bool operator()(const CppJohnson::PriorityQueue& q) {
+            return __priority_queue.isEmpty(q);
+        };
+    };
+
+    static CppJohnson::_isEmptyQueue isEmptyQueue;
+    struct _nonTreeEdge {
+        inline void operator()(const CppJohnson::EdgeDescriptor& edgeOrVertex, const CppJohnson::Graph& g, CppJohnson::PriorityQueue& q, CppJohnson::StateWithMaps& a) {
+            ;
+        };
+    };
+
+    static CppJohnson::_nonTreeEdge nonTreeEdge;
+    struct _pop {
+        inline void operator()(CppJohnson::PriorityQueue& q) {
+            return __priority_queue.pop(q);
+        };
+    };
+
+    static CppJohnson::_pop pop;
+    struct _push {
+        inline void operator()(const CppJohnson::VertexDescriptor& a, CppJohnson::PriorityQueue& q) {
+            return __priority_queue.push(a, q);
+        };
+    };
+
+    static CppJohnson::_push push;
+    struct _treeEdge {
+        inline void operator()(const CppJohnson::EdgeDescriptor& edgeOrVertex, const CppJohnson::Graph& g, CppJohnson::PriorityQueue& q, CppJohnson::StateWithMaps& a) {
+            ;
+        };
+    };
+
+    static CppJohnson::_treeEdge treeEdge;
+    struct _update {
+        inline CppJohnson::PriorityQueue operator()(const CppJohnson::VertexCostMap& pm, const CppJohnson::VertexDescriptor& a, const CppJohnson::PriorityQueue& pq) {
+            return __priority_queue.update(pm, a, pq);
+        };
+    };
+
+    static CppJohnson::_update update;
+private:
+    static priority_queue<CppJohnson::VertexDescriptor, CppJohnson::Cost, CppJohnson::VertexCostMap, CppJohnson::_get> __priority_queue;
+public:
+    static CppJohnson::_get get;
+    struct _gray {
+        inline CppJohnson::Color operator()() {
+            return __two_bit_color_map.gray();
+        };
+    };
+
+    static CppJohnson::_gray gray;
+    struct _initMap {
+        inline CppJohnson::VertexCostMatrix operator()(const CppJohnson::VertexIterator& kli, const CppJohnson::VertexCostMap& v) {
+            return __read_write_property_map1.initMap(kli, v);
+        };
+        inline CppJohnson::EdgeCostMap operator()(const CppJohnson::OutEdgeIterator& kli, const CppJohnson::Cost& v) {
+            return __read_write_property_map.initMap(kli, v);
+        };
+        inline CppJohnson::VertexPredecessorMap operator()(const CppJohnson::VertexIterator& kli, const CppJohnson::VertexDescriptor& v) {
+            return __read_write_property_map2.initMap(kli, v);
+        };
+        inline CppJohnson::VertexCostMap operator()(const CppJohnson::VertexIterator& kli, const CppJohnson::Cost& v) {
+            return __read_write_property_map0.initMap(kli, v);
+        };
+        inline CppJohnson::ColorPropertyMap operator()(const CppJohnson::VertexIterator& kli, const CppJohnson::Color& v) {
+            return __two_bit_color_map.initMap(kli, v);
+        };
+    };
+
+    static CppJohnson::_initMap initMap;
+    struct _put {
+        inline void operator()(CppJohnson::VertexCostMatrix& pm, const CppJohnson::VertexDescriptor& k, const CppJohnson::VertexCostMap& v) {
+            return __read_write_property_map1.put(pm, k, v);
+        };
+        inline void operator()(CppJohnson::EdgeCostMap& pm, const CppJohnson::EdgeDescriptor& k, const CppJohnson::Cost& v) {
+            return __read_write_property_map.put(pm, k, v);
+        };
+        inline void operator()(CppJohnson::VertexPredecessorMap& pm, const CppJohnson::VertexDescriptor& k, const CppJohnson::VertexDescriptor& v) {
+            return __read_write_property_map2.put(pm, k, v);
+        };
+        inline void operator()(CppJohnson::VertexCostMap& pm, const CppJohnson::VertexDescriptor& k, const CppJohnson::Cost& v) {
+            return __read_write_property_map0.put(pm, k, v);
+        };
+        inline void operator()(CppJohnson::ColorPropertyMap& pm, const CppJohnson::VertexDescriptor& k, const CppJohnson::Color& v) {
+            return __two_bit_color_map.put(pm, k, v);
+        };
+    };
+
+    static CppJohnson::_put put;
+    struct _white {
+        inline CppJohnson::Color operator()() {
+            return __two_bit_color_map.white();
+        };
+    };
+
+    static CppJohnson::_white white;
+    typedef base_bool::Bool Bool;
+    struct _bellmanFordShortestPaths {
+        inline void operator()(const CppJohnson::Graph& g, CppJohnson::VertexCostMap& vcm, const CppJohnson::EdgeCostMap& ecm, CppJohnson::Unit& a, CppJohnson::VertexPredecessorMap& vpm, CppJohnson::Bool& allMinimized) {
+            CppJohnson::VertexIterator vertexItr;
+            CppJohnson::vertices(g, vertexItr);
+            vpm = CppJohnson::emptyVPMap();
+            CppJohnson::populateVPMapLoopRepeat(vertexItr, vpm, CppJohnson::unit());
+            CppJohnson::edgeRelaxationOuterLoopRepeat(vertexItr, a, vcm, vpm, ecm, g);
+            CppJohnson::EdgeIterator edgeItr;
+            CppJohnson::edges(g, edgeItr);
+            allMinimized = CppJohnson::btrue();
+            CppJohnson::checkNegativeCycleLoopRepeat(edgeItr, a, allMinimized, vcm, ecm, g);
+        };
+    };
+
+    static CppJohnson::_bellmanFordShortestPaths bellmanFordShortestPaths;
+    struct _bfalse {
+        inline CppJohnson::Bool operator()() {
+            return __base_bool.bfalse();
+        };
+    };
+
+    static CppJohnson::_bfalse bfalse;
+    struct _btrue {
+        inline CppJohnson::Bool operator()() {
+            return __base_bool.btrue();
+        };
+    };
+
+    static CppJohnson::_btrue btrue;
+    struct _checkNegativeCycleLoopRepeat {
+        inline void operator()(const CppJohnson::EdgeIterator& itr, CppJohnson::Unit& s1, CppJohnson::Bool& s2, const CppJohnson::VertexCostMap& ctx1, const CppJohnson::EdgeCostMap& ctx2, const CppJohnson::Graph& ctx3) {
+            return __for_iterator_loop2_3.forLoopRepeat(itr, s1, s2, ctx1, ctx2, ctx3);
+        };
+    };
+
+    static CppJohnson::_checkNegativeCycleLoopRepeat checkNegativeCycleLoopRepeat;
+    struct _checkNegativeCycleLoopStep {
+        inline void operator()(const CppJohnson::EdgeIterator& edgeItr, CppJohnson::Unit& a, CppJohnson::Bool& allMinimized, const CppJohnson::VertexCostMap& vcm, const CppJohnson::EdgeCostMap& ecm, const CppJohnson::Graph& g) {
+            CppJohnson::EdgeDescriptor currentEdge = CppJohnson::edgeIterUnpack(edgeItr);
+            CppJohnson::VertexDescriptor u = CppJohnson::src(currentEdge, g);
+            CppJohnson::VertexDescriptor v = CppJohnson::tgt(currentEdge, g);
+            CppJohnson::Cost uCost = CppJohnson::get(vcm, u);
+            CppJohnson::Cost vCost = CppJohnson::get(vcm, v);
+            CppJohnson::Cost edgeCost = CppJohnson::get(ecm, currentEdge);
+            if (CppJohnson::less(CppJohnson::plus(uCost, edgeCost), vCost))
+            {
+                CppJohnson::edgeNotMinimized(currentEdge, g, a);
+                allMinimized = CppJohnson::bfalse();
+            }
+            else
+                CppJohnson::edgeMinimized(currentEdge, g, a);
+        };
+    };
+
+private:
+    static for_iterator_loop2_3<CppJohnson::VertexCostMap, CppJohnson::EdgeCostMap, CppJohnson::Graph, CppJohnson::EdgeIterator, CppJohnson::Unit, CppJohnson::Bool, CppJohnson::_edgeIterEnd, CppJohnson::_edgeIterNext, CppJohnson::_checkNegativeCycleLoopStep> __for_iterator_loop2_3;
+public:
+    static CppJohnson::_checkNegativeCycleLoopStep checkNegativeCycleLoopStep;
+    struct _holds {
+        inline bool operator()(const CppJohnson::Bool& b) {
+            return (b) == (CppJohnson::btrue());
+        };
+    };
+
+    static CppJohnson::_holds holds;
+    struct _johnsonAllPairsShortestPaths {
+        inline void operator()(const CppJohnson::Graph& g, const CppJohnson::EdgeCostMap& ecm, CppJohnson::Unit& a, CppJohnson::VertexCostMatrix& vcmat, CppJohnson::Bool& succeeded) {
+            CppJohnson::VertexIterator vertexItr;
+            CppJohnson::vertices(g, vertexItr);
+            CppJohnson::VertexCostMap vcm = CppJohnson::emptyVCMap.operator()<VertexCostMap>();
+            CppJohnson::initializeVertexCostMapLoopRepeat(vertexItr, vcm, CppJohnson::zero());
+            CppJohnson::VertexPredecessorMap vpm;
+            CppJohnson::bellmanFordShortestPaths(g, vcm, ecm, a, vpm, succeeded);
+            if (CppJohnson::holds(succeeded))
+            {
+                CppJohnson::EdgeIterator edgeItr;
+                CppJohnson::edges(g, edgeItr);
+                CppJohnson::EdgeCostMap newCosts = CppJohnson::emptyECMap();
+                CppJohnson::reweightEdgeLoopRepeat(edgeItr, newCosts, ecm, vcm, g);
+                CppJohnson::dijkstraAndAdjustLoopRepeat(vertexItr, vcmat, newCosts, vcm, g);
+            }
+            else
+                ;
+        };
+    };
+
+    static CppJohnson::_johnsonAllPairsShortestPaths johnsonAllPairsShortestPaths;
 };
 } // examples
 } // bgl
@@ -3119,6 +4073,13 @@ public:
     };
 
     static CppPrimVisitor::_less less;
+    struct _negate {
+        inline CppPrimVisitor::Cost operator()(const CppPrimVisitor::Cost& f) {
+            return __base_float_ops.negate(f);
+        };
+    };
+
+    static CppPrimVisitor::_negate negate;
     struct _plus {
         inline CppPrimVisitor::Cost operator()(const CppPrimVisitor::Cost& i1, const CppPrimVisitor::Cost& i2) {
             return __base_float_ops.plus(i1, i2);
@@ -3150,6 +4111,13 @@ public:
     };
 
     static CppPrimVisitor::_second second;
+    struct _zero {
+        inline CppPrimVisitor::Cost operator()() {
+            return __base_float_ops.zero();
+        };
+    };
+
+    static CppPrimVisitor::_zero zero;
     typedef two_bit_color_map<CppPrimVisitor::VertexDescriptor, CppPrimVisitor::VertexIterator, CppPrimVisitor::_vertexIterEnd, CppPrimVisitor::_vertexIterNext, CppPrimVisitor::_vertexIterUnpack>::ColorPropertyMap ColorPropertyMap;
     typedef two_bit_color_map<CppPrimVisitor::VertexDescriptor, CppPrimVisitor::VertexIterator, CppPrimVisitor::_vertexIterEnd, CppPrimVisitor::_vertexIterNext, CppPrimVisitor::_vertexIterUnpack>::Color Color;
     struct _black {

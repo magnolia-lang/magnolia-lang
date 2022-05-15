@@ -40,7 +40,7 @@ struct base_bool {
         bool value;
         bool operator==(const Bool &other) const = default;
     };
-    
+
     inline Bool btrue() { return Bool(true); }
     inline Bool bfalse() { return Bool(false); }
 };
@@ -61,6 +61,8 @@ struct base_float_ops {
     typedef float Float;
     inline Float plus(const Float &i1, const Float &i2) { return i1 + i2; }
     inline bool less(const Float &i1, const Float &i2) const { return i1 < i2; }
+    inline Float negate(const Float &f) { return -f; }
+    inline Float zero() { return 0; }
 };
 
 // color_marker_cpp
@@ -103,7 +105,7 @@ struct edge_without_descriptor {
     }
 };
 
-//template <typename 
+//template <typename
 
 template <typename _Edge, typename _EdgeIterator, typename _EdgeList,
           typename _OutEdgeIterator, typename _Vertex, typename _VertexIterator,
@@ -215,7 +217,7 @@ struct custom_incidence_and_vertex_list_and_edge_list_graph {
         for (auto itr = getVertexIterator(g.vertices);
              !vertexIterEnd(itr);
              vertexIterNext(itr), ++count) {}
-        
+
         return count;
     }
 
@@ -316,12 +318,12 @@ struct list {
 
     inline List empty() { return List(); }
     inline void cons(const A &a, List &l) { l.push_front(a); }
-        
+
     inline const A& head(const List &l) {
         return l.front();
     }
     inline void tail(List &l) { l.pop_front(); }
-        
+
     inline bool isEmpty(const List &l) {
         return l.empty();
     }
@@ -520,7 +522,7 @@ struct two_bit_color_map {
     private:
     typedef typename boost::vec_adj_list_vertex_id_map<boost::no_property, Key> IndexMap;
     typedef typename boost::property_traits<IndexMap> Traits;
-    
+
     public:
     typedef typename boost::two_bit_color_map<IndexMap>
             ColorPropertyMap;
@@ -832,11 +834,11 @@ struct triplet {
     typedef _B B;
     typedef _C C;
     typedef std::tuple<A, B, C> Triplet;
-    
+
     Triplet makeTriplet(const A &a, const B &b, const C &c) {
         return std::make_tuple(a, b, c);
     }
-    
+
     inline A first(const Triplet &triplet) { return std::get<0>(triplet); }
     inline B second(const Triplet &triplet) { return std::get<1>(triplet); }
     inline C third(const Triplet &triplet) { return std::get<2>(triplet); }
@@ -849,7 +851,7 @@ struct for_iterator_loop {
     typedef _State State;
     typedef _Context Context;
     typedef _Iterator Iterator;
-    
+
     _iterEnd iterEnd;
     _iterNext iterNext;
     _step step;
@@ -863,6 +865,53 @@ struct for_iterator_loop {
     }
 };
 
+template <typename _Context1, typename _Context2,
+          typename _Iterator, typename _State,
+          class _iterEnd, class _iterNext, class _step>
+struct for_iterator_loop1_2 {
+    typedef _Context1 Context1;
+    typedef _Context2 Context2;
+    typedef _Iterator Iterator;
+    typedef _State State;
+
+    _iterEnd iterEnd;
+    _iterNext iterNext;
+    _step step;
+
+    inline __attribute__((always_inline)) void forLoopRepeat(Iterator itr,
+                                                             State &s,
+                                                             const Context1 &c1,
+                                                             const Context2 &c2) {
+        for (; !iterEnd(itr); iterNext(itr)) {
+            step(itr, s, c1, c2);
+        }
+    }
+};
+
+template <typename _Context1, typename _Context2, typename _Context3,
+          typename _Iterator, typename _State,
+          class _iterEnd, class _iterNext, class _step>
+struct for_iterator_loop1_3 {
+    typedef _Context1 Context1;
+    typedef _Context2 Context2;
+    typedef _Context3 Context3;
+    typedef _Iterator Iterator;
+    typedef _State State;
+
+    _iterEnd iterEnd;
+    _iterNext iterNext;
+    _step step;
+
+    inline __attribute__((always_inline)) void forLoopRepeat(Iterator itr,
+                                                             State &s,
+                                                             const Context1 &c1,
+                                                             const Context2 &c2,
+                                                             const Context3 &c3) {
+        for (; !iterEnd(itr); iterNext(itr)) {
+            step(itr, s, c1, c2, c3);
+        }
+    }
+};
 
 template <typename _Context1, typename _Context2, typename _Context3,
           typename _Iterator, typename _State1, typename _State2,
@@ -964,7 +1013,7 @@ struct while_loop {
 };
 
 
-template <typename _Context, typename _State1, typename _State2, 
+template <typename _Context, typename _State1, typename _State2,
           typename _State3, class _cond, class _step>
 struct while_loop3 {
     typedef _State1 State1;
