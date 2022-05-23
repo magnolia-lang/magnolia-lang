@@ -2,6 +2,7 @@
 
 ![Continuous
 integration](https://github.com/magnolia-lang/magnolia-lang/actions/workflows/ci.yml/badge.svg)
+[![DOI](https://zenodo.org/badge/327562112.svg)](https://zenodo.org/badge/latestdoi/327562112)
 
 Magnolia is a research programming language based on the theory of institutions.
 
