@@ -6,6 +6,9 @@ integration](https://github.com/magnolia-lang/magnolia-lang/actions/workflows/ci
 
 Magnolia is a research programming language based on the theory of institutions.
 
+As of May 2022, this repository guides the evolution of Magnolia and hosts
+the `magnoliac` compiler.
+
 ⚠️  The compiler is still at an experimental stage. Expect bugs, sharp edges, and
 changing APIs. ⚠️
 
@@ -13,13 +16,13 @@ changing APIs. ⚠️
 
 ### How to install
 
-To install Magnolia, simply run the following command:
+To install the Magnolia compiler, simply run the following command:
 
 ```bash
 make install
 ```
 
-`magnolia` will then be installed in the default directory for your cabal
+`magnoliac` will then be installed in the default directory for your cabal
 binaries. By default, this should be `~/.cabal/bin`. Make sure that directory
 is in your `PATH`.
 
@@ -28,7 +31,7 @@ is in your `PATH`.
 To build a Magnolia program, use the `build` command as follows:
 
 ```bash
-magnolia build <path/to/package.mg> --output-directory <path/to/generated/files>
+magnoliac build <path/to/package.mg> --output-directory <path/to/generated/files>
 ```
 
 By default, this command does **NOT** overwrite files. In order to re-generate
@@ -44,7 +47,7 @@ Another option to explore Magnolia source files is to explore them using the
 `repl` option instead:
 
 ```bash
-magnolia repl
+magnoliac repl
 mgn> help
 Available commands are:
         help: show this help menu
@@ -77,7 +80,7 @@ to get going with a development version of the compiler:
 ```bash
 make build
 # For convenience, you may define an alias for the compiler
-alias magnolia='cabal exec magnolia --'
+alias magnoliac='cabal exec magnoliac --'
 ```
 
 ## How to contribute

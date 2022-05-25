@@ -1,7 +1,7 @@
 cradle:
   cabal:
     - path: "src/lib"
-      component: "lib:magnolia"
+      component: "lib:magnoliac"
 
-    - path: "src/magnolia.hs"
-      component: "magnolia:exe:magnolia"
+    - path: "src/magnoliac.hs"
+      component: "magnoliac:exe:magnoliac"

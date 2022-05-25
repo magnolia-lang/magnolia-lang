@@ -1,4 +1,4 @@
-mgn := cabal exec -v0 magnolia --
+mgn := cabal exec -v0 magnoliac --
 pass := check
 tests-out-dir := gen
 

@@ -6,7 +6,7 @@ import os
 import subprocess
 import tempfile
 
-magnolia = 'cabal exec -v0 magnolia --'
+magnoliac = 'cabal exec -v0 magnoliac --'
 
 default_test_target = 'tests/frontend/test.mg'
 base_path = tempfile.mkdtemp()
@@ -70,7 +70,7 @@ def run_compiler(config: Config, target=default_test_target):
     Returns the completed process, along with its captured stderr and stdout
     outputs.
     """
-    command_line = [magnolia, "build"]
+    command_line = [magnoliac, "build"]
     if config.output_directory is not None:
         command_line += ["-o", config.output_directory]
     if config.import_base_directory is not None:
