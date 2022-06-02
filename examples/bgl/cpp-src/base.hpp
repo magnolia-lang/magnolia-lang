@@ -170,7 +170,6 @@ struct custom_incidence_and_vertex_list_and_edge_list_graph {
             std::unordered_set<Vertex> _vertices;
             std::unordered_set<Vertex> *unique_out_edges = new std::unordered_set<Vertex>[num_vertices];
             for (auto edge_it = edges.begin(); edge_it != edges.end(); ++edge_it) {
-                consEdgeList(*edge_it, this->allEdges);
                 unique_out_edges[srcPlainEdge(*edge_it)].insert(
                     tgtPlainEdge(*edge_it));
                 _vertices.insert(srcPlainEdge(*edge_it));
@@ -183,6 +182,7 @@ struct custom_incidence_and_vertex_list_and_edge_list_graph {
             for (auto i = 0; i < num_vertices; ++i) {
                 for (auto vertex_it = unique_out_edges[i].begin(); vertex_it != unique_out_edges[i].end(); ++vertex_it) {
                     consEdgeList(makeEdge(i, *vertex_it), this->edges[i]);
+                    consEdgeList(makeEdge(i, *vertex_it), this->allEdges);
                 }
             }
 
