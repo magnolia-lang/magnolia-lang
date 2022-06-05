@@ -80,7 +80,7 @@ implementation BFSVisitorDefaultAction = {
                             upd a: A) = {};
 }
 
-implementation BFSVisit = {
+implementation GenericBFSUtils = {
     require BFSVisitor[ Vertex => VertexDescriptor
                       , Edge => EdgeDescriptor
                       ];
@@ -104,10 +104,8 @@ implementation BFSVisit = {
                                 upd q: Queue,
                                 upd c: ColorPropertyMap) {
         call discoverVertex(s, g, q, a);
-
         call push(s, q);
         call put(c, s, gray());
-
         call bfsOuterLoopRepeat(a, q, c, g);
     }
 
@@ -189,8 +187,8 @@ implementation BFSVisit = {
     }
 }
 
-implementation BFSOrDFS = {
-    use BFSVisit;
+implementation GraphSearch = {
+    use GenericBFSUtils;
     require function empty(): Queue;
 
     function search(g: Graph,
@@ -208,20 +206,20 @@ implementation BFSOrDFS = {
 }
 
 implementation BFS = {
-    use BFSOrDFS[ search => breadthFirstSearch
-                , Queue => FIFOQueue
-                ];
+    use GraphSearch[ search => breadthFirstSearch
+                   , Queue => FIFOQueue
+                   ];
     use FIFOQueue[ A => VertexDescriptor
                  , isEmpty => isEmptyQueue
                  ];
 }
 
 implementation DFS = {
-    use BFSOrDFS[ search => depthFirstSearch
-                , Queue => Stack // LIFOQueue
-                , front => top
-                , isEmptyQueue => isEmptyStack
-                ];
+    use GraphSearch[ search => depthFirstSearch
+                   , Queue => Stack // LIFOQueue
+                   , front => top
+                   , isEmptyQueue => isEmptyStack
+                   ];
     use Stack[ A => VertexDescriptor
              , isEmpty => isEmptyStack
              ];

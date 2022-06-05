@@ -19,9 +19,9 @@ implementation DijkstraVisitorBase = {
                                , empty => emptyPriorityQueue
                                , isEmpty => isEmptyQueue
                                ];
-    use BFSVisit[ Queue => PriorityQueue
-                , A => StateWithMaps
-                ]; // TODO: the rest
+    use GenericBFSUtils[ Queue => PriorityQueue
+                       , A => StateWithMaps
+                       ]; // TODO: the rest
 
     use Relax[ Edge => Edge
              , EdgeDescriptor => EdgeDescriptor
