@@ -6,16 +6,12 @@
 #include "base.hpp"
 
 //typedef array_ops::Shape Shape;
-typedef array_ops::Array Array;
-typedef array_ops::Index Index;
+typedef array_ops<float>::Array Array;
+typedef array_ops<float>::Index Index;
 typedef examples::pde::mg_src::pde_cpp::PDEProgram PDEProgram;
 
-static const double s_dt = 0.00082212448155679772495;
-static const double s_nu = 1.0;
-static const double s_dx = 1.0;
-
 int main() {
-    size_t steps = 50;
+    size_t steps = 1;
     Array u0, u1, u2;
     dumpsine(u0);
     dumpsine(u1);
@@ -24,7 +20,7 @@ int main() {
     double begin = omp_get_wtime();
 
     for (size_t i = 0; i < steps; ++i) {
-        PDEProgram::step(u0, u1, u2, s_nu, s_dx, s_dt);
+        PDEProgram::step(u0, u1, u2); //, S_NU, S_DX, S_DT);
         std::cout << u0[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2] << " "
                   << u1[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2] << " "
                   << u2[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2] << std::endl;

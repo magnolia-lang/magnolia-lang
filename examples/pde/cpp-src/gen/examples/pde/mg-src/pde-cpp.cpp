@@ -13,7 +13,21 @@ namespace pde_cpp {
 
     BasePDEProgram::_one BasePDEProgram::one;
 
-    array_ops BasePDEProgram::__array_ops;
+    constants BasePDEProgram::__constants;
+
+    array_ops<BasePDEProgram::Float> BasePDEProgram::__array_ops;
+
+
+
+    BasePDEProgram::_dt BasePDEProgram::dt;
+
+
+
+    BasePDEProgram::_dx BasePDEProgram::dx;
+
+
+
+    BasePDEProgram::_nu BasePDEProgram::nu;
 
 
 
@@ -30,10 +44,6 @@ namespace pde_cpp {
 
 
     BasePDEProgram::_zero BasePDEProgram::zero;
-
-
-
-    BasePDEProgram::_all_substeps BasePDEProgram::all_substeps;
 
 
 
@@ -84,7 +94,21 @@ namespace pde_cpp {
 
     PDEProgram::_one PDEProgram::one;
 
-    array_ops PDEProgram::__array_ops;
+    constants PDEProgram::__constants;
+
+    array_ops<PDEProgram::Float> PDEProgram::__array_ops;
+
+
+
+    PDEProgram::_dt PDEProgram::dt;
+
+
+
+    PDEProgram::_dx PDEProgram::dx;
+
+
+
+    PDEProgram::_nu PDEProgram::nu;
 
 
 
@@ -101,10 +125,6 @@ namespace pde_cpp {
 
 
     PDEProgram::_zero PDEProgram::zero;
-
-
-
-    PDEProgram::_all_substeps PDEProgram::all_substeps;
 
 
 
@@ -132,7 +152,21 @@ namespace pde_cpp {
 
 
 
+    PDEProgram::_schedule PDEProgram::schedule;
+
+
+
     PDEProgram::_snippet PDEProgram::snippet;
+
+
+
+
+
+    PDEProgram::_make_ix PDEProgram::make_ix;
+
+    forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Nat, PDEProgram::Offset, PDEProgram::_snippet_ix> PDEProgram::__forall_ops;
+
+    PDEProgram::_snippet_ix PDEProgram::snippet_ix;
 
 
 
@@ -155,7 +189,21 @@ namespace pde_cpp {
 
     PDEProgram0::_one PDEProgram0::one;
 
-    array_ops PDEProgram0::__array_ops;
+    constants PDEProgram0::__constants;
+
+    array_ops<PDEProgram0::Float> PDEProgram0::__array_ops;
+
+
+
+    PDEProgram0::_dt PDEProgram0::dt;
+
+
+
+    PDEProgram0::_dx PDEProgram0::dx;
+
+
+
+    PDEProgram0::_nu PDEProgram0::nu;
 
 
 
@@ -172,10 +220,6 @@ namespace pde_cpp {
 
 
     PDEProgram0::_zero PDEProgram0::zero;
-
-
-
-    PDEProgram0::_all_substeps PDEProgram0::all_substeps;
 
 
 
@@ -226,7 +270,21 @@ namespace pde_cpp {
 
     PDEProgram1::_one PDEProgram1::one;
 
-    array_ops PDEProgram1::__array_ops;
+    constants PDEProgram1::__constants;
+
+    array_ops<PDEProgram1::Float> PDEProgram1::__array_ops;
+
+
+
+    PDEProgram1::_dt PDEProgram1::dt;
+
+
+
+    PDEProgram1::_dx PDEProgram1::dx;
+
+
+
+    PDEProgram1::_nu PDEProgram1::nu;
 
 
 
@@ -243,10 +301,6 @@ namespace pde_cpp {
 
 
     PDEProgram1::_zero PDEProgram1::zero;
-
-
-
-    PDEProgram1::_all_substeps PDEProgram1::all_substeps;
 
 
 
@@ -293,99 +347,6 @@ namespace pde_cpp {
 
 
     PDEProgram1::_step PDEProgram1::step;
-
-} // examples
-} // pde
-} // mg_src
-} // pde_cpp
-
-namespace examples {
-namespace pde {
-namespace mg_src {
-namespace pde_cpp {
-
-
-    PDEProgram2::_two PDEProgram2::two;
-
-
-
-    PDEProgram2::_one PDEProgram2::one;
-
-    array_ops PDEProgram2::__array_ops;
-
-
-
-    PDEProgram2::_nbCores PDEProgram2::nbCores;
-
-
-
-    PDEProgram2::_three PDEProgram2::three;
-
-
-
-    PDEProgram2::_unary_sub PDEProgram2::unary_sub;
-
-
-
-    PDEProgram2::_rotate_ix PDEProgram2::rotate_ix;
-
-
-
-    PDEProgram2::_zero PDEProgram2::zero;
-
-
-
-    PDEProgram2::_all_substeps PDEProgram2::all_substeps;
-
-
-
-    PDEProgram2::_binary_add PDEProgram2::binary_add;
-
-
-
-    PDEProgram2::_binary_sub PDEProgram2::binary_sub;
-
-
-
-    PDEProgram2::_div PDEProgram2::div;
-
-
-
-    PDEProgram2::_mul PDEProgram2::mul;
-
-
-
-    PDEProgram2::_psi PDEProgram2::psi;
-
-
-
-    PDEProgram2::_rotate PDEProgram2::rotate;
-
-
-
-    PDEProgram2::_schedule PDEProgram2::schedule;
-
-
-
-    PDEProgram2::_schedule_threaded PDEProgram2::schedule_threaded;
-
-
-
-    PDEProgram2::_snippet PDEProgram2::snippet;
-
-
-
-
-
-    PDEProgram2::_make_ix PDEProgram2::make_ix;
-
-    forall_ops<PDEProgram2::Array, PDEProgram2::Axis, PDEProgram2::Float, PDEProgram2::Index, PDEProgram2::Nat, PDEProgram2::Offset, PDEProgram2::_snippet_ix> PDEProgram2::__forall_ops;
-
-    PDEProgram2::_snippet_ix PDEProgram2::snippet_ix;
-
-
-
-    PDEProgram2::_step PDEProgram2::step;
 
 } // examples
 } // pde

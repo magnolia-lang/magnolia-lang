@@ -23,8 +23,20 @@
 #define NTILES 4
 #define NB_CORES 2
 
+#define S_DT 0.00082212448155679772495
+#define S_NU 1.0
+#define S_DX 1.0
+
+struct constants {
+    typedef float Float;
+    constexpr Float nu() { return S_NU; }
+    constexpr Float dt() { return S_DT; }
+    constexpr Float dx() { return S_DX; }
+};
+
+template <typename _Float>
 struct array_ops {
-  typedef float Float;
+  typedef _Float Float;
   struct Offset { int value; };
   struct Axis { size_t value; };
   typedef size_t Index;
@@ -264,12 +276,11 @@ struct forall_ops {
   inline Nat nbCores() { return Nat(NB_CORES); }
 
   inline Array schedule(const Array &u, const Array &v,
-      const Array &u0, const Array &u1, const Array &u2, const Float &c0,
-      const Float &c1, const Float &c2, const Float &c3, const Float &c4) {
+      const Array &u0, const Array &u1, const Array &u2) {
     Array result;
     std::cout << "in schedule" << std::endl;
     for (size_t i = 0; i < TOTAL_PADDED_SIZE; ++i) {
-      result[i] = snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4, i);
+      result[i] = snippet_ix(u, v, u0, u1, u2, i);
     }
 
     //std::cout << "produced: " << result[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2] << std::endl;
@@ -278,23 +289,20 @@ struct forall_ops {
   }
 
   inline Array schedule_threaded(const Array &u, const Array &v,
-      const Array &u0, const Array &u1, const Array &u2, const Float &c0,
-      const Float &c1, const Float &c2, const Float &c3, const Float &c4,
-      const Nat &nbThreads) {
+      const Array &u0, const Array &u1, const Array &u2, const Nat &nbThreads) {
     Array result;
     omp_set_num_threads(nbThreads.value);
     std::cout << "in schedule threaded" << std::endl;
 
     #pragma omp parallel for schedule(static)
     for (size_t i = 0; i < TOTAL_PADDED_SIZE; ++i) {
-      result[i] = snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4, i);
+      result[i] = snippet_ix(u, v, u0, u1, u2, i);
     }
     return result;
   }
 
   inline Array schedule_tiled(const Array &u, const Array &v,
-      const Array &u0, const Array &u1, const Array &u2, const Float &c0,
-      const Float &c1, const Float &c2, const Float &c3, const Float &c4) {
+      const Array &u0, const Array &u1, const Array &u2) {
     Array result;
 
     #pragma omp parallel for schedule(static) collapse(3)
@@ -305,7 +313,7 @@ struct forall_ops {
             for (size_t j = tj; j < tj + S1/NTILES; ++j) {
               for (size_t k = tk; k < tk + S2/NTILES; ++k) {
                 size_t ix = i * S1 * S2 + j * S2 + k;
-                result[ix] = snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4, ix);
+                result[ix] = snippet_ix(u, v, u0, u1, u2, ix);
               }
             }
           }
@@ -319,8 +327,7 @@ struct forall_ops {
   /* OF Pad extension */
   inline Array schedule_padded(const Array &u,
       const Array &v, const Array &u0, const Array &u1,
-      const Array &u2, const Float &c0, const Float &c1,
-      const Float &c2, const Float &c3, const Float &c4) {
+      const Array &u2) {
 
     Array result;
 
@@ -329,7 +336,7 @@ struct forall_ops {
       for (size_t j = PAD1; j < S1 + PAD1; ++j) {
         for (size_t k = PAD2; k < S2 + PAD2; ++k) {
           size_t ix = i * PADDED_S1 * PADDED_S2 + j * PADDED_S2 + k;
-          result[ix] = snippet_ix(u, v, u0, u1, u2, c0, c1, c2, c3, c4, ix);
+          result[ix] = snippet_ix(u, v, u0, u1, u2, ix);
         }
       }
     }
@@ -444,15 +451,14 @@ struct specialize_psi_ops {
   }
 
   inline Array schedule_specialized_psi_padded(const Array &u, const Array &v,
-      const Array &u0, const Array &u1, const Array &u2, const Float &c0,
-      const Float &c1, const Float &c2, const Float &c3, const Float &c4) {
+      const Array &u0, const Array &u1, const Array &u2) {
     Array result;
     std::cout << "in schedule_specialized_psi_padded" << std::endl;
     for (size_t i = PAD0; i < S0 + PAD0; ++i) {
       for (size_t j = PAD1; j < S1 + PAD1; ++j) {
         for (size_t k = PAD2; k < S2 + PAD2; ++k) {
           size_t ix = i * PADDED_S1 * PADDED_S2 + j * PADDED_S2 + k;
-          result[ix] = snippet_ix_specialized(u, v, u0, u1, u2, c0, c1, c2, c3, c4, ScalarIndex(i), ScalarIndex(j), ScalarIndex(k));
+          result[ix] = snippet_ix_specialized(u, v, u0, u1, u2, ScalarIndex(i), ScalarIndex(j), ScalarIndex(k));
         }
       }
     }
@@ -463,7 +469,7 @@ struct specialize_psi_ops {
 
 
 
-inline void dumpsine(array_ops::Array &result) {
+inline void dumpsine(array_ops<float>::Array &result) {
   double step = 0.01;
   double PI = 3.14159265358979323846;
   double amplitude = 10.0;
@@ -518,15 +524,14 @@ struct specialize_psi_ops_2 {
   }
 
   inline Array schedule_specialized_psi_padded(const Array &u, const Array &v,
-      const Array &u0, const Array &u1, const Array &u2, const Float &c0,
-      const Float &c1, const Float &c2, const Float &c3, const Float &c4) {
+      const Array &u0, const Array &u1, const Array &u2) {
     Array result;
     std::cout << "in schedule_specialized_psi_padded" << std::endl;
     for (size_t i = PAD0; i < S0 + PAD0; ++i) {
       for (size_t j = PAD1; j < S1 + PAD1; ++j) {
         for (size_t k = PAD2; k < S2 + PAD2; ++k) {
           size_t ix = i * PADDED_S1 * PADDED_S2 + j * PADDED_S2 + k;
-          result[ix] = snippet_ix_specialized(u, v, u0, u1, u2, c0, c1, c2, c3, c4, ScalarIndex(i), ScalarIndex(j), ScalarIndex(k));
+          result[ix] = snippet_ix_specialized(u, v, u0, u1, u2, ScalarIndex(i), ScalarIndex(j), ScalarIndex(k));
         }
       }
     }
