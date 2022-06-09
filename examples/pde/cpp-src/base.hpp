@@ -215,7 +215,7 @@ struct array_ops {
     Array result;
 
     for (size_t i = 0; i < TOTAL_PADDED_SIZE; ++i) {
-      Index ix = rotate_ix(ix, axis, o);
+      Index ix = rotateIx(ix, axis, o);
       result[i] = array[ix];
     }
 
@@ -224,7 +224,7 @@ struct array_ops {
     //std::unreachable(); // Always optimize with DNF, do not rotate
   }
 
-  inline Index rotate_ix0(const Index &ix, const Offset &offset) {
+  inline Index rotateIx0(const Index &ix, const Offset &offset) {
     if constexpr(PAD0 >= 1) {
       return ix + (offset.value * PADDED_S1 * PADDED_S2);
     } else {
@@ -232,7 +232,7 @@ struct array_ops {
     }
   }
 
-  inline Index rotate_ix(const Index &ix,
+  inline Index rotateIx(const Index &ix,
                          const Axis &axis,
                          const Offset &offset) {
     if (axis.value == 0) {
@@ -360,7 +360,7 @@ struct forall_ops {
     arr.replenish_padding();
   }
 
-  inline Index rotate_ix_padded(const Index &ix,
+  inline Index rotateIx_padded(const Index &ix,
                                 const Axis &axis,
                                 const Offset &offset) {
     if (axis.value == 0) {
@@ -400,7 +400,7 @@ struct forall_ops {
 
   struct ScalarIndex { size_t value; };
 
-  inline Index make_ix(const ScalarIndex &i, const ScalarIndex &j,
+  inline Index mkIx(const ScalarIndex &i, const ScalarIndex &j,
                        const ScalarIndex &k) {
     return i.value * PADDED_S1 * PADDED_S2 + j.value * PADDED_S2 + k.value;
   }
@@ -417,9 +417,9 @@ struct forall_ops {
     return ScalarIndex(six.value % sc.value);
   }
 
-  inline AxisLength shape_0() { return AxisLength(PADDED_S0); }
-  inline AxisLength shape_1() { return AxisLength(PADDED_S1); }
-  inline AxisLength shape_2() { return AxisLength(PADDED_S2); }
+  inline AxisLength shape0() { return AxisLength(PADDED_S0); }
+  inline AxisLength shape1() { return AxisLength(PADDED_S1); }
+  inline AxisLength shape2() { return AxisLength(PADDED_S2); }
 
   inline ScalarIndex ix_0(const Index &ix) {
     return ScalarIndex(ix / (PADDED_S1 * PADDED_S2));
@@ -507,31 +507,33 @@ inline void dumpsine(array_ops<float>::Array &result) {
 /* experimental stuff below */
 
 /* OF Specialize Psi extension */
-template <typename _Array, typename _Float, typename _Index, typename _Offset,
-          typename _ScalarIndex, class _snippet_ix_specialized>
+template <typename _Array, typename _Axis, typename _Float, typename _Index,
+          typename _Offset, typename _ScalarIndex,
+          class _substepIx3D>
 struct specialize_psi_ops_2 {
   typedef _Array Array;
+  typedef _Axis Axis;
   typedef _Float Float;
   typedef _Index Index;
   typedef _Offset Offset;
   typedef _ScalarIndex ScalarIndex;
 
-  _snippet_ix_specialized snippet_ix_specialized;
+  _substepIx3D substepIx3D;
 
   inline Float psi(const ScalarIndex &i, const ScalarIndex &j,
                    const ScalarIndex &k, const Array &a) {
     return a[i.value * PADDED_S1 * PADDED_S2 + j.value * PADDED_S2 + k.value];
   }
 
-  inline Array schedule_specialized_psi_padded(const Array &u, const Array &v,
+  inline Array schedule3DPadded(const Array &u, const Array &v,
       const Array &u0, const Array &u1, const Array &u2) {
     Array result;
-    std::cout << "in schedule_specialized_psi_padded" << std::endl;
+    std::cout << "in schedule3DPadded" << std::endl;
     for (size_t i = PAD0; i < S0 + PAD0; ++i) {
       for (size_t j = PAD1; j < S1 + PAD1; ++j) {
         for (size_t k = PAD2; k < S2 + PAD2; ++k) {
           size_t ix = i * PADDED_S1 * PADDED_S2 + j * PADDED_S2 + k;
-          result[ix] = snippet_ix_specialized(u, v, u0, u1, u2, ScalarIndex(i), ScalarIndex(j), ScalarIndex(k));
+          result[ix] = substepIx3D(u, v, u0, u1, u2, ScalarIndex(i), ScalarIndex(j), ScalarIndex(k));
         }
       }
     }
@@ -551,21 +553,62 @@ struct specialize_psi_ops_2 {
     return ScalarIndex(six.value % sc.value);
   }
 
-  inline AxisLength shape_0() { return AxisLength(PADDED_S0); }
-  inline AxisLength shape_1() { return AxisLength(PADDED_S1); }
-  inline AxisLength shape_2() { return AxisLength(PADDED_S2); }
+  inline AxisLength shape0() { return AxisLength(PADDED_S0); }
+  inline AxisLength shape1() { return AxisLength(PADDED_S1); }
+  inline AxisLength shape2() { return AxisLength(PADDED_S2); }
 
-  inline ScalarIndex ix_0(const Index &ix) {
+  inline ScalarIndex ix0(const Index &ix) {
     return ScalarIndex(ix / (PADDED_S1 * PADDED_S2));
   }
 
-  inline ScalarIndex ix_1(const Index &ix) {
+  inline ScalarIndex ix1(const Index &ix) {
     return ScalarIndex((ix % PADDED_S1 * PADDED_S2) / PADDED_S2);
   }
 
-  inline ScalarIndex ix_2(const Index &ix) {
+  inline ScalarIndex ix2(const Index &ix) {
     return ScalarIndex(ix % PADDED_S2);
   }
+
+  inline void refillPadding(Array& arr) {
+    arr.replenish_padding();
+  }
+
+  inline Index rotateIxPadded(const Index &ix,
+                              const Axis &axis,
+                              const Offset &offset) {
+    if (axis.value == 0) {
+      if constexpr(PAD0 >= 1) {
+        return ix + (offset.value * PADDED_S1 * PADDED_S2);
+      }
+      else {
+        size_t result = (ix + TOTAL_PADDED_SIZE + (offset.value * PADDED_S1 * PADDED_S2)) % TOTAL_PADDED_SIZE;
+        return result;
+      }
+    } else if (axis.value == 1) {
+      if constexpr(PAD1 >= 1) {
+        return ix + (offset.value * PADDED_S2);
+      }
+      else {
+        size_t ix_subarray_base = ix / (PADDED_S1 * PADDED_S2);
+        size_t ix_in_subarray = (ix + PADDED_S1 * PADDED_S2 + offset.value * PADDED_S2) % (PADDED_S1 * PADDED_S2);
+        return ix_subarray_base * (PADDED_S1 * PADDED_S2) + ix_in_subarray;
+      }
+    } else if (axis.value == 2) {
+      if constexpr(PAD2 >= 1) {
+        return ix + offset.value;
+      }
+      else {
+        size_t ix_subarray_base = ix / PADDED_S2;
+        size_t ix_in_subarray = (ix + PADDED_S2 + offset.value) % PADDED_S2;
+        return ix_subarray_base * PADDED_S2 + ix_in_subarray;
+      }
+    }
+
+    throw "failed at rotating index";
+    //std::unreachable();
+    return 0;
+  }
+
 };
 
 

@@ -11,7 +11,7 @@ typedef array_ops<float>::Index Index;
 typedef examples::pde::mg_src::pde_cpp::PDEProgram PDEProgram;
 
 int main() {
-    size_t steps = 1;
+    size_t steps = 50;
     Array u0, u1, u2;
     dumpsine(u0);
     dumpsine(u1);

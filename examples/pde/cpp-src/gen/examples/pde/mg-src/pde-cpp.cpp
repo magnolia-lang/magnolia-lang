@@ -39,7 +39,7 @@ namespace pde_cpp {
 
 
 
-    BasePDEProgram::_rotate_ix BasePDEProgram::rotate_ix;
+    BasePDEProgram::_rotateIx BasePDEProgram::rotateIx;
 
 
 
@@ -71,11 +71,11 @@ namespace pde_cpp {
 
 
 
-    BasePDEProgram::_snippet BasePDEProgram::snippet;
-
-
-
     BasePDEProgram::_step BasePDEProgram::step;
+
+
+
+    BasePDEProgram::_substep BasePDEProgram::substep;
 
 } // examples
 } // pde
@@ -120,15 +120,15 @@ namespace pde_cpp {
 
 
 
-    PDEProgram::_rotate_ix PDEProgram::rotate_ix;
+    PDEProgram::_rotateIx PDEProgram::rotateIx;
+
+
+
+    PDEProgram::_rotateIxPadded PDEProgram::rotateIxPadded;
 
 
 
     PDEProgram::_zero PDEProgram::zero;
-
-
-
-    PDEProgram::_binary_add PDEProgram::binary_add;
 
 
 
@@ -144,7 +144,7 @@ namespace pde_cpp {
 
 
 
-    PDEProgram::_psi PDEProgram::psi;
+    PDEProgram::_refillPadding PDEProgram::refillPadding;
 
 
 
@@ -156,21 +156,67 @@ namespace pde_cpp {
 
 
 
-    PDEProgram::_snippet PDEProgram::snippet;
-
-
-
-
-
-    PDEProgram::_make_ix PDEProgram::make_ix;
-
-    forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Nat, PDEProgram::Offset, PDEProgram::_snippet_ix> PDEProgram::__forall_ops;
-
-    PDEProgram::_snippet_ix PDEProgram::snippet_ix;
+    PDEProgram::_schedule3DPadded PDEProgram::schedule3DPadded;
 
 
 
     PDEProgram::_step PDEProgram::step;
+
+
+
+    PDEProgram::_substep PDEProgram::substep;
+
+
+
+
+
+    PDEProgram::_binary_add PDEProgram::binary_add;
+
+
+
+    PDEProgram::_ix0 PDEProgram::ix0;
+
+
+
+    PDEProgram::_ix1 PDEProgram::ix1;
+
+
+
+    PDEProgram::_ix2 PDEProgram::ix2;
+
+
+
+    PDEProgram::_mkIx PDEProgram::mkIx;
+
+
+
+    PDEProgram::_psi PDEProgram::psi;
+
+    forall_ops<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Nat, PDEProgram::Offset, PDEProgram::_substepIx> PDEProgram::__forall_ops;
+
+    PDEProgram::_substepIx PDEProgram::substepIx;
+
+
+
+
+
+    PDEProgram::_mod PDEProgram::mod;
+
+
+
+    PDEProgram::_shape0 PDEProgram::shape0;
+
+
+
+    PDEProgram::_shape1 PDEProgram::shape1;
+
+
+
+    PDEProgram::_shape2 PDEProgram::shape2;
+
+    specialize_psi_ops_2<PDEProgram::Array, PDEProgram::Axis, PDEProgram::Float, PDEProgram::Index, PDEProgram::Offset, PDEProgram::ScalarIndex, PDEProgram::_substepIx3D> PDEProgram::__specialize_psi_ops_2;
+
+    PDEProgram::_substepIx3D PDEProgram::substepIx3D;
 
 } // examples
 } // pde
@@ -215,7 +261,7 @@ namespace pde_cpp {
 
 
 
-    PDEProgram0::_rotate_ix PDEProgram0::rotate_ix;
+    PDEProgram0::_rotateIx PDEProgram0::rotateIx;
 
 
 
@@ -247,11 +293,11 @@ namespace pde_cpp {
 
 
 
-    PDEProgram0::_snippet PDEProgram0::snippet;
-
-
-
     PDEProgram0::_step PDEProgram0::step;
+
+
+
+    PDEProgram0::_substep PDEProgram0::substep;
 
 } // examples
 } // pde
@@ -296,7 +342,7 @@ namespace pde_cpp {
 
 
 
-    PDEProgram1::_rotate_ix PDEProgram1::rotate_ix;
+    PDEProgram1::_rotateIx PDEProgram1::rotateIx;
 
 
 
@@ -332,21 +378,162 @@ namespace pde_cpp {
 
 
 
-    PDEProgram1::_snippet PDEProgram1::snippet;
-
-
-
-
-
-    PDEProgram1::_make_ix PDEProgram1::make_ix;
-
-    forall_ops<PDEProgram1::Array, PDEProgram1::Axis, PDEProgram1::Float, PDEProgram1::Index, PDEProgram1::Nat, PDEProgram1::Offset, PDEProgram1::_snippet_ix> PDEProgram1::__forall_ops;
-
-    PDEProgram1::_snippet_ix PDEProgram1::snippet_ix;
-
-
-
     PDEProgram1::_step PDEProgram1::step;
+
+
+
+    PDEProgram1::_substep PDEProgram1::substep;
+
+
+
+
+
+    PDEProgram1::_mkIx PDEProgram1::mkIx;
+
+    forall_ops<PDEProgram1::Array, PDEProgram1::Axis, PDEProgram1::Float, PDEProgram1::Index, PDEProgram1::Nat, PDEProgram1::Offset, PDEProgram1::_substepIx> PDEProgram1::__forall_ops;
+
+    PDEProgram1::_substepIx PDEProgram1::substepIx;
+
+} // examples
+} // pde
+} // mg_src
+} // pde_cpp
+
+namespace examples {
+namespace pde {
+namespace mg_src {
+namespace pde_cpp {
+
+
+    SpecializedAndPaddedProgram::_two SpecializedAndPaddedProgram::two;
+
+
+
+    SpecializedAndPaddedProgram::_one SpecializedAndPaddedProgram::one;
+
+    constants SpecializedAndPaddedProgram::__constants;
+
+    array_ops<SpecializedAndPaddedProgram::Float> SpecializedAndPaddedProgram::__array_ops;
+
+
+
+    SpecializedAndPaddedProgram::_dt SpecializedAndPaddedProgram::dt;
+
+
+
+    SpecializedAndPaddedProgram::_dx SpecializedAndPaddedProgram::dx;
+
+
+
+    SpecializedAndPaddedProgram::_nu SpecializedAndPaddedProgram::nu;
+
+
+
+    SpecializedAndPaddedProgram::_three SpecializedAndPaddedProgram::three;
+
+
+
+    SpecializedAndPaddedProgram::_unary_sub SpecializedAndPaddedProgram::unary_sub;
+
+
+
+    SpecializedAndPaddedProgram::_rotateIx SpecializedAndPaddedProgram::rotateIx;
+
+
+
+    SpecializedAndPaddedProgram::_rotateIxPadded SpecializedAndPaddedProgram::rotateIxPadded;
+
+
+
+    SpecializedAndPaddedProgram::_zero SpecializedAndPaddedProgram::zero;
+
+
+
+    SpecializedAndPaddedProgram::_binary_sub SpecializedAndPaddedProgram::binary_sub;
+
+
+
+    SpecializedAndPaddedProgram::_div SpecializedAndPaddedProgram::div;
+
+
+
+    SpecializedAndPaddedProgram::_mul SpecializedAndPaddedProgram::mul;
+
+
+
+    SpecializedAndPaddedProgram::_refillPadding SpecializedAndPaddedProgram::refillPadding;
+
+
+
+    SpecializedAndPaddedProgram::_rotate SpecializedAndPaddedProgram::rotate;
+
+
+
+    SpecializedAndPaddedProgram::_schedule SpecializedAndPaddedProgram::schedule;
+
+
+
+    SpecializedAndPaddedProgram::_schedule3DPadded SpecializedAndPaddedProgram::schedule3DPadded;
+
+
+
+    SpecializedAndPaddedProgram::_step SpecializedAndPaddedProgram::step;
+
+
+
+    SpecializedAndPaddedProgram::_substep SpecializedAndPaddedProgram::substep;
+
+
+
+
+
+    SpecializedAndPaddedProgram::_binary_add SpecializedAndPaddedProgram::binary_add;
+
+
+
+    SpecializedAndPaddedProgram::_ix0 SpecializedAndPaddedProgram::ix0;
+
+
+
+    SpecializedAndPaddedProgram::_ix1 SpecializedAndPaddedProgram::ix1;
+
+
+
+    SpecializedAndPaddedProgram::_ix2 SpecializedAndPaddedProgram::ix2;
+
+
+
+    SpecializedAndPaddedProgram::_mkIx SpecializedAndPaddedProgram::mkIx;
+
+
+
+    SpecializedAndPaddedProgram::_psi SpecializedAndPaddedProgram::psi;
+
+    forall_ops<SpecializedAndPaddedProgram::Array, SpecializedAndPaddedProgram::Axis, SpecializedAndPaddedProgram::Float, SpecializedAndPaddedProgram::Index, SpecializedAndPaddedProgram::Nat, SpecializedAndPaddedProgram::Offset, SpecializedAndPaddedProgram::_substepIx> SpecializedAndPaddedProgram::__forall_ops;
+
+    SpecializedAndPaddedProgram::_substepIx SpecializedAndPaddedProgram::substepIx;
+
+
+
+
+
+    SpecializedAndPaddedProgram::_mod SpecializedAndPaddedProgram::mod;
+
+
+
+    SpecializedAndPaddedProgram::_shape0 SpecializedAndPaddedProgram::shape0;
+
+
+
+    SpecializedAndPaddedProgram::_shape1 SpecializedAndPaddedProgram::shape1;
+
+
+
+    SpecializedAndPaddedProgram::_shape2 SpecializedAndPaddedProgram::shape2;
+
+    specialize_psi_ops_2<SpecializedAndPaddedProgram::Array, SpecializedAndPaddedProgram::Axis, SpecializedAndPaddedProgram::Float, SpecializedAndPaddedProgram::Index, SpecializedAndPaddedProgram::Offset, SpecializedAndPaddedProgram::ScalarIndex, SpecializedAndPaddedProgram::_substepIx3D> SpecializedAndPaddedProgram::__specialize_psi_ops_2;
+
+    SpecializedAndPaddedProgram::_substepIx3D SpecializedAndPaddedProgram::substepIx3D;
 
 } // examples
 } // pde
