@@ -224,14 +224,6 @@ struct array_ops {
     //std::unreachable(); // Always optimize with DNF, do not rotate
   }
 
-  inline Index rotateIx0(const Index &ix, const Offset &offset) {
-    if constexpr(PAD0 >= 1) {
-      return ix + (offset.value * PADDED_S1 * PADDED_S2);
-    } else {
-
-    }
-  }
-
   inline Index rotateIx(const Index &ix,
                          const Axis &axis,
                          const Offset &offset) {
@@ -262,7 +254,7 @@ struct array_ops {
 };
 
 template <typename _Array, typename _Axis, typename _Float, typename _Index,
-          typename _Nat, typename _Offset, class _snippet_ix>
+          typename _Nat, typename _Offset, class _substepIx>
 struct forall_ops {
   typedef _Array Array;
   typedef _Axis Axis;
@@ -271,7 +263,7 @@ struct forall_ops {
   typedef _Nat Nat;
   typedef _Offset Offset;
 
-  _snippet_ix snippet_ix;
+  _substepIx substepIx;
 
   inline Nat nbCores() { return Nat(NB_CORES); }
 
@@ -280,7 +272,7 @@ struct forall_ops {
     Array result;
     std::cout << "in schedule" << std::endl;
     for (size_t i = 0; i < TOTAL_PADDED_SIZE; ++i) {
-      result[i] = snippet_ix(u, v, u0, u1, u2, i);
+      result[i] = substepIx(u, v, u0, u1, u2, i);
     }
 
     //std::cout << "produced: " << result[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2] << std::endl;
@@ -296,7 +288,7 @@ struct forall_ops {
 
     #pragma omp parallel for schedule(static)
     for (size_t i = 0; i < TOTAL_PADDED_SIZE; ++i) {
-      result[i] = snippet_ix(u, v, u0, u1, u2, i);
+      result[i] = substepIx(u, v, u0, u1, u2, i);
     }
     return result;
   }
@@ -313,7 +305,7 @@ struct forall_ops {
             for (size_t j = tj; j < tj + S1/NTILES; ++j) {
               for (size_t k = tk; k < tk + S2/NTILES; ++k) {
                 size_t ix = i * S1 * S2 + j * S2 + k;
-                result[ix] = snippet_ix(u, v, u0, u1, u2, ix);
+                result[ix] = substepIx(u, v, u0, u1, u2, ix);
               }
             }
           }
@@ -325,18 +317,15 @@ struct forall_ops {
   }
 
   /* OF Pad extension */
-  inline Array schedule_padded(const Array &u,
-      const Array &v, const Array &u0, const Array &u1,
-      const Array &u2) {
-
+  inline Array schedulePadded(const Array &u, const Array &v,
+      const Array &u0, const Array &u1, const Array &u2) {
     Array result;
-
-    std::cout << "in schedule_padded" << std::endl;
+    std::cout << "in schedulePadded" << std::endl;
     for (size_t i = PAD0; i < S0 + PAD0; ++i) {
       for (size_t j = PAD1; j < S1 + PAD1; ++j) {
         for (size_t k = PAD2; k < S2 + PAD2; ++k) {
           size_t ix = i * PADDED_S1 * PADDED_S2 + j * PADDED_S2 + k;
-          result[ix] = snippet_ix(u, v, u0, u1, u2, ix);
+          result[ix] = substepIx(u, v, u0, u1, u2, ix);
         }
       }
     }
@@ -356,11 +345,11 @@ struct forall_ops {
   //   return result;
   // }
 
-  inline void refill_all_padding(Array& arr) {
+  inline void refillPadding(Array& arr) {
     arr.replenish_padding();
   }
 
-  inline Index rotateIx_padded(const Index &ix,
+  inline Index rotateIxPadded(const Index &ix,
                                 const Axis &axis,
                                 const Offset &offset) {
     if (axis.value == 0) {
@@ -433,41 +422,6 @@ struct forall_ops {
     return ScalarIndex(ix % PADDED_S2);
   }
 };
-
-/* OF Specialize Psi extension */
-template <typename _Array, typename _Float, typename _Index,
-          typename _ScalarIndex, class _snippet_ix_specialized>
-struct specialize_psi_ops {
-  typedef _Array Array;
-  typedef _Float Float;
-  typedef _Index Index;
-  typedef _ScalarIndex ScalarIndex;
-
-  _snippet_ix_specialized snippet_ix_specialized;
-
-  inline Float psi(const ScalarIndex &i, const ScalarIndex &j,
-                   const ScalarIndex &k, const Array &a) {
-    return a[i.value * PADDED_S1 * PADDED_S2 + j.value * PADDED_S2 + k.value];
-  }
-
-  inline Array schedule_specialized_psi_padded(const Array &u, const Array &v,
-      const Array &u0, const Array &u1, const Array &u2) {
-    Array result;
-    std::cout << "in schedule_specialized_psi_padded" << std::endl;
-    for (size_t i = PAD0; i < S0 + PAD0; ++i) {
-      for (size_t j = PAD1; j < S1 + PAD1; ++j) {
-        for (size_t k = PAD2; k < S2 + PAD2; ++k) {
-          size_t ix = i * PADDED_S1 * PADDED_S2 + j * PADDED_S2 + k;
-          result[ix] = snippet_ix_specialized(u, v, u0, u1, u2, ScalarIndex(i), ScalarIndex(j), ScalarIndex(k));
-        }
-      }
-    }
-
-    return result;
-  }
-};
-
-
 
 inline void dumpsine(array_ops<float>::Array &result) {
   double step = 0.01;
@@ -608,7 +562,6 @@ struct specialize_psi_ops_2 {
     //std::unreachable();
     return 0;
   }
-
 };
 
 

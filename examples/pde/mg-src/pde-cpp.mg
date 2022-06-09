@@ -82,7 +82,6 @@ program BasePDEProgram = {
   //use ExtExtendMissingBypass;
 }
 
-program PDEProgram0 = BasePDEProgram;
 program PDEProgramDNF = {
   use (rewrite
         (rewrite
@@ -96,6 +95,11 @@ program PDEProgramDNF = {
 //   use (rewrite PDEProgramDNF with OFLiftCores 1);
 //   use ExtExtendLiftCores;
 // }
+
+program PDEProgramPadded = {
+  use (rewrite PDEProgramDNF with OFPad 1);
+  use ExtExtendPadding;
+}
 
 program PDEProgram3DPadded = {
   use (rewrite
@@ -112,7 +116,7 @@ program PDEProgram3DPadded = {
   use ExtNeededFns; // pulling in psi, schedules, etc...
 }
 
-program PDEProgram = PDEProgram3DPadded;
+program PDEProgram = PDEProgramDNF;
 
 concept ToIxwiseGenerator = {
   type Array;
