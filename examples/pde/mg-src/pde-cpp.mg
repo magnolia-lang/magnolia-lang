@@ -83,7 +83,7 @@ program BasePDEProgram = {
 }
 
 program PDEProgram0 = BasePDEProgram;
-program PDEProgram1 = {
+program PDEProgramDNF = {
   use (rewrite
         (rewrite
           (generate ToIxwiseGenerator in BasePDEProgram)
@@ -93,27 +93,26 @@ program PDEProgram1 = {
   use ExtExtendMissingBypass;
 }
 // program PDEProgram2 = {
-//   use (rewrite PDEProgram1 with OFLiftCores 1);
+//   use (rewrite PDEProgramDNF with OFLiftCores 1);
 //   use ExtExtendLiftCores;
 // }
 
-program SpecializedAndPaddedProgram = {
+program PDEProgram3DPadded = {
   use (rewrite
         (rewrite
           (rewrite
             (rewrite
-              (generate OFSpecializeSubstepGenerator in PDEProgram1)
+              (generate OFSpecializeSubstepGenerator in PDEProgramDNF)
             with OFSpecializePsi 10)
           with OFReduceMakeIxRotate 20)
         with OFPad[schedulePadded =>
                    schedule3DPadded] 1)
       with OFEliminateModuloPadding 10);
 
-  use ExtNeededFns;
-  //use ExternalNeededFunctions; // pulling in psi, schedules, etc...
+  use ExtNeededFns; // pulling in psi, schedules, etc...
 }
 
-program PDEProgram = SpecializedAndPaddedProgram;
+program PDEProgram = PDEProgram3DPadded;
 
 concept ToIxwiseGenerator = {
   type Array;
