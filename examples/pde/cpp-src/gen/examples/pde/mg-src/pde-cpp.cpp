@@ -251,7 +251,7 @@ namespace pde_cpp {
 
 
 
-    PDEProgram3D::_schedule3DPadded PDEProgram3D::schedule3DPadded;
+    PDEProgram3D::_schedule3D PDEProgram3D::schedule3D;
 
 
 

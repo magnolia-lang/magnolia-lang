@@ -599,24 +599,24 @@ public:
     };
 
     static PDEProgram3D::_schedule schedule;
-    struct _schedule3DPadded {
+    struct _schedule3D {
         inline PDEProgram3D::Array operator()(const PDEProgram3D::Array& u, const PDEProgram3D::Array& v, const PDEProgram3D::Array& u0, const PDEProgram3D::Array& u1, const PDEProgram3D::Array& u2) {
             return __specialize_psi_ops_2.schedule3DPadded(u, v, u0, u1, u2);
         };
     };
 
-    static PDEProgram3D::_schedule3DPadded schedule3DPadded;
+    static PDEProgram3D::_schedule3D schedule3D;
     struct _step {
         inline void operator()(PDEProgram3D::Array& u0, PDEProgram3D::Array& u1, PDEProgram3D::Array& u2) {
             PDEProgram3D::Array v0 = u0;
             PDEProgram3D::Array v1 = u1;
             PDEProgram3D::Array v2 = u2;
-            v0 = PDEProgram3D::schedule(v0, u0, u0, u1, u2);
-            v1 = PDEProgram3D::schedule(v1, u1, u0, u1, u2);
-            v2 = PDEProgram3D::schedule(v2, u2, u0, u1, u2);
-            u0 = PDEProgram3D::schedule(u0, v0, u0, u1, u2);
-            u1 = PDEProgram3D::schedule(u1, v1, u0, u1, u2);
-            u2 = PDEProgram3D::schedule(u2, v2, u0, u1, u2);
+            v0 = PDEProgram3D::schedule3D(v0, u0, u0, u1, u2);
+            v1 = PDEProgram3D::schedule3D(v1, u1, u0, u1, u2);
+            v2 = PDEProgram3D::schedule3D(v2, u2, u0, u1, u2);
+            u0 = PDEProgram3D::schedule3D(u0, v0, u0, u1, u2);
+            u1 = PDEProgram3D::schedule3D(u1, v1, u0, u1, u2);
+            u2 = PDEProgram3D::schedule3D(u2, v2, u0, u1, u2);
         };
     };
 

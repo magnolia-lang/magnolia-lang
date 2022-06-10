@@ -118,11 +118,15 @@ program PDEProgramPadded = {
 program PDEProgram3D = {
   use (rewrite
         (rewrite
-          (generate OFSpecializeSubstepGenerator in PDEProgramDNF)
-        with OFSpecializePsi 10)
-      with OFReduceMakeIxRotate 20);
+          (rewrite
+            (generate OFSpecializeSubstepGenerator in PDEProgramDNF)
+          with OFSpecializePsi 10)
+        with OFReduceMakeIxRotate 20)
+      with SwitchSchedule[ sourceSchedule => schedule
+                         , targetSchedule => schedule3D
+                         ] 1);
 
-  use ExtNeededFns;
+  use ExtNeededFns[schedule3DPadded => schedule3D];
 }
 
 program PDEProgram3DPadded = {
@@ -397,6 +401,20 @@ concept OFLiftCores = {
     var d = nbCores();
 
     assert schedule(u, v, u0, u1, u2) ==
-         schedule_threaded(u, v, u0, u1, u2, d);
+           schedule_threaded(u, v, u0, u1, u2, d);
+  }
+}
+
+concept SwitchSchedule = {
+  type Array;
+
+  function sourceSchedule(u: Array, v: Array, u0: Array, u1: Array, u2: Array)
+    : Array;
+
+  function targetSchedule(u: Array, v: Array, u0: Array, u1: Array, u2: Array)
+    : Array;
+
+  axiom switchScheduleRule(u: Array, v: Array, u0: Array, u1: Array, u2: Array) {
+    assert sourceSchedule(u, v, u0, u1, u2) == targetSchedule(u, v, u0, u1, u2);
   }
 }
