@@ -142,8 +142,8 @@ instance Pretty (MModuleExpr' PhCheck) where
   pretty (MModuleRef v _) = absurd v
   pretty (MModuleAsSignature v _) = absurd v
   pretty (MModuleTransform _ v) = absurd v
-  pretty (MModuleExternal backend fqn moduleExpr') =
-    "external" <+> p backend <+> p fqn <+> p moduleExpr'
+  pretty (MModuleExternal extModuleInfo fqn moduleExpr') =
+    "external" <+> p extModuleInfo <+> p fqn <+> p moduleExpr'
 
 instance Pretty (MModuleDep' PhCheck) where
   pretty (MModuleDep mmoduleDepType mmoduleDepModuleExpr) =
@@ -178,6 +178,18 @@ instance Pretty Backend where
     Cxx -> "C++"
     JavaScript -> "JavaScript"
     Python -> "Python"
+    Cuda -> "C++ (CUDA)"
+
+instance Pretty ExternalModuleInfo where
+  pretty extModuleInfo = case extModuleInfo of
+    ExternalModuleInfo'Cxx -> p Cxx
+    ExternalModuleInfo'Cuda (CudaDim3 dim0 dim1 dim2) globals ->
+      p Cuda <> brackets (hsep (punctuate comma
+        [ "dim=" <> parens (hsep (punctuate comma (map p [dim0, dim1, dim2])))
+        , "globals=" <> parens (hsep (punctuate comma (map p globals)))
+        ]))
+    ExternalModuleInfo'JavaScript -> p JavaScript
+    ExternalModuleInfo'Python -> p Python
 
 instance Pretty (MDecl PhCheck) where
   pretty decl = case decl of

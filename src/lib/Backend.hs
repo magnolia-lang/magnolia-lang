@@ -4,5 +4,5 @@ module Backend (
   where
 
 -- | The backends for which Magnolia can generate code.
-data Backend = Cxx | JavaScript | Python
+data Backend = Cxx | Cuda | JavaScript | Python
                deriving (Eq, Ord, Show)

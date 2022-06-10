@@ -30,6 +30,7 @@ import Magnolia.Syntax
 import Python.Syntax
 import Make
 import Monad
+import Cuda.Syntax (CudaPackage)
 
 data CompilerMode = ReplMode
                   | BuildMode Config FilePath
@@ -54,18 +55,11 @@ data Config = Config { -- | Up to (and including) what pass the compiler should
                        -- | What the behavior of the compiler should be when
                        -- attempting to write to the file system.
                      , _configWriteToFsBehavior :: WriteToFsBehavior
-                       -- | A configuration for each rewriting system to be
-                       -- used in the equational rewriting pass.
-                     , _configRewritingSystemConfigs :: [RewritingSystemConfig]
-                       -- | What programs should be rewritten using the
-                       -- rewriting rules.
-                     , _configProgramsToRewrite :: [FullyQualifiedName]
                      }
 
 -- | Compiler passes
 data Pass = CheckPass
           | DepAnalPass
-          | EquationalRewritingPass
           | ParsePass
           | SelfContainedProgramCodegenPass
           | StructurePreservingCodegenPass
@@ -74,7 +68,6 @@ instance Show Pass where
   show pass = case pass of
     CheckPass -> "check"
     DepAnalPass -> "dependency analysis"
-    EquationalRewritingPass -> "equational rewriting"
     ParsePass -> "parse"
     SelfContainedProgramCodegenPass -> "self-contained code generation"
     StructurePreservingCodegenPass -> "structure preserving code generation"
@@ -91,19 +84,9 @@ runTestWith filePath config = case _configPass config of
   DepAnalPass -> runAndLogErrs $ depAnalPass filePath
   ParsePass -> runAndLogErrs $ depAnalPass filePath >>= parsePass
   CheckPass -> runAndLogErrs $ depAnalPass filePath >>= parsePass >>= checkPass
-  EquationalRewritingPass ->
-    let rewritingSystemConfigs = _configRewritingSystemConfigs config
-        programsToRewrite = _configProgramsToRewrite config
-    in runAndLogErrs $ depAnalPass filePath >>= parsePass >>= checkPass
-        >>= rewritePass rewritingSystemConfigs programsToRewrite
-  -- TODO(bchetioui): add rewrite pass in codegen?
-  SelfContainedProgramCodegenPass ->
-    let rewritingSystemConfigs = _configRewritingSystemConfigs config
-        programsToRewrite = _configProgramsToRewrite config
-    in case _configBackend config of
+  SelfContainedProgramCodegenPass -> case _configBackend config of
     Cxx -> do
-      (ecxxPkgs, errs) <- runMgMonad $
-        compileToCxxPackages filePath rewritingSystemConfigs programsToRewrite
+      (ecxxPkgs, errs) <- runMgMonad $ compileToCxxPackages filePath
       case ecxxPkgs of
         Left () -> logErrs errs
         Right cxxPkgs -> do
@@ -115,8 +98,7 @@ runTestWith filePath config = case _configPass config of
           mapM_ (pprintCxxPackage outDir CxxHeader) sortedPkgs
           mapM_ (pprintCxxPackage outDir CxxImplementation) sortedPkgs
     Python -> do
-      (epyPkgs, errs) <- runMgMonad $
-        compileToPyPackages filePath rewritingSystemConfigs programsToRewrite
+      (epyPkgs, errs) <- runMgMonad $ compileToPyPackages filePath
       case epyPkgs of
         Left () -> logErrs errs
         Right pyPkgs -> do
@@ -126,6 +108,7 @@ runTestWith filePath config = case _configPass config of
               outDir = _configImportBaseDirectory config <|>
                        _configOutputDirectory config
           mapM_ (pprintPyPackage outDir) sortedPkgs
+    -- TODO: add CUDA
     _ -> fail "codegen not yet implemented"
   StructurePreservingCodegenPass ->
     fail "structure preserving codegen not yet implemented"
@@ -139,15 +122,11 @@ runAndLogErrs m = runMgMonad m >>= \(_, errs) -> logErrs errs
 -- === build mode-related utils ===
 
 runCompileWith :: FilePath -> Config -> IO ()
-runCompileWith filePath config =
-  let rewritingSystemConfigs = _configRewritingSystemConfigs config
-      programsToRewrite = _configProgramsToRewrite config
-  in case _configOutputDirectory config of
+runCompileWith filePath config = case _configOutputDirectory config of
   Nothing -> fail "output directory must be set"
   Just outDir -> case (_configBackend config, _configPass config) of
     (Cxx, SelfContainedProgramCodegenPass) -> do
-      (ecxxPkgs, errs) <- runMgMonad $
-        compileToCxxPackages filePath rewritingSystemConfigs programsToRewrite
+      (ecxxPkgs, errs) <- runMgMonad $ compileToCxxPackages filePath
       case ecxxPkgs of
         Left () -> logErrs errs >> fail "compilation failed"
         Right cxxPkgs -> do
@@ -156,8 +135,7 @@ runCompileWith filePath config =
           createBasePath outDir
           mapM_ (writeCxxPackage outDir) cxxPkgsWithModules
     (Python, SelfContainedProgramCodegenPass) -> do
-      (epyPkgs, errs) <- runMgMonad $
-        compileToPyPackages filePath rewritingSystemConfigs programsToRewrite
+      (epyPkgs, errs) <- runMgMonad $ compileToPyPackages filePath
       case epyPkgs of
         Left () -> logErrs errs >> fail "compilation failed"
         Right pyPkgs -> do
@@ -233,20 +211,19 @@ runCompileWith filePath config =
 
 -- TODO(bchetioui): add rewriting step in compilation steps
 
-compileToCxxPackages :: FilePath
-                     -> [RewritingSystemConfig]
-                     -> [FullyQualifiedName]
-                     -> MgMonad [CxxPackage]
-compileToCxxPackages filePath rewritingSystemConfigs rewritingTargetsLocation =
+compileToCxxPackages :: FilePath -> MgMonad [CxxPackage]
+compileToCxxPackages filePath =
   depAnalPass filePath >>= parsePass >>= checkPass
-  >>= rewritePass rewritingSystemConfigs rewritingTargetsLocation
   >>= programCodegenCxxPass
 
-compileToPyPackages :: FilePath
-                    -> [RewritingSystemConfig]
-                    -> [FullyQualifiedName]
-                    -> MgMonad [PyPackage]
-compileToPyPackages filePath rewritingSystemConfigs rewritingTargetsLocation =
+compileToPyPackages :: FilePath -> MgMonad [PyPackage]
+compileToPyPackages filePath =
   depAnalPass filePath >>= parsePass >>= checkPass
-  >>= rewritePass rewritingSystemConfigs rewritingTargetsLocation
   >>= programCodegenPyPass
+
+compileToCudaPackages :: FilePath -> MgMonad [CudaPackage]
+compileToCudaPackages filePath =
+  depAnalPass filePath >>= parsePass >>= checkPass
+  >>= programCodegenCudaPass
+
+programCodegenCudaPass = undefined

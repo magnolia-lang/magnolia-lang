@@ -57,9 +57,7 @@ parseCompilerMode = mkInfo compilerMode
       optImportDir <*>
       flag WriteIfDoesNotExist OverwriteTargetFiles
            (long "allow-overwrite" <>
-            help "Allow overwriting target files in the output directory") <*>
-      optRewritingSystemConfigs <*>
-      optProgramsToRewrite
+            help "Allow overwriting target files in the output directory")
 
     testConfig = Config <$>
       option (oneOf passOpts)
@@ -71,9 +69,7 @@ parseCompilerMode = mkInfo compilerMode
               short 'o' <>
               help "Output directory for code generation") <*>
       optImportDir <*>
-      pure WriteIfDoesNotExist <*>
-      optRewritingSystemConfigs <*>
-      optProgramsToRewrite
+      pure WriteIfDoesNotExist
 
     optBackend =
       option (oneOf backendOpts)
@@ -86,42 +82,6 @@ parseCompilerMode = mkInfo compilerMode
               short 'i' <>
               help ("Base import directory for the generated code " <>
                     "(defaults to the output directory)"))
-
-    optRewritingSystemConfigs =
-      let mkRewSystemConfig s = case splitOn '|' s of
-            [conceptName] -> Right $ RewritingSystemConfig
-              (toFullyQualifiedModuleName conceptName) 10
-              RewritingSystemMode'Optimize
-            [conceptName, maxRewSteps] -> Right $ RewritingSystemConfig
-              (toFullyQualifiedModuleName conceptName) (read maxRewSteps)
-              RewritingSystemMode'Optimize
-            -- TODO: document mode
-            [conceptName, maxRewSteps, "g"] -> Right $ RewritingSystemConfig
-              (toFullyQualifiedModuleName conceptName) (read maxRewSteps)
-              RewritingSystemMode'GenerateCallable
-            _ -> Left $ "Expected string of format 'path.to.concept|int' " <>
-                        "but got '" <> s <> "'"
-          optParser = eitherReader (\s ->
-            let rewSystemConfigStrings = splitOn ',' s
-                rewSystemConfigs = map mkRewSystemConfig rewSystemConfigStrings
-                errors = filter isLeft rewSystemConfigs
-            in if null errors
-               then Right $ map (fromRight undefined) rewSystemConfigs
-               else Left $ fromLeft undefined $ head errors)
-      in
-      option optParser -- TODO: improve documentation
-             (long "rewriting-system-configs" <> value [] <>
-              help ("Comma-separated list of fully qualified concept names " <>
-                    "in which to look for rewriting rules along with the " <>
-                    "maximum rewriting steps the compiler is allowed to " <>
-                    "apply for the relevant concept and possibly the type " <>
-                    "of rewriting to apply (e.g. concept1|nb1|g,concept2|nb2)"))
-
-    optProgramsToRewrite =
-      option (map toFullyQualifiedModuleName . splitOn ',' <$> str)
-             (long "programs-to-rewrite" <> value [] <>
-              help ("Comma-separated list of fully qualified program names " <>
-                    "on which to apply rewriting rules"))
 
     splitOn :: Eq a => a -> [a] -> [[a]]
     splitOn sep list = case list of
@@ -143,9 +103,9 @@ parseCompilerMode = mkInfo compilerMode
                , ("depanal", DepAnalPass)
                , ("parse", ParsePass)
                , ("structured-codegen", StructurePreservingCodegenPass)
-               , ("rewrite", EquationalRewritingPass)
                ]
     backendOpts = [ ("cpp", Cxx)
+                  , ("cuda", Cuda)
                   , ("javascript", JavaScript)
                   , ("python", Python)
                   ]

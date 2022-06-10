@@ -15,6 +15,7 @@ module MgToUtil (
   , freshNameM
   , freshObjectNameM
     -- * Misc utils
+  , checkCudaBackend
   , checkCxxBackend
   , checkPyBackend
   )
@@ -164,3 +165,7 @@ checkCxxBackend = checkBackend Cxx
 -- | See 'checkBackend'.
 checkPyBackend :: SrcCtx -> T.Text -> ExternalDeclDetails -> MgMonad ()
 checkPyBackend = checkBackend Python
+
+-- | See 'checkBackend'.
+checkCudaBackend :: SrcCtx -> T.Text -> ExternalDeclDetails -> MgMonad ()
+checkCudaBackend = checkBackend Cuda

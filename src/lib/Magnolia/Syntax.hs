@@ -21,6 +21,8 @@ module Magnolia.Syntax (
   -- ** Generic AST nodes
     CBody (..)
   , CGuard
+  , CudaDim3 (..)
+  , ExternalModuleInfo (..)
   , InlineRenaming
   , MaybeTypedVar
   , MaybeTypedVar'
@@ -108,6 +110,7 @@ module Magnolia.Syntax (
   , getTypeDeclsAndModifiers
   , moduleDecls
   , moduleExprDecls
+  , toBackend
   -- * Classes
   , HasDependencies (..)
   , HasName (..)
@@ -124,6 +127,7 @@ module Magnolia.Syntax (
   , externalDeclBackend
   , externalDeclElementName
   , externalDeclFilePath
+  , externalDeclModuleInfo
   , externalDeclModuleName
   , externalDeclRequirements
   , mkConcreteLocalDecl
@@ -286,6 +290,7 @@ data MModule' p = MModule MModuleType Name (MModuleExpr p)
 
 deriving instance Eq (MModule' PhCheck)
 
+-- TODO: make renaming a module morphism
 type MModuleExpr p = Ann p MModuleExpr'
 data MModuleExpr' p =
     MModuleDef (XPhasedContainer p (MDecl p)) [MModuleDep p]
@@ -293,7 +298,20 @@ data MModuleExpr' p =
   | MModuleRef (XRef p) [MRenamingBlock p]
   | MModuleAsSignature (XRef p) [MRenamingBlock p]
   | MModuleTransform (MModuleMorphism p) (XTransformTarget p)
-  | MModuleExternal Backend FullyQualifiedName (XExternalModule p)
+  | MModuleExternal ExternalModuleInfo FullyQualifiedName (XExternalModule p)
+
+-- | 'ExternalModuleInfo' stores the information of which functions within the
+-- module determine the dimensions with which to make kernel calls when needed,
+-- as well as a list of global procedures.
+data ExternalModuleInfo = ExternalModuleInfo'Cxx
+                        | ExternalModuleInfo'Cuda CudaDim3 [Name]
+                        | ExternalModuleInfo'JavaScript
+                        | ExternalModuleInfo'Python
+                          deriving (Eq, Ord, Show)
+
+-- TODO: Int can be negative, do we care?
+data CudaDim3 = CudaDim3 Name Name Name
+                deriving (Eq, Ord, Show)
 
 deriving instance Eq (MModuleExpr' PhCheck)
 
@@ -456,8 +474,9 @@ data MVarMode = MObs | MOut | MUnk | MUpd
 -- backend considered. For the moment, we consider the requirements of C++
 -- only, and will revisit later if necessary.
 data ExternalDeclDetails =
-  ExternalDeclDetails { -- | The backend associated with the declaration
-                        _externalDeclBackend :: Backend
+  ExternalDeclDetails { -- | The information associated with the external
+                        -- module that contains the declaration
+                        _externalDeclModuleInfo :: ExternalModuleInfo
                         -- | The external file path in which the external
                         -- declaration can be found
                       , _externalDeclFilepath :: FilePath
@@ -477,9 +496,14 @@ data ExternalDeclDetails =
                       }
   deriving (Eq, Ord, Show)
 
--- | See '_externalDeclBackend'.
+-- | The backend corresponding to the external declaration's
+-- '_externalDeclModuleInfo'.
 externalDeclBackend :: ExternalDeclDetails -> Backend
-externalDeclBackend = _externalDeclBackend
+externalDeclBackend = toBackend . _externalDeclModuleInfo
+
+-- | See '_externalDeclModuleInfo'.
+externalDeclModuleInfo :: ExternalDeclDetails -> ExternalModuleInfo
+externalDeclModuleInfo = _externalDeclModuleInfo
 
 -- | See '_externalDeclFilepath'.
 externalDeclFilePath :: ExternalDeclDetails -> FilePath
@@ -540,13 +564,13 @@ instance Ord ConcreteDeclOrigin where
 -- correspond to the name of the external data structure for the relevant
 -- backend.
 -- TODO: fix data types to get more type safety when it comes to the names.
-mkConcreteLocalDecl :: Maybe (Backend, FullyQualifiedName, [TcDecl])
+mkConcreteLocalDecl :: Maybe (ExternalModuleInfo, FullyQualifiedName, [TcDecl])
                     -> SrcCtx
                     -> Name
                     -> MgMonad ConcreteDeclOrigin
 mkConcreteLocalDecl mexternalInfo src name = case mexternalInfo of
   Nothing -> pure $ ConcreteLocalMagnoliaDecl src
-  Just backendFqnReqs -> mkExternalDeclDetails backendFqnReqs src name
+  Just externalInfo -> mkExternalDeclDetails externalInfo src name
     >>= \extDeclDetails -> pure $ ConcreteLocalExternalDecl extDeclDetails src
 
 -- | Safely builds external declaration details based on a backend, its fully
@@ -557,17 +581,19 @@ mkConcreteLocalDecl mexternalInfo src name = case mexternalInfo of
 -- the Magnolia package, and the name of the declaration within the external
 -- module.
 -- Throws an error if the path to the external file is 'Nothing'.
-mkExternalDeclDetails :: (Backend, FullyQualifiedName, [TcDecl])
+mkExternalDeclDetails :: (ExternalModuleInfo, FullyQualifiedName, [TcDecl])
                       -> SrcCtx
                       -> Name
                       -> MgMonad ExternalDeclDetails
-mkExternalDeclDetails (backend, extModuleFqn, requirements) src declName =
+mkExternalDeclDetails (extModuleInfo, extModuleFqn, requirements) src declName =
   case _scopeName extModuleFqn of
-    Nothing -> throwLocatedE MiscErr src $ "external " <> pshow backend <>
-      " block " <> pshow extModuleFqn <> " was specified without an include path"
+    Nothing -> throwLocatedE MiscErr src $ "external " <>
+      pshow (toBackend extModuleInfo) <> " block " <> pshow extModuleFqn <>
+      " was specified without an include path"
     Just (Name _ filepath) -> pure $
-      ExternalDeclDetails backend filepath (_targetName extModuleFqn) declName
-                          (M.fromList (map (\d -> (d, d)) requirements))
+      ExternalDeclDetails
+        extModuleInfo filepath (_targetName extModuleFqn)
+        declName (M.fromList (map (\d -> (d, d)) requirements))
 
 -- | Extracts the requirements of an external module that are wrapped within a
 -- 'ConcreteDeclOrigin' if relevant.
@@ -925,3 +951,12 @@ getCallableDeclsAndModifiers = foldr extractCallableAndModifiers []
 
 getCallableDecls :: Foldable t => t (MDecl p) -> [MCallableDecl p]
 getCallableDecls = map snd . getCallableDeclsAndModifiers
+
+-- === other utils ===
+
+toBackend :: ExternalModuleInfo -> Backend
+toBackend extModuleInfo = case extModuleInfo of
+  ExternalModuleInfo'Cxx -> Cxx
+  ExternalModuleInfo'Cuda {} -> Cuda
+  ExternalModuleInfo'JavaScript -> JavaScript
+  ExternalModuleInfo'Python -> Python

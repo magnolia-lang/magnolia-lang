@@ -7,6 +7,7 @@ import Control.Monad.Combinators.Expr
 import Control.Monad.Except (void, when)
 import Data.Functor (($>))
 import Data.Maybe (isJust, isNothing)
+import Data.Tuple (swap)
 import Data.Void
 import Text.Megaparsec
 import Text.Megaparsec.Char
@@ -134,16 +135,35 @@ moduleDecl = label "module" $ annot $ do
   symbol "="
   (src, mexternal) <- withSrc $ option Nothing (do
     keyword ExternalKW
-    backend <- choice [ keyword CxxKW >> return Cxx
-                      , keyword JavaScriptKW >> return JavaScript
-                      , keyword PythonKW >> return Python]
+    extModuleInfo <- choice
+      [ keyword CxxKW >> return ExternalModuleInfo'Cxx
+      , keyword JavaScriptKW >> return ExternalModuleInfo'JavaScript
+      , keyword PythonKW >> return ExternalModuleInfo'Python
+      , keyword CudaKW >> cudaModuleInfo
+      ]
     externalFqn <- fullyQualifiedName NSPackage NSModule
-    return $ Just (backend, externalFqn))
+    return $ Just (extModuleInfo, externalFqn))
   case mexternal of
     Nothing -> MModule typ name <$> moduleExpr
-    Just (backend, externalFqn) ->
-      MModule typ name . Ann src . MModuleExternal backend externalFqn <$>
+    Just (extModuleInfo, externalFqn) ->
+      MModule typ name . Ann src . MModuleExternal extModuleInfo externalFqn <$>
         moduleExpr
+  where
+    cudaModuleInfo = brackets $ do
+      let funcName = FuncName <$> nameString
+          dim3 = do symbol "dims"
+                    symbol "="
+                    parens $ do d0 <- funcName <* symbol ","
+                                d1 <- funcName <* symbol ","
+                                CudaDim3 d0 d1 <$> funcName
+          globals = do symbol "globals"
+                       symbol "="
+                       parens $ (ProcName <$> nameString) `sepBy` symbol ","
+      (dim3', globals') <- choice [ (,) <$> (dim3 <* symbol ",") <*> globals
+                                  , (swap .) . (,) <$>
+                                    (globals <* symbol ",") <*> dim3
+                                  ]
+      pure $ ExternalModuleInfo'Cuda dim3' globals'
 
 moduleExpr :: Parser ParsedModuleExpr
 moduleExpr = parens moduleExpr <|> moduleDef <|> moduleCastedRef
@@ -425,7 +445,7 @@ symOpName = choice $ map (try . mkSymOpNameParser) symOps
 
 data Keyword = ConceptKW | ImplementationKW | ProgramKW | SignatureKW
              | ExternalKW
-             | CxxKW | JavaScriptKW | PythonKW
+             | CxxKW | CudaKW | JavaScriptKW | PythonKW
              | RenamingKW | SatisfactionKW
              | ModelsKW | ApproximatesKW | WithKW
              | AxiomKW | FunctionKW | PredicateKW | ProcedureKW | TheoremKW
@@ -448,6 +468,7 @@ keyword kw = (lexeme . try) $ string s *> notFollowedBy nameChar
       SignatureKW      -> "signature"
       ExternalKW       -> "external"
       CxxKW            -> "C++"
+      CudaKW           -> "CUDA"
       JavaScriptKW     -> "JavaScript"
       PythonKW         -> "Python"
       RenamingKW       -> "renaming"

@@ -37,18 +37,19 @@ library
   ghc-options:  -Wall
   exposed-modules:  Backend
                   , Compiler
+                  , Cuda.Syntax
                   , Cxx.Syntax
                   , Env
                   , Err
                   , Magnolia.Check
                   , Magnolia.EquationalRewriting
-                  , Magnolia.EquationalRewriting2
                   , Magnolia.Parser
                   , Magnolia.PPrint
                   , Magnolia.Syntax
                   , Magnolia.Util
                   , Make
                   , Monad
+                  , MgToCuda
                   , MgToCxx
                   , MgToPython
                   , MgToUtil

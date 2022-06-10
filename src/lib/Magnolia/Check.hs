@@ -24,7 +24,7 @@ import qualified Data.Set as S
 import qualified Data.Text.Lazy as T
 
 import Env
-import Magnolia.EquationalRewriting2
+import Magnolia.EquationalRewriting
 import Magnolia.PPrint
 import Magnolia.Syntax
 import Magnolia.Util
@@ -237,10 +237,10 @@ checkModuleExpr tlDecls _
       pure (Ann src (MModuleDef allDecls tcDeps tcRenamingBlocks))
 
 checkModuleExpr tlDecls moduleType
-                (Ann src (MModuleExternal backend fqn moduleExpr)) = do
+                (Ann src (MModuleExternal extModuleInfo fqn moduleExpr)) = do
   -- TODO: should we make external void?
   checkModuleExpr tlDecls moduleType moduleExpr
-    >>= externalizeModuleExpr backend fqn src
+    >>= externalizeModuleExpr extModuleInfo fqn src
 
 checkModuleExpr tlDecls moduleType
                 (Ann modSrc (MModuleDef decls deps renamingBlocks)) = do
@@ -524,13 +524,14 @@ castModuleExpr targetModuleType tcModuleExpr
 -- | Converts a module expression into one that refers to external declarations,
 -- i.e. declarations for whom the body is provided in an external module of
 -- a given backend.
-externalizeModuleExpr :: Backend -- ^ the backend of the external module
+externalizeModuleExpr :: ExternalModuleInfo -- ^ information specific to the
+                                            --   external module
                       -> FullyQualifiedName -- ^ the path to the external module
                       -> SrcCtx -- ^ the source context corresponding to where
                                 --   the externalization is requested
                       -> TcModuleExpr
                       -> MgMonad TcModuleExpr
-externalizeModuleExpr backend extModuleFqn src tcModuleExpr
+externalizeModuleExpr extModuleInfo extModuleFqn src tcModuleExpr
   | MModuleRef v _ <- _elem tcModuleExpr = absurd v
   | MModuleAsSignature v _ <- _elem tcModuleExpr = absurd v
   | MModuleTransform _ v <- _elem tcModuleExpr = absurd v
@@ -553,7 +554,7 @@ externalizeModuleExpr backend extModuleFqn src tcModuleExpr
             Nothing -> True
             Just GeneratedBuiltin -> True
             Just (ConcreteExternalDecl _ extDeclDetails) ->
-              backend == externalDeclBackend extDeclDetails &&
+              toBackend extModuleInfo == externalDeclBackend extDeclDetails &&
               _targetName extModuleFqn == externalDeclModuleName extDeclDetails
             Just _ -> False
       unless isValid $ do
@@ -578,7 +579,7 @@ externalizeModuleExpr backend extModuleFqn src tcModuleExpr
           then pure tcDecl
           else do
             conDeclO <- mkConcreteLocalDecl
-                  (Just (backend, extModuleFqn, allRequirements))
+                  (Just (extModuleInfo, extModuleFqn, allRequirements))
                   (srcCtx $ NE.head absDeclOs)
                   (nodeName tcDecl)
             pure $ MTypeDecl modifiers $ Ann (Just conDeclO, absDeclOs) tyDecl
@@ -587,7 +588,7 @@ externalizeModuleExpr backend extModuleFqn src tcModuleExpr
           then pure tcDecl
           else do
             conDeclO <- mkConcreteLocalDecl
-                  (Just (backend, extModuleFqn, allRequirements))
+                  (Just (extModuleInfo, extModuleFqn, allRequirements))
                   (srcCtx $ NE.head absDeclOs)
                   (nodeName tcDecl)
             pure $ MCallableDecl modifiers $

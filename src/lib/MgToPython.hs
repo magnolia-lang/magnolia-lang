@@ -61,6 +61,7 @@ mgPackageToPySelfContainedProgramPackage tcPkg =
     extractImportFromModuleExpr (Ann _ moduleExpr) = case moduleExpr of
       MModuleRef v _ -> absurd v
       MModuleAsSignature v _ -> absurd v
+      MModuleTransform _ v -> absurd v
       MModuleExternal _ _ v -> absurd v
       MModuleDef decls _ _ -> do
         let innerFoldFn acc tcDecl =

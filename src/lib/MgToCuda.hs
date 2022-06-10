@@ -2,8 +2,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
 
-module MgToCxx (
-    mgPackageToCxxSelfContainedProgramPackage
+module MgToCuda (
+    mgPackageToCudaSelfContainedProgramPackage
   )
   where
 
@@ -18,7 +18,7 @@ import qualified Data.Set as S
 import qualified Data.Text.Lazy as T
 import Data.Void (absurd)
 
-import Cxx.Syntax
+import Cuda.Syntax
 import Env
 import Magnolia.PPrint
 import Magnolia.Syntax
@@ -37,32 +37,32 @@ import Monad
 --   prototype and the same name exists? We need to make sure the function
 --   is properly renamed.
 
--- | Transforms a Magnolia typechecked package into a C++ self-contained
--- package. Self-contained here means that a C++ module (a struct or class) is
+-- | Transforms a Magnolia typechecked package into a CUDA self-contained
+-- package. Self-contained here means that a CUDA module (a struct or class) is
 -- generated for each program defined in the Magnolia package. No code is
 -- generated for other types of modules, and the same function exposed in two
 -- different programs is code generated twice – once for each program.
-mgPackageToCxxSelfContainedProgramPackage :: TcPackage -> MgMonad CxxPackage
-mgPackageToCxxSelfContainedProgramPackage tcPkg =
+mgPackageToCudaSelfContainedProgramPackage :: TcPackage -> MgMonad CudaPackage
+mgPackageToCudaSelfContainedProgramPackage tcPkg =
   enter (nodeName tcPkg) $ do
     let allModules = join $
           map (getModules . snd) $ M.toList (_packageDecls $ _elem tcPkg)
-        cxxPkgName = nodeName tcPkg
-        cxxIncludes = mkCxxSystemInclude "cassert" :
-          gatherCxxIncludes allModules
-    cxxPrograms <- gatherPrograms allModules
-    return $ CxxPackage cxxPkgName cxxIncludes cxxPrograms
+        cudaPkgName = nodeName tcPkg
+        cudaIncludes = mkCudaSystemInclude "cassert" :
+          gatherCudaIncludes allModules
+    cudaPrograms <- gatherPrograms allModules
+    return $ CudaPackage cudaPkgName cudaIncludes cudaPrograms
   where
     moduleType :: TcModule -> MModuleType
     moduleType (Ann _ (MModule moduleTy _ _)) = moduleTy
 
-    gatherCxxIncludes :: [TcModule] -> [CxxInclude]
-    gatherCxxIncludes tcModules = S.toList $ foldl
+    gatherCudaIncludes :: [TcModule] -> [CudaInclude]
+    gatherCudaIncludes tcModules = S.toList $ foldl
       (\acc (Ann _ (MModule _ _ tcModuleExpr)) ->
-        let newCxxIncludes = extractIncludeFromModuleExpr tcModuleExpr
-        in acc `S.union` newCxxIncludes) S.empty tcModules
+        let newCudaIncludes = extractIncludeFromModuleExpr tcModuleExpr
+        in acc `S.union` newCudaIncludes) S.empty tcModules
 
-    extractIncludeFromModuleExpr :: TcModuleExpr -> S.Set CxxInclude
+    extractIncludeFromModuleExpr :: TcModuleExpr -> S.Set CudaInclude
     extractIncludeFromModuleExpr (Ann _ moduleExpr) = case moduleExpr of
       MModuleRef v _ -> absurd v
       MModuleAsSignature v _ -> absurd v
@@ -78,25 +78,25 @@ mgPackageToCxxSelfContainedProgramPackage tcPkg =
     -- concrete external definition). This edge case will be properly handled
     -- once some tweaks are made on {Concrete,Abstract}DeclOrigin annotations
     -- in a WIP change.
-    extractExternalReference :: TcDecl -> Maybe CxxInclude
+    extractExternalReference :: TcDecl -> Maybe CudaInclude
     extractExternalReference tcDecl = case tcDecl of
       MTypeDecl _ (Ann (mconDeclO, _) _) ->
-        mconDeclO >>= mkCxxIncludeFromConDeclO
+        mconDeclO >>= mkCudaIncludeFromConDeclO
       MCallableDecl _ (Ann (mconDeclO, _) _) ->
-        mconDeclO >>= mkCxxIncludeFromConDeclO
+        mconDeclO >>= mkCudaIncludeFromConDeclO
 
-    mkCxxIncludeFromConDeclO :: ConcreteDeclOrigin -> Maybe CxxInclude
-    mkCxxIncludeFromConDeclO (ConcreteExternalDecl _ extDeclDetails) = Just $
-      mkCxxRelativeCxxIncludeFromPath (externalDeclFilePath extDeclDetails)
-    mkCxxIncludeFromConDeclO _ = Nothing
+    mkCudaIncludeFromConDeclO :: ConcreteDeclOrigin -> Maybe CudaInclude
+    mkCudaIncludeFromConDeclO (ConcreteExternalDecl _ extDeclDetails) = Just $
+      mkCudaRelativeCudaIncludeFromPath (externalDeclFilePath extDeclDetails)
+    mkCudaIncludeFromConDeclO _ = Nothing
 
-    gatherPrograms :: [TcModule] -> MgMonad [CxxModule]
+    gatherPrograms :: [TcModule] -> MgMonad [CudaModule]
     gatherPrograms = foldMAccumErrors
-      (\acc -> ((:acc) <$>) . mgProgramToCxxProgramModule (nodeName tcPkg)) [] .
+      (\acc -> ((:acc) <$>) . mgProgramToCudaProgramModule (nodeName tcPkg)) [] .
       filter ((== Program) . moduleType)
 
-mgProgramToCxxProgramModule :: Name -> TcModule -> MgMonad CxxModule
-mgProgramToCxxProgramModule
+mgProgramToCudaProgramModule :: Name -> TcModule -> MgMonad CudaModule
+mgProgramToCudaProgramModule
   pkgName (Ann declO (MModule Program name
                               tcModuleExpr@(Ann _ (MModuleDef decls deps _)))) =
   enter name $ do
@@ -154,22 +154,22 @@ mgProgramToCxxProgramModule
 
         extObjectsNameMap = M.fromList $ zip referencedExternals extObjectsNames
 
-    moduleCxxNamespaces <- mkCxxNamespaces moduleFqName
-    moduleCxxName <- mkCxxName name
+    moduleCudaNamespaces <- mkCudaNamespaces moduleFqName
+    moduleCudaName <- mkCudaName name
 
-    extObjectsCxxNameMap <- mapM mkCxxName extObjectsNameMap
+    extObjectsCudaNameMap <- mapM mkCudaName extObjectsNameMap
     extObjectsDef <- mapMAccumErrors
-      (\((structName, requirements), targetCxxName) -> do
+      (\((structName, requirements), targetCudaName) -> do
           fnOpReqs <- mapM toFnOpStructRequirement requirements
-          cxxStructName <- mkCxxName structName
-          CxxInstance <$> mkCxxObject cxxStructName fnOpReqs targetCxxName)
-      (M.toList extObjectsCxxNameMap)
+          cudaStructName <- mkCudaName structName
+          CudaInstance <$> mkCudaObject cudaStructName fnOpReqs targetCudaName)
+      (M.toList extObjectsCudaNameMap)
 
-    cxxTyDefs <-
-      mapMAccumErrors (mgTyDeclToCxxTypeDef callableNamesToFreshFnOpStructNames)
+    cudaTyDefs <-
+      mapMAccumErrors (mgTyDeclToCudaTypeDef callableNamesToFreshFnOpStructNames)
                       typeDecls
 
-    -- These C++ functions are used to create data structures implemention the
+    -- These CUDA functions are used to create data structures implemention the
     -- function call operator. A static instance of these data structures is
     -- then created which can be used to invoked the relevant functions.
     -- We accumulate errors here, but fail if any was thrown, as the rest of
@@ -179,51 +179,51 @@ mgProgramToCxxProgramModule
     --       the desired f<T1, …, Tn>(a1, …, an). This will eventually be fixed
     --       by generating functions wrapping calls to the operator, but is
     --       for the moment left out of the compiler.
-    cxxFnDefs <- mapMAccumErrorsAndFail
-      (mgCallableDeclToCxx returnTypeOverloadsNameAliasMap extObjectsCxxNameMap)
+    cudaFnDefs <- mapMAccumErrorsAndFail
+      (mgCallableDeclToCuda returnTypeOverloadsNameAliasMap extObjectsCudaNameMap)
       callableDecls
 
-    cxxFnTemplatedDefs <- mapM
-      (uncurry . uncurry $ mgReturnTypeOverloadToCxxTemplatedDef boundNames')
+    cudaFnTemplatedDefs <- mapM
+      (uncurry . uncurry $ mgReturnTypeOverloadToCudaTemplatedDef boundNames')
       (M.toList returnTypeOverloadsNameAliasMap)
 
     let mkFunctionCallOperatorStruct (callableName, fnOpStructName) = do
-          cxxCallableName <- mkCxxName callableName
-          let cxxFns = filter (\cxxFn -> _cxxFnName cxxFn == cxxCallableName)
-                              (cxxFnDefs <> cxxFnTemplatedDefs)
-          case cxxFns of
+          cudaCallableName <- mkCudaName callableName
+          let cudaFns = filter (\cudaFn -> _cudaFnName cudaFn == cudaCallableName)
+                              (cudaFnDefs <> cudaFnTemplatedDefs)
+          case cudaFns of
             [] -> throwNonLocatedE CompilerErr $
-              "could not find any C++ generated implementation for " <>
-              pshow cxxCallableName <> " but function generation supposedly " <>
+              "could not find any CUDA generated implementation for " <>
+              pshow cudaCallableName <> " but function generation supposedly " <>
               "succeeded"
-            _ -> cxxFnsToFunctionCallOperatorStruct (fnOpStructName, cxxFns)
+            _ -> cudaFnsToFunctionCallOperatorStruct (fnOpStructName, cudaFns)
 
-    cxxFnCallOperatorStructs <- foldM
+    cudaFnCallOperatorStructs <- foldM
       (\acc (cn, sn) -> (:acc) <$> mkFunctionCallOperatorStruct (cn, sn)) []
       callableNamesAndFreshFnOpStructNames
 
-    cxxFnCallOperatorObjects <- mapM (\(callableName, structName) -> do
-        callableCxxName <- mkCxxName callableName
-        structCxxName <-
-          mkCxxClassMemberAccess (CxxCustomType moduleCxxName) <$>
-            mkCxxName structName
-        mkCxxObject structCxxName [] callableCxxName)
+    cudaFnCallOperatorObjects <- mapM (\(callableName, structName) -> do
+        callableCudaName <- mkCudaName callableName
+        structCudaName <-
+          mkCudaClassMemberAccess (CudaCustomType moduleCudaName) <$>
+            mkCudaName structName
+        mkCudaObject structCudaName [] callableCudaName)
       callableNamesAndFreshFnOpStructNames
 
-    cxxGeneratedFunctions <- do
-      uniqueCallableCxxNames <-
-        S.fromList <$> mapM mkCxxName uniqueCallableNames
-      pure $ filter (\f -> _cxxFnName f `S.notMember` uniqueCallableCxxNames)
-                    cxxFnDefs
+    cudaGeneratedFunctions <- do
+      uniqueCallableCudaNames <-
+        S.fromList <$> mapM mkCudaName uniqueCallableNames
+      pure $ filter (\f -> _cudaFnName f `S.notMember` uniqueCallableCudaNames)
+                    cudaFnDefs
 
     let allDefs =
-             map (CxxPrivate,) (  extObjectsDef
-                               <> map CxxFunctionDef cxxGeneratedFunctions)
-          <> map (CxxPublic,) (  map (uncurry CxxTypeDef) cxxTyDefs
-                              <> map CxxInstance cxxFnCallOperatorObjects
-                              <> map CxxNestedModule cxxFnCallOperatorStructs)
-    topSortedDefs <- topSortCxxDefs (srcCtx declO) moduleCxxName allDefs
-    pure $ CxxModule moduleCxxNamespaces moduleCxxName topSortedDefs
+             map (CudaPrivate,) (  extObjectsDef
+                               <> map CudaFunctionDef cudaGeneratedFunctions)
+          <> map (CudaPublic,) (  map (uncurry CudaTypeDef) cudaTyDefs
+                              <> map CudaInstance cudaFnCallOperatorObjects
+                              <> map CudaNestedModule cudaFnCallOperatorStructs)
+    topSortedDefs <- topSortCudaDefs (srcCtx declO) moduleCudaName allDefs
+    pure $ CudaModule moduleCudaNamespaces moduleCudaName topSortedDefs
   where
     declFilter :: TcDecl -> Bool
     declFilter decl = case decl of
@@ -253,26 +253,26 @@ mgProgramToCxxProgramModule
     referencedExternals :: [(Name, [Requirement])]
     referencedExternals = gatherUniqueExternalRequirements tcModuleExpr
 
-mgProgramToCxxProgramModule _ _ = error "expected program"
+mgProgramToCudaProgramModule _ _ = error "expected program"
 
--- | Sorts topologically a list of C++ definitions with access specifiers
+-- | Sorts topologically a list of CUDA definitions with access specifiers
 -- based on their dependencies. We assume the definitions to all belong to the
 -- same module, whose name is passed as a parameter. For this to work, it is
 -- crucial that each definition refers to other definitions of the same module
 -- in a fully qualified way, i.e., if the parent module is called \'M\', and
 -- contains a type \'T\', and a function \'f\' that returns an element of
 -- type \'T\', the return type of \'f\' must be given as \'M::T\'.
-topSortCxxDefs :: SrcCtx  -- ^ a source location for error reporting
-               -> CxxName -- ^ the name of the parent module in C++
-               -> [(CxxAccessSpec, CxxDef)]
-               -> MgMonad [(CxxAccessSpec, CxxDef)]
-topSortCxxDefs src parentModuleCxxName defs = do
+topSortCudaDefs :: SrcCtx  -- ^ a source location for error reporting
+               -> CudaName -- ^ the name of the parent module in CUDA
+               -> [(CudaAccessSpec, CudaDef)]
+               -> MgMonad [(CudaAccessSpec, CudaDef)]
+topSortCudaDefs src parentModuleCudaName defs = do
   mapM checkAcyclic sccs
   where
-    extractInName = extractAllChildrenNamesFromCxxClassTypeInCxxName
-      (CxxCustomType parentModuleCxxName)
-    extractInType = extractAllChildrenNamesFromCxxClassTypeInCxxType
-      (CxxCustomType parentModuleCxxName)
+    extractInName = extractAllChildrenNamesFromCudaClassTypeInCudaName
+      (CudaCustomType parentModuleCudaName)
+    extractInType = extractAllChildrenNamesFromCudaClassTypeInCudaType
+      (CudaCustomType parentModuleCudaName)
 
     sccs =  let snd3 (_, b, _) = b
                 -- TODO(not that important): check if the assessment below
@@ -293,111 +293,111 @@ topSortCxxDefs src parentModuleCxxName defs = do
             in G.stronglyConnComp incidenceGraphInformation
 
     extractIncidenceGraphInformation
-      :: (CxxAccessSpec, CxxDef)
-      -> ((CxxAccessSpec, CxxDef), CxxName, [CxxName])
+      :: (CudaAccessSpec, CudaDef)
+      -> ((CudaAccessSpec, CudaDef), CudaName, [CudaName])
     extractIncidenceGraphInformation defAndAs@(_, def) =
 
       case def of
-        CxxTypeDef sourceName targetName ->
+        CudaTypeDef sourceName targetName ->
           ( defAndAs
           , targetName
           , extractInName sourceName
           )
-        CxxFunctionDef cxxFn ->
+        CudaFunctionDef cudaFn ->
           ( defAndAs
-          , _cxxFnName cxxFn
-          , extractInType (_cxxFnReturnType cxxFn) <>
-            join (map (extractInType . _cxxVarType) (_cxxFnParams cxxFn))
+          , _cudaFnName cudaFn
+          , extractInType (_cudaFnReturnType cudaFn) <>
+            join (map (extractInType . _cudaVarType) (_cudaFnParams cudaFn))
           )
-        CxxNestedModule cxxMod ->
+        CudaNestedModule cudaMod ->
           let (_, _, allDependencies) = unzip3 $
                 map extractIncidenceGraphInformation
-                    (_cxxModuleDefinitions cxxMod)
+                    (_cudaModuleDefinitions cudaMod)
           in ( defAndAs
-             , _cxxModuleName cxxMod
+             , _cudaModuleName cudaMod
              , join allDependencies
              )
-        CxxInstance cxxObj ->
+        CudaInstance cudaObj ->
           ( defAndAs
-          , _cxxObjectName cxxObj
-          , extractInType (_cxxObjectType cxxObj)
+          , _cudaObjectName cudaObj
+          , extractInType (_cudaObjectType cudaObj)
           )
 
-    checkAcyclic :: G.SCC (CxxAccessSpec, CxxDef)
-                 -> MgMonad (CxxAccessSpec, CxxDef)
+    checkAcyclic :: G.SCC (CudaAccessSpec, CudaDef)
+                 -> MgMonad (CudaAccessSpec, CudaDef)
     checkAcyclic comp = case comp of
       G.AcyclicSCC defAndAs -> pure defAndAs
       G.CyclicSCC circularDepDefsAndAs ->
         let extractName def = case def of
-              CxxTypeDef _ cxxTargetName -> cxxTargetName
-              CxxFunctionDef cxxFn -> _cxxFnName cxxFn
-              CxxNestedModule cxxMod -> _cxxModuleName cxxMod
-              CxxInstance cxxObj -> _cxxObjectName cxxObj
+              CudaTypeDef _ cudaTargetName -> cudaTargetName
+              CudaFunctionDef cudaFn -> _cudaFnName cudaFn
+              CudaNestedModule cudaMod -> _cudaModuleName cudaMod
+              CudaInstance cudaObj -> _cudaObjectName cudaObj
             circularDepDefs = map snd circularDepDefsAndAs
         in throwLocatedE MiscErr src $
               "can not sort elements " <>
               T.intercalate ", " (map (pshow . extractName) circularDepDefs) <>
               " topologically"
 
--- | Produces a C++ object from a data structure to instantiate along with
+-- | Produces a CUDA object from a data structure to instantiate along with
 -- the required template parameters if necessary. All the generated objects are
 -- static at the moment.
-mkCxxObject :: CxxName       -- ^ the data structure to instantiate
+mkCudaObject :: CudaName       -- ^ the data structure to instantiate
             -> [Requirement] -- ^ the required arguments to the
                              --   data structure
-            -> CxxName       -- ^ the name given to the resulting
+            -> CudaName       -- ^ the name given to the resulting
                              --   object
-            -> MgMonad CxxObject
-mkCxxObject structCxxName [] targetCxxName = do
-  pure $ CxxObject CxxStaticMember (CxxCustomType structCxxName) targetCxxName
-mkCxxObject structCxxName requirements@(_:_) targetCxxName = do
+            -> MgMonad CudaObject
+mkCudaObject structCudaName [] targetCudaName = do
+  pure $ CudaObject CudaStaticMember (CudaCustomType structCudaName) targetCudaName
+mkCudaObject structCudaName requirements@(_:_) targetCudaName = do
   let sortedRequirements = L.sortBy orderRequirements requirements
-  cxxTemplateParameters <-
-    mapM (mkClassMemberCxxType . nodeName . _parameterDecl)
+  cudaTemplateParameters <-
+    mapM (mkClassMemberCudaType . nodeName . _parameterDecl)
          sortedRequirements
-  pure $ CxxObject CxxStaticMember
-                   (CxxCustomTemplatedType structCxxName cxxTemplateParameters)
-                   targetCxxName
+  pure $ CudaObject CudaStaticMember
+                   (CudaCustomTemplatedType structCudaName cudaTemplateParameters)
+                   targetCudaName
 
 -- | Takes a list of overloaded function definitions, a fresh name for the
 -- module in Magnolia, and produces a function call operator module.
-cxxFnsToFunctionCallOperatorStruct :: (Name, [CxxFunctionDef])
-                                   -> MgMonad CxxModule
-cxxFnsToFunctionCallOperatorStruct (moduleName, cxxFns) = do
-  cxxModuleName <- mkCxxName moduleName
-  let renamedCxxFns = map
-        (\cxxFn -> cxxFn { _cxxFnName = cxxFunctionCallOperatorName
-                         , _cxxFnModuleMemberType = CxxNonStaticMember
-                         }) cxxFns
-  pure $ CxxModule [] cxxModuleName $
-    map ((CxxPublic,) . CxxFunctionDef) renamedCxxFns
+cudaFnsToFunctionCallOperatorStruct :: (Name, [CudaFunctionDef])
+                                   -> MgMonad CudaModule
+cudaFnsToFunctionCallOperatorStruct (moduleName, cudaFns) = do
+  cudaModuleName <- mkCudaName moduleName
+  let renamedCudaFns = map
+        (\cudaFn -> cudaFn { _cudaFnName = cudaFunctionCallOperatorName
+                         , _cudaFnModuleMemberType = CudaNonStaticMember
+                         }) cudaFns
+  pure $ CudaModule [] cudaModuleName $
+    map ((CudaPublic,) . CudaFunctionDef) renamedCudaFns
 
--- | Produces a C++ typedef from a Magnolia type declaration. A map from
+-- | Produces a CUDA typedef from a Magnolia type declaration. A map from
 -- callable names to their function operator-implementing struct name is
 -- provided to look up template parameters as needed.
-mgTyDeclToCxxTypeDef :: M.Map Name Name
+mgTyDeclToCudaTypeDef :: M.Map Name Name
                      -> TcTypeDecl
-                     -> MgMonad (CxxName, CxxName)
-mgTyDeclToCxxTypeDef callableNamesToFnOpStructNames
+                     -> MgMonad (CudaName, CudaName)
+mgTyDeclToCudaTypeDef callableNamesToFnOpStructNames
     (Ann (conDeclO, absDeclOs) (Type targetTyName)) = do
-  cxxTargetTyName <- mkCxxName targetTyName
+  cudaTargetTyName <- mkCudaName targetTyName
   let ~(Just (ConcreteExternalDecl _ extDeclDetails)) = conDeclO
       extStructName = externalDeclModuleName extDeclDetails
       extTyName = externalDeclElementName extDeclDetails
   sortedRequirements <- mapM (makeReqTypeName . _parameterDecl)
     (orderedRequirements extDeclDetails)
-  checkCxxBackend errorLoc "type" extDeclDetails
-  cxxExtStructName <- mkCxxName extStructName
-  cxxExtTyName <- mkCxxName extTyName
-  cxxSourceTyName <-
+  checkCudaBackend errorLoc "type" extDeclDetails
+  cudaExtStructName <- mkCudaName extStructName
+  cudaExtTyName <- mkCudaName extTyName
+  cudaSourceTyName <-
     if null sortedRequirements
     then pure $
-      mkCxxClassMemberAccess (CxxCustomType cxxExtStructName) cxxExtTyName
+      mkCudaClassMemberAccess (CudaCustomType cudaExtStructName) cudaExtTyName
     else do
-      cxxReqTypes <- mapM mkClassMemberCxxType sortedRequirements
-      pure $ mkCxxClassMemberAccess
-        (CxxCustomTemplatedType cxxExtStructName cxxReqTypes) cxxExtTyName
-  pure (cxxSourceTyName, cxxTargetTyName)
+      cudaReqTypes <- mapM mkClassMemberCudaType sortedRequirements
+      pure $ mkCudaClassMemberAccess
+        (CudaCustomTemplatedType cudaExtStructName cudaReqTypes) cudaExtTyName
+  pure (cudaSourceTyName, cudaTargetTyName)
   where
     errorLoc = srcCtx $ NE.head absDeclOs
 
@@ -410,12 +410,12 @@ mgTyDeclToCxxTypeDef callableNamesToFnOpStructNames
           Just fnOpStructName -> pure fnOpStructName
       MTypeDecl {} -> pure $ nodeName decl
 
-mgCallableDeclToCxx
+mgCallableDeclToCuda
   :: M.Map (Name, [MType]) Name
-  -> M.Map (Name, [Requirement]) CxxName
+  -> M.Map (Name, [Requirement]) CudaName
   -> TcCallableDecl
-  -> MgMonad CxxFunctionDef
-mgCallableDeclToCxx returnTypeOverloadsNameAliasMap extObjectsMap
+  -> MgMonad CudaFunctionDef
+mgCallableDeclToCuda returnTypeOverloadsNameAliasMap extObjectsMap
   mgFn@(Ann (conDeclO, absDeclOs)
             (Callable _ _ args retTy _ (ExternalBody _))) = do
     -- This case is hit when one of the API functions we want to expose
@@ -428,64 +428,64 @@ mgCallableDeclToCxx returnTypeOverloadsNameAliasMap extObjectsMap
         extOrderedRequirements = orderedRequirements extDeclDetails
         mgFnWithDummyMgBody = Ann (conDeclO, absDeclOs) $
           (_elem mgFn) { _callableBody = MagnoliaBody (Ann retTy MSkip) }
-    cxxExtObjectName <-
+    cudaExtObjectName <-
       case M.lookup (extStructName, extOrderedRequirements) extObjectsMap of
         Nothing -> throwLocatedE CompilerErr (srcCtx $ NE.head absDeclOs) $
           "could not find matching external object definition for " <>
           pshow extStructName <> " with requirements " <>
           pshow (map _parameterDecl extOrderedRequirements)
-        Just cxxExtObjName -> pure cxxExtObjName
+        Just cudaExtObjName -> pure cudaExtObjName
 
-    checkCxxBackend (srcCtx $ NE.head absDeclOs) "function" extDeclDetails
+    checkCudaBackend (srcCtx $ NE.head absDeclOs) "function" extDeclDetails
 
-    cxxFnDef <- mgCallableDeclToCxx
+    cudaFnDef <- mgCallableDeclToCuda
       returnTypeOverloadsNameAliasMap extObjectsMap mgFnWithDummyMgBody
-    cxxExtFnName <- mkCxxObjectMemberAccess cxxExtObjectName <$>
-      mkCxxName extCallableName
-    cxxArgExprs <- mapM ((CxxVarRef <$>) . mkCxxName . nodeName) args
+    cudaExtFnName <- mkCudaObjectMemberAccess cudaExtObjectName <$>
+      mkCudaName extCallableName
+    cudaArgExprs <- mapM ((CudaVarRef <$>) . mkCudaName . nodeName) args
     -- If mutification occurred, then it means that we must not return the
     -- value but instead assign it to the last variable in the argument list.
     -- Checking if mutification occur can be done by checking if the length
     -- of the argument list changed.
-    let cxxBody = if length (_cxxFnParams cxxFnDef) == length args
+    let cudaBody = if length (_cudaFnParams cudaFnDef) == length args
                   then -- We synthesize a return function call
-                    [ CxxStmtInline . CxxReturn . Just $
-                      CxxCall cxxExtFnName [] cxxArgExprs
+                    [ CudaStmtInline . CudaReturn . Just $
+                      CudaCall cudaExtFnName [] cudaArgExprs
                     ]
                   else
-                    let outVarCxxName =
-                          _cxxVarName $ last (_cxxFnParams cxxFnDef)
-                    in [ CxxStmtInline $
-                           CxxAssign outVarCxxName
-                                     (CxxCall cxxExtFnName [] cxxArgExprs)
+                    let outVarCudaName =
+                          _cudaVarName $ last (_cudaFnParams cudaFnDef)
+                    in [ CudaStmtInline $
+                           CudaAssign outVarCudaName
+                                     (CudaCall cudaExtFnName [] cudaArgExprs)
                        ]
-    pure cxxFnDef {_cxxFnBody = cxxBody }
+    pure cudaFnDef {_cudaFnBody = cudaBody }
 
 
-mgCallableDeclToCxx returnTypeOverloadsNameAliasMap extObjectsMap
+mgCallableDeclToCuda returnTypeOverloadsNameAliasMap extObjectsMap
                     mgFn@(Ann _ (Callable cty name args retTy mguard cbody))
   | isOverloadedOnReturnType = do
       mgFn' <- mutify mgFn
-      mgCallableDeclToCxx returnTypeOverloadsNameAliasMap extObjectsMap mgFn'
+      mgCallableDeclToCuda returnTypeOverloadsNameAliasMap extObjectsMap mgFn'
   | otherwise = do
-      cxxFnName <- mkCxxName name
-      cxxBody <- mgFnBodyToCxxStmtBlock returnTypeOverloadsNameAliasMap mgFn
-      cxxRetTy <- case cty of
-        Function -> mkClassMemberCxxType retTy
-        Predicate -> mkCxxType Pred
-        _ -> mkCxxType Unit -- Axiom and procedures
-      cxxParams <- mapM mgTypedVarToCxx args
+      cudaFnName <- mkCudaName name
+      cudaBody <- mgFnBodyToCudaStmtBlock returnTypeOverloadsNameAliasMap mgFn
+      cudaRetTy <- case cty of
+        Function -> mkClassMemberCudaType retTy
+        Predicate -> mkCudaType Pred
+        _ -> mkCudaType Unit -- Axiom and procedures
+      cudaParams <- mapM mgTypedVarToCuda args
       -- TODO: what do we do with guard? Carry it in and use it as a
       -- precondition test?
       -- TODO: for now, all functions are generated as static.
-      pure $ CxxFunction CxxStaticMember True cxxFnName [] cxxParams cxxRetTy
-                         cxxBody
+      pure $ CudaFunction CudaStaticMember True cudaFnName [] cudaParams cudaRetTy
+                         cudaBody
   where
-    mgTypedVarToCxx :: TypedVar PhCheck -> MgMonad CxxVar
-    mgTypedVarToCxx (Ann _ v) = do
-      cxxVarName <- mkCxxName $ _varName v
-      cxxVarType <- mkClassMemberCxxType $ _varType v
-      return $ CxxVar (_varMode v == MObs) True cxxVarName cxxVarType
+    mgTypedVarToCuda :: TypedVar PhCheck -> MgMonad CudaVar
+    mgTypedVarToCuda (Ann _ v) = do
+      cudaVarName <- mkCudaName $ _varName v
+      cudaVarType <- mkClassMemberCudaType $ _varType v
+      return $ CudaVar (_varMode v == MObs) True cudaVarName cudaVarType
 
     isOverloadedOnReturnType :: Bool
     isOverloadedOnReturnType = isJust $
@@ -524,7 +524,7 @@ mgCallableDeclToCxx returnTypeOverloadsNameAliasMap extObjectsMap
 
 -- | Generates a templated function given a set of functions overloaded on their
 -- return type.
-mgReturnTypeOverloadToCxxTemplatedDef :: S.Set String
+mgReturnTypeOverloadToCudaTemplatedDef :: S.Set String
                                       -- ^ the bound strings in the environment
                                       -> Name
                                       -- ^ the name of the overloaded function
@@ -534,55 +534,55 @@ mgReturnTypeOverloadToCxxTemplatedDef :: S.Set String
                                       -> Name
                                       -- ^ the name to give to the resulting
                                       --   mutified definition
-                                      -> MgMonad CxxFunctionDef
-mgReturnTypeOverloadToCxxTemplatedDef boundNs fnName argTypes mutifiedFnName =
+                                      -> MgMonad CudaFunctionDef
+mgReturnTypeOverloadToCudaTemplatedDef boundNs fnName argTypes mutifiedFnName =
   do
-    argCxxNames <- mapM mkCxxName $
+    argCudaNames <- mapM mkCudaName $
       evalState (mapM (freshNameM . const (VarName "a")) argTypes) boundNs
-    cxxArgTypes <- mapM mkClassMemberCxxType argTypes
+    cudaArgTypes <- mapM mkClassMemberCudaType argTypes
     let templateTyName = freshName (TypeName "T") boundNs
-    cxxTemplateTy <- mkCxxType templateTyName
-    outVarCxxName <- mkCxxName $ freshName (VarName "o") boundNs
-    cxxFnName <- mkCxxName fnName
-    mutifiedFnCxxName <- mkCxxName mutifiedFnName
-    moduleCxxName <- getParentModuleName >>= mkCxxName
-    let fullyQualifiedMutifiedFnCxxName = mkCxxClassMemberAccess
-          (CxxCustomType moduleCxxName) mutifiedFnCxxName
-        cxxOutVar = CxxVar { _cxxVarIsConst = False
-                           , _cxxVarIsRef = False
-                           , _cxxVarName = outVarCxxName
-                           , _cxxVarType = cxxTemplateTy
+    cudaTemplateTy <- mkCudaType templateTyName
+    outVarCudaName <- mkCudaName $ freshName (VarName "o") boundNs
+    cudaFnName <- mkCudaName fnName
+    mutifiedFnCudaName <- mkCudaName mutifiedFnName
+    moduleCudaName <- getParentModuleName >>= mkCudaName
+    let fullyQualifiedMutifiedFnCudaName = mkCudaClassMemberAccess
+          (CudaCustomType moduleCudaName) mutifiedFnCudaName
+        cudaOutVar = CudaVar { _cudaVarIsConst = False
+                           , _cudaVarIsRef = False
+                           , _cudaVarName = outVarCudaName
+                           , _cudaVarType = cudaTemplateTy
                            }
-        cxxFnParams = zipWith (\cxxArgName cxxArgTy ->
-          CxxVar { _cxxVarIsConst = True
-                 , _cxxVarIsRef = True
-                 , _cxxVarName = cxxArgName
-                 , _cxxVarType = cxxArgTy
-                 } ) argCxxNames cxxArgTypes
-        cxxCallArgExprs = map CxxVarRef (argCxxNames <> [outVarCxxName])
-        cxxFnBody = map CxxStmtInline
+        cudaFnParams = zipWith (\cudaArgName cudaArgTy ->
+          CudaVar { _cudaVarIsConst = True
+                 , _cudaVarIsRef = True
+                 , _cudaVarName = cudaArgName
+                 , _cudaVarType = cudaArgTy
+                 } ) argCudaNames cudaArgTypes
+        cudaCallArgExprs = map CudaVarRef (argCudaNames <> [outVarCudaName])
+        cudaFnBody = map CudaStmtInline
           [ -- T o;
-            CxxVarDecl cxxOutVar Nothing
+            CudaVarDecl cudaOutVar Nothing
             -- mutifiedFnName(a0, a1, …, an, &o);
-          , CxxExpr (CxxCall fullyQualifiedMutifiedFnCxxName []
-                             cxxCallArgExprs)
+          , CudaExpr (CudaCall fullyQualifiedMutifiedFnCudaName []
+                             cudaCallArgExprs)
             -- return o;
-          , CxxReturn (Just (CxxVarRef outVarCxxName))
+          , CudaReturn (Just (CudaVarRef outVarCudaName))
           ]
     pure $
-      CxxFunction { _cxxFnModuleMemberType = CxxStaticMember
-                  , _cxxFnIsInline = True
-                  , _cxxFnName = cxxFnName
-                  , _cxxFnTemplateParameters = [cxxTemplateTy]
-                  , _cxxFnParams = cxxFnParams
-                  , _cxxFnReturnType = cxxTemplateTy
-                  , _cxxFnBody = cxxFnBody
+      CudaFunction { _cudaFnModuleMemberType = CudaStaticMember
+                  , _cudaFnIsInline = True
+                  , _cudaFnName = cudaFnName
+                  , _cudaFnTemplateParameters = [cudaTemplateTy]
+                  , _cudaFnParams = cudaFnParams
+                  , _cudaFnReturnType = cudaTemplateTy
+                  , _cudaFnBody = cudaFnBody
                   }
 
 
-mgFnBodyToCxxStmtBlock :: M.Map (Name, [MType]) Name -> TcCallableDecl
-                       -> MgMonad CxxStmtBlock
-mgFnBodyToCxxStmtBlock returnTypeOverloadsNameAliasMap
+mgFnBodyToCudaStmtBlock :: M.Map (Name, [MType]) Name -> TcCallableDecl
+                       -> MgMonad CudaStmtBlock
+mgFnBodyToCudaStmtBlock returnTypeOverloadsNameAliasMap
                        (Ann _ (Callable _ name _ _ _ body)) = case body of
   EmptyBody -> throwNonLocatedE CompilerErr $
     "attempted to generate implementation code for unimplemented callable " <>
@@ -595,9 +595,9 @@ mgFnBodyToCxxStmtBlock returnTypeOverloadsNameAliasMap
     pshow name
   -- TODO: this is not extremely pretty. Can we easily do something better?
   MagnoliaBody (Ann _ (MBlockExpr _ exprs)) ->
-    mapM (mgExprToCxxStmt returnTypeOverloadsNameAliasMap) (NE.toList exprs)
+    mapM (mgExprToCudaStmt returnTypeOverloadsNameAliasMap) (NE.toList exprs)
   MagnoliaBody expr -> (:[]) <$>
-    mgExprToCxxStmt returnTypeOverloadsNameAliasMap (insertValueBlocks expr)
+    mgExprToCudaStmt returnTypeOverloadsNameAliasMap (insertValueBlocks expr)
 
 insertValueBlocks :: TcExpr -> TcExpr
 insertValueBlocks inExpr@(Ann Unit _) = inExpr
@@ -608,141 +608,141 @@ insertValueBlocks inExpr@(Ann ty e) = case e of
     MIf cond (insertValueBlocks trueExpr) (insertValueBlocks falseExpr)
   _ -> Ann ty $ MValue inExpr
 
-mgExprToCxxStmt :: M.Map (Name, [MType]) Name -> TcExpr -> MgMonad CxxStmt
-mgExprToCxxStmt returnTypeOverloadsNameAliasMap = goStmt
+mgExprToCudaStmt :: M.Map (Name, [MType]) Name -> TcExpr -> MgMonad CudaStmt
+mgExprToCudaStmt returnTypeOverloadsNameAliasMap = goStmt
   where
     goStmt annInExpr@(Ann _ inExpr) = case inExpr of
-      MVar _ -> CxxStmtInline . CxxExpr <$> goExpr annInExpr
+      MVar _ -> CudaStmtInline . CudaExpr <$> goExpr annInExpr
       -- TODO: handle special case of assignment in a prettier way. ATM,
       --       this seems good enough.
       MCall (ProcName "_=_") [Ann tyLhs (MVar v), rhs@(Ann tyRhs _)] _ ->
         if tyLhs == tyRhs then do
-          cxxVarName <- mkCxxName . _varName $ _elem v
-          cxxRhs <- goExpr rhs
-          return . CxxStmtInline $ CxxAssign cxxVarName cxxRhs
-        else CxxStmtInline . CxxExpr <$> goExpr annInExpr
-      MCall {} -> CxxStmtInline . CxxExpr <$> goExpr annInExpr
-      MBlockExpr _ stmts -> CxxStmtBlock <$> mapM goStmt (NE.toList stmts)
-      MValue _ -> CxxStmtInline . CxxReturn . Just <$> goExpr annInExpr
+          cudaVarName <- mkCudaName . _varName $ _elem v
+          cudaRhs <- goExpr rhs
+          return . CudaStmtInline $ CudaAssign cudaVarName cudaRhs
+        else CudaStmtInline . CudaExpr <$> goExpr annInExpr
+      MCall {} -> CudaStmtInline . CudaExpr <$> goExpr annInExpr
+      MBlockExpr _ stmts -> CudaStmtBlock <$> mapM goStmt (NE.toList stmts)
+      MValue _ -> CudaStmtInline . CudaReturn . Just <$> goExpr annInExpr
       MLet (Ann vty (Var mode name _)) mexpr -> do
-        cxxVarName <- mkCxxName name
-        cxxVarType <- mkClassMemberCxxType vty
-        mcxxRhsExpr <- maybe (return Nothing) ((Just <$>) . goExpr) mexpr
-        let cxxVarIsConst = mode == MObs
-            cxxVarIsRef = False -- TODO: figure out when to use refs?
-            cxxVar = CxxVar cxxVarIsConst cxxVarIsRef cxxVarName cxxVarType
-        return . CxxStmtInline $ CxxVarDecl cxxVar mcxxRhsExpr
+        cudaVarName <- mkCudaName name
+        cudaVarType <- mkClassMemberCudaType vty
+        mcudaRhsExpr <- maybe (return Nothing) ((Just <$>) . goExpr) mexpr
+        let cudaVarIsConst = mode == MObs
+            cudaVarIsRef = False -- TODO: figure out when to use refs?
+            cudaVar = CudaVar cudaVarIsConst cudaVarIsRef cudaVarName cudaVarType
+        return . CudaStmtInline $ CudaVarDecl cudaVar mcudaRhsExpr
       MIf cond trueStmt falseStmt -> do
-        cxxCond <- goExpr cond
-        cxxTrueStmt <- goStmt trueStmt
-        cxxFalseStmt <- goStmt falseStmt
-        return . CxxStmtInline $ CxxIf cxxCond cxxTrueStmt cxxFalseStmt
-      MAssert expr -> CxxStmtInline . CxxAssert <$> goExpr expr
-      MSkip -> return $ CxxStmtInline CxxSkip
-    goExpr = mgExprToCxxExpr returnTypeOverloadsNameAliasMap
+        cudaCond <- goExpr cond
+        cudaTrueStmt <- goStmt trueStmt
+        cudaFalseStmt <- goStmt falseStmt
+        return . CudaStmtInline $ CudaIf cudaCond cudaTrueStmt cudaFalseStmt
+      MAssert expr -> CudaStmtInline . CudaAssert <$> goExpr expr
+      MSkip -> return $ CudaStmtInline CudaSkip
+    goExpr = mgExprToCudaExpr returnTypeOverloadsNameAliasMap
 
-mgExprToCxxExpr :: M.Map (Name, [MType]) Name -> TcExpr -> MgMonad CxxExpr
-mgExprToCxxExpr returnTypeOverloadsNameAliasMap = goExpr
+mgExprToCudaExpr :: M.Map (Name, [MType]) Name -> TcExpr -> MgMonad CudaExpr
+mgExprToCudaExpr returnTypeOverloadsNameAliasMap = goExpr
   where
     goExpr annInExpr@(Ann ty inExpr) = case inExpr of
-      MVar (Ann _ v) -> CxxVarRef <$> mkCxxName (_varName v)
+      MVar (Ann _ v) -> CudaVarRef <$> mkCudaName (_varName v)
       MCall name args _ -> do
-        mCxxExpr <- tryMgCallToCxxSpecialOpExpr returnTypeOverloadsNameAliasMap
+        mCudaExpr <- tryMgCallToCudaSpecialOpExpr returnTypeOverloadsNameAliasMap
           name args ty
-        case mCxxExpr of
-          Just cxxExpr -> return cxxExpr
+        case mCudaExpr of
+          Just cudaExpr -> return cudaExpr
           Nothing -> do
-            cxxModuleName <- getParentModuleName >>= mkCxxName
+            cudaModuleName <- getParentModuleName >>= mkCudaName
             let inputProto = (name, map _ann args)
-            cxxTemplateArgs <- mapM mkCxxType
+            cudaTemplateArgs <- mapM mkCudaType
               [ty | inputProto `M.member` returnTypeOverloadsNameAliasMap]
-            cxxArgs <- mapM goExpr args
+            cudaArgs <- mapM goExpr args
             -- TODO: right now, we need to call operator() with templated types.
             --       This is not great from the point of view of the exposed
             --       and it will be fixed at some point.
-            case cxxTemplateArgs of
+            case cudaTemplateArgs of
               [] -> do
-                cxxName <-
-                  mkCxxClassMemberAccess (CxxCustomType cxxModuleName) <$>
-                    mkCxxName name
-                pure $ CxxCall cxxName cxxTemplateArgs cxxArgs
+                cudaName <-
+                  mkCudaClassMemberAccess (CudaCustomType cudaModuleName) <$>
+                    mkCudaName name
+                pure $ CudaCall cudaName cudaTemplateArgs cudaArgs
               _:_ -> do
-                cxxFunctionObjectName <- mkCxxName name
-                let cxxOperatorName = mkCxxObjectMemberAccess
-                      cxxFunctionObjectName
-                      cxxFunctionCallOperatorName
-                    cxxName = mkCxxClassMemberAccess
-                      (CxxCustomType cxxModuleName)
-                      cxxOperatorName
-                pure $ CxxCall cxxName cxxTemplateArgs cxxArgs
+                cudaFunctionObjectName <- mkCudaName name
+                let cudaOperatorName = mkCudaObjectMemberAccess
+                      cudaFunctionObjectName
+                      cudaFunctionCallOperatorName
+                    cudaName = mkCudaClassMemberAccess
+                      (CudaCustomType cudaModuleName)
+                      cudaOperatorName
+                pure $ CudaCall cudaName cudaTemplateArgs cudaArgs
       MBlockExpr blockTy exprs -> do
-        cxxExprs <- mapM goStmt (NE.toList exprs)
+        cudaExprs <- mapM goStmt (NE.toList exprs)
         case blockTy of
           -- TODO: check properly that ref is okay here (it should be)
-          MValueBlock -> mgToCxxLambdaRef cxxExprs
-          MEffectfulBlock -> mgToCxxLambdaRef cxxExprs
+          MValueBlock -> mgToCudaLambdaRef cudaExprs
+          MEffectfulBlock -> mgToCudaLambdaRef cudaExprs
       MValue expr -> goExpr expr
       -- TODO: check properly that ref is okay here (it should be)
-      MLet {} -> goStmt annInExpr >>= mgToCxxLambdaRef . (:[])
-      MIf cond trueExpr falseExpr -> CxxIfExpr <$> goExpr cond <*>
+      MLet {} -> goStmt annInExpr >>= mgToCudaLambdaRef . (:[])
+      MIf cond trueExpr falseExpr -> CudaIfExpr <$> goExpr cond <*>
         goExpr trueExpr <*> goExpr falseExpr
       -- TODO: check properly that ref is okay here (it should be)
-      MAssert _ -> goStmt annInExpr >>= mgToCxxLambdaRef . (:[])
-      MSkip -> mgToCxxLambdaRef []
+      MAssert _ -> goStmt annInExpr >>= mgToCudaLambdaRef . (:[])
+      MSkip -> mgToCudaLambdaRef []
 
-    goStmt = mgExprToCxxStmt returnTypeOverloadsNameAliasMap
-    mgToCxxLambdaRef = return . CxxLambdaCall CxxLambdaCaptureDefaultReference
-    --mgToCxxLambdaVal = return . CxxLambdaCall CxxLambdaCaptureDefaultValue
+    goStmt = mgExprToCudaStmt returnTypeOverloadsNameAliasMap
+    mgToCudaLambdaRef = return . CudaLambdaCall CudaLambdaCaptureDefaultReference
+    --mgToCudaLambdaVal = return . CudaLambdaCall CudaLambdaCaptureDefaultValue
 
 -- TODO: for the moment, this assumes no '_:T ==_:T' predicate is implemented
 -- in Magnolia, although it will be possible to define one manually. Therefore,
 -- this will have to be improved later.
 -- | Takes the name of a function, its arguments and its return type, and
 -- produces a unop or binop expression node if it can be expressed as such in
--- C++. For the moment, functions that can be expressed like that include the
+-- CUDA. For the moment, functions that can be expressed like that include the
 -- equality predicate between two elements of the same type, predicate
 -- combinators (such as '_&&_' and '_||_'), and the boolean constants 'TRUE',
 -- and 'FALSE'.
-tryMgCallToCxxSpecialOpExpr :: M.Map (Name, [MType]) Name
+tryMgCallToCudaSpecialOpExpr :: M.Map (Name, [MType]) Name
                             -> Name -> [TcExpr] -> MType
-                            -> MgMonad (Maybe CxxExpr)
-tryMgCallToCxxSpecialOpExpr returnTypeOverloadsNameAliasMap name args retTy = do
-  cxxArgs <- mapM (mgExprToCxxExpr returnTypeOverloadsNameAliasMap) args
-  case (cxxArgs, retTy : map _ann args ) of
-    ([cxxExpr], [Pred, Pred]) -> pure $ unPredCombinator cxxExpr
-    ([cxxLhsExpr, cxxRhsExpr], [Pred, Pred, Pred]) ->
-      pure $ binPredCombinator cxxLhsExpr cxxRhsExpr
-    ([cxxLhsExpr, cxxRhsExpr], [Pred, a, b]) -> return $
+                            -> MgMonad (Maybe CudaExpr)
+tryMgCallToCudaSpecialOpExpr returnTypeOverloadsNameAliasMap name args retTy = do
+  cudaArgs <- mapM (mgExprToCudaExpr returnTypeOverloadsNameAliasMap) args
+  case (cudaArgs, retTy : map _ann args ) of
+    ([cudaExpr], [Pred, Pred]) -> pure $ unPredCombinator cudaExpr
+    ([cudaLhsExpr, cudaRhsExpr], [Pred, Pred, Pred]) ->
+      pure $ binPredCombinator cudaLhsExpr cudaRhsExpr
+    ([cudaLhsExpr, cudaRhsExpr], [Pred, a, b]) -> return $
       if a == b
       then case name of
-        FuncName "_==_" -> pure $ CxxBinOp CxxEqual cxxLhsExpr cxxRhsExpr
-        FuncName "_!=_" -> pure $ CxxBinOp CxxNotEqual cxxLhsExpr cxxRhsExpr
+        FuncName "_==_" -> pure $ CudaBinOp CudaEqual cudaLhsExpr cudaRhsExpr
+        FuncName "_!=_" -> pure $ CudaBinOp CudaNotEqual cudaLhsExpr cudaRhsExpr
         _ -> Nothing
       else Nothing
     ([], [Pred]) -> pure constPred
     _ -> return Nothing
   where
-    constPred = case name of FuncName "FALSE" -> Just CxxFalse
-                             FuncName "TRUE"  -> Just CxxTrue
+    constPred = case name of FuncName "FALSE" -> Just CudaFalse
+                             FuncName "TRUE"  -> Just CudaTrue
                              _      -> Nothing
 
-    unPredCombinator cxxExpr =
-      let mCxxUnOp = case name of
-            FuncName "!_" -> Just CxxLogicalNot
+    unPredCombinator cudaExpr =
+      let mCudaUnOp = case name of
+            FuncName "!_" -> Just CudaLogicalNot
             _ -> Nothing
-      in mCxxUnOp >>= \op -> Just $ CxxUnOp op cxxExpr
+      in mCudaUnOp >>= \op -> Just $ CudaUnOp op cudaExpr
 
-    binPredCombinator cxxLhsExpr cxxRhsExpr =
-      let mCxxBinOp = case name of
-            FuncName "_&&_" -> Just CxxLogicalAnd
-            FuncName "_||_" -> Just CxxLogicalOr
+    binPredCombinator cudaLhsExpr cudaRhsExpr =
+      let mCudaBinOp = case name of
+            FuncName "_&&_" -> Just CudaLogicalAnd
+            FuncName "_||_" -> Just CudaLogicalOr
             _ -> Nothing
-      in mCxxBinOp >>= \op -> Just $ CxxBinOp op cxxLhsExpr cxxRhsExpr
+      in mCudaBinOp >>= \op -> Just $ CudaBinOp op cudaLhsExpr cudaRhsExpr
 
-mkCxxNamespaces :: FullyQualifiedName -> MgMonad [CxxNamespaceName]
-mkCxxNamespaces fqName = maybe (return []) split (_scopeName fqName)
+mkCudaNamespaces :: FullyQualifiedName -> MgMonad [CudaNamespaceName]
+mkCudaNamespaces fqName = maybe (return []) split (_scopeName fqName)
   where split (Name namespace nameStr) = case break (== '.') nameStr of
           ("", "") -> return []
-          (ns, "") -> (:[]) <$> mkCxxName (Name namespace ns)
-          (ns, _:rest) -> (:) <$> mkCxxName (Name namespace ns)
+          (ns, "") -> (:[]) <$> mkCudaName (Name namespace ns)
+          (ns, _:rest) -> (:) <$> mkCudaName (Name namespace ns)
                               <*> split (Name namespace rest)
