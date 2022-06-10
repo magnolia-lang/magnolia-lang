@@ -6,6 +6,7 @@ module Make (
     checkPass
   , depAnalPass
   , parsePass
+  , programCodegenCudaPass
   , programCodegenCxxPass
   , programCodegenPyPass
   )
@@ -17,6 +18,7 @@ import qualified Data.Graph as G
 import qualified Data.List as L
 import qualified Data.Map as M
 
+import Cuda.Syntax
 import Cxx.Syntax
 import Env
 import Magnolia.Check
@@ -24,6 +26,7 @@ import Magnolia.Parser
 import Magnolia.PPrint
 import Magnolia.Syntax
 import Magnolia.Util
+import MgToCuda
 import MgToCxx
 import MgToPython
 import Monad
@@ -51,6 +54,13 @@ checkPass = foldMAccumErrorsAndFail go M.empty
     go env parsedPkg = do
       tcPkg <- checkPackage env parsedPkg
       return $ M.insert (nodeName parsedPkg) tcPkg env
+
+-- | This function takes in a Map of typechecked packages, and produces, for
+-- each of them, a CUDA package containing all the programs defined in the
+-- input package.
+programCodegenCudaPass :: Env TcPackage -> MgMonad [CudaPackage]
+programCodegenCudaPass = foldMAccumErrorsAndFail
+  (\acc -> ((:acc) <$>) . mgPackageToCudaSelfContainedProgramPackage) []
 
 -- | This function takes in a Map of typechecked packages, and produces, for
 -- each of them, a C++ package containing all the programs defined in the

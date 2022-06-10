@@ -7,10 +7,10 @@ module Cuda.Syntax (
   , CudaDef (..)
   , CudaExpr (..)
   , CudaFunctionDef (..)
+  , CudaFunctionType (..)
   , CudaInclude
   , CudaLambdaCaptureDefault (..)
   , CudaModule (..)
-  , CudaModuleMemberType (..)
   , CudaNamespaceName
   , CudaObject (..)
   , CudaOutMode (..)
@@ -213,9 +213,9 @@ cudaKeywords = S.fromList
 -- corresponding Magnolia package.
 data CudaPackage =
   CudaPackage { _cudaPackageName :: Name
-             , _cudaPackageImports :: [CudaInclude]
-             , _cudaPackageModules :: [CudaModule]
-             }
+              , _cudaPackageImports :: [CudaInclude]
+              , _cudaPackageModules :: [CudaModule]
+              }
   deriving Show
 
 -- | A CUDA file inclusion. As of June 2022, CUDA is bound to C++17.
@@ -249,15 +249,15 @@ mkCudaSystemInclude = CudaInclude SystemDir
 data CudaModule =
   CudaModule { -- | The namespaces wrapping the module.
               _cudaModuleNamespaces :: [CudaNamespaceName]
-              -- | The name of the module.
-            , _cudaModuleName :: CudaModuleName
-              -- | The definitions within the module, along with access
-              -- specifiers. The set of public definitions should correspond
-              -- to the API exposed by the corresponding Magnolia module.
-              -- We assume that the definitions here are topologically sorted,
-              -- so that printing them in order yields valid CUDA.
-            , _cudaModuleDefinitions :: [(CudaAccessSpec, CudaDef)]
-            }
+               -- | The name of the module.
+             , _cudaModuleName :: CudaModuleName
+               -- | The definitions within the module, along with access
+               -- specifiers. The set of public definitions should correspond
+               -- to the API exposed by the corresponding Magnolia module.
+               -- We assume that the definitions here are topologically sorted,
+               -- so that printing them in order yields valid CUDA.
+             , _cudaModuleDefinitions :: [(CudaAccessSpec, CudaDef)]
+             }
   deriving (Eq, Show)
 
 type CudaModuleName = CudaName
@@ -278,74 +278,77 @@ data CudaDef
   | CudaInstance CudaObject
     deriving (Eq, Show)
 
-data CudaObject = CudaObject { _cudaObjectModuleMemberType :: CudaModuleMemberType
-                           , _cudaObjectType :: CudaType
-                           , _cudaObjectName :: CudaName
-                          }
-                 deriving (Eq, Ord, Show)
+data CudaObject = CudaObject
+  { _cudaObjectType :: CudaType
+  , _cudaObjectName :: CudaName
+  }
+  deriving (Eq, Ord, Show)
 
 -- TODO: is this needed?
--- | Used to differentiate static member objects and functions from members
--- dependent on struct/class instances.
-data CudaModuleMemberType = CudaStaticMember | CudaNonStaticMember
-                           deriving (Eq, Ord, Show)
+-- | Used to differentiate device, host, and global member functions.
+data CudaFunctionType = CudaFunctionType'Device
+                      | CudaFunctionType'DeviceHost
+                      | CudaFunctionType'Global
+                      | CudaFunctionType'Host
+                        deriving (Eq, Ord, Show)
 
 -- TODO: note: we do not care about trying to return const. It has become
 -- redundant according to https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#Rf-out.
 
 -- | The equivalent of a concrete Magnolia function definition in CUDA.
 data CudaFunctionDef =
-  CudaFunction { -- | Whether the function is static. This field should now be
-                -- set to 'CudaStaticMember' for every function definition.
-                _cudaFnModuleMemberType :: CudaModuleMemberType
-              , -- | Whether the function should be inlined. This field is set
-                -- to true typically when the function is a simple wrapping
-                -- over an external implementation.
-                _cudaFnIsInline :: Bool
-                -- | The name of the function.
-              , _cudaFnName :: CudaName
-                -- | The template parameters to the function. This is at least
-                -- necessary when generating CUDA code for Magnolia functions
-                -- that are overloaded only on their return type.
-              , _cudaFnTemplateParameters :: [CudaTemplateParameter]
-                -- | The parameters to the function.
-              , _cudaFnParams :: [CudaVar]
-                -- | The return type of the function.
-              , _cudaFnReturnType :: CudaType
-                -- | The body of the function.
-              , _cudaFnBody :: CudaStmtBlock
-              }
+  CudaFunction { -- | Where the function can be executed. As of June 2020, the
+                 -- expected values are 'CudaFunctionType'DeviceHost' and
+                 -- 'CudaFunctionType'Global'
+                _cudaFnType :: CudaFunctionType
+               , -- | Whether the function should be inlined. This field is set
+                 -- to true typically when the function is a simple wrapping
+                  -- over an external implementation.
+                 _cudaFnIsInline :: Bool
+                 -- | The name of the function.
+               , _cudaFnName :: CudaName
+                 -- | The template parameters to the function. This is at least
+                 -- necessary when generating CUDA code for Magnolia functions
+                 -- that are overloaded only on their return type.
+               , _cudaFnTemplateParameters :: [CudaTemplateParameter]
+                 -- | The parameters to the function.
+               , _cudaFnParams :: [CudaVar]
+                 -- | The return type of the function.
+               , _cudaFnReturnType :: CudaType
+                 -- | The body of the function.
+               , _cudaFnBody :: CudaStmtBlock
+               }
   deriving (Eq, Ord, Show)
 
 -- | A variable in CUDA.
 data CudaVar = CudaVar { _cudaVarIsConst :: Bool
-                     , _cudaVarIsRef :: Bool
-                     , _cudaVarName :: CudaName
-                     , _cudaVarType :: CudaType
-                     }
-              deriving (Eq, Ord, Show)
+                       , _cudaVarIsRef :: Bool
+                       , _cudaVarName :: CudaName
+                       , _cudaVarType :: CudaType
+                       }
+               deriving (Eq, Ord, Show)
 
 data CudaStmt = CudaStmtBlock CudaStmtBlock
-             | CudaStmtInline CudaStmtInline
-               deriving (Eq, Ord, Show)
+              | CudaStmtInline CudaStmtInline
+                deriving (Eq, Ord, Show)
 
 type CudaStmtBlock = [CudaStmt]
 
 -- | Useful inline statements in the CUDA world.
 data CudaStmtInline = -- | A variable assignment.
-                     CudaAssign CudaName CudaExpr
-                     -- | A variable declaration.
-                   | CudaVarDecl CudaVar (Maybe CudaExpr)
-                     -- | An assertion.
-                   | CudaAssert CudaCond
-                     -- | An if-then-else statement.
-                   | CudaIf CudaCond CudaStmt CudaStmt
-                     -- | A statement wrapper around an expression.
-                   | CudaExpr CudaExpr
-                     -- | A return statement.
-                   | CudaReturn (Maybe CudaExpr)
-                   | CudaSkip
-                     deriving (Eq, Ord, Show)
+                      CudaAssign CudaName CudaExpr
+                      -- | A variable declaration.
+                    | CudaVarDecl CudaVar (Maybe CudaExpr)
+                      -- | An assertion.
+                    | CudaAssert CudaCond
+                      -- | An if-then-else statement.
+                    | CudaIf CudaCond CudaStmt CudaStmt
+                      -- | A statement wrapper around an expression.
+                    | CudaExpr CudaExpr
+                      -- | A return statement.
+                    | CudaReturn (Maybe CudaExpr)
+                    | CudaSkip
+                      deriving (Eq, Ord, Show)
 
 type CudaCond = CudaExpr
 
@@ -355,20 +358,23 @@ type CudaCond = CudaExpr
 -- blocks, the environment is captured by value, whereas in stateful blocks it
 -- is captured by reference.
 data CudaExpr = -- | A call to a function.
-               CudaCall CudaName [CudaTemplateParameter] [CudaExpr]
-               -- | A call to an inline lambda definition.
-             | CudaLambdaCall CudaLambdaCaptureDefault CudaStmtBlock
-               -- | A variable access.
-             | CudaVarRef CudaName
-               -- | An if-then-else expression.
-             | CudaIfExpr CudaCond CudaExpr CudaExpr
-               -- | A unary operator wrapper for convenience.
-             | CudaUnOp CudaUnOp CudaExpr
-               -- | A binary operator wrapper for convenience.
-             | CudaBinOp CudaBinOp CudaExpr CudaExpr
-             | CudaTrue
-             | CudaFalse
-               deriving (Eq, Ord, Show)
+                CudaCall CudaName [CudaTemplateParameter] [CudaExpr]
+                -- | A call to a global method.
+              | CudaGlobalCall CudaDim3 CudaName [CudaTemplateParameter]
+                               [CudaExpr]
+                -- | A call to an inline lambda definition.
+              | CudaLambdaCall CudaLambdaCaptureDefault CudaStmtBlock
+                -- | A variable access.
+              | CudaVarRef CudaName
+                -- | An if-then-else expression.
+              | CudaIfExpr CudaCond CudaExpr CudaExpr
+                -- | A unary operator wrapper for convenience.
+              | CudaUnOp CudaUnOp CudaExpr
+                -- | A binary operator wrapper for convenience.
+              | CudaBinOp CudaBinOp CudaExpr CudaExpr
+              | CudaTrue
+              | CudaFalse
+                deriving (Eq, Ord, Show)
 
 data CudaUnOp = CudaLogicalNot
                deriving (Eq, Ord, Show)
@@ -555,29 +561,30 @@ prettyCudaModule CudaImplementation
         if not (_cudaFnIsInline cudaFn)
         then docElems <> [indent cudaIndent $
                 prettyCudaFnDef CudaImplementation
-                               (mkFunctionImplName cudaFn) <> ";" <> line]
+                                (mkFunctionImplName cudaFn) <> ";" <> line]
         else docElems
       CudaNestedModule cudaMod ->
         docElems <> [prettyCudaModule CudaImplementation
-                                     (mkNestedModuleImplName cudaMod) <> line]
+                                      (mkNestedModuleImplName cudaMod) <> line]
       CudaInstance cudaObj ->
         docElems <> [indent cudaIndent $
-          prettyCudaObject CudaImplementation (mkObjectImplName cudaObj) <> line]
+          prettyCudaObject CudaImplementation (mkObjectImplName cudaObj) <>
+            line]
       _ -> docElems
 
     mkFunctionImplName cudaFn =
       let newName = mkCudaClassMemberAccess (CudaCustomType cudaModuleName)
-                                           (_cudaFnName cudaFn)
+                                            (_cudaFnName cudaFn)
       in cudaFn { _cudaFnName = newName}
 
     mkNestedModuleImplName cudaMod =
       let newName = mkCudaClassMemberAccess (CudaCustomType cudaModuleName)
-                                           (_cudaModuleName cudaMod)
+                                            (_cudaModuleName cudaMod)
       in cudaMod { _cudaModuleName = newName }
 
     mkObjectImplName cudaObj =
       let newName = mkCudaClassMemberAccess (CudaCustomType cudaModuleName)
-                                           (_cudaObjectName cudaObj)
+                                            (_cudaObjectName cudaObj)
       in cudaObj { _cudaObjectName = newName }
 
 prettyCudaDef :: CudaOutMode -> CudaDef -> Doc ann
@@ -591,21 +598,14 @@ prettyCudaDef cudaOutMode (CudaInstance cudaObject) =
   prettyCudaObject cudaOutMode cudaObject
 
 prettyCudaObject :: CudaOutMode -> CudaObject -> Doc ann
-prettyCudaObject cudaOutMode (CudaObject cudaMemberTy ty name) =
-  let instDoc = p ty <+> p name <> ";"
-  in case cudaMemberTy of
-      CudaStaticMember -> case cudaOutMode of
-        CudaHeader -> "static" <+> instDoc
-        CudaImplementation -> instDoc
-      CudaNonStaticMember -> instDoc
+prettyCudaObject _ (CudaObject ty name) = p ty <+> p name <> ";"
 
 prettyCudaFnDef :: CudaOutMode -> CudaFunctionDef -> Doc ann
 prettyCudaFnDef cudaOutMode
-              (CudaFunction cudaModuleMemberType isInline name templateParams
-                           params retTy body) =
+              (CudaFunction cudaFnType isInline name templateParams
+                            params retTy body) =
   (if isTemplated then pTemplateParams <> line else "") <>
-  (if cudaModuleMemberType == CudaStaticMember && cudaOutMode == CudaHeader
-   then "static " else "") <>
+  prettyCudaFnType cudaFnType <>
   (if isInline then "inline " else "") <> p retTy <+> p name <> "(" <>
   hsep (punctuate comma (map p params)) <> ")" <>
   case cudaOutMode of
@@ -619,6 +619,13 @@ prettyCudaFnDef cudaOutMode
       ">"
 
     isTemplated = not (null templateParams)
+
+prettyCudaFnType :: CudaFunctionType -> Doc ann
+prettyCudaFnType cudaFnType = case cudaFnType of
+  CudaFunctionType'Device -> "__device__"
+  CudaFunctionType'DeviceHost -> "__device__ __host__"
+  CudaFunctionType'Global -> "__global__"
+  CudaFunctionType'Host -> "__host__"
 
 p :: Pretty a => a -> Doc ann
 p = pretty

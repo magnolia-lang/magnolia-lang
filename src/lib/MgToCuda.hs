@@ -349,26 +349,26 @@ mkCudaObject :: CudaName       -- ^ the data structure to instantiate
                              --   object
             -> MgMonad CudaObject
 mkCudaObject structCudaName [] targetCudaName = do
-  pure $ CudaObject CudaStaticMember (CudaCustomType structCudaName) targetCudaName
+  pure $ CudaObject (CudaCustomType structCudaName) targetCudaName
 mkCudaObject structCudaName requirements@(_:_) targetCudaName = do
   let sortedRequirements = L.sortBy orderRequirements requirements
   cudaTemplateParameters <-
     mapM (mkClassMemberCudaType . nodeName . _parameterDecl)
          sortedRequirements
-  pure $ CudaObject CudaStaticMember
-                   (CudaCustomTemplatedType structCudaName cudaTemplateParameters)
-                   targetCudaName
+  pure $ CudaObject
+            (CudaCustomTemplatedType structCudaName cudaTemplateParameters)
+            targetCudaName
 
 -- | Takes a list of overloaded function definitions, a fresh name for the
 -- module in Magnolia, and produces a function call operator module.
 cudaFnsToFunctionCallOperatorStruct :: (Name, [CudaFunctionDef])
-                                   -> MgMonad CudaModule
+                                    -> MgMonad CudaModule
 cudaFnsToFunctionCallOperatorStruct (moduleName, cudaFns) = do
   cudaModuleName <- mkCudaName moduleName
   let renamedCudaFns = map
         (\cudaFn -> cudaFn { _cudaFnName = cudaFunctionCallOperatorName
-                         , _cudaFnModuleMemberType = CudaNonStaticMember
-                         }) cudaFns
+                           , _cudaFnType = CudaFunctionType'DeviceHost
+                           }) cudaFns
   pure $ CudaModule [] cudaModuleName $
     map ((CudaPublic,) . CudaFunctionDef) renamedCudaFns
 
@@ -477,9 +477,8 @@ mgCallableDeclToCuda returnTypeOverloadsNameAliasMap extObjectsMap
       cudaParams <- mapM mgTypedVarToCuda args
       -- TODO: what do we do with guard? Carry it in and use it as a
       -- precondition test?
-      -- TODO: for now, all functions are generated as static.
-      pure $ CudaFunction CudaStaticMember True cudaFnName [] cudaParams cudaRetTy
-                         cudaBody
+      pure $ CudaFunction CudaFunctionType'DeviceHost True
+        cudaFnName [] cudaParams cudaRetTy cudaBody
   where
     mgTypedVarToCuda :: TypedVar PhCheck -> MgMonad CudaVar
     mgTypedVarToCuda (Ann _ v) = do
@@ -569,16 +568,18 @@ mgReturnTypeOverloadToCudaTemplatedDef boundNs fnName argTypes mutifiedFnName =
             -- return o;
           , CudaReturn (Just (CudaVarRef outVarCudaName))
           ]
+    -- TODO: as of June 2022, we only support __device__ __host__ functions and
+    -- __global__ methods. Methods can *not* be overloaded, and this must
+    -- therefore be a __device__ __host__ function.
     pure $
-      CudaFunction { _cudaFnModuleMemberType = CudaStaticMember
-                  , _cudaFnIsInline = True
-                  , _cudaFnName = cudaFnName
-                  , _cudaFnTemplateParameters = [cudaTemplateTy]
-                  , _cudaFnParams = cudaFnParams
-                  , _cudaFnReturnType = cudaTemplateTy
-                  , _cudaFnBody = cudaFnBody
-                  }
-
+      CudaFunction { _cudaFnType = CudaFunctionType'DeviceHost
+                   , _cudaFnIsInline = True
+                   , _cudaFnName = cudaFnName
+                   , _cudaFnTemplateParameters = [cudaTemplateTy]
+                   , _cudaFnParams = cudaFnParams
+                   , _cudaFnReturnType = cudaTemplateTy
+                   , _cudaFnBody = cudaFnBody
+                   }
 
 mgFnBodyToCudaStmtBlock :: M.Map (Name, [MType]) Name -> TcCallableDecl
                        -> MgMonad CudaStmtBlock
@@ -746,3 +747,33 @@ mkCudaNamespaces fqName = maybe (return []) split (_scopeName fqName)
           (ns, "") -> (:[]) <$> mkCudaName (Name namespace ns)
           (ns, _:rest) -> (:) <$> mkCudaName (Name namespace ns)
                               <*> split (Name namespace rest)
+
+-- | Finds the name of all the callables upon which the input callable depends.
+extractCallableDependencies :: TcCallableDecl -> MgMonad (S.Set Name)
+extractCallableDependencies (Ann (mconDeclO, _) callable) =
+  case _callableBody callable of
+    MagnoliaBody expr -> pure $ go expr
+    ExternalBody () ->
+      let ~(Just (ConcreteExternalDecl _ extDeclDetails)) = mconDeclO
+      in pure $ S.singleton (externalDeclModuleName extDeclDetails)
+    _ -> throwNonLocatedE CompilerErr $
+      "tried to extract dependencies for codegen of unimplemented " <>
+      pshow (_callableName callable)
+  where
+    go :: TcExpr -> S.Set Name
+    go (Ann _ expr) = case expr of
+      MVar {} -> noDeps
+      -- TODO: what happens if f depends on another function also named f?
+      -- Probably a bug. We ignore it for the prototype, and will fix it
+      -- later.
+      MCall name tcArgs _ -> foldl S.union (S.singleton name) $ map go tcArgs
+      MBlockExpr _ tcStmts -> foldl S.union S.empty $ NE.map go tcStmts
+      MValue tcExpr' -> go tcExpr'
+      MLet _ tcExpr' -> maybe S.empty go tcExpr'
+      MIf tcCond tcTrue tcFalse ->
+        go tcCond `S.union` go tcTrue `S.union` go tcFalse
+      MAssert tcExpr' -> go tcExpr'
+      MSkip -> noDeps
+
+    noDeps = S.empty
+

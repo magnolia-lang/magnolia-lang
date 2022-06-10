@@ -150,12 +150,16 @@ moduleDecl = label "module" $ annot $ do
         moduleExpr
   where
     cudaModuleInfo = brackets $ do
+          -- TODO: allow specifying a general prototype here to deal with
+          -- overloading.
       let funcName = FuncName <$> nameString
           dim3 = do symbol "dims"
                     symbol "="
                     parens $ do d0 <- funcName <* symbol ","
                                 d1 <- funcName <* symbol ","
                                 CudaDim3 d0 d1 <$> funcName
+          -- TODO: allow specifying a general prototype here to deal with
+          -- overloading.
           globals = do symbol "globals"
                        symbol "="
                        parens $ (ProcName <$> nameString) `sepBy` symbol ","

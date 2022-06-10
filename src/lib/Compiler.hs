@@ -24,13 +24,14 @@ import System.FilePath (takeDirectory)
 import System.IO.Error (alreadyExistsErrorType, ioeSetErrorType)
 
 import Env
+
+import Cuda.Syntax
 import Cxx.Syntax
 import Magnolia.PPrint
 import Magnolia.Syntax
 import Python.Syntax
 import Make
 import Monad
-import Cuda.Syntax (CudaPackage)
 
 data CompilerMode = ReplMode
                   | BuildMode Config FilePath
@@ -125,6 +126,15 @@ runCompileWith :: FilePath -> Config -> IO ()
 runCompileWith filePath config = case _configOutputDirectory config of
   Nothing -> fail "output directory must be set"
   Just outDir -> case (_configBackend config, _configPass config) of
+    (Cuda, SelfContainedProgramCodegenPass) -> do
+      (ecudaPkgs, errs) <- runMgMonad $ compileToCudaPackages filePath
+      case ecudaPkgs of
+        Left () -> logErrs errs >> fail "compilation failed"
+        Right cudaPkgs -> do
+          let cudaPkgsWithModules =
+                filter (not . null . _cudaPackageModules) cudaPkgs
+          createBasePath outDir
+          mapM_ (writeCudaPackage outDir) cudaPkgsWithModules
     (Cxx, SelfContainedProgramCodegenPass) -> do
       (ecxxPkgs, errs) <- runMgMonad $ compileToCxxPackages filePath
       case ecxxPkgs of
@@ -157,6 +167,31 @@ runCompileWith filePath config = case _configOutputDirectory config of
       createDirectoryIfMissing True basePath
 
     fileExistsError s = ioeSetErrorType (userError s) alreadyExistsErrorType
+
+    writeCudaPackage :: FilePath -> CudaPackage -> IO ()
+    writeCudaPackage baseOutPath cudaPkg = do
+      let pathToTargetNoExt = baseOutPath <> "/" <>
+            map (\c -> if c == '.' then '/' else c)
+                (_name $ _cudaPackageName cudaPkg)
+      -- TODO: we only need a .cuh file I believe. Remove .cu path if that
+      -- holds.
+      -- Here, we do not need to check for configuration any way. We only allow
+      -- overwriting leave files, so this operation will fail if a file exists
+      -- where we want to create a directory.
+      createDirectoryIfMissing True (takeDirectory pathToTargetNoExt)
+      let pathToHeaderFile = pathToTargetNoExt <> ".cuh"
+          pathToImplementationFile = pathToTargetNoExt <> ".cu"
+          baseIncludePath =
+            fromMaybe baseOutPath (_configImportBaseDirectory config)
+          headerFileContent = T.unpack $
+            pshowCudaPackage (Just baseIncludePath) CudaHeader cudaPkg
+          implementationFileContent = T.unpack $
+            pshowCudaPackage (Just baseIncludePath) CudaImplementation cudaPkg
+          writeFn = case _configWriteToFsBehavior config of
+            WriteIfDoesNotExist -> writeIfNotExists
+            OverwriteTargetFiles -> writeFile
+      writeFn pathToHeaderFile headerFileContent
+      writeFn pathToImplementationFile implementationFileContent
 
     writeCxxPackage :: FilePath -> CxxPackage -> IO ()
     writeCxxPackage baseOutPath cxxPkg = do
@@ -225,5 +260,3 @@ compileToCudaPackages :: FilePath -> MgMonad [CudaPackage]
 compileToCudaPackages filePath =
   depAnalPass filePath >>= parsePass >>= checkPass
   >>= programCodegenCudaPass
-
-programCodegenCudaPass = undefined
