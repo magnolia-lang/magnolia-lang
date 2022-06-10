@@ -64,7 +64,21 @@ implementation PDE = {
 
   function substep(u: Array, v: Array, u0: Array,
                    u1: Array, u2: Array) : Array =
-    u + dt()/(two(): Float) * (nu() * ((one(): Float)/dx()/dx() * (rotate(v, zero(), -one(): Offset) + rotate(v, zero(), one(): Offset) + rotate(v, one(): Axis, -one(): Offset) + rotate(v, one(): Axis, one(): Offset) + rotate(v, two(): Axis, -one(): Offset) + rotate(v, two(): Axis, one(): Offset)) - three() * (two(): Float)/dx()/dx() * u0) - (one(): Float)/(two(): Float)/dx() * ((rotate(v, zero(), one(): Offset) - rotate(v, zero(), -one(): Offset)) * u0 + (rotate(v, one(): Axis, one(): Offset) - rotate(v, one(): Axis, -one(): Offset)) * u1 + (rotate(v, two(): Axis, one(): Offset) - rotate(v, two(): Axis, -one(): Offset)) * u2));
+    u + dt()/(two(): Float) * (nu() * ((one(): Float)/dx()/dx() *
+      (rotate(v, zero(), -one(): Offset) +
+       rotate(v, zero(), one(): Offset) +
+       rotate(v, one(): Axis, -one(): Offset) +
+       rotate(v, one(): Axis, one(): Offset) +
+       rotate(v, two(): Axis, -one(): Offset) +
+       rotate(v, two(): Axis, one(): Offset)) -
+    three() * (two(): Float)/dx()/dx() * u0) -
+    (one(): Float)/(two(): Float)/dx() *
+      ((rotate(v, zero(), one(): Offset) -
+        rotate(v, zero(), -one(): Offset)) * u0 +
+       (rotate(v, one(): Axis, one(): Offset) -
+        rotate(v, one(): Axis, -one(): Offset)) * u1 +
+       (rotate(v, two(): Axis, one(): Offset) -
+        rotate(v, two(): Axis, -one(): Offset)) * u2));
 }
 
 
@@ -101,6 +115,16 @@ program PDEProgramPadded = {
   use ExtExtendPadding;
 }
 
+program PDEProgram3D = {
+  use (rewrite
+        (rewrite
+          (generate OFSpecializeSubstepGenerator in PDEProgramDNF)
+        with OFSpecializePsi 10)
+      with OFReduceMakeIxRotate 20);
+
+  use ExtNeededFns;
+}
+
 program PDEProgram3DPadded = {
   use (rewrite
         (rewrite
@@ -124,17 +148,17 @@ concept ToIxwiseGenerator = {
   type Index;
 
   function substepIx(u: Array, v: Array, u0: Array,
-            u1: Array, u2: Array, ix: Index): Float;
+                     u1: Array, u2: Array, ix: Index): Float;
 
   function substep(u: Array, v: Array, u0: Array,
-           u1: Array, u2: Array): Array;
+                   u1: Array, u2: Array): Array;
 
   function psi(ix: Index, array: Array): Float;
 
   axiom toIxwiseGenerator(u: Array, v: Array, u0: Array,
               u1: Array, u2: Array, ix: Index) {
     assert substepIx(u, v, u0, u1, u2, ix) ==
-         psi(ix, substep(u, v, u0, u1, u2));
+           psi(ix, substep(u, v, u0, u1, u2));
   }
 }
 
@@ -144,13 +168,13 @@ concept ToIxwise = {
   function substep(u: Array, v: Array, u0: Array,
            u1: Array, u2: Array): Array;
 
-  function schedule(u: Array, v: Array, u0: Array,
-                 u1: Array, u2: Array): Array;
+  function schedule(u: Array, v: Array,
+                    u0: Array, u1: Array, u2: Array): Array;
 
   axiom toIxwiseRule(u: Array, v: Array, u0: Array,
              u1: Array, u2: Array) {
     assert substep(u, v, u0, u1, u2) ==
-         schedule(u, v, u0, u1, u2);
+           schedule(u, v, u0, u1, u2);
   }
 }
 

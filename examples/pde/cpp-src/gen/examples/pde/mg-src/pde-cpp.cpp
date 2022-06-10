@@ -183,6 +183,147 @@ namespace mg_src {
 namespace pde_cpp {
 
 
+    PDEProgram3D::_two PDEProgram3D::two;
+
+
+
+    PDEProgram3D::_one PDEProgram3D::one;
+
+    constants PDEProgram3D::__constants;
+
+    array_ops<PDEProgram3D::Float> PDEProgram3D::__array_ops;
+
+
+
+    PDEProgram3D::_dt PDEProgram3D::dt;
+
+
+
+    PDEProgram3D::_dx PDEProgram3D::dx;
+
+
+
+    PDEProgram3D::_nu PDEProgram3D::nu;
+
+
+
+    PDEProgram3D::_three PDEProgram3D::three;
+
+
+
+    PDEProgram3D::_unary_sub PDEProgram3D::unary_sub;
+
+
+
+    PDEProgram3D::_rotateIx PDEProgram3D::rotateIx;
+
+
+
+    PDEProgram3D::_rotateIxPadded PDEProgram3D::rotateIxPadded;
+
+
+
+    PDEProgram3D::_zero PDEProgram3D::zero;
+
+
+
+    PDEProgram3D::_binary_sub PDEProgram3D::binary_sub;
+
+
+
+    PDEProgram3D::_div PDEProgram3D::div;
+
+
+
+    PDEProgram3D::_mul PDEProgram3D::mul;
+
+
+
+    PDEProgram3D::_refillPadding PDEProgram3D::refillPadding;
+
+
+
+    PDEProgram3D::_rotate PDEProgram3D::rotate;
+
+
+
+    PDEProgram3D::_schedule PDEProgram3D::schedule;
+
+
+
+    PDEProgram3D::_schedule3DPadded PDEProgram3D::schedule3DPadded;
+
+
+
+    PDEProgram3D::_step PDEProgram3D::step;
+
+
+
+    PDEProgram3D::_substep PDEProgram3D::substep;
+
+
+
+
+
+    PDEProgram3D::_binary_add PDEProgram3D::binary_add;
+
+
+
+    PDEProgram3D::_ix0 PDEProgram3D::ix0;
+
+
+
+    PDEProgram3D::_ix1 PDEProgram3D::ix1;
+
+
+
+    PDEProgram3D::_ix2 PDEProgram3D::ix2;
+
+
+
+    PDEProgram3D::_mkIx PDEProgram3D::mkIx;
+
+
+
+    PDEProgram3D::_psi PDEProgram3D::psi;
+
+    forall_ops<PDEProgram3D::Array, PDEProgram3D::Axis, PDEProgram3D::Float, PDEProgram3D::Index, PDEProgram3D::Nat, PDEProgram3D::Offset, PDEProgram3D::_substepIx> PDEProgram3D::__forall_ops;
+
+    PDEProgram3D::_substepIx PDEProgram3D::substepIx;
+
+
+
+
+
+    PDEProgram3D::_mod PDEProgram3D::mod;
+
+
+
+    PDEProgram3D::_shape0 PDEProgram3D::shape0;
+
+
+
+    PDEProgram3D::_shape1 PDEProgram3D::shape1;
+
+
+
+    PDEProgram3D::_shape2 PDEProgram3D::shape2;
+
+    specialize_psi_ops_2<PDEProgram3D::Array, PDEProgram3D::Axis, PDEProgram3D::Float, PDEProgram3D::Index, PDEProgram3D::Offset, PDEProgram3D::ScalarIndex, PDEProgram3D::_substepIx3D> PDEProgram3D::__specialize_psi_ops_2;
+
+    PDEProgram3D::_substepIx3D PDEProgram3D::substepIx3D;
+
+} // examples
+} // pde
+} // mg_src
+} // pde_cpp
+
+namespace examples {
+namespace pde {
+namespace mg_src {
+namespace pde_cpp {
+
+
     PDEProgram3DPadded::_two PDEProgram3DPadded::two;
 
 

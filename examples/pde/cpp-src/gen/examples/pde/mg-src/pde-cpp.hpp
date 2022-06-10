@@ -431,6 +431,317 @@ namespace examples {
 namespace pde {
 namespace mg_src {
 namespace pde_cpp {
+struct PDEProgram3D {
+    struct _two {
+        template <typename T>
+        inline T operator()() {
+            T o;
+            PDEProgram3D::two0(o);
+            return o;
+        };
+    };
+
+    static PDEProgram3D::_two two;
+    struct _one {
+        template <typename T>
+        inline T operator()() {
+            T o;
+            PDEProgram3D::one0(o);
+            return o;
+        };
+    };
+
+    static PDEProgram3D::_one one;
+private:
+    static constants __constants;
+public:
+    typedef constants::Float Float;
+    typedef array_ops<PDEProgram3D::Float>::Index Index;
+    typedef array_ops<PDEProgram3D::Float>::Nat Nat;
+    typedef array_ops<PDEProgram3D::Float>::Offset Offset;
+private:
+    static inline void one0(PDEProgram3D::Offset& o) {
+        o = __array_ops.one_offset();
+    };
+    static array_ops<PDEProgram3D::Float> __array_ops;
+public:
+    struct _dt {
+        inline PDEProgram3D::Float operator()() {
+            return __constants.dt();
+        };
+    };
+
+    static PDEProgram3D::_dt dt;
+    struct _dx {
+        inline PDEProgram3D::Float operator()() {
+            return __constants.dx();
+        };
+    };
+
+    static PDEProgram3D::_dx dx;
+    struct _nu {
+        inline PDEProgram3D::Float operator()() {
+            return __constants.nu();
+        };
+    };
+
+    static PDEProgram3D::_nu nu;
+    struct _three {
+        inline PDEProgram3D::Float operator()() {
+            return __array_ops.three_float();
+        };
+    };
+
+    static PDEProgram3D::_three three;
+    struct _unary_sub {
+        inline PDEProgram3D::Float operator()(const PDEProgram3D::Float& f) {
+            return __array_ops.unary_sub(f);
+        };
+        inline PDEProgram3D::Offset operator()(const PDEProgram3D::Offset& o) {
+            return __array_ops.unary_sub(o);
+        };
+    };
+
+    static PDEProgram3D::_unary_sub unary_sub;
+private:
+    static inline void one0(PDEProgram3D::Float& o) {
+        o = __array_ops.one_float();
+    };
+    static inline void two0(PDEProgram3D::Float& o) {
+        o = __array_ops.two_float();
+    };
+public:
+    typedef array_ops<PDEProgram3D::Float>::Axis Axis;
+    struct _rotateIx {
+        inline PDEProgram3D::Index operator()(const PDEProgram3D::Index& ix, const PDEProgram3D::Axis& axis, const PDEProgram3D::Offset& o) {
+            return __array_ops.rotateIx(ix, axis, o);
+        };
+    };
+
+    static PDEProgram3D::_rotateIx rotateIx;
+    struct _rotateIxPadded {
+        inline PDEProgram3D::Index operator()(const PDEProgram3D::Index& ix, const PDEProgram3D::Axis& axis, const PDEProgram3D::Offset& o) {
+            return __specialize_psi_ops_2.rotateIxPadded(ix, axis, o);
+        };
+    };
+
+    static PDEProgram3D::_rotateIxPadded rotateIxPadded;
+    struct _zero {
+        inline PDEProgram3D::Axis operator()() {
+            return __array_ops.zero_axis();
+        };
+    };
+
+    static PDEProgram3D::_zero zero;
+private:
+    static inline void one0(PDEProgram3D::Axis& o) {
+        o = __array_ops.one_axis();
+    };
+    static inline void two0(PDEProgram3D::Axis& o) {
+        o = __array_ops.two_axis();
+    };
+public:
+    typedef array_ops<PDEProgram3D::Float>::Array Array;
+    struct _binary_sub {
+        inline PDEProgram3D::Array operator()(const PDEProgram3D::Array& lhs, const PDEProgram3D::Array& rhs) {
+            return __array_ops.binary_sub(lhs, rhs);
+        };
+        inline PDEProgram3D::Array operator()(const PDEProgram3D::Float& lhs, const PDEProgram3D::Array& rhs) {
+            return __array_ops.binary_sub(lhs, rhs);
+        };
+        inline PDEProgram3D::Float operator()(const PDEProgram3D::Float& lhs, const PDEProgram3D::Float& rhs) {
+            return __array_ops.binary_sub(lhs, rhs);
+        };
+    };
+
+    static PDEProgram3D::_binary_sub binary_sub;
+    struct _div {
+        inline PDEProgram3D::Float operator()(const PDEProgram3D::Float& num, const PDEProgram3D::Float& den) {
+            return __array_ops.div(num, den);
+        };
+        inline PDEProgram3D::Array operator()(const PDEProgram3D::Float& num, const PDEProgram3D::Array& den) {
+            return __array_ops.div(num, den);
+        };
+    };
+
+    static PDEProgram3D::_div div;
+    struct _mul {
+        inline PDEProgram3D::Array operator()(const PDEProgram3D::Array& lhs, const PDEProgram3D::Array& rhs) {
+            return __array_ops.mul(lhs, rhs);
+        };
+        inline PDEProgram3D::Array operator()(const PDEProgram3D::Float& lhs, const PDEProgram3D::Array& rhs) {
+            return __array_ops.mul(lhs, rhs);
+        };
+        inline PDEProgram3D::Float operator()(const PDEProgram3D::Float& lhs, const PDEProgram3D::Float& rhs) {
+            return __array_ops.mul(lhs, rhs);
+        };
+    };
+
+    static PDEProgram3D::_mul mul;
+    struct _refillPadding {
+        inline void operator()(PDEProgram3D::Array& a) {
+            return __specialize_psi_ops_2.refillPadding(a);
+        };
+    };
+
+    static PDEProgram3D::_refillPadding refillPadding;
+    struct _rotate {
+        inline PDEProgram3D::Array operator()(const PDEProgram3D::Array& a, const PDEProgram3D::Axis& axis, const PDEProgram3D::Offset& o) {
+            return __array_ops.rotate(a, axis, o);
+        };
+    };
+
+    static PDEProgram3D::_rotate rotate;
+    struct _schedule {
+        inline PDEProgram3D::Array operator()(const PDEProgram3D::Array& u, const PDEProgram3D::Array& v, const PDEProgram3D::Array& u0, const PDEProgram3D::Array& u1, const PDEProgram3D::Array& u2) {
+            return __forall_ops.schedule(u, v, u0, u1, u2);
+        };
+    };
+
+    static PDEProgram3D::_schedule schedule;
+    struct _schedule3DPadded {
+        inline PDEProgram3D::Array operator()(const PDEProgram3D::Array& u, const PDEProgram3D::Array& v, const PDEProgram3D::Array& u0, const PDEProgram3D::Array& u1, const PDEProgram3D::Array& u2) {
+            return __specialize_psi_ops_2.schedule3DPadded(u, v, u0, u1, u2);
+        };
+    };
+
+    static PDEProgram3D::_schedule3DPadded schedule3DPadded;
+    struct _step {
+        inline void operator()(PDEProgram3D::Array& u0, PDEProgram3D::Array& u1, PDEProgram3D::Array& u2) {
+            PDEProgram3D::Array v0 = u0;
+            PDEProgram3D::Array v1 = u1;
+            PDEProgram3D::Array v2 = u2;
+            v0 = PDEProgram3D::schedule(v0, u0, u0, u1, u2);
+            v1 = PDEProgram3D::schedule(v1, u1, u0, u1, u2);
+            v2 = PDEProgram3D::schedule(v2, u2, u0, u1, u2);
+            u0 = PDEProgram3D::schedule(u0, v0, u0, u1, u2);
+            u1 = PDEProgram3D::schedule(u1, v1, u0, u1, u2);
+            u2 = PDEProgram3D::schedule(u2, v2, u0, u1, u2);
+        };
+    };
+
+    static PDEProgram3D::_step step;
+    struct _substep {
+        inline PDEProgram3D::Array operator()(const PDEProgram3D::Array& u, const PDEProgram3D::Array& v, const PDEProgram3D::Array& u0, const PDEProgram3D::Array& u1, const PDEProgram3D::Array& u2) {
+            return PDEProgram3D::binary_add(u, PDEProgram3D::mul(PDEProgram3D::div(PDEProgram3D::dt(), PDEProgram3D::two.operator()<Float>()), PDEProgram3D::binary_sub(PDEProgram3D::mul(PDEProgram3D::nu(), PDEProgram3D::binary_sub(PDEProgram3D::mul(PDEProgram3D::div(PDEProgram3D::div(PDEProgram3D::one.operator()<Float>(), PDEProgram3D::dx()), PDEProgram3D::dx()), PDEProgram3D::binary_add(PDEProgram3D::binary_add(PDEProgram3D::binary_add(PDEProgram3D::binary_add(PDEProgram3D::binary_add(PDEProgram3D::rotate(v, PDEProgram3D::zero(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>())), PDEProgram3D::rotate(v, PDEProgram3D::zero(), PDEProgram3D::one.operator()<Offset>())), PDEProgram3D::rotate(v, PDEProgram3D::one.operator()<Axis>(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), PDEProgram3D::rotate(v, PDEProgram3D::one.operator()<Axis>(), PDEProgram3D::one.operator()<Offset>())), PDEProgram3D::rotate(v, PDEProgram3D::two.operator()<Axis>(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), PDEProgram3D::rotate(v, PDEProgram3D::two.operator()<Axis>(), PDEProgram3D::one.operator()<Offset>()))), PDEProgram3D::mul(PDEProgram3D::div(PDEProgram3D::div(PDEProgram3D::mul(PDEProgram3D::three(), PDEProgram3D::two.operator()<Float>()), PDEProgram3D::dx()), PDEProgram3D::dx()), u0))), PDEProgram3D::mul(PDEProgram3D::div(PDEProgram3D::div(PDEProgram3D::one.operator()<Float>(), PDEProgram3D::two.operator()<Float>()), PDEProgram3D::dx()), PDEProgram3D::binary_add(PDEProgram3D::binary_add(PDEProgram3D::mul(PDEProgram3D::binary_sub(PDEProgram3D::rotate(v, PDEProgram3D::zero(), PDEProgram3D::one.operator()<Offset>()), PDEProgram3D::rotate(v, PDEProgram3D::zero(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), u0), PDEProgram3D::mul(PDEProgram3D::binary_sub(PDEProgram3D::rotate(v, PDEProgram3D::one.operator()<Axis>(), PDEProgram3D::one.operator()<Offset>()), PDEProgram3D::rotate(v, PDEProgram3D::one.operator()<Axis>(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), u1)), PDEProgram3D::mul(PDEProgram3D::binary_sub(PDEProgram3D::rotate(v, PDEProgram3D::two.operator()<Axis>(), PDEProgram3D::one.operator()<Offset>()), PDEProgram3D::rotate(v, PDEProgram3D::two.operator()<Axis>(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), u2))))));
+        };
+    };
+
+    static PDEProgram3D::_substep substep;
+    struct _substepIx {
+        inline PDEProgram3D::Float operator()(const PDEProgram3D::Array& u, const PDEProgram3D::Array& v, const PDEProgram3D::Array& u0, const PDEProgram3D::Array& u1, const PDEProgram3D::Array& u2, const PDEProgram3D::Index& ix) {
+            return PDEProgram3D::binary_add(PDEProgram3D::psi(PDEProgram3D::ix0(ix), PDEProgram3D::ix1(ix), PDEProgram3D::ix2(ix), u), PDEProgram3D::mul(PDEProgram3D::div(PDEProgram3D::dt(), PDEProgram3D::two.operator()<Float>()), PDEProgram3D::binary_sub(PDEProgram3D::mul(PDEProgram3D::nu(), PDEProgram3D::binary_sub(PDEProgram3D::mul(PDEProgram3D::div(PDEProgram3D::div(PDEProgram3D::one.operator()<Float>(), PDEProgram3D::dx()), PDEProgram3D::dx()), PDEProgram3D::binary_add(PDEProgram3D::binary_add(PDEProgram3D::binary_add(PDEProgram3D::binary_add(PDEProgram3D::binary_add(PDEProgram3D::psi(PDEProgram3D::ix0(PDEProgram3D::rotateIx(ix, PDEProgram3D::zero(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), PDEProgram3D::ix1(PDEProgram3D::rotateIx(ix, PDEProgram3D::zero(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), PDEProgram3D::ix2(PDEProgram3D::rotateIx(ix, PDEProgram3D::zero(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), v), PDEProgram3D::psi(PDEProgram3D::ix0(PDEProgram3D::rotateIx(ix, PDEProgram3D::zero(), PDEProgram3D::one.operator()<Offset>())), PDEProgram3D::ix1(PDEProgram3D::rotateIx(ix, PDEProgram3D::zero(), PDEProgram3D::one.operator()<Offset>())), PDEProgram3D::ix2(PDEProgram3D::rotateIx(ix, PDEProgram3D::zero(), PDEProgram3D::one.operator()<Offset>())), v)), PDEProgram3D::psi(PDEProgram3D::ix0(PDEProgram3D::rotateIx(ix, PDEProgram3D::one.operator()<Axis>(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), PDEProgram3D::ix1(PDEProgram3D::rotateIx(ix, PDEProgram3D::one.operator()<Axis>(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), PDEProgram3D::ix2(PDEProgram3D::rotateIx(ix, PDEProgram3D::one.operator()<Axis>(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), v)), PDEProgram3D::psi(PDEProgram3D::ix0(PDEProgram3D::rotateIx(ix, PDEProgram3D::one.operator()<Axis>(), PDEProgram3D::one.operator()<Offset>())), PDEProgram3D::ix1(PDEProgram3D::rotateIx(ix, PDEProgram3D::one.operator()<Axis>(), PDEProgram3D::one.operator()<Offset>())), PDEProgram3D::ix2(PDEProgram3D::rotateIx(ix, PDEProgram3D::one.operator()<Axis>(), PDEProgram3D::one.operator()<Offset>())), v)), PDEProgram3D::psi(PDEProgram3D::ix0(PDEProgram3D::rotateIx(ix, PDEProgram3D::two.operator()<Axis>(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), PDEProgram3D::ix1(PDEProgram3D::rotateIx(ix, PDEProgram3D::two.operator()<Axis>(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), PDEProgram3D::ix2(PDEProgram3D::rotateIx(ix, PDEProgram3D::two.operator()<Axis>(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), v)), PDEProgram3D::psi(PDEProgram3D::ix0(PDEProgram3D::rotateIx(ix, PDEProgram3D::two.operator()<Axis>(), PDEProgram3D::one.operator()<Offset>())), PDEProgram3D::ix1(PDEProgram3D::rotateIx(ix, PDEProgram3D::two.operator()<Axis>(), PDEProgram3D::one.operator()<Offset>())), PDEProgram3D::ix2(PDEProgram3D::rotateIx(ix, PDEProgram3D::two.operator()<Axis>(), PDEProgram3D::one.operator()<Offset>())), v))), PDEProgram3D::mul(PDEProgram3D::div(PDEProgram3D::div(PDEProgram3D::mul(PDEProgram3D::three(), PDEProgram3D::two.operator()<Float>()), PDEProgram3D::dx()), PDEProgram3D::dx()), PDEProgram3D::psi(PDEProgram3D::ix0(ix), PDEProgram3D::ix1(ix), PDEProgram3D::ix2(ix), u0)))), PDEProgram3D::mul(PDEProgram3D::div(PDEProgram3D::div(PDEProgram3D::one.operator()<Float>(), PDEProgram3D::two.operator()<Float>()), PDEProgram3D::dx()), PDEProgram3D::binary_add(PDEProgram3D::binary_add(PDEProgram3D::mul(PDEProgram3D::binary_sub(PDEProgram3D::psi(PDEProgram3D::ix0(PDEProgram3D::rotateIx(ix, PDEProgram3D::zero(), PDEProgram3D::one.operator()<Offset>())), PDEProgram3D::ix1(PDEProgram3D::rotateIx(ix, PDEProgram3D::zero(), PDEProgram3D::one.operator()<Offset>())), PDEProgram3D::ix2(PDEProgram3D::rotateIx(ix, PDEProgram3D::zero(), PDEProgram3D::one.operator()<Offset>())), v), PDEProgram3D::psi(PDEProgram3D::ix0(PDEProgram3D::rotateIx(ix, PDEProgram3D::zero(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), PDEProgram3D::ix1(PDEProgram3D::rotateIx(ix, PDEProgram3D::zero(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), PDEProgram3D::ix2(PDEProgram3D::rotateIx(ix, PDEProgram3D::zero(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), v)), PDEProgram3D::psi(PDEProgram3D::ix0(ix), PDEProgram3D::ix1(ix), PDEProgram3D::ix2(ix), u0)), PDEProgram3D::mul(PDEProgram3D::binary_sub(PDEProgram3D::psi(PDEProgram3D::ix0(PDEProgram3D::rotateIx(ix, PDEProgram3D::one.operator()<Axis>(), PDEProgram3D::one.operator()<Offset>())), PDEProgram3D::ix1(PDEProgram3D::rotateIx(ix, PDEProgram3D::one.operator()<Axis>(), PDEProgram3D::one.operator()<Offset>())), PDEProgram3D::ix2(PDEProgram3D::rotateIx(ix, PDEProgram3D::one.operator()<Axis>(), PDEProgram3D::one.operator()<Offset>())), v), PDEProgram3D::psi(PDEProgram3D::ix0(PDEProgram3D::rotateIx(ix, PDEProgram3D::one.operator()<Axis>(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), PDEProgram3D::ix1(PDEProgram3D::rotateIx(ix, PDEProgram3D::one.operator()<Axis>(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), PDEProgram3D::ix2(PDEProgram3D::rotateIx(ix, PDEProgram3D::one.operator()<Axis>(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), v)), PDEProgram3D::psi(PDEProgram3D::ix0(ix), PDEProgram3D::ix1(ix), PDEProgram3D::ix2(ix), u1))), PDEProgram3D::mul(PDEProgram3D::binary_sub(PDEProgram3D::psi(PDEProgram3D::ix0(PDEProgram3D::rotateIx(ix, PDEProgram3D::two.operator()<Axis>(), PDEProgram3D::one.operator()<Offset>())), PDEProgram3D::ix1(PDEProgram3D::rotateIx(ix, PDEProgram3D::two.operator()<Axis>(), PDEProgram3D::one.operator()<Offset>())), PDEProgram3D::ix2(PDEProgram3D::rotateIx(ix, PDEProgram3D::two.operator()<Axis>(), PDEProgram3D::one.operator()<Offset>())), v), PDEProgram3D::psi(PDEProgram3D::ix0(PDEProgram3D::rotateIx(ix, PDEProgram3D::two.operator()<Axis>(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), PDEProgram3D::ix1(PDEProgram3D::rotateIx(ix, PDEProgram3D::two.operator()<Axis>(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), PDEProgram3D::ix2(PDEProgram3D::rotateIx(ix, PDEProgram3D::two.operator()<Axis>(), PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>()))), v)), PDEProgram3D::psi(PDEProgram3D::ix0(ix), PDEProgram3D::ix1(ix), PDEProgram3D::ix2(ix), u2)))))));
+        };
+    };
+
+    typedef forall_ops<PDEProgram3D::Array, PDEProgram3D::Axis, PDEProgram3D::Float, PDEProgram3D::Index, PDEProgram3D::Nat, PDEProgram3D::Offset, PDEProgram3D::_substepIx>::ScalarIndex ScalarIndex;
+    struct _binary_add {
+        inline PDEProgram3D::ScalarIndex operator()(const PDEProgram3D::ScalarIndex& six, const PDEProgram3D::Offset& o) {
+            return __specialize_psi_ops_2.binary_add(six, o);
+        };
+        inline PDEProgram3D::Array operator()(const PDEProgram3D::Array& lhs, const PDEProgram3D::Array& rhs) {
+            return __array_ops.binary_add(lhs, rhs);
+        };
+        inline PDEProgram3D::Array operator()(const PDEProgram3D::Float& lhs, const PDEProgram3D::Array& rhs) {
+            return __array_ops.binary_add(lhs, rhs);
+        };
+        inline PDEProgram3D::Float operator()(const PDEProgram3D::Float& lhs, const PDEProgram3D::Float& rhs) {
+            return __array_ops.binary_add(lhs, rhs);
+        };
+    };
+
+    static PDEProgram3D::_binary_add binary_add;
+    struct _ix0 {
+        inline PDEProgram3D::ScalarIndex operator()(const PDEProgram3D::Index& ix) {
+            return __specialize_psi_ops_2.ix0(ix);
+        };
+    };
+
+    static PDEProgram3D::_ix0 ix0;
+    struct _ix1 {
+        inline PDEProgram3D::ScalarIndex operator()(const PDEProgram3D::Index& ix) {
+            return __specialize_psi_ops_2.ix1(ix);
+        };
+    };
+
+    static PDEProgram3D::_ix1 ix1;
+    struct _ix2 {
+        inline PDEProgram3D::ScalarIndex operator()(const PDEProgram3D::Index& ix) {
+            return __specialize_psi_ops_2.ix2(ix);
+        };
+    };
+
+    static PDEProgram3D::_ix2 ix2;
+    struct _mkIx {
+        inline PDEProgram3D::Index operator()(const PDEProgram3D::ScalarIndex& a, const PDEProgram3D::ScalarIndex& b, const PDEProgram3D::ScalarIndex& c) {
+            return __forall_ops.mkIx(a, b, c);
+        };
+    };
+
+    static PDEProgram3D::_mkIx mkIx;
+    struct _psi {
+        inline PDEProgram3D::Float operator()(const PDEProgram3D::ScalarIndex& i, const PDEProgram3D::ScalarIndex& j, const PDEProgram3D::ScalarIndex& k, const PDEProgram3D::Array& a) {
+            return __specialize_psi_ops_2.psi(i, j, k, a);
+        };
+        inline PDEProgram3D::Float operator()(const PDEProgram3D::Index& ix, const PDEProgram3D::Array& array) {
+            return __array_ops.psi(ix, array);
+        };
+    };
+
+    static PDEProgram3D::_psi psi;
+private:
+    static forall_ops<PDEProgram3D::Array, PDEProgram3D::Axis, PDEProgram3D::Float, PDEProgram3D::Index, PDEProgram3D::Nat, PDEProgram3D::Offset, PDEProgram3D::_substepIx> __forall_ops;
+public:
+    static PDEProgram3D::_substepIx substepIx;
+    struct _substepIx3D {
+        inline PDEProgram3D::Float operator()(const PDEProgram3D::Array& u, const PDEProgram3D::Array& v, const PDEProgram3D::Array& u0, const PDEProgram3D::Array& u1, const PDEProgram3D::Array& u2, const PDEProgram3D::ScalarIndex& i, const PDEProgram3D::ScalarIndex& j, const PDEProgram3D::ScalarIndex& k) {
+            return PDEProgram3D::binary_add(PDEProgram3D::psi(i, j, k, u), PDEProgram3D::mul(PDEProgram3D::div(PDEProgram3D::dt(), PDEProgram3D::two.operator()<Float>()), PDEProgram3D::binary_sub(PDEProgram3D::mul(PDEProgram3D::nu(), PDEProgram3D::binary_sub(PDEProgram3D::mul(PDEProgram3D::div(PDEProgram3D::div(PDEProgram3D::one.operator()<Float>(), PDEProgram3D::dx()), PDEProgram3D::dx()), PDEProgram3D::binary_add(PDEProgram3D::binary_add(PDEProgram3D::binary_add(PDEProgram3D::binary_add(PDEProgram3D::binary_add(PDEProgram3D::psi(PDEProgram3D::mod(PDEProgram3D::binary_add(i, PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>())), PDEProgram3D::shape0()), j, k, v), PDEProgram3D::psi(PDEProgram3D::mod(PDEProgram3D::binary_add(i, PDEProgram3D::one.operator()<Offset>()), PDEProgram3D::shape0()), j, k, v)), PDEProgram3D::psi(i, PDEProgram3D::mod(PDEProgram3D::binary_add(j, PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>())), PDEProgram3D::shape1()), k, v)), PDEProgram3D::psi(i, PDEProgram3D::mod(PDEProgram3D::binary_add(j, PDEProgram3D::one.operator()<Offset>()), PDEProgram3D::shape1()), k, v)), PDEProgram3D::psi(i, j, PDEProgram3D::mod(PDEProgram3D::binary_add(k, PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>())), PDEProgram3D::shape2()), v)), PDEProgram3D::psi(i, j, PDEProgram3D::mod(PDEProgram3D::binary_add(k, PDEProgram3D::one.operator()<Offset>()), PDEProgram3D::shape2()), v))), PDEProgram3D::mul(PDEProgram3D::div(PDEProgram3D::div(PDEProgram3D::mul(PDEProgram3D::three(), PDEProgram3D::two.operator()<Float>()), PDEProgram3D::dx()), PDEProgram3D::dx()), PDEProgram3D::psi(i, j, k, u0)))), PDEProgram3D::mul(PDEProgram3D::div(PDEProgram3D::div(PDEProgram3D::one.operator()<Float>(), PDEProgram3D::two.operator()<Float>()), PDEProgram3D::dx()), PDEProgram3D::binary_add(PDEProgram3D::binary_add(PDEProgram3D::mul(PDEProgram3D::binary_sub(PDEProgram3D::psi(PDEProgram3D::mod(PDEProgram3D::binary_add(i, PDEProgram3D::one.operator()<Offset>()), PDEProgram3D::shape0()), j, k, v), PDEProgram3D::psi(PDEProgram3D::mod(PDEProgram3D::binary_add(i, PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>())), PDEProgram3D::shape0()), j, k, v)), PDEProgram3D::psi(i, j, k, u0)), PDEProgram3D::mul(PDEProgram3D::binary_sub(PDEProgram3D::psi(i, PDEProgram3D::mod(PDEProgram3D::binary_add(j, PDEProgram3D::one.operator()<Offset>()), PDEProgram3D::shape1()), k, v), PDEProgram3D::psi(i, PDEProgram3D::mod(PDEProgram3D::binary_add(j, PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>())), PDEProgram3D::shape1()), k, v)), PDEProgram3D::psi(i, j, k, u1))), PDEProgram3D::mul(PDEProgram3D::binary_sub(PDEProgram3D::psi(i, j, PDEProgram3D::mod(PDEProgram3D::binary_add(k, PDEProgram3D::one.operator()<Offset>()), PDEProgram3D::shape2()), v), PDEProgram3D::psi(i, j, PDEProgram3D::mod(PDEProgram3D::binary_add(k, PDEProgram3D::unary_sub(PDEProgram3D::one.operator()<Offset>())), PDEProgram3D::shape2()), v)), PDEProgram3D::psi(i, j, k, u2)))))));
+        };
+    };
+
+    typedef specialize_psi_ops_2<PDEProgram3D::Array, PDEProgram3D::Axis, PDEProgram3D::Float, PDEProgram3D::Index, PDEProgram3D::Offset, PDEProgram3D::ScalarIndex, PDEProgram3D::_substepIx3D>::AxisLength AxisLength;
+    struct _mod {
+        inline PDEProgram3D::ScalarIndex operator()(const PDEProgram3D::ScalarIndex& six, const PDEProgram3D::AxisLength& sc) {
+            return __specialize_psi_ops_2.mod(six, sc);
+        };
+    };
+
+    static PDEProgram3D::_mod mod;
+    struct _shape0 {
+        inline PDEProgram3D::AxisLength operator()() {
+            return __specialize_psi_ops_2.shape0();
+        };
+    };
+
+    static PDEProgram3D::_shape0 shape0;
+    struct _shape1 {
+        inline PDEProgram3D::AxisLength operator()() {
+            return __specialize_psi_ops_2.shape1();
+        };
+    };
+
+    static PDEProgram3D::_shape1 shape1;
+    struct _shape2 {
+        inline PDEProgram3D::AxisLength operator()() {
+            return __specialize_psi_ops_2.shape2();
+        };
+    };
+
+    static PDEProgram3D::_shape2 shape2;
+private:
+    static specialize_psi_ops_2<PDEProgram3D::Array, PDEProgram3D::Axis, PDEProgram3D::Float, PDEProgram3D::Index, PDEProgram3D::Offset, PDEProgram3D::ScalarIndex, PDEProgram3D::_substepIx3D> __specialize_psi_ops_2;
+public:
+    static PDEProgram3D::_substepIx3D substepIx3D;
+};
+} // examples
+} // pde
+} // mg_src
+} // pde_cpp
+
+namespace examples {
+namespace pde {
+namespace mg_src {
+namespace pde_cpp {
 struct PDEProgram3DPadded {
     struct _two {
         template <typename T>
