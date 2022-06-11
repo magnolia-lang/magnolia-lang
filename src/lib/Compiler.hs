@@ -180,18 +180,14 @@ runCompileWith filePath config = case _configOutputDirectory config of
       -- where we want to create a directory.
       createDirectoryIfMissing True (takeDirectory pathToTargetNoExt)
       let pathToHeaderFile = pathToTargetNoExt <> ".cuh"
-          pathToImplementationFile = pathToTargetNoExt <> ".cu"
           baseIncludePath =
             fromMaybe baseOutPath (_configImportBaseDirectory config)
           headerFileContent = T.unpack $
-            pshowCudaPackage (Just baseIncludePath) CudaHeader cudaPkg
-          implementationFileContent = T.unpack $
-            pshowCudaPackage (Just baseIncludePath) CudaImplementation cudaPkg
+            pshowCudaPackage (Just baseIncludePath) cudaPkg
           writeFn = case _configWriteToFsBehavior config of
             WriteIfDoesNotExist -> writeIfNotExists
             OverwriteTargetFiles -> writeFile
       writeFn pathToHeaderFile headerFileContent
-      writeFn pathToImplementationFile implementationFileContent
 
     writeCxxPackage :: FilePath -> CxxPackage -> IO ()
     writeCxxPackage baseOutPath cxxPkg = do

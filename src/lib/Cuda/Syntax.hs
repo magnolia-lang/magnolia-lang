@@ -13,7 +13,6 @@ module Cuda.Syntax (
   , CudaModule (..)
   , CudaNamespaceName
   , CudaObject (..)
-  , CudaOutMode (..)
   , CudaPackage (..)
   , CudaStmt (..)
   , CudaStmtBlock
@@ -24,6 +23,7 @@ module Cuda.Syntax (
     -- * name-related utils
   , CudaName
   , cudaFunctionCallOperatorName
+  , getCudaObjectName
   , mkClassMemberCudaType
   , mkCudaClassMemberAccess
   , mkCudaName
@@ -73,6 +73,12 @@ data CudaName = -- | A simple identifier
                -- | An identifier corresponding to a member of an object
              | CudaObjectMemberName CudaName CudaName
                deriving (Eq, Ord, Show)
+
+-- | Returns the name of the object in a 'CudaName' in the case when it
+-- represents an access to a member of an object.
+getCudaObjectName :: CudaName -> Maybe CudaName
+getCudaObjectName (CudaObjectMemberName cuObjName _) = Just cuObjName
+getCudaObjectName _ = Nothing
 
 -- | The CUDA name corresponding to the function call operator \'operator()\'.
 cudaFunctionCallOperatorName :: CudaName
@@ -230,14 +236,14 @@ data CudaHeaderLoc = RelativeMgDir | RelativeCudaDir | SystemDir
 -- ".hpp" suffix.
 mkCudaRelativeMgIncludeFromName :: Name -> CudaInclude
 mkCudaRelativeMgIncludeFromName =
-  CudaInclude RelativeMgDir . (<> ".hpp") .
+  CudaInclude RelativeMgDir . (<> ".cuh") .
     map (\c -> if c == '.' then '/' else c) . _name
 
 -- | Exposed constructor for CUDA relative includes of external CUDA files.
 -- Includes created through this constructor are given a ".hpp" suffix.
 mkCudaRelativeCudaIncludeFromPath :: FilePath -> CudaInclude
 mkCudaRelativeCudaIncludeFromPath =
-  CudaInclude RelativeCudaDir . (<> ".hpp") .
+  CudaInclude RelativeCudaDir . (<> ".cuh") .
     map (\c -> if c == '.' then '/' else c)
 
 -- | Exposed constructor for CUDA system includes. No suffix is appended to the
@@ -470,34 +476,27 @@ extractAllChildrenNamesFromCudaClassTypeInCudaType classTy cudaTy =
 
 -- TODO: PrettyCuda might be a bit wrong if we need to carry around a path.
 
--- | An enumeration of possible output modes for the PrettyCuda typeclass.
-data CudaOutMode = CudaHeader | CudaImplementation
-                  deriving Eq
-
 -- | Pretty prints a CUDA package as an implementation file or as a header
 -- file. A base path can be provided to derive includes correctly.
-pprintCudaPackage :: Maybe FilePath -> CudaOutMode -> CudaPackage -> IO ()
-pprintCudaPackage mbasePath cudaOutMode =
+pprintCudaPackage :: Maybe FilePath -> CudaPackage -> IO ()
+pprintCudaPackage mbasePath =
   TIO.putStrLn . renderLazy . layoutPretty defaultLayoutOptions .
-    prettyCudaPackage mbasePath cudaOutMode
+    prettyCudaPackage mbasePath
 
 -- | Pretty formats a CUDA package as an implementation file or as a header
 -- file. A base path can be provided to derive includes correctly.
-pshowCudaPackage :: Maybe FilePath -> CudaOutMode -> CudaPackage -> T.Text
-pshowCudaPackage mbasePath cudaOutMode =
-  render . prettyCudaPackage mbasePath cudaOutMode
+pshowCudaPackage :: Maybe FilePath -> CudaPackage -> T.Text
+pshowCudaPackage mbasePath =
+  render . prettyCudaPackage mbasePath
 
 -- | Pretty formats a CUDA package as an implementation file or as a header
 -- file. A base path can be provided to derive includes correctly.
-prettyCudaPackage :: Maybe FilePath -> CudaOutMode -> CudaPackage -> Doc ann
-prettyCudaPackage mbasePath cudaOutMode (CudaPackage pkgName includes modules) =
-    (case cudaOutMode of
-      CudaHeader -> "#pragma once" <> line <> line <>
-        vsep (map (prettyCudaInclude mbasePath) $ L.sort includes)
-      CudaImplementation -> prettyCudaInclude mbasePath
-        (mkCudaRelativeMgIncludeFromName pkgName)) <> line <> line <>
-    vsep (map ((line <>) . prettyCudaModule cudaOutMode) $
-      L.sortOn _cudaModuleName modules)
+prettyCudaPackage :: Maybe FilePath -> CudaPackage -> Doc ann
+prettyCudaPackage mbasePath (CudaPackage pkgName includes modules) =
+  "#pragma once" <> line <> line <>
+  vsep (map (prettyCudaInclude mbasePath) $ L.sort includes) <> line <> line <>
+  vsep (map ((line <>) . prettyCudaModule) $
+    L.sortOn _cudaModuleName modules)
 
 prettyCudaInclude :: Maybe FilePath -> CudaInclude -> Doc ann
 prettyCudaInclude mbasePath (CudaInclude headerLoc filePath) =
@@ -510,8 +509,8 @@ prettyCudaInclude mbasePath (CudaInclude headerLoc filePath) =
     SystemDir -> langle <> p filePath <> rangle
 
 -- TODO: pretty print template parameters
-prettyCudaModule :: CudaOutMode -> CudaModule -> Doc ann
-prettyCudaModule CudaHeader (CudaModule namespaces name defs) =
+prettyCudaModule :: CudaModule -> Doc ann
+prettyCudaModule (CudaModule namespaces name defs) =
   -- 1. Open namespaces
   ifNotNull namespaces
     (align (vsep (map (\ns -> "namespace" <+> p ns <+> "{") namespaces)) <>
@@ -528,91 +527,38 @@ prettyCudaModule CudaHeader (CudaModule namespaces name defs) =
 
     prettyDef prevAccessSpec accessSpec def =
       if accessSpec == prevAccessSpec
-      then indent cudaIndent (prettyCudaDef CudaHeader def)
+      then indent cudaIndent (prettyCudaDef def)
       else p accessSpec <> colon <> line <>
-        indent cudaIndent (prettyCudaDef CudaHeader def)
+        indent cudaIndent (prettyCudaDef def)
 
     prettyStructContent _ [] = ""
     prettyStructContent prevAccessSpec ((accessSpec, def):ds) =
       prettyDef prevAccessSpec accessSpec def <> line <>
       prettyStructContent accessSpec ds
 
-prettyCudaModule CudaImplementation
-                (CudaModule namespaces cudaModuleName
-                           defsWithAccessSpec) =
-  -- 1. Open namespaces
-  ifNotNull namespaces
-  (align (vsep (map (\ns -> "namespace" <+> p ns <+> "{") namespaces)) <>
-   line) <>
-  -- 2. Build class / struct definitions
-  implDoc <>
-  -- 3. Close namespaces if some were opened
-  ifNotNull namespaces
-    (line <> align (vsep (map (\ns -> "} //" <+> p ns) namespaces)))
-  where
-    ifNotNull es doc = if not (null es) then doc else ""
-
-    (_, defs) = unzip defsWithAccessSpec
-
-    implDoc = vsep $ foldl accDifferentDefsInOrder [] defs
-
-    accDifferentDefsInOrder docElems cudaDef = case cudaDef of
-      CudaFunctionDef cudaFn ->
-        if not (_cudaFnIsInline cudaFn)
-        then docElems <> [indent cudaIndent $
-                prettyCudaFnDef CudaImplementation
-                                (mkFunctionImplName cudaFn) <> ";" <> line]
-        else docElems
-      CudaNestedModule cudaMod ->
-        docElems <> [prettyCudaModule CudaImplementation
-                                      (mkNestedModuleImplName cudaMod) <> line]
-      CudaInstance cudaObj ->
-        docElems <> [indent cudaIndent $
-          prettyCudaObject CudaImplementation (mkObjectImplName cudaObj) <>
-            line]
-      _ -> docElems
-
-    mkFunctionImplName cudaFn =
-      let newName = mkCudaClassMemberAccess (CudaCustomType cudaModuleName)
-                                            (_cudaFnName cudaFn)
-      in cudaFn { _cudaFnName = newName}
-
-    mkNestedModuleImplName cudaMod =
-      let newName = mkCudaClassMemberAccess (CudaCustomType cudaModuleName)
-                                            (_cudaModuleName cudaMod)
-      in cudaMod { _cudaModuleName = newName }
-
-    mkObjectImplName cudaObj =
-      let newName = mkCudaClassMemberAccess (CudaCustomType cudaModuleName)
-                                            (_cudaObjectName cudaObj)
-      in cudaObj { _cudaObjectName = newName }
-
-prettyCudaDef :: CudaOutMode -> CudaDef -> Doc ann
-prettyCudaDef _ (CudaTypeDef sourceName targetName) =
+prettyCudaDef :: CudaDef -> Doc ann
+prettyCudaDef (CudaTypeDef sourceName targetName) =
     "typedef" <+> p sourceName <+> p targetName <> ";"
-prettyCudaDef cudaOutMode (CudaFunctionDef fn) =
-  prettyCudaFnDef cudaOutMode fn <> ";"
-prettyCudaDef cudaOutMode (CudaNestedModule cudaMod) =
-  prettyCudaModule cudaOutMode cudaMod
-prettyCudaDef cudaOutMode (CudaInstance cudaObject) =
-  prettyCudaObject cudaOutMode cudaObject
+prettyCudaDef (CudaFunctionDef fn) =
+  prettyCudaFnDef fn <> ";"
+prettyCudaDef (CudaNestedModule cudaMod) =
+  prettyCudaModule cudaMod
+prettyCudaDef (CudaInstance cudaObject) =
+  prettyCudaObject cudaObject
 
-prettyCudaObject :: CudaOutMode -> CudaObject -> Doc ann
-prettyCudaObject _ (CudaObject ty name) = p ty <+> p name <> ";"
+prettyCudaObject :: CudaObject -> Doc ann
+prettyCudaObject (CudaObject ty name) = p ty <+> p name <> ";"
 
-prettyCudaFnDef :: CudaOutMode -> CudaFunctionDef -> Doc ann
-prettyCudaFnDef cudaOutMode
-              (CudaFunction cudaFnType isInline name templateParams
-                            params retTy body) =
+prettyCudaFnDef :: CudaFunctionDef -> Doc ann
+prettyCudaFnDef (CudaFunction cudaFnType isInline name templateParams
+                              params retTy body) =
   (if isTemplated then pTemplateParams <> line else "") <>
-  prettyCudaFnType cudaFnType <>
+  prettyCudaFnType cudaFnType <+>
   (if isInline then "inline " else "") <> p retTy <+> p name <> "(" <>
   hsep (punctuate comma (map p params)) <> ")" <>
-  case cudaOutMode of
-    CudaHeader -> if isTemplated || isInline
-                  then " " <> p (CudaStmtBlock body)
-                  else ""
-    CudaImplementation -> " " <> p (CudaStmtBlock body)
+  if isTemplated || isInline
+  then " " <> p (CudaStmtBlock body)
+  else ""
   where
     pTemplateParams = "template <" <>
       hsep (punctuate comma (map (("typename" <+>) . p) templateParams)) <>
