@@ -72,6 +72,7 @@ example-names = bgl \
                 fizzbuzz \
                 while_loop
 
+# TODO: add also CUDA examples here
 build-examples: build-examples-cpp build-examples-py
 
 build-examples-cpp: $(example-names:%=build-example-cpp-%)
@@ -83,6 +84,11 @@ build-example-cpp-%: examples/% build
 	make -C $<
 	@# TODO(bchetioui): add hashtree tool to check generation is a noop
 	@# TODO(bchetioui): add to CI
+
+build-example-cuda-%: examples/% build
+	$(eval example-name := $(notdir $<))
+	$(mgn) build --output-directory $</cuda-src/gen --backend cuda --base-import-directory gen --allow-overwrite $</mg-src/$(example-name)-cuda.mg
+	make cuda -C $<
 
 build-example-py-%: examples/% build
 	$(eval example-name := $(notdir $<))
