@@ -867,4 +867,13 @@ extractCudaFnObjectDependencies (CudaFunction _ _ _ _ _ _ body) = goBlock body
     noDeps = S.empty
 
     memitDep :: CudaName -> S.Set CudaName
-    memitDep = maybe S.empty S.singleton . getCudaObjectName
+    memitDep cuName = case getCudaObjectName cuName of
+      Nothing -> S.empty
+      Just cuObjName -> case getCudaMemberName cuName of
+        Nothing -> unreachable -- should not happen
+        Just cuMemberName ->
+          if cuMemberName == cudaFunctionCallOperatorName
+          then S.empty
+          else S.singleton cuObjName
+
+    unreachable = error "unreachable code in memitDep (MgToCuda)"

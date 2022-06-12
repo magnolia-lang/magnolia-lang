@@ -23,6 +23,7 @@ module Cuda.Syntax (
     -- * name-related utils
   , CudaName
   , cudaFunctionCallOperatorName
+  , getCudaMemberName
   , getCudaObjectName
   , mkClassMemberCudaType
   , mkCudaClassMemberAccess
@@ -79,6 +80,15 @@ data CudaName = -- | A simple identifier
 getCudaObjectName :: CudaName -> Maybe CudaName
 getCudaObjectName (CudaObjectMemberName cuObjName _) = Just cuObjName
 getCudaObjectName _ = Nothing
+
+-- | Returns the name of the member in a 'CudaName' in the case when it
+-- represents an access to a member of a class, namespace, or object.
+getCudaMemberName :: CudaName -> Maybe CudaName
+getCudaMemberName cuName = case cuName of
+  CudaName _ -> Nothing
+  CudaClassMemberName _ cuMemberName -> Just cuMemberName
+  CudaNamespaceMemberName _ cuMemberName -> Just cuMemberName
+  CudaObjectMemberName _ cuMemberName -> Just cuMemberName
 
 -- | The CUDA name corresponding to the function call operator \'operator()\'.
 cudaFunctionCallOperatorName :: CudaName
