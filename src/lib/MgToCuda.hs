@@ -9,6 +9,7 @@ module MgToCuda (
 
 import Control.Monad.State
 --import Control.Monad.IO.Class (liftIO)
+import Data.Either (isLeft, isRight)
 import qualified Data.Graph as G
 import qualified Data.List as L
 import qualified Data.List.NonEmpty as NE
@@ -126,7 +127,7 @@ mgProgramToCudaProgramModule
             callableNamesAndFreshFnOpStructNames' <-
               mapM (\callableName -> (callableName,) <$>
                       freshFunctionClassNameM callableName)
-                    uniqueCallableNames
+                    (uniqueCallableNames <> returnTypeOverloadsNames')
 
             pure ( returnTypeOverloadsNames'
                  , extObjectsNames'
@@ -191,46 +192,52 @@ mgProgramToCudaProgramModule
     let extObjectsCudaNameRMap = M.fromList $
           map swap $ M.toList extObjectsCudaNameMap
         -- TODO: do better at error reporting
-        checkExtObjectExists e = case M.lookup e extObjectsCudaNameRMap of
-          Nothing -> throwNonLocatedE CompilerErr $
-            pshow e <> " is not an external object"
-          Just einfo -> pure einfo
+        extractDependencyInfo e = case M.lookup e extObjectsCudaNameRMap of
+          Nothing -> do
+            -- Must be a generated object! These have no requirements.
+            -- TODO: this name generation is not fool-proof. We will
+            -- have to fix it after the deadline. It should work in
+            -- most cases, i.e., when Magnolia code doesn't expose
+            -- two identifiers of the form \'_<x>\' and \'<x>\'.
+            Right <$> mkCudaCanonicalClassName e
+          Just (structName, requirements) ->
+            Left . (, requirements) <$> mkCudaName structName
         mkFunctionCallOperatorStruct (callableName, fnOpStructName) = do
           cudaCallableName <- mkCudaName callableName
           let mustKeep cudaFnDef = _cudaFnName cudaFnDef == cudaCallableName
               (cudaFns', cudaFns'MgDecls) = unzip $
                 filter (mustKeep . fst) (zip cudaFnDefs callableDecls)
               cudaFns = cudaFns' <> filter mustKeep cudaFnTemplatedDefs
-              extObjectDependencyNames = foldl S.union S.empty $
+              objectDependenciesNames = foldl S.union S.empty $
                 map extractCudaFnObjectDependencies cudaFns
-          localDependencies <- do
-            allDependencies <- S.toList <$>
-              foldM (\acc callable -> S.union acc <$>
-                extractCallableDependencies callable) S.empty cudaFns'MgDecls
-            allDependencies'Cuda <- zip allDependencies <$>
-              mapM (\n -> mkCudaName $ n { _name = tail $ _name n })
-                allDependencies
-            -- TODO: not sure if this is necessary anymore
-            pure . S.fromList . map fst $ filter (\(_, cudaName) ->
-              not $ cudaName `S.member` extObjectDependencyNames) allDependencies'Cuda
-          extObjectDependencies <-
-            let extObjectDependencyNames' = S.toList extObjectDependencyNames in
-              flip zip extObjectDependencyNames' <$>
-                mapM checkExtObjectExists extObjectDependencyNames'
-          extObjectDependenciesDefs <-
-            mapMAccumErrors (\((structName, requirements), targetCudaName) ->do
+              toClassName = mkCudaName . TypeName . ("_" <>) . _name
+          localDependencies <- S.fromList <$>
+            (foldM (\acc callable -> S.union acc <$>
+              extractCallableDependencies callable) S.empty cudaFns'MgDecls >>=
+             mapM (\n -> (,) <$> toClassName n <*> mkCudaName n) . S.toList)
+          (objectDependencies, localDependencies') <- do
+            let objectDependenciesNames' = S.toList objectDependenciesNames
+            dependenciesInfos <- flip zip objectDependenciesNames' <$>
+              mapM extractDependencyInfo objectDependenciesNames'
+            pure ( map (\(~(Left l, r)) -> (l, r)) $
+                       filter (isLeft . fst) dependenciesInfos
+                 , S.fromList $ map (\(~(Right l, r)) -> (l, r)) $
+                    filter (isRight . fst) dependenciesInfos
+                 )
+          objectDependenciesDefs <-
+            mapMAccumErrors (\((cudaStructName, requirements),
+                               targetCudaName) -> do
                 fnOpReqs <- mapM toFnOpStructRequirement requirements
-                cudaStructName <- mkCudaName structName
                 CudaInstance <$> mkCudaObject cudaStructName fnOpReqs
                                               targetCudaName)
-              extObjectDependencies
+              objectDependencies
           case cudaFns of
             [] -> throwNonLocatedE CompilerErr $
               "could not find any CUDA generated implementation for " <>
               pshow cudaCallableName <> " but function generation supposedly " <>
               "succeeded"
             _ -> cudaFnsToFunctionCallOperatorStruct (fnOpStructName, cudaFns)
-              extObjectDependenciesDefs localDependencies
+              objectDependenciesDefs (localDependencies `S.union` localDependencies')
 
     cudaFnCallOperatorStructs <- foldM
       (\acc (cn, sn) -> (:acc) <$> mkFunctionCallOperatorStruct (cn, sn)) []
@@ -244,15 +251,15 @@ mgProgramToCudaProgramModule
         mkCudaObject cudaStructName [] callableCudaName)
       callableNamesAndFreshFnOpStructNames
 
-    cudaGeneratedFunctions <- do
-      uniqueCallableCudaNames <-
-        S.fromList <$> mapM mkCudaName uniqueCallableNames
-      pure $ filter (\f -> _cudaFnName f `S.notMember` uniqueCallableCudaNames)
-                    cudaFnDefs
+    -- cudaGeneratedFunctions <- do
+    --   uniqueCallableCudaNames <-
+    --     S.fromList <$> mapM mkCudaName uniqueCallableNames
+    --   pure $ filter (\f -> _cudaFnName f `S.notMember` uniqueCallableCudaNames)
+    --                 cudaFnDefs
 
     let allDefs =
-             map (CudaPrivate,) (  extObjectsDef
-                               <> map CudaFunctionDef cudaGeneratedFunctions)
+             map (CudaPrivate,) extObjectsDef
+                              -- <> map CudaFunctionDef cudaGeneratedFunctions)
           <> map (CudaPublic,) (  map (uncurry CudaTypeDef) cudaTyDefs
                               <> map CudaInstance cudaFnCallOperatorObjects
                               <> map CudaNestedModule cudaFnCallOperatorStructs)
@@ -398,7 +405,8 @@ mkCudaObject cudaStructName requirements@(_:_) targetCudaName = do
 -- TODO: out of sync comment
 cudaFnsToFunctionCallOperatorStruct :: (Name, [CudaFunctionDef])
                                     -> [CudaDef]
-                                    -> S.Set Name
+                                    -> S.Set (CudaName, CudaName)
+                                    -- ^ (class name, object name)
                                     -> MgMonad CudaModule
 cudaFnsToFunctionCallOperatorStruct (moduleName, cudaFns) extObjDefs deps = do
   cudaModuleName <- mkCudaName moduleName
@@ -408,11 +416,11 @@ cudaFnsToFunctionCallOperatorStruct (moduleName, cudaFns) extObjDefs deps = do
                            }) cudaFns
   cudaParentModuleName <- getParentModuleName >>= mkCudaType
   cudaDependencyObjects <- mapM
-    (\name -> do
-        cudaStructName <- mkCudaClassMemberAccess cudaParentModuleName <$>
-          mkCudaName (TypeName ("_" <> _name name))
-        mkCudaName name >>= mkCudaObject cudaStructName [])
-    (S.toList deps)
+    (\(className, objectName) ->
+        let cudaStructName = mkCudaClassMemberAccess cudaParentModuleName
+              className
+        in mkCudaObject cudaStructName [] objectName)
+      (S.toList deps)
   pure $ CudaModule [] cudaModuleName $
     map ((CudaPrivate,) . CudaInstance) cudaDependencyObjects <>
     map (CudaPrivate,) extObjDefs <>
@@ -589,28 +597,27 @@ mgReturnTypeOverloadToCudaTemplatedDef boundNs fnName argTypes mutifiedFnName =
     cudaTemplateTy <- mkCudaType templateTyName
     outVarCudaName <- mkCudaName $ freshName (VarName "o") boundNs
     cudaFnName <- mkCudaName fnName
-    mutifiedFnCudaName <- mkCudaName mutifiedFnName
-    moduleCudaName <- getParentModuleName >>= mkCudaName
-    let fullyQualifiedMutifiedFnCudaName = mkCudaClassMemberAccess
-          (CudaCustomType moduleCudaName) mutifiedFnCudaName
+    mutifiedStructCudaName <- mkCudaName mutifiedFnName
+    let mutifiedFnCudaName = mkCudaObjectMemberAccess mutifiedStructCudaName
+          cudaFunctionCallOperatorName
         cudaOutVar = CudaVar { _cudaVarIsConst = False
-                           , _cudaVarIsRef = False
-                           , _cudaVarName = outVarCudaName
-                           , _cudaVarType = cudaTemplateTy
+                             , _cudaVarIsRef = False
+                             , _cudaVarName = outVarCudaName
+                             , _cudaVarType = cudaTemplateTy
                            }
         cudaFnParams = zipWith (\cudaArgName cudaArgTy ->
           CudaVar { _cudaVarIsConst = True
-                 , _cudaVarIsRef = True
-                 , _cudaVarName = cudaArgName
-                 , _cudaVarType = cudaArgTy
-                 } ) argCudaNames cudaArgTypes
+                  , _cudaVarIsRef = True
+                  , _cudaVarName = cudaArgName
+                  , _cudaVarType = cudaArgTy
+                  } ) argCudaNames cudaArgTypes
         cudaCallArgExprs = map CudaVarRef (argCudaNames <> [outVarCudaName])
         cudaFnBody = map CudaStmtInline
           [ -- T o;
             CudaVarDecl cudaOutVar Nothing
             -- mutifiedFnName(a0, a1, …, an, &o);
-          , CudaExpr (CudaCall fullyQualifiedMutifiedFnCudaName []
-                             cudaCallArgExprs)
+          , CudaExpr (CudaCall mutifiedFnCudaName []
+                               cudaCallArgExprs)
             -- return o;
           , CudaReturn (Just (CudaVarRef outVarCudaName))
           ]
@@ -867,13 +874,4 @@ extractCudaFnObjectDependencies (CudaFunction _ _ _ _ _ _ body) = goBlock body
     noDeps = S.empty
 
     memitDep :: CudaName -> S.Set CudaName
-    memitDep cuName = case getCudaObjectName cuName of
-      Nothing -> S.empty
-      Just cuObjName -> case getCudaMemberName cuName of
-        Nothing -> unreachable -- should not happen
-        Just cuMemberName ->
-          if cuMemberName == cudaFunctionCallOperatorName
-          then S.empty
-          else S.singleton cuObjName
-
-    unreachable = error "unreachable code in memitDep (MgToCuda)"
+    memitDep cuName = maybe S.empty S.singleton (getCudaObjectName cuName)

@@ -26,6 +26,7 @@ module Cuda.Syntax (
   , getCudaMemberName
   , getCudaObjectName
   , mkClassMemberCudaType
+  , mkCudaCanonicalClassName
   , mkCudaClassMemberAccess
   , mkCudaName
   , mkCudaNamespaceMemberAccess
@@ -173,6 +174,15 @@ mkCudaClassMemberAccess = CudaClassMemberName
 -- | Given two CUDA names N1 and N2, builds the CUDA name N1.N2.
 mkCudaObjectMemberAccess :: CudaName -> CudaName -> CudaName
 mkCudaObjectMemberAccess = CudaObjectMemberName
+
+-- | Gives the class name corresponding to the name of the object passed as a
+-- parameter following the codegen convention (prefixing the name by an
+-- underscore).
+mkCudaCanonicalClassName :: CudaName -> MgMonad CudaName
+mkCudaCanonicalClassName cudaName = case cudaName of
+  CudaName s -> pure . CudaName $ "_" <> s
+  _ -> throwNonLocatedE CompilerErr $ "unexpected name " <> pshow cudaName <>
+    " in mkCudaCanonicalClassName"
 
 -- | Makes a CudaType out of a Magnolia type. The function may throw an error
 -- if the name of the type can not be used in CUDA.
