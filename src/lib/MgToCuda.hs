@@ -472,6 +472,7 @@ mgCallableDeclToCuda returnTypeOverloadsNameAliasMap extObjectsMap
         extStructName = externalDeclModuleName extDeclDetails
         extCallableName = externalDeclElementName extDeclDetails
         extOrderedRequirements = orderedRequirements extDeclDetails
+        extModuleInfo = externalDeclModuleInfo extDeclDetails
         mgFnWithDummyMgBody = Ann (conDeclO, absDeclOs) $
           (_elem mgFn) { _callableBody = MagnoliaBody (Ann retTy MSkip) }
     cudaExtObjectName <-
@@ -493,18 +494,29 @@ mgCallableDeclToCuda returnTypeOverloadsNameAliasMap extObjectsMap
     -- value but instead assign it to the last variable in the argument list.
     -- Checking if mutification occur can be done by checking if the length
     -- of the argument list changed.
-    let cudaBody = if length (_cudaFnParams cudaFnDef) == length args
-                  then -- We synthesize a return function call
-                    [ CudaStmtInline . CudaReturn . Just $
-                      CudaCall cudaExtFnName [] cudaArgExprs
-                    ]
-                  else
-                    let outVarCudaName =
-                          _cudaVarName $ last (_cudaFnParams cudaFnDef)
-                    in [ CudaStmtInline $
-                           CudaAssign outVarCudaName
-                                     (CudaCall cudaExtFnName [] cudaArgExprs)
-                       ]
+    let ~(ExternalModuleInfo'Cuda globalDims globalNames) = extModuleInfo
+        cudaBody =
+          if length (_cudaFnParams cudaFnDef) == length args
+          then -- We synthesize a return function call
+            if extCallableName `S.member` S.fromList globalNames
+            then
+              [ CudaStmtInline . CudaReturn . Just $
+                  CudaGlobalCall globalDims cudaExtFnName [] cudaArgExprs
+              ]
+            else
+              [ CudaStmtInline . CudaReturn . Just $
+                  CudaCall cudaExtFnName [] cudaArgExprs
+              ]
+          else
+            -- __global__ functions are always procedures in Magnolia,
+            -- and can never be mutified. We do not need to handle them
+            -- in this case.
+            let outVarCudaName =
+                  _cudaVarName $ last (_cudaFnParams cudaFnDef)
+            in [ CudaStmtInline $
+                  CudaAssign outVarCudaName
+                              (CudaCall cudaExtFnName [] cudaArgExprs)
+              ]
     pure cudaFnDef {_cudaFnBody = cudaBody }
 
 

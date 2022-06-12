@@ -635,6 +635,7 @@ instance Pretty CudaExpr where
         [] -> ""
         _  -> "<" <> hsep (punctuate comma (map p templateParams)) <> ">") <>
       "(" <> hsep (punctuate comma (map p args)) <> ")"
+    CudaGlobalCall dims name templateParams args -> undefined
     CudaLambdaCall captureDefault stmts -> p captureDefault <> "()" <+> "{" <>
       line <> indent cudaIndent (vsep (map p stmts)) <> line <>
       "}()"

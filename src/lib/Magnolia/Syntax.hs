@@ -303,6 +303,7 @@ data MModuleExpr' p =
 -- | 'ExternalModuleInfo' stores the information of which functions within the
 -- module determine the dimensions with which to make kernel calls when needed,
 -- as well as a list of global procedures.
+-- TODO: make the list of names for CUDA a set?
 data ExternalModuleInfo = ExternalModuleInfo'Cxx
                         | ExternalModuleInfo'Cuda CudaDim3 [Name]
                         | ExternalModuleInfo'JavaScript
