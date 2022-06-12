@@ -131,6 +131,7 @@ program PDEProgram3D = {
 
   //use ExtScalarIndex;
   use ExtAxisLength;
+  use ExtSpecializeBase;
   use ExtNeededFns[schedule3DPadded => schedule3D];
 }
 
@@ -148,6 +149,7 @@ program PDEProgram3DPadded = {
       with OFEliminateModuloPadding 10);
 
   use ExtAxisLength;
+  use ExtSpecializeBase;
   use ExtNeededFns; // pulling in psi, schedules, etc...
 }
 
@@ -217,6 +219,20 @@ implementation ExtAxisLength = external CUDA [dims=(a,b,c), globals=()]
   function shape2(): AxisLength;
 }
 
+implementation ExtSpecializeBase = external CUDA [dims=(a,b,c), globals=()]
+  base.specialize_base {
+
+  require type ScalarIndex;
+  require type Array;
+  require type Float;
+
+  function psi(i: ScalarIndex,
+               j: ScalarIndex,
+               k: ScalarIndex,
+               a: Array): Float;
+}
+
+
 implementation ExtNeededFns = external CUDA [dims=(a,b,c), globals=()] base.specialize_psi_ops_2 {
   require type Axis;
   require type Index;
@@ -232,10 +248,6 @@ implementation ExtNeededFns = external CUDA [dims=(a,b,c), globals=()] base.spec
   procedure refillPadding(upd a: Array);
 
   /* OF Specialize Psi extension */
-  function psi(i: ScalarIndex,
-               j: ScalarIndex,
-               k: ScalarIndex,
-               a: Array): Float;
   function schedule3DPadded(u: Array,
                             v: Array,
                             u0: Array,
@@ -262,24 +274,31 @@ implementation ExtExtendMissingBypass = external CUDA [dims=(a,b,c), globals=()]
                  u0: Array, u1: Array, u2: Array): Array;
 }
 
-implementation ExtExtendPadding = external CUDA [dims=(a,b,c), globals=()] base.forall_ops {
-  require type Float;
-  require type Array;
-  require type Offset;
-  require type Axis;
-  require type Index;
-  require type Nat;
+implementation ExtExtendPadding = {
+  use (external CUDA [dims=(a,b,c), globals=()] base.forall_ops {
+    require type Float;
+    require type Array;
+    require type Offset;
+    require type Axis;
+    require type Index;
+    require type Nat;
 
-  require function substepIx(u: Array, v: Array,
-                u0: Array, u1: Array, u2: Array, ix: Index): Float;
+    /* OF Pad extension */
+    procedure refillPadding(upd a: Array);
+    function rotateIxPadded(ix: Index, axis: Axis, offset: Offset): Index;
+  });
 
-  /* OF Pad extension */
-  procedure refillPadding(upd a: Array);
+  use (external CUDA [dims=(a,b,c), globals=()] base.padded_schedule {
+    require type Array;
+    require type Index;
+    require type Float;
 
-  function schedulePadded(u: Array, v: Array,
-    u0: Array, u1: Array, u2: Array): Array;
+    require function substepIx(u: Array, v: Array,
+                               u0: Array, u1: Array, u2: Array, ix: Index): Float;
 
-  function rotateIxPadded(ix: Index, axis: Axis, offset: Offset): Index;
+    function schedulePadded(u: Array, v: Array,
+                            u0: Array, u1: Array, u2: Array): Array;
+  });
 }
 
 implementation ExtExtendLiftCores = external CUDA [dims=(a,b,c), globals=()] base.forall_ops {
