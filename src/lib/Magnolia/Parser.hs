@@ -133,45 +133,11 @@ moduleDecl = label "module" $ annot $ do
   typ <- moduleType
   name <- ModName <$> nameString
   symbol "="
-  (src, mexternal) <- withSrc $ option Nothing (do
-    keyword ExternalKW
-    extModuleInfo <- choice
-      [ keyword CxxKW >> return ExternalModuleInfo'Cxx
-      , keyword JavaScriptKW >> return ExternalModuleInfo'JavaScript
-      , keyword PythonKW >> return ExternalModuleInfo'Python
-      , keyword CudaKW >> cudaModuleInfo
-      ]
-    externalFqn <- fullyQualifiedName NSPackage NSModule
-    return $ Just (extModuleInfo, externalFqn))
-  case mexternal of
-    Nothing -> MModule typ name <$> moduleExpr
-    Just (extModuleInfo, externalFqn) ->
-      MModule typ name . Ann src . MModuleExternal extModuleInfo externalFqn <$>
-        moduleExpr
-  where
-    cudaModuleInfo = brackets $ do
-          -- TODO: allow specifying a general prototype here to deal with
-          -- overloading.
-      let funcName = FuncName <$> nameString
-          dim3 = do symbol "dims"
-                    symbol "="
-                    parens $ do d0 <- funcName <* symbol ","
-                                d1 <- funcName <* symbol ","
-                                CudaDim3 d0 d1 <$> funcName
-          -- TODO: allow specifying a general prototype here to deal with
-          -- overloading.
-          globals = do symbol "globals"
-                       symbol "="
-                       parens $ (ProcName <$> nameString) `sepBy` symbol ","
-      (dim3', globals') <- choice [ (,) <$> (dim3 <* symbol ",") <*> globals
-                                  , (swap .) . (,) <$>
-                                    (globals <* symbol ",") <*> dim3
-                                  ]
-      pure $ ExternalModuleInfo'Cuda dim3' globals'
+  MModule typ name <$> moduleExpr
 
 moduleExpr :: Parser ParsedModuleExpr
 moduleExpr = parens moduleExpr <|> moduleDef <|> moduleCastedRef
-          <|> moduleTransformedRef <|> moduleRef
+          <|> moduleTransformedRef <|> moduleExternal <|> moduleRef
 
 moduleType :: Parser MModuleType
 moduleType = (keyword ConceptKW >> return Concept)
@@ -213,6 +179,38 @@ moduleCastedRef = annot $ do
   refName <- parens $ fullyQualifiedName NSPackage NSModule
   renamingBlocks <- many renamingBlock
   return $ MModuleAsSignature refName renamingBlocks
+
+moduleExternal :: Parser ParsedModuleExpr
+moduleExternal = annot $ do
+  keyword ExternalKW
+  extModuleInfo <- choice
+    [ keyword CxxKW >> return ExternalModuleInfo'Cxx
+    , keyword JavaScriptKW >> return ExternalModuleInfo'JavaScript
+    , keyword PythonKW >> return ExternalModuleInfo'Python
+    , keyword CudaKW >> cudaModuleInfo
+    ]
+  externalFqn <- fullyQualifiedName NSPackage NSModule
+  MModuleExternal extModuleInfo externalFqn <$> moduleExpr
+  where
+    cudaModuleInfo = brackets $ do
+          -- TODO: allow specifying a general prototype here to deal with
+          -- overloading.
+      let funcName = FuncName <$> nameString
+          dim3 = do symbol "dims"
+                    symbol "="
+                    parens $ do d0 <- funcName <* symbol ","
+                                d1 <- funcName <* symbol ","
+                                CudaDim3 d0 d1 <$> funcName
+          -- TODO: allow specifying a general prototype here to deal with
+          -- overloading.
+          globals = do symbol "globals"
+                       symbol "="
+                       parens $ (ProcName <$> nameString) `sepBy` symbol ","
+      (dim3', globals') <- choice [ (,) <$> (dim3 <* symbol ",") <*> globals
+                                  , (swap .) . (,) <$>
+                                    (globals <* symbol ",") <*> dim3
+                                  ]
+      pure $ ExternalModuleInfo'Cuda dim3' globals'
 
 moduleDef :: Parser ParsedModuleExpr
 moduleDef = annot $ do
