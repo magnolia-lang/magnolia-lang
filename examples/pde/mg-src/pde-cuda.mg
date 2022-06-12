@@ -113,7 +113,6 @@ program PDEProgramDNF = {
 
 program PDEProgramPadded = {
   use (rewrite PDEProgramDNF with OFPad 1);
-  use ExtScalarIndex;
   use ExtExtendPadding;
 }
 
@@ -233,7 +232,7 @@ implementation ExtSpecializeBase = external CUDA [dims=(a,b,c), globals=()]
 }
 
 
-implementation ExtNeededFns = external CUDA [dims=(a,b,c), globals=()] base.specialize_psi_ops_2 {
+implementation ExtNeededFns = external CUDA [dims=(a,b,c), globals=(schedule3DPadded)] base.specialize_psi_ops_2 {
   require type Axis;
   require type Index;
   require type Offset;
@@ -259,7 +258,7 @@ implementation ExtNeededFns = external CUDA [dims=(a,b,c), globals=()] base.spec
 }
 
 
-implementation ExtExtendMissingBypass = external CUDA [dims=(a,b,c), globals=()] base.forall_ops {
+implementation ExtExtendMissingBypass = external CUDA [dims=(a,b,c), globals=(schedule)] base.forall_ops {
   require type Float;
   require type Array;
   require type Offset;
@@ -275,20 +274,18 @@ implementation ExtExtendMissingBypass = external CUDA [dims=(a,b,c), globals=()]
 }
 
 implementation ExtExtendPadding = {
-  use (external CUDA [dims=(a,b,c), globals=()] base.forall_ops {
-    require type Float;
+  use (external CUDA [dims=(a,b,c), globals=()] base.padding_extension {
     require type Array;
     require type Offset;
     require type Axis;
     require type Index;
-    require type Nat;
 
     /* OF Pad extension */
     procedure refillPadding(upd a: Array);
     function rotateIxPadded(ix: Index, axis: Axis, offset: Offset): Index;
   });
 
-  use (external CUDA [dims=(a,b,c), globals=()] base.padded_schedule {
+  use (external CUDA [dims=(a,b,c), globals=(schedulePadded)] base.padded_schedule {
     require type Array;
     require type Index;
     require type Float;
@@ -301,7 +298,7 @@ implementation ExtExtendPadding = {
   });
 }
 
-implementation ExtExtendLiftCores = external CUDA [dims=(a,b,c), globals=()] base.forall_ops {
+implementation ExtExtendLiftCores = external CUDA [dims=(a,b,c), globals=(schedule_threaded)] base.forall_ops2 {
   require type Float;
   require type Array;
   require type Offset;

@@ -9,26 +9,6 @@ namespace pde {
 namespace mg_src {
 namespace pde_cuda {
 struct BasePDEProgram {
-    struct _two {
-        template <typename T>
-        __device__ __host__ inline T operator()() {
-            T o;
-            BasePDEProgram::two0(o);
-            return o;
-        };
-    };
-
-    BasePDEProgram::_two two;
-    struct _one {
-        template <typename T>
-        __device__ __host__ inline T operator()() {
-            T o;
-            BasePDEProgram::one0(o);
-            return o;
-        };
-    };
-
-    BasePDEProgram::_one one;
 private:
     constants __constants;
 public:
@@ -37,9 +17,6 @@ public:
     typedef array_ops<BasePDEProgram::Float>::Nat Nat;
     typedef array_ops<BasePDEProgram::Float>::Offset Offset;
 private:
-    __device__ __host__ inline void one0(BasePDEProgram::Offset& o) {
-        o = __array_ops.one_offset();
-    };
     array_ops<BasePDEProgram::Float> __array_ops;
 public:
     struct _dt {
@@ -95,15 +72,36 @@ public:
     };
 
     BasePDEProgram::_unary_sub unary_sub;
-private:
-    __device__ __host__ inline void one0(BasePDEProgram::Float& o) {
-        o = __array_ops.one_float();
-    };
-    __device__ __host__ inline void two0(BasePDEProgram::Float& o) {
-        o = __array_ops.two_float();
-    };
-public:
     typedef array_ops<BasePDEProgram::Float>::Axis Axis;
+    struct _one0 {
+    private:
+        array_ops<BasePDEProgram::Float> __array_ops;
+    public:
+        __device__ __host__ inline void operator()(BasePDEProgram::Axis& o) {
+            o = __array_ops.one_axis();
+        };
+        __device__ __host__ inline void operator()(BasePDEProgram::Float& o) {
+            o = __array_ops.one_float();
+        };
+        __device__ __host__ inline void operator()(BasePDEProgram::Offset& o) {
+            o = __array_ops.one_offset();
+        };
+    };
+
+    struct _one {
+    private:
+        BasePDEProgram::_one0 one0;
+    public:
+        template <typename T>
+        __device__ __host__ inline T operator()() {
+            T o;
+            one0.operator()(o);
+            return o;
+        };
+    };
+
+    BasePDEProgram::_one one;
+    BasePDEProgram::_one0 one0;
     struct _rotateIx {
     private:
         array_ops<BasePDEProgram::Float> __array_ops;
@@ -114,6 +112,32 @@ public:
     };
 
     BasePDEProgram::_rotateIx rotateIx;
+    struct _two0 {
+    private:
+        array_ops<BasePDEProgram::Float> __array_ops;
+    public:
+        __device__ __host__ inline void operator()(BasePDEProgram::Axis& o) {
+            o = __array_ops.two_axis();
+        };
+        __device__ __host__ inline void operator()(BasePDEProgram::Float& o) {
+            o = __array_ops.two_float();
+        };
+    };
+
+    struct _two {
+    private:
+        BasePDEProgram::_two0 two0;
+    public:
+        template <typename T>
+        __device__ __host__ inline T operator()() {
+            T o;
+            two0.operator()(o);
+            return o;
+        };
+    };
+
+    BasePDEProgram::_two two;
+    BasePDEProgram::_two0 two0;
     struct _zero {
     private:
         array_ops<BasePDEProgram::Float> __array_ops;
@@ -124,14 +148,6 @@ public:
     };
 
     BasePDEProgram::_zero zero;
-private:
-    __device__ __host__ inline void one0(BasePDEProgram::Axis& o) {
-        o = __array_ops.one_axis();
-    };
-    __device__ __host__ inline void two0(BasePDEProgram::Axis& o) {
-        o = __array_ops.two_axis();
-    };
-public:
     typedef array_ops<BasePDEProgram::Float>::Array Array;
     struct _binary_add {
     private:
@@ -216,12 +232,12 @@ public:
     BasePDEProgram::_rotate rotate;
     struct _substep {
     private:
-        BasePDEProgram::_mul mul;
         BasePDEProgram::_binary_add binary_add;
-        BasePDEProgram::_div div;
         BasePDEProgram::_binary_sub binary_sub;
+        BasePDEProgram::_div div;
         BasePDEProgram::_dt dt;
         BasePDEProgram::_dx dx;
+        BasePDEProgram::_mul mul;
         BasePDEProgram::_nu nu;
         BasePDEProgram::_one one;
         BasePDEProgram::_rotate rotate;
@@ -265,26 +281,6 @@ namespace pde {
 namespace mg_src {
 namespace pde_cuda {
 struct PDEProgram3D {
-    struct _two {
-        template <typename T>
-        __device__ __host__ inline T operator()() {
-            T o;
-            PDEProgram3D::two0(o);
-            return o;
-        };
-    };
-
-    PDEProgram3D::_two two;
-    struct _one {
-        template <typename T>
-        __device__ __host__ inline T operator()() {
-            T o;
-            PDEProgram3D::one0(o);
-            return o;
-        };
-    };
-
-    PDEProgram3D::_one one;
 private:
     constants __constants;
 public:
@@ -338,9 +334,6 @@ public:
     typedef array_ops<PDEProgram3D::Float>::Offset Offset;
 private:
     axis_length<PDEProgram3D::Offset, PDEProgram3D::ScalarIndex> __axis_length;
-    __device__ __host__ inline void one0(PDEProgram3D::Offset& o) {
-        o = __array_ops.one_offset();
-    };
     array_ops<PDEProgram3D::Float> __array_ops;
 public:
     struct _dt {
@@ -396,14 +389,6 @@ public:
     };
 
     PDEProgram3D::_unary_sub unary_sub;
-private:
-    __device__ __host__ inline void one0(PDEProgram3D::Float& o) {
-        o = __array_ops.one_float();
-    };
-    __device__ __host__ inline void two0(PDEProgram3D::Float& o) {
-        o = __array_ops.two_float();
-    };
-public:
     typedef axis_length<PDEProgram3D::Offset, PDEProgram3D::ScalarIndex>::AxisLength AxisLength;
     struct _mod {
     private:
@@ -446,6 +431,35 @@ public:
 
     PDEProgram3D::_shape2 shape2;
     typedef array_ops<PDEProgram3D::Float>::Axis Axis;
+    struct _one0 {
+    private:
+        array_ops<PDEProgram3D::Float> __array_ops;
+    public:
+        __device__ __host__ inline void operator()(PDEProgram3D::Offset& o) {
+            o = __array_ops.one_offset();
+        };
+        __device__ __host__ inline void operator()(PDEProgram3D::Float& o) {
+            o = __array_ops.one_float();
+        };
+        __device__ __host__ inline void operator()(PDEProgram3D::Axis& o) {
+            o = __array_ops.one_axis();
+        };
+    };
+
+    struct _one {
+    private:
+        PDEProgram3D::_one0 one0;
+    public:
+        template <typename T>
+        __device__ __host__ inline T operator()() {
+            T o;
+            one0.operator()(o);
+            return o;
+        };
+    };
+
+    PDEProgram3D::_one one;
+    PDEProgram3D::_one0 one0;
     struct _rotateIx {
     private:
         array_ops<PDEProgram3D::Float> __array_ops;
@@ -456,6 +470,32 @@ public:
     };
 
     PDEProgram3D::_rotateIx rotateIx;
+    struct _two0 {
+    private:
+        array_ops<PDEProgram3D::Float> __array_ops;
+    public:
+        __device__ __host__ inline void operator()(PDEProgram3D::Float& o) {
+            o = __array_ops.two_float();
+        };
+        __device__ __host__ inline void operator()(PDEProgram3D::Axis& o) {
+            o = __array_ops.two_axis();
+        };
+    };
+
+    struct _two {
+    private:
+        PDEProgram3D::_two0 two0;
+    public:
+        template <typename T>
+        __device__ __host__ inline T operator()() {
+            T o;
+            two0.operator()(o);
+            return o;
+        };
+    };
+
+    PDEProgram3D::_two two;
+    PDEProgram3D::_two0 two0;
     struct _zero {
     private:
         array_ops<PDEProgram3D::Float> __array_ops;
@@ -466,14 +506,6 @@ public:
     };
 
     PDEProgram3D::_zero zero;
-private:
-    __device__ __host__ inline void one0(PDEProgram3D::Axis& o) {
-        o = __array_ops.one_axis();
-    };
-    __device__ __host__ inline void two0(PDEProgram3D::Axis& o) {
-        o = __array_ops.two_axis();
-    };
-public:
     typedef array_ops<PDEProgram3D::Float>::Array Array;
 private:
     specialize_base<PDEProgram3D::Array, PDEProgram3D::Float, PDEProgram3D::ScalarIndex> __specialize_base;
@@ -569,12 +601,12 @@ public:
     PDEProgram3D::_rotate rotate;
     struct _substep {
     private:
-        PDEProgram3D::_mul mul;
         PDEProgram3D::_binary_add binary_add;
-        PDEProgram3D::_div div;
         PDEProgram3D::_binary_sub binary_sub;
+        PDEProgram3D::_div div;
         PDEProgram3D::_dt dt;
         PDEProgram3D::_dx dx;
+        PDEProgram3D::_mul mul;
         PDEProgram3D::_nu nu;
         PDEProgram3D::_one one;
         PDEProgram3D::_rotate rotate;
@@ -591,15 +623,15 @@ public:
     PDEProgram3D::_substep substep;
     struct _substepIx {
     private:
-        PDEProgram3D::_mul mul;
         PDEProgram3D::_binary_add binary_add;
-        PDEProgram3D::_div div;
         PDEProgram3D::_binary_sub binary_sub;
+        PDEProgram3D::_div div;
         PDEProgram3D::_dt dt;
         PDEProgram3D::_dx dx;
         PDEProgram3D::_ix0 ix0;
         PDEProgram3D::_ix1 ix1;
         PDEProgram3D::_ix2 ix2;
+        PDEProgram3D::_mul mul;
         PDEProgram3D::_nu nu;
         PDEProgram3D::_one one;
         PDEProgram3D::_psi psi;
@@ -630,13 +662,13 @@ public:
     PDEProgram3D::_substepIx substepIx;
     struct _substepIx3D {
     private:
-        PDEProgram3D::_mod mod;
-        PDEProgram3D::_mul mul;
         PDEProgram3D::_binary_add binary_add;
-        PDEProgram3D::_div div;
         PDEProgram3D::_binary_sub binary_sub;
+        PDEProgram3D::_div div;
         PDEProgram3D::_dt dt;
         PDEProgram3D::_dx dx;
+        PDEProgram3D::_mod mod;
+        PDEProgram3D::_mul mul;
         PDEProgram3D::_nu nu;
         PDEProgram3D::_one one;
         PDEProgram3D::_psi psi;
@@ -715,26 +747,6 @@ namespace pde {
 namespace mg_src {
 namespace pde_cuda {
 struct PDEProgram3DPadded {
-    struct _two {
-        template <typename T>
-        __device__ __host__ inline T operator()() {
-            T o;
-            PDEProgram3DPadded::two0(o);
-            return o;
-        };
-    };
-
-    PDEProgram3DPadded::_two two;
-    struct _one {
-        template <typename T>
-        __device__ __host__ inline T operator()() {
-            T o;
-            PDEProgram3DPadded::one0(o);
-            return o;
-        };
-    };
-
-    PDEProgram3DPadded::_one one;
 private:
     constants __constants;
 public:
@@ -788,9 +800,6 @@ public:
     typedef array_ops<PDEProgram3DPadded::Float>::Offset Offset;
 private:
     axis_length<PDEProgram3DPadded::Offset, PDEProgram3DPadded::ScalarIndex> __axis_length;
-    __device__ __host__ inline void one0(PDEProgram3DPadded::Offset& o) {
-        o = __array_ops.one_offset();
-    };
     array_ops<PDEProgram3DPadded::Float> __array_ops;
 public:
     struct _dt {
@@ -846,14 +855,6 @@ public:
     };
 
     PDEProgram3DPadded::_unary_sub unary_sub;
-private:
-    __device__ __host__ inline void one0(PDEProgram3DPadded::Float& o) {
-        o = __array_ops.one_float();
-    };
-    __device__ __host__ inline void two0(PDEProgram3DPadded::Float& o) {
-        o = __array_ops.two_float();
-    };
-public:
     typedef axis_length<PDEProgram3DPadded::Offset, PDEProgram3DPadded::ScalarIndex>::AxisLength AxisLength;
     struct _mod {
     private:
@@ -896,6 +897,35 @@ public:
 
     PDEProgram3DPadded::_shape2 shape2;
     typedef array_ops<PDEProgram3DPadded::Float>::Axis Axis;
+    struct _one0 {
+    private:
+        array_ops<PDEProgram3DPadded::Float> __array_ops;
+    public:
+        __device__ __host__ inline void operator()(PDEProgram3DPadded::Offset& o) {
+            o = __array_ops.one_offset();
+        };
+        __device__ __host__ inline void operator()(PDEProgram3DPadded::Float& o) {
+            o = __array_ops.one_float();
+        };
+        __device__ __host__ inline void operator()(PDEProgram3DPadded::Axis& o) {
+            o = __array_ops.one_axis();
+        };
+    };
+
+    struct _one {
+    private:
+        PDEProgram3DPadded::_one0 one0;
+    public:
+        template <typename T>
+        __device__ __host__ inline T operator()() {
+            T o;
+            one0.operator()(o);
+            return o;
+        };
+    };
+
+    PDEProgram3DPadded::_one one;
+    PDEProgram3DPadded::_one0 one0;
     struct _rotateIx {
     private:
         array_ops<PDEProgram3DPadded::Float> __array_ops;
@@ -906,6 +936,32 @@ public:
     };
 
     PDEProgram3DPadded::_rotateIx rotateIx;
+    struct _two0 {
+    private:
+        array_ops<PDEProgram3DPadded::Float> __array_ops;
+    public:
+        __device__ __host__ inline void operator()(PDEProgram3DPadded::Float& o) {
+            o = __array_ops.two_float();
+        };
+        __device__ __host__ inline void operator()(PDEProgram3DPadded::Axis& o) {
+            o = __array_ops.two_axis();
+        };
+    };
+
+    struct _two {
+    private:
+        PDEProgram3DPadded::_two0 two0;
+    public:
+        template <typename T>
+        __device__ __host__ inline T operator()() {
+            T o;
+            two0.operator()(o);
+            return o;
+        };
+    };
+
+    PDEProgram3DPadded::_two two;
+    PDEProgram3DPadded::_two0 two0;
     struct _zero {
     private:
         array_ops<PDEProgram3DPadded::Float> __array_ops;
@@ -916,14 +972,6 @@ public:
     };
 
     PDEProgram3DPadded::_zero zero;
-private:
-    __device__ __host__ inline void one0(PDEProgram3DPadded::Axis& o) {
-        o = __array_ops.one_axis();
-    };
-    __device__ __host__ inline void two0(PDEProgram3DPadded::Axis& o) {
-        o = __array_ops.two_axis();
-    };
-public:
     typedef array_ops<PDEProgram3DPadded::Float>::Array Array;
 private:
     specialize_base<PDEProgram3DPadded::Array, PDEProgram3DPadded::Float, PDEProgram3DPadded::ScalarIndex> __specialize_base;
@@ -1019,12 +1067,12 @@ public:
     PDEProgram3DPadded::_rotate rotate;
     struct _substep {
     private:
-        PDEProgram3DPadded::_mul mul;
         PDEProgram3DPadded::_binary_add binary_add;
-        PDEProgram3DPadded::_div div;
         PDEProgram3DPadded::_binary_sub binary_sub;
+        PDEProgram3DPadded::_div div;
         PDEProgram3DPadded::_dt dt;
         PDEProgram3DPadded::_dx dx;
+        PDEProgram3DPadded::_mul mul;
         PDEProgram3DPadded::_nu nu;
         PDEProgram3DPadded::_one one;
         PDEProgram3DPadded::_rotate rotate;
@@ -1041,12 +1089,12 @@ public:
     PDEProgram3DPadded::_substep substep;
     struct _substepIx3D {
     private:
-        PDEProgram3DPadded::_mul mul;
         PDEProgram3DPadded::_binary_add binary_add;
-        PDEProgram3DPadded::_div div;
         PDEProgram3DPadded::_binary_sub binary_sub;
+        PDEProgram3DPadded::_div div;
         PDEProgram3DPadded::_dt dt;
         PDEProgram3DPadded::_dx dx;
+        PDEProgram3DPadded::_mul mul;
         PDEProgram3DPadded::_nu nu;
         PDEProgram3DPadded::_one one;
         PDEProgram3DPadded::_psi psi;
@@ -1083,15 +1131,15 @@ public:
 
     struct _substepIx {
     private:
-        PDEProgram3DPadded::_mul mul;
         PDEProgram3DPadded::_binary_add binary_add;
-        PDEProgram3DPadded::_div div;
         PDEProgram3DPadded::_binary_sub binary_sub;
+        PDEProgram3DPadded::_div div;
         PDEProgram3DPadded::_dt dt;
         PDEProgram3DPadded::_dx dx;
         PDEProgram3DPadded::_ix0 ix0;
         PDEProgram3DPadded::_ix1 ix1;
         PDEProgram3DPadded::_ix2 ix2;
+        PDEProgram3DPadded::_mul mul;
         PDEProgram3DPadded::_nu nu;
         PDEProgram3DPadded::_one one;
         PDEProgram3DPadded::_psi psi;
@@ -1186,26 +1234,6 @@ namespace pde {
 namespace mg_src {
 namespace pde_cuda {
 struct PDEProgramDNF {
-    struct _two {
-        template <typename T>
-        __device__ __host__ inline T operator()() {
-            T o;
-            PDEProgramDNF::two0(o);
-            return o;
-        };
-    };
-
-    PDEProgramDNF::_two two;
-    struct _one {
-        template <typename T>
-        __device__ __host__ inline T operator()() {
-            T o;
-            PDEProgramDNF::one0(o);
-            return o;
-        };
-    };
-
-    PDEProgramDNF::_one one;
 private:
     constants __constants;
 public:
@@ -1214,9 +1242,6 @@ public:
     typedef array_ops<PDEProgramDNF::Float>::Nat Nat;
     typedef array_ops<PDEProgramDNF::Float>::Offset Offset;
 private:
-    __device__ __host__ inline void one0(PDEProgramDNF::Offset& o) {
-        o = __array_ops.one_offset();
-    };
     array_ops<PDEProgramDNF::Float> __array_ops;
 public:
     struct _dt {
@@ -1272,15 +1297,36 @@ public:
     };
 
     PDEProgramDNF::_unary_sub unary_sub;
-private:
-    __device__ __host__ inline void one0(PDEProgramDNF::Float& o) {
-        o = __array_ops.one_float();
-    };
-    __device__ __host__ inline void two0(PDEProgramDNF::Float& o) {
-        o = __array_ops.two_float();
-    };
-public:
     typedef array_ops<PDEProgramDNF::Float>::Axis Axis;
+    struct _one0 {
+    private:
+        array_ops<PDEProgramDNF::Float> __array_ops;
+    public:
+        __device__ __host__ inline void operator()(PDEProgramDNF::Offset& o) {
+            o = __array_ops.one_offset();
+        };
+        __device__ __host__ inline void operator()(PDEProgramDNF::Float& o) {
+            o = __array_ops.one_float();
+        };
+        __device__ __host__ inline void operator()(PDEProgramDNF::Axis& o) {
+            o = __array_ops.one_axis();
+        };
+    };
+
+    struct _one {
+    private:
+        PDEProgramDNF::_one0 one0;
+    public:
+        template <typename T>
+        __device__ __host__ inline T operator()() {
+            T o;
+            one0.operator()(o);
+            return o;
+        };
+    };
+
+    PDEProgramDNF::_one one;
+    PDEProgramDNF::_one0 one0;
     struct _rotateIx {
     private:
         array_ops<PDEProgramDNF::Float> __array_ops;
@@ -1291,6 +1337,32 @@ public:
     };
 
     PDEProgramDNF::_rotateIx rotateIx;
+    struct _two0 {
+    private:
+        array_ops<PDEProgramDNF::Float> __array_ops;
+    public:
+        __device__ __host__ inline void operator()(PDEProgramDNF::Float& o) {
+            o = __array_ops.two_float();
+        };
+        __device__ __host__ inline void operator()(PDEProgramDNF::Axis& o) {
+            o = __array_ops.two_axis();
+        };
+    };
+
+    struct _two {
+    private:
+        PDEProgramDNF::_two0 two0;
+    public:
+        template <typename T>
+        __device__ __host__ inline T operator()() {
+            T o;
+            two0.operator()(o);
+            return o;
+        };
+    };
+
+    PDEProgramDNF::_two two;
+    PDEProgramDNF::_two0 two0;
     struct _zero {
     private:
         array_ops<PDEProgramDNF::Float> __array_ops;
@@ -1301,14 +1373,6 @@ public:
     };
 
     PDEProgramDNF::_zero zero;
-private:
-    __device__ __host__ inline void one0(PDEProgramDNF::Axis& o) {
-        o = __array_ops.one_axis();
-    };
-    __device__ __host__ inline void two0(PDEProgramDNF::Axis& o) {
-        o = __array_ops.two_axis();
-    };
-public:
     typedef array_ops<PDEProgramDNF::Float>::Array Array;
     struct _binary_add {
     private:
@@ -1393,12 +1457,12 @@ public:
     PDEProgramDNF::_rotate rotate;
     struct _substep {
     private:
-        PDEProgramDNF::_mul mul;
         PDEProgramDNF::_binary_add binary_add;
-        PDEProgramDNF::_div div;
         PDEProgramDNF::_binary_sub binary_sub;
+        PDEProgramDNF::_div div;
         PDEProgramDNF::_dt dt;
         PDEProgramDNF::_dx dx;
+        PDEProgramDNF::_mul mul;
         PDEProgramDNF::_nu nu;
         PDEProgramDNF::_one one;
         PDEProgramDNF::_rotate rotate;
@@ -1415,12 +1479,12 @@ public:
     PDEProgramDNF::_substep substep;
     struct _substepIx {
     private:
-        PDEProgramDNF::_mul mul;
         PDEProgramDNF::_binary_add binary_add;
-        PDEProgramDNF::_div div;
         PDEProgramDNF::_binary_sub binary_sub;
+        PDEProgramDNF::_div div;
         PDEProgramDNF::_dt dt;
         PDEProgramDNF::_dx dx;
+        PDEProgramDNF::_mul mul;
         PDEProgramDNF::_nu nu;
         PDEProgramDNF::_one one;
         PDEProgramDNF::_psi psi;
@@ -1478,81 +1542,14 @@ namespace pde {
 namespace mg_src {
 namespace pde_cuda {
 struct PDEProgramPadded {
-    struct _two {
-        template <typename T>
-        __device__ __host__ inline T operator()() {
-            T o;
-            PDEProgramPadded::two0(o);
-            return o;
-        };
-    };
-
-    PDEProgramPadded::_two two;
-    struct _one {
-        template <typename T>
-        __device__ __host__ inline T operator()() {
-            T o;
-            PDEProgramPadded::one0(o);
-            return o;
-        };
-    };
-
-    PDEProgramPadded::_one one;
 private:
     constants __constants;
 public:
     typedef constants::Float Float;
     typedef array_ops<PDEProgramPadded::Float>::Index Index;
-    typedef scalar_index<PDEProgramPadded::Index>::ScalarIndex ScalarIndex;
-private:
-    scalar_index<PDEProgramPadded::Index> __scalar_index;
-public:
-    struct _ix0 {
-    private:
-        scalar_index<PDEProgramPadded::Index> __scalar_index;
-    public:
-        __device__ __host__ inline PDEProgramPadded::ScalarIndex operator()(const PDEProgramPadded::Index& ix) {
-            return __scalar_index.ix0(ix);
-        };
-    };
-
-    PDEProgramPadded::_ix0 ix0;
-    struct _ix1 {
-    private:
-        scalar_index<PDEProgramPadded::Index> __scalar_index;
-    public:
-        __device__ __host__ inline PDEProgramPadded::ScalarIndex operator()(const PDEProgramPadded::Index& ix) {
-            return __scalar_index.ix1(ix);
-        };
-    };
-
-    PDEProgramPadded::_ix1 ix1;
-    struct _ix2 {
-    private:
-        scalar_index<PDEProgramPadded::Index> __scalar_index;
-    public:
-        __device__ __host__ inline PDEProgramPadded::ScalarIndex operator()(const PDEProgramPadded::Index& ix) {
-            return __scalar_index.ix2(ix);
-        };
-    };
-
-    PDEProgramPadded::_ix2 ix2;
-    struct _mkIx {
-    private:
-        scalar_index<PDEProgramPadded::Index> __scalar_index;
-    public:
-        __device__ __host__ inline PDEProgramPadded::Index operator()(const PDEProgramPadded::ScalarIndex& a, const PDEProgramPadded::ScalarIndex& b, const PDEProgramPadded::ScalarIndex& c) {
-            return __scalar_index.mkIx(a, b, c);
-        };
-    };
-
-    PDEProgramPadded::_mkIx mkIx;
     typedef array_ops<PDEProgramPadded::Float>::Nat Nat;
     typedef array_ops<PDEProgramPadded::Float>::Offset Offset;
 private:
-    __device__ __host__ inline void one0(PDEProgramPadded::Offset& o) {
-        o = __array_ops.one_offset();
-    };
     array_ops<PDEProgramPadded::Float> __array_ops;
 public:
     struct _dt {
@@ -1608,15 +1605,36 @@ public:
     };
 
     PDEProgramPadded::_unary_sub unary_sub;
-private:
-    __device__ __host__ inline void one0(PDEProgramPadded::Float& o) {
-        o = __array_ops.one_float();
-    };
-    __device__ __host__ inline void two0(PDEProgramPadded::Float& o) {
-        o = __array_ops.two_float();
-    };
-public:
     typedef array_ops<PDEProgramPadded::Float>::Axis Axis;
+    struct _one0 {
+    private:
+        array_ops<PDEProgramPadded::Float> __array_ops;
+    public:
+        __device__ __host__ inline void operator()(PDEProgramPadded::Axis& o) {
+            o = __array_ops.one_axis();
+        };
+        __device__ __host__ inline void operator()(PDEProgramPadded::Float& o) {
+            o = __array_ops.one_float();
+        };
+        __device__ __host__ inline void operator()(PDEProgramPadded::Offset& o) {
+            o = __array_ops.one_offset();
+        };
+    };
+
+    struct _one {
+    private:
+        PDEProgramPadded::_one0 one0;
+    public:
+        template <typename T>
+        __device__ __host__ inline T operator()() {
+            T o;
+            one0.operator()(o);
+            return o;
+        };
+    };
+
+    PDEProgramPadded::_one one;
+    PDEProgramPadded::_one0 one0;
     struct _rotateIx {
     private:
         array_ops<PDEProgramPadded::Float> __array_ops;
@@ -1627,6 +1645,32 @@ public:
     };
 
     PDEProgramPadded::_rotateIx rotateIx;
+    struct _two0 {
+    private:
+        array_ops<PDEProgramPadded::Float> __array_ops;
+    public:
+        __device__ __host__ inline void operator()(PDEProgramPadded::Axis& o) {
+            o = __array_ops.two_axis();
+        };
+        __device__ __host__ inline void operator()(PDEProgramPadded::Float& o) {
+            o = __array_ops.two_float();
+        };
+    };
+
+    struct _two {
+    private:
+        PDEProgramPadded::_two0 two0;
+    public:
+        template <typename T>
+        __device__ __host__ inline T operator()() {
+            T o;
+            two0.operator()(o);
+            return o;
+        };
+    };
+
+    PDEProgramPadded::_two two;
+    PDEProgramPadded::_two0 two0;
     struct _zero {
     private:
         array_ops<PDEProgramPadded::Float> __array_ops;
@@ -1637,17 +1681,9 @@ public:
     };
 
     PDEProgramPadded::_zero zero;
-private:
-    __device__ __host__ inline void one0(PDEProgramPadded::Axis& o) {
-        o = __array_ops.one_axis();
-    };
-    __device__ __host__ inline void two0(PDEProgramPadded::Axis& o) {
-        o = __array_ops.two_axis();
-    };
-public:
     typedef array_ops<PDEProgramPadded::Float>::Array Array;
 private:
-    forall_ops<PDEProgramPadded::Array, PDEProgramPadded::Axis, PDEProgramPadded::Float, PDEProgramPadded::Index, PDEProgramPadded::Nat, PDEProgramPadded::Offset> __forall_ops;
+    padding_extension<PDEProgramPadded::Array, PDEProgramPadded::Axis, PDEProgramPadded::Index, PDEProgramPadded::Offset> __padding_extension;
 public:
     struct _binary_add {
     private:
@@ -1722,10 +1758,10 @@ public:
     PDEProgramPadded::_psi psi;
     struct _refillPadding {
     private:
-        forall_ops<PDEProgramPadded::Array, PDEProgramPadded::Axis, PDEProgramPadded::Float, PDEProgramPadded::Index, PDEProgramPadded::Nat, PDEProgramPadded::Offset> __forall_ops;
+        padding_extension<PDEProgramPadded::Array, PDEProgramPadded::Axis, PDEProgramPadded::Index, PDEProgramPadded::Offset> __padding_extension;
     public:
         __device__ __host__ inline void operator()(PDEProgramPadded::Array& a) {
-            return __forall_ops.refillPadding(a);
+            return __padding_extension.refillPadding(a);
         };
     };
 
@@ -1742,22 +1778,22 @@ public:
     PDEProgramPadded::_rotate rotate;
     struct _rotateIxPadded {
     private:
-        forall_ops<PDEProgramPadded::Array, PDEProgramPadded::Axis, PDEProgramPadded::Float, PDEProgramPadded::Index, PDEProgramPadded::Nat, PDEProgramPadded::Offset> __forall_ops;
+        padding_extension<PDEProgramPadded::Array, PDEProgramPadded::Axis, PDEProgramPadded::Index, PDEProgramPadded::Offset> __padding_extension;
     public:
         __device__ __host__ inline PDEProgramPadded::Index operator()(const PDEProgramPadded::Index& ix, const PDEProgramPadded::Axis& axis, const PDEProgramPadded::Offset& offset) {
-            return __forall_ops.rotateIxPadded(ix, axis, offset);
+            return __padding_extension.rotateIxPadded(ix, axis, offset);
         };
     };
 
     PDEProgramPadded::_rotateIxPadded rotateIxPadded;
     struct _substep {
     private:
-        PDEProgramPadded::_mul mul;
         PDEProgramPadded::_binary_add binary_add;
-        PDEProgramPadded::_div div;
         PDEProgramPadded::_binary_sub binary_sub;
+        PDEProgramPadded::_div div;
         PDEProgramPadded::_dt dt;
         PDEProgramPadded::_dx dx;
+        PDEProgramPadded::_mul mul;
         PDEProgramPadded::_nu nu;
         PDEProgramPadded::_one one;
         PDEProgramPadded::_rotate rotate;
@@ -1774,12 +1810,12 @@ public:
     PDEProgramPadded::_substep substep;
     struct _substepIx {
     private:
-        PDEProgramPadded::_mul mul;
         PDEProgramPadded::_binary_add binary_add;
-        PDEProgramPadded::_div div;
         PDEProgramPadded::_binary_sub binary_sub;
+        PDEProgramPadded::_div div;
         PDEProgramPadded::_dt dt;
         PDEProgramPadded::_dx dx;
+        PDEProgramPadded::_mul mul;
         PDEProgramPadded::_nu nu;
         PDEProgramPadded::_one one;
         PDEProgramPadded::_psi psi;
@@ -1795,15 +1831,15 @@ public:
     };
 
 private:
-    forall_ops<PDEProgramPadded::Array, PDEProgramPadded::Axis, PDEProgramPadded::Float, PDEProgramPadded::Index, PDEProgramPadded::Nat, PDEProgramPadded::Offset, PDEProgramPadded::_substepIx> __forall_ops0;
+    forall_ops<PDEProgramPadded::Array, PDEProgramPadded::Axis, PDEProgramPadded::Float, PDEProgramPadded::Index, PDEProgramPadded::Nat, PDEProgramPadded::Offset, PDEProgramPadded::_substepIx> __forall_ops;
     padded_schedule<PDEProgramPadded::Array, PDEProgramPadded::Float, PDEProgramPadded::Index, PDEProgramPadded::_substepIx> __padded_schedule;
 public:
     struct _schedule {
     private:
-        forall_ops<PDEProgramPadded::Array, PDEProgramPadded::Axis, PDEProgramPadded::Float, PDEProgramPadded::Index, PDEProgramPadded::Nat, PDEProgramPadded::Offset, PDEProgramPadded::_substepIx> __forall_ops0;
+        forall_ops<PDEProgramPadded::Array, PDEProgramPadded::Axis, PDEProgramPadded::Float, PDEProgramPadded::Index, PDEProgramPadded::Nat, PDEProgramPadded::Offset, PDEProgramPadded::_substepIx> __forall_ops;
     public:
         __device__ __host__ inline PDEProgramPadded::Array operator()(const PDEProgramPadded::Array& u, const PDEProgramPadded::Array& v, const PDEProgramPadded::Array& u0, const PDEProgramPadded::Array& u1, const PDEProgramPadded::Array& u2) {
-            return __forall_ops0.schedule(u, v, u0, u1, u2);
+            return __forall_ops.schedule(u, v, u0, u1, u2);
         };
     };
 
