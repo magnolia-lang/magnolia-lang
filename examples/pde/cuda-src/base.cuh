@@ -48,14 +48,113 @@ struct array_ops {
     __host__ __device__ Nat(){}
     __host__ __device__ Nat(const size_t &v) : value(v) {} };
 
-  struct Array {
-    Float * content;
-    __host__ __device__ Array() {
-      this -> content = new Float[TOTAL_PADDED_SIZE];
+  struct HostArray {
+    std::unique_ptr<Float[]> content;
+    HostArray() {
+      this->content = std::unique_ptr<Float[]>(new Float[TOTAL_PADDED_SIZE]);
     }
 
-// TODO: FIX THESE
-/*
+    HostArray(const HostArray &other) {
+      this->content = std::unique_ptr<Float[]>(new Float[TOTAL_PADDED_SIZE]);
+      memcpy(this->content.get(), other.content.get(),
+             TOTAL_PADDED_SIZE * sizeof(Float));
+    }
+
+    HostArray(HostArray &&other) {
+        this->content = std::move(other.content);
+    }
+
+    HostArray &operator=(const HostArray &other) {
+      this->content = std::unique_ptr<Float[]>(new Float[TOTAL_PADDED_SIZE]);
+      memcpy(this->content.get(), other.content.get(),
+             TOTAL_PADDED_SIZE * sizeof(Float));
+      return *this;
+    }
+
+    HostArray &operator=(HostArray &&other) {
+        this->content = std::move(other.content);
+        return *this;
+    }
+
+    inline Float operator[](const Index &ix) const {
+      return this->content[ix];
+    }
+
+    inline Float &operator[](const Index &ix) {
+      return this->content[ix];
+    }
+
+    /* OF Pad extension */
+    void replenish_padding() {
+      Float *raw_content = this->content.get();
+
+      // Axis 2
+      if (PAD2 > 0) {
+        for (size_t i = 0; i < S0; ++i) {
+            for (size_t j = 0; j < S1; ++j) {
+                size_t start_offset_padded = (PAD0 + i) * PADDED_S1 * PADDED_S2 +
+                                            (PAD1 + j) * PADDED_S2;
+                Float *start_padded = raw_content + start_offset_padded;
+                // |pad2|s2|pad2|
+                // |s2|pad2|pad2|
+                // |pad2|pad2|s2|
+
+                memcpy(start_padded, start_padded + S2,
+                      PAD2 * sizeof(Float)); // left pad
+                memcpy(start_padded + PAD2 + S2, start_padded + PAD2,
+                      PAD2 * sizeof(Float)); // right pad
+            }
+        }
+      }
+      //std::cout << "overhead: " << end - begin << " [s]" << std::endl;
+
+      // Axis 1
+      if (PAD1 > 0) {
+        for (size_t i = 0; i < S0; i++) {
+            // [ ? <content> ? ]
+            size_t start_offset = (PAD0 + i) * PADDED_S1 * PADDED_S2;
+            Float *start_padded = raw_content + start_offset;
+
+            memcpy(start_padded,
+                  start_padded + PADDED_S1 * PADDED_S2 - 2 * PAD1 * PADDED_S2,
+                  PAD1 * PADDED_S2 * sizeof(Float)); // left pad
+            memcpy(start_padded + PADDED_S1 * PADDED_S2 - PAD1 * PADDED_S2,
+                  start_padded + PAD1 * PADDED_S2,
+                  PAD1 * PADDED_S2 * sizeof(Float)); // right pad
+        }
+      }
+
+      // Axis 0
+      memcpy(raw_content,
+             raw_content + TOTAL_PADDED_SIZE - 2 * PAD0 * PADDED_S1 * PADDED_S2,
+             PAD0 * PADDED_S1 * PADDED_S2 * sizeof(Float)); // left pad
+      memcpy(raw_content + TOTAL_PADDED_SIZE - PAD0 * PADDED_S1 * PADDED_S2,
+             raw_content + PAD0 * PADDED_S1 * PADDED_S2,
+             PAD0 * PADDED_S1 * PADDED_S2 * sizeof(Float)); // right pad
+    }
+  };
+
+  struct DeviceArray {
+    Float *content;
+    __host__ __device__ DeviceArray() {
+      cudaMalloc(&(this->content), TOTAL_PADDED_SIZE * sizeof(Float));
+    }
+
+    __host__ __device__ DeviceArray &operator=(const DeviceArray &other) {
+      cudaMalloc(&(this->content), TOTAL_PADDED_SIZE * sizeof(Float));
+      cudaMemcpy(this->content, other.content,
+                 TOTAL_PADDED_SIZE * sizeof(Float), cudaMemcpyDeviceToDevice);
+      return *this;
+    }
+
+    __host__ __device__ DeviceArray &operator=(const HostArray &host) {
+      cudaMalloc(&(this->content), TOTAL_PADDED_SIZE * sizeof(Float));
+      cudaMemcpy(this->content, host.content.get(),
+                 TOTAL_PADDED_SIZE * sizeof(Float), cudaMemcpyHostToDevice);
+      return *this;
+    }
+
+    /*
     Array(const Array &other) {
       this->content = new Float[TOTAL_PADDED_SIZE];
       memcpy(this->content, other.content,
@@ -65,28 +164,22 @@ struct array_ops {
     Array(Array &&other) {
         this->content = std::move(other.content);
     }
-*/
-    __host__ __device__ Array &operator=(const Array &other) {
-      this->content = new Float[TOTAL_PADDED_SIZE];
-      memcpy(this->content, other.content,
-             TOTAL_PADDED_SIZE * sizeof(Float));
-      return *this;
-    }
 
-    /*__host__ __device__ Array &operator=(Array &&other) {
+    __host__ __device__ Array &operator=(Array &&other) {
         this->content = other.content;
         return *this;
     }*/
 
     __host__ __device__ inline Float operator[](const Index & ix) const {
-      return this -> content[ix];
+      return this->content[ix];
     }
 
     __host__ __device__ inline Float & operator[](const Index & ix) {
-      return this -> content[ix];
+      return this->content[ix];
     }
 
     /* OF Pad extension */
+    // TODO: this is probably all broken...
     __host__ __device__ void replenish_padding() {
       Float *raw_content = this->content;
 
@@ -136,6 +229,8 @@ struct array_ops {
              PAD0 * PADDED_S1 * PADDED_S2 * sizeof(Float)); // right pad
     }
   };
+
+  typedef DeviceArray Array;
 
   __host__ __device__ inline Float psi(const Index & ix,
     const Array & array) {
@@ -492,7 +587,7 @@ struct forall_ops {
   }
 };
 
-__host__ __device__ inline void dumpsine(array_ops<float>::Array &result) {
+__host__ __device__ inline void dumpsine(array_ops<float>::HostArray &result) {
   double step = 0.01;
   double PI = 3.14159265358979323846;
   double amplitude = 10.0;
