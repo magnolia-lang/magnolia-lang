@@ -140,35 +140,39 @@ struct array_ops {
       cudaMalloc(&(this->content), TOTAL_PADDED_SIZE * sizeof(Float));
     }
 
-    __host__ __device__ DeviceArray &operator=(const DeviceArray &other) {
+    __host__ __device__ DeviceArray(const DeviceArray &other) {
       cudaMalloc(&(this->content), TOTAL_PADDED_SIZE * sizeof(Float));
+      cudaMemcpy(this->content, other.content,
+                 TOTAL_PADDED_SIZE * sizeof(Float), cudaMemcpyDeviceToDevice);
+    }
+
+    __host__ __device__ DeviceArray &operator=(const DeviceArray &other) {
       cudaMemcpy(this->content, other.content,
                  TOTAL_PADDED_SIZE * sizeof(Float), cudaMemcpyDeviceToDevice);
       return *this;
     }
 
     __host__ __device__ DeviceArray &operator=(const HostArray &host) {
-      cudaMalloc(&(this->content), TOTAL_PADDED_SIZE * sizeof(Float));
       cudaMemcpy(this->content, host.content.get(),
                  TOTAL_PADDED_SIZE * sizeof(Float), cudaMemcpyHostToDevice);
       return *this;
     }
 
-    /*
-    Array(const Array &other) {
-      this->content = new Float[TOTAL_PADDED_SIZE];
-      memcpy(this->content, other.content,
-             TOTAL_PADDED_SIZE * sizeof(Float));
+    __host__ __device__ ~DeviceArray() {
+      if (this->content != NULL) cudaFree(this->content);
     }
 
-    Array(Array &&other) {
-        this->content = std::move(other.content);
+    __host__ __device__ DeviceArray(DeviceArray &&other) {
+      this->content = other.content;
+      other.content = NULL;
     }
 
-    __host__ __device__ Array &operator=(Array &&other) {
-        this->content = other.content;
-        return *this;
-    }*/
+    __host__ __device__ DeviceArray &operator=(DeviceArray &&other) {
+      cudaFree(this->content);
+      this->content = other.content;
+      other.content = NULL;
+      return *this;
+    }
 
     __host__ __device__ inline Float operator[](const Index & ix) const {
       return this->content[ix];
@@ -178,7 +182,6 @@ struct array_ops {
       return this->content[ix];
     }
 
-    /* OF Pad extension */
     // TODO: this is probably all broken...
     __host__ __device__ void replenish_padding() {
       Float *raw_content = this->content;
@@ -407,23 +410,20 @@ struct forall_ops {
 
     Array result;
 
-    static Array *result_dev = NULL,
+    Array *result_dev = NULL,
                  *u_dev = NULL,
                  *v_dev = NULL,
                  *u0_dev = NULL,
                  *u1_dev = NULL,
                  *u2_dev = NULL;
 
-    // Should free that some day, but let's not bother now.
-    if (result_dev == NULL) {
-      // One single cudaMalloc call
-      cudaMalloc(&result_dev, 6 * sizeof(Array));
-      u_dev = result_dev + 1;
-      v_dev = result_dev + 2;
-      u0_dev = result_dev + 3;
-      u1_dev = result_dev + 4;
-      u2_dev = result_dev + 5;
-    }
+    // One single cudaMalloc call
+    cudaMalloc(&result_dev, 6 * sizeof(Array));
+    u_dev = result_dev + 1;
+    v_dev = result_dev + 2;
+    u0_dev = result_dev + 3;
+    u1_dev = result_dev + 4;
+    u2_dev = result_dev + 5;
 
     Float *result_dev_content;
     cudaMalloc(&(result_dev_content), TOTAL_PADDED_SIZE * sizeof(Float));
@@ -438,8 +438,12 @@ struct forall_ops {
 
     substep_ix_global<_substepIx><<<block_shape, 1024>>>(result_dev, u_dev, v_dev, u0_dev, u1_dev, u2_dev);
 
+    //cudaDeviceSynchronize();
+    cudaFree(result.content);
     cudaMemcpy(&(result.content), &(result_dev->content), ptrSize,
                cudaMemcpyDeviceToHost);
+
+    cudaFree(result_dev);
 
     return result;
   }

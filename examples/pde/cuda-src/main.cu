@@ -1,6 +1,6 @@
 #include <vector>
 
-#include <omp.h>
+#include <time.h>
 
 #include "gen/examples/pde/mg-src/pde-cuda.cuh"
 #include "base.cuh"
@@ -24,23 +24,11 @@ int main() {
 
     Array u0, u1, u2;
 
-    // auto allocDevArrayPtrAndCopyData = [] (Array &arrDevPtr, const Array &arrHostPtr) {
-    //     auto devPtr = arrDevPtr.content;
-    //     auto hostPtr = arrHostPtr.content;
-    //     cudaMalloc((void**)&devPtr, sizeof(Float) * TOTAL_PADDED_SIZE);
-    //     cudaMemcpy(devPtr, hostPtr, sizeof(Float) * TOTAL_PADDED_SIZE, cudaMemcpyHostToDevice);
-    // };
-
     auto copyDataToHost = [] (HostArray &arrHostPtr, const Array &arrDevPtr) {
         auto devPtr = arrDevPtr.content;
         auto hostPtr = arrHostPtr.content.get();
         cudaMemcpy(hostPtr, devPtr, sizeof(Float) * TOTAL_PADDED_SIZE, cudaMemcpyDeviceToHost);
     };
-
-
-    //allocDevArrayPtrAndCopyData(u0, u0_base);
-    //allocDevArrayPtrAndCopyData(u1, u1_base);
-    //allocDevArrayPtrAndCopyData(u2, u2_base);
 
     u0 = u0_base;
     u1 = u1_base;
@@ -51,27 +39,34 @@ int main() {
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
     cudaEventRecord(start, 0);
+
+    time_t begin, end;
+
+    time(&begin);
     for (size_t i = 0; i < steps; ++i) {
-	    std::cout << "OK HERE" << std::endl;
         pde_dnf.step(u0, u1, u2);
 	    copyDataToHost(u0_base, u0);
         copyDataToHost(u1_base, u1);
 	    copyDataToHost(u2_base, u2);
 
-	    std::cout << u0_base[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2] << " "
-                  << u1_base[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2] << " "
-                  << u2_base[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2] << std::endl;
+	    std::cout
+            << u0_base[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2]
+            << " "
+            << u1_base[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2]
+            << " "
+            << u2_base[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2]
+            << std::endl;
     }
-    /*
+
+    time(&end);
+
     std::cout << end - begin << "[s] elapsed with sizes ("
               << S0 << ", "
               << S1 << ", "
               << S2 << ") with padding ("
               << PAD0 << ", "
               << PAD1 << ", "
-              << PAD2 << ") on "
-              << NB_CORES << " threads for "
+              << PAD2 << ") on GPU for "
               << steps << " steps" << std::endl;
-              */
     return 0;
 }
