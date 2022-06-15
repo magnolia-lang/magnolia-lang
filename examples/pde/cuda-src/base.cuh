@@ -73,10 +73,10 @@ struct array_ops {
       return *this;
     }
 
-    //Array &operator=(Array &&other) {
-    //    this->content = std::move(other.content);
-    //    return *this;
-    //}
+    /*__host__ __device__ Array &operator=(Array &&other) {
+        this->content = other.content;
+        return *this;
+    }*/
 
     __host__ __device__ inline Float operator[](const Index & ix) const {
       return this -> content[ix];
@@ -307,6 +307,7 @@ struct forall_ops {
   __host__ inline Array schedule(const Array &u, const Array &v,
       const Array &u0, const Array &u1, const Array &u2) {
 
+    std::cout << "in schedule" << std::endl;
     dim3 block_shape = dim3(65336, 2);
 
     Array result;
@@ -329,9 +330,11 @@ struct forall_ops {
       u2_dev = result_dev + 5;
     }
 
-    cudaMalloc(&(result_dev->content), TOTAL_PADDED_SIZE * sizeof(Float));
-    const size_t ptrSize = sizeof(u.content);
+    Float *result_dev_content;
+    cudaMalloc(&(result_dev_content), TOTAL_PADDED_SIZE * sizeof(Float));
+    const size_t ptrSize = sizeof(result_dev_content);
     const auto htd = cudaMemcpyHostToDevice;
+    cudaMemcpy(&(result_dev->content), &(result_dev_content), ptrSize, htd);
     cudaMemcpy(&(u_dev->content), &(u.content), ptrSize, htd);
     cudaMemcpy(&(v_dev->content), &(v.content), ptrSize, htd);
     cudaMemcpy(&(u0_dev->content), &(u0.content), ptrSize, htd);
@@ -738,9 +741,3 @@ struct specialize_psi_ops_2 {
     return 0;
   }
 };
-
-
-
-
-
-

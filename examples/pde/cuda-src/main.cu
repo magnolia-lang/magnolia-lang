@@ -12,11 +12,11 @@ typedef array_ops<float>::Float Float;
 typedef examples::pde::mg_src::pde_cuda::BasePDEProgram BasePDEProgram;
 typedef examples::pde::mg_src::pde_cuda::PDEProgramDNF PDEProgramDNF;
 
-void allocateDeviceMemory(Float* &u0_host_content, 
-                          Float* &u1_host_content,    
+void allocateDeviceMemory(Float* &u0_host_content,
+                          Float* &u1_host_content,
                           Float* &u2_host_content,
-                          Float* &u0_dev_content, 
-                          Float* &u1_dev_content, 
+                          Float* &u0_dev_content,
+                          Float* &u1_dev_content,
                           Float* &u2_dev_content,
                           Array* &u0_dev, Array* &u1_dev, Array* &u2_dev) {
 
@@ -29,11 +29,11 @@ void allocateDeviceMemory(Float* &u0_host_content,
     cudaMalloc((void**)&u2_dev, sizeof(*u2_dev));
 }
 
-void copyDeviceMemory(Float* &u0_host_content, 
-                      Float* &u1_host_content,    
+void copyDeviceMemory(Float* &u0_host_content,
+                      Float* &u1_host_content,
                       Float* &u2_host_content,
-                      Float* &u0_dev_content, 
-                      Float* &u1_dev_content, 
+                      Float* &u0_dev_content,
+                      Float* &u1_dev_content,
                       Float* &u2_dev_content,
                       Array* &u0_dev, Array* &u1_dev, Array* &u2_dev) {
 
@@ -49,35 +49,34 @@ void copyDeviceMemory(Float* &u0_host_content,
 
 int main() {
     size_t steps = 50;
-    Array u0, u1, u2;
-    dumpsine(u0);
-    dumpsine(u1);
-    dumpsine(u2);
+    Array u0_base, u1_base, u2_base;
+    dumpsine(u0_base);
+    dumpsine(u1_base);
+    dumpsine(u2_base);
 
     PDEProgramDNF pde_dnf;
 
-    Float *u0_host_content, *u1_host_content, *u2_host_content;
-    u0_host_content = u0.content;
-    u1_host_content = u1.content;
-    u2_host_content = u2.content;
+    Array u0, u1, u2;
 
-    Float *u0_dev_content, *u1_dev_content, *u2_dev_content;
-    Array *u0_dev, *u1_dev, *u2_dev;
+    auto allocDevArrayPtrAndCopyData = [] (Array &arrDevPtr, const Array &arrHostPtr) {
+	auto devPtr = arrDevPtr.content;
+	auto hostPtr = arrHostPtr.content;
+	cudaMalloc((void**)&devPtr, sizeof(Float) * TOTAL_PADDED_SIZE);
+	cudaMemcpy(devPtr, hostPtr, sizeof(Float) * TOTAL_PADDED_SIZE, cudaMemcpyHostToDevice);
+    };
 
-    allocateDeviceMemory(u0_host_content, u1_host_content, u2_host_content,
-        u0_dev_content, u1_dev_content, u2_dev_content,
-        u0_dev, u1_dev, u2_dev);
-    copyDeviceMemory(u0_host_content, u1_host_content, u2_host_content,
-            u0_dev_content, u1_dev_content, u2_dev_content,
-            u0_dev, u1_dev, u2_dev);
-    
-    float time;
+    allocDevArrayPtrAndCopyData(u0, u0_base);
+    allocDevArrayPtrAndCopyData(u1, u1_base);
+    allocDevArrayPtrAndCopyData(u2, u2_base);
+
+    //float time;
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
     cudaEventRecord(start, 0);
     for (size_t i = 0; i < steps; ++i) {
-        pde_dnf.step(*u0_dev, *u1_dev, *u2_dev);//, S_NU, S_DX, S_DT);
+	std::cout << "OK HERE" << std::endl;
+        pde_dnf.step(u0, u1, u2); //*u0_dev, *u1_dev, *u2_dev);//, S_NU, S_DX, S_DT);
         std::cout << u0[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2] << " "
                   << u1[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2] << " "
                   << u2[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2] << std::endl;
@@ -93,4 +92,5 @@ int main() {
               << NB_CORES << " threads for "
               << steps << " steps" << std::endl;
               */
+    return 0;
 }
