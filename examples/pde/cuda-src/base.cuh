@@ -424,11 +424,9 @@ struct forall_ops {
     u1_dev = result_dev + 4;
     u2_dev = result_dev + 5;
 
-    Float *result_dev_content;
-    cudaMalloc(&(result_dev_content), TOTAL_PADDED_SIZE * sizeof(Float));
-    const size_t ptrSize = sizeof(result_dev_content);
+    const size_t ptrSize = sizeof(result.content);
     const auto htd = cudaMemcpyHostToDevice;
-    cudaMemcpy(&(result_dev->content), &(result_dev_content), ptrSize, htd);
+    cudaMemcpy(&(result_dev->content), &(result.content), ptrSize, htd);
     cudaMemcpy(&(u_dev->content), &(u.content), ptrSize, htd);
     cudaMemcpy(&(v_dev->content), &(v.content), ptrSize, htd);
     cudaMemcpy(&(u0_dev->content), &(u0.content), ptrSize, htd);
@@ -436,11 +434,6 @@ struct forall_ops {
     cudaMemcpy(&(u2_dev->content), &(u2.content), ptrSize, htd);
 
     substep_ix_global<_substepIx><<<nbBlocks, nbThreadsPerBlock>>>(result_dev, u_dev, v_dev, u0_dev, u1_dev, u2_dev);
-
-    //cudaDeviceSynchronize();
-    cudaFree(result.content);
-    cudaMemcpy(&(result.content), &(result_dev->content), ptrSize,
-               cudaMemcpyDeviceToHost);
 
     cudaFree(result_dev);
 
