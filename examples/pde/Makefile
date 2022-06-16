@@ -9,7 +9,7 @@ CPP_SOURCES := $(shell find $(CPP_SOURCE_DIR) -name "*.cpp")
 CUDA_SOURCE_DIR := cuda-src
 CUDA_SOURCES := $(shell find $(CUDA_SOURCE_DIR) -name "*.cu")
 
-DEFINES := -DPAD0=0 -DPAD1=0 -DPAD2=0
+DEFINES := -DPAD0=0 -DPAD1=0 -DPAD2=0 -DPROGRAM_NAME=PDEProgramDNF
 
 CC := g++
 # if clang++, can use

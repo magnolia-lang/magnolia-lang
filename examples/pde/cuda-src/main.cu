@@ -5,13 +5,16 @@
 #include "gen/examples/pde/mg-src/pde-cuda.cuh"
 #include "base.cuh"
 
+#ifndef PROGRAM_NAME
+#define PROGRAM_NAME PDEProgramDNF
+#endif
+
 //typedef array_ops::Shape Shape;
 typedef array_ops<float>::Array Array;
 typedef array_ops<float>::HostArray HostArray;
 typedef array_ops<float>::Index Index;
 typedef array_ops<float>::Float Float;
-typedef examples::pde::mg_src::pde_cuda::BasePDEProgram BasePDEProgram;
-typedef examples::pde::mg_src::pde_cuda::PDEProgramDNF PDEProgramDNF;
+typedef examples::pde::mg_src::pde_cuda::PROGRAM_NAME PROGRAM_NAME;
 
 extern DeviceAllocator globalAllocator;
 
@@ -22,7 +25,7 @@ int main() {
     dumpsine(u1_base);
     dumpsine(u2_base);
 
-    PDEProgramDNF pde_dnf;
+    PROGRAM_NAME p;
 
     Array u0, u1, u2;
 
@@ -45,7 +48,7 @@ int main() {
     double begin = omp_get_wtime();
 
     for (size_t i = 0; i < steps; ++i) {
-        pde_dnf.step(u0, u1, u2);
+        p.step(u0, u1, u2);
         std::cout << "step " << i << std::endl;
     }
 

@@ -5,10 +5,14 @@
 #include "gen/examples/pde/mg-src/pde-cpp.hpp"
 #include "base.hpp"
 
+#ifndef PROGRAM_NAME
+#define PROGRAM_NAME PDEProgramDNF
+#endif
+
 //typedef array_ops::Shape Shape;
 typedef array_ops<float>::Array Array;
 typedef array_ops<float>::Index Index;
-typedef examples::pde::mg_src::pde_cpp::PDEProgram PDEProgram;
+typedef examples::pde::mg_src::pde_cpp::PROGRAM_NAME PROGRAM_NAME;
 
 int main() {
     size_t steps = 50;
@@ -20,7 +24,7 @@ int main() {
     double begin = omp_get_wtime();
 
     for (size_t i = 0; i < steps; ++i) {
-        PDEProgram::step(u0, u1, u2); //, S_NU, S_DX, S_DT);
+        PROGRAM_NAME::step(u0, u1, u2); //, S_NU, S_DX, S_DT);
         std::cout << u0[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2] << " "
                   << u1[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2] << " "
                   << u2[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2] << std::endl;
