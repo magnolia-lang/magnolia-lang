@@ -89,11 +89,11 @@ struct DeviceAllocator {
         unusedChunks.erase(itr, itr + 1);
         break;
       }
-
-      if (*ptr == NULL) { returnCode = cudaMalloc(ptr, size); }
-      inUseChunks.push_back(DevicePtrInfo(ptr, size));
-      //        inUseChunks.push_back(*itr);
     }
+
+    if (*ptr == NULL) { returnCode = cudaMalloc(ptr, size); }
+    inUseChunks.push_back(DevicePtrInfo(*ptr, size));
+    //        inUseChunks.push_back(*itr);
 
     return returnCode;
   }
@@ -104,6 +104,7 @@ struct DeviceAllocator {
         unusedChunks.push_back(*itr);
         inUseChunks.erase(itr, itr + 1);
         ptr = NULL;
+        break;
       }
     }
   }
