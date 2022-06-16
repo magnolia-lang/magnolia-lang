@@ -1,6 +1,6 @@
 #include <vector>
 
-#include <time.h>
+#include <omp.h>
 
 #include "gen/examples/pde/mg-src/pde-cuda.cuh"
 #include "base.cuh"
@@ -42,15 +42,14 @@ int main() {
     cudaEventCreate(&stop);
     cudaEventRecord(start, 0);
 
-    time_t begin, end;
+    double begin = omp_get_wtime();
 
-    time(&begin);
     for (size_t i = 0; i < steps; ++i) {
         pde_dnf.step(u0, u1, u2);
         std::cout << "step " << i << std::endl;
     }
 
-    time(&end);
+    double end = omp_get_wtime();
 
     copyDataToHost(u0_base, u0);
     copyDataToHost(u1_base, u1);

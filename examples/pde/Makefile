@@ -19,7 +19,7 @@ CCFLAGS := -g -mtune=native -march=native -O3 -std=c++20 -I$(CPP_SOURCE_DIR) -fo
 CUARCH := 61
 CUCC := nvcc
 CUCCFLAGS := -std=c++17 -I$(CUDA_SOURCE_DIR) -arch=sm_$(CUARCH) \
-             -rdc=true -g -lcudadevrt -lineinfo
+             -rdc=true -g -lcudadevrt -lineinfo -Xcompiler -fopenmp
 
 MKDIR := @mkdir
 RM := @rm
