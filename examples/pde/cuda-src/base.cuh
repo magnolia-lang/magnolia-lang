@@ -376,15 +376,12 @@ struct array_ops {
 // CUDA kernel
 template <class _substepIx>
 __global__ void substep_ix_global(array_ops<float>::Array *res,const array_ops<float>::Array *u, const array_ops<float>::Array *v, const array_ops<float>::Array *u0, const array_ops<float>::Array *u1, const array_ops<float>::Array *u2) {
-
-  int x = blockIdx.x * blockDim.x + threadIdx.x;
-  int y = blockIdx.y * blockDim.y + threadIdx.x;
-  int i = y*S0+x;
+  size_t ix = blockIdx.x * blockDim.x + threadIdx.x;
 
   _substepIx substepIx;
 
-  if (i < TOTAL_PADDED_SIZE) {
-    res->content[i] = substepIx(*u,*v,*u0,*u1,*u2,i);
+  if (ix < TOTAL_PADDED_SIZE) {
+    res->content[ix] = substepIx(*u,*v,*u0,*u1,*u2,ix);
   }
 }
 
@@ -406,9 +403,11 @@ struct forall_ops {
       const Array &u0, const Array &u1, const Array &u2) {
 
     std::cout << "in schedule" << std::endl;
-    dim3 block_shape = dim3(65336, 2);
 
     Array result;
+
+    size_t nbThreadsPerBlock = 1024;
+    size_t nbBlocks = (TOTAL_PADDED_SIZE / nbThreadsPerBlock) + (TOTAL_PADDED_SIZE % nbThreadsPerBlock > 0 ? 1 : 0);
 
     Array *result_dev = NULL,
                  *u_dev = NULL,
@@ -436,7 +435,7 @@ struct forall_ops {
     cudaMemcpy(&(u1_dev->content), &(u1.content), ptrSize, htd);
     cudaMemcpy(&(u2_dev->content), &(u2.content), ptrSize, htd);
 
-    substep_ix_global<_substepIx><<<block_shape, 1024>>>(result_dev, u_dev, v_dev, u0_dev, u1_dev, u2_dev);
+    substep_ix_global<_substepIx><<<nbBlocks, nbThreadsPerBlock>>>(result_dev, u_dev, v_dev, u0_dev, u1_dev, u2_dev);
 
     //cudaDeviceSynchronize();
     cudaFree(result.content);
