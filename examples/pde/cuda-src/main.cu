@@ -45,20 +45,22 @@ int main() {
     time(&begin);
     for (size_t i = 0; i < steps; ++i) {
         pde_dnf.step(u0, u1, u2);
-	    copyDataToHost(u0_base, u0);
-        copyDataToHost(u1_base, u1);
-	    copyDataToHost(u2_base, u2);
-
-	    std::cout
-            << u0_base[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2]
-            << " "
-            << u1_base[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2]
-            << " "
-            << u2_base[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2]
-            << std::endl;
+        std::cout << "step " << i << std::endl;
     }
 
     time(&end);
+
+    copyDataToHost(u0_base, u0);
+    copyDataToHost(u1_base, u1);
+    copyDataToHost(u2_base, u2);
+
+    std::cout
+        << u0_base[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2]
+        << " "
+        << u1_base[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2]
+        << " "
+        << u2_base[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2]
+        << std::endl;
 
     std::cout << end - begin << "[s] elapsed with sizes ("
               << S0 << ", "
