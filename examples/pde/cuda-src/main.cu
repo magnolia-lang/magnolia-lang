@@ -13,6 +13,8 @@ typedef array_ops<float>::Float Float;
 typedef examples::pde::mg_src::pde_cuda::BasePDEProgram BasePDEProgram;
 typedef examples::pde::mg_src::pde_cuda::PDEProgramDNF PDEProgramDNF;
 
+extern DeviceAllocator globalAllocator;
+
 int main() {
     size_t steps = 50;
     HostArray u0_base, u1_base, u2_base;

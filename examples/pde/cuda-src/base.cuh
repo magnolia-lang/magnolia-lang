@@ -7,6 +7,7 @@
 #include <iostream>
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include <omp.h>
 
@@ -37,6 +38,78 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
       if (abort) exit(code);
    }
 }
+
+struct DevicePtrInfo {
+  void* ptr;
+  size_t size;
+  // bool isInUse;
+  // DevicePtrInfo(void *ptr, size_t size, bool isInUse) {
+  //   this->ptr = ptr;
+  //   this->size = size;
+  //   this->isInUse = isInUse;
+  // }
+
+  DevicePtrInfo(void *ptr, size_t size) {
+    this->ptr = ptr;
+    this->size = size;
+    //this->isInUse = false;
+  }
+};
+
+struct DeviceAllocator {
+  std::vector<DevicePtrInfo> unusedChunks;
+  std::vector<DevicePtrInfo> inUseChunks;
+
+  DeviceAllocator() {};
+  ~DeviceAllocator() {
+    auto freeFn = [](void *ptr) {
+      if (ptr != NULL) {
+        cudaFree(ptr);
+        ptr = NULL;
+      }
+    };
+
+    for (auto itr = unusedChunks.begin(); itr != unusedChunks.end(); ++itr) {
+      freeFn(itr->ptr);
+    }
+
+    for (auto itr = inUseChunks.begin(); itr != inUseChunks.end(); ++itr) {
+      freeFn(itr->ptr);
+    }
+  }
+
+  template <typename T>
+  cudaError_t alloc(T** ptr, size_t size) {
+    *ptr = NULL;
+    cudaError_t returnCode = cudaSuccess;
+    for (auto itr = unusedChunks.begin(); itr != unusedChunks.end(); ++itr) {
+      if (itr->size == size) {
+        //itr->isInUse = true;
+        *ptr = (T*)itr->ptr;
+        unusedChunks.erase(itr, itr + 1);
+        break;
+      }
+
+      if (*ptr == NULL) { returnCode = cudaMalloc(ptr, size); }
+      inUseChunks.push_back(DevicePtrInfo(ptr, size));
+      //        inUseChunks.push_back(*itr);
+    }
+
+    return returnCode;
+  }
+
+  void free(void *ptr) {
+    for (auto itr = inUseChunks.begin(); itr != inUseChunks.end(); ++itr) {
+      if (itr->ptr == ptr) {
+        unusedChunks.push_back(*itr);
+        inUseChunks.erase(itr, itr + 1);
+        ptr = NULL;
+      }
+    }
+  }
+};
+
+DeviceAllocator globalAllocator;
 
 struct constants {
     typedef float Float;
@@ -147,39 +220,39 @@ struct array_ops {
 
   struct DeviceArray {
     Float *content;
-    __host__ __device__ DeviceArray() {
-      gpuErrChk(cudaMalloc(&(this->content), TOTAL_PADDED_SIZE * sizeof(Float)));
+    __host__ DeviceArray() {
+      gpuErrChk(globalAllocator.alloc(&(this->content), TOTAL_PADDED_SIZE * sizeof(Float)));
     }
 
-    __host__ __device__ DeviceArray(const DeviceArray &other) {
-      gpuErrChk(cudaMalloc(&(this->content), TOTAL_PADDED_SIZE * sizeof(Float)));
+    __host__ DeviceArray(const DeviceArray &other) {
+      gpuErrChk(globalAllocator.alloc(&(this->content), TOTAL_PADDED_SIZE * sizeof(Float)));
       gpuErrChk(cudaMemcpy(this->content, other.content,
                  TOTAL_PADDED_SIZE * sizeof(Float), cudaMemcpyDeviceToDevice));
     }
 
-    __host__ __device__ DeviceArray &operator=(const DeviceArray &other) {
+    __host__ DeviceArray &operator=(const DeviceArray &other) {
       gpuErrChk(cudaMemcpy(this->content, other.content,
                  TOTAL_PADDED_SIZE * sizeof(Float), cudaMemcpyDeviceToDevice));
       return *this;
     }
 
-    __host__ __device__ DeviceArray &operator=(const HostArray &host) {
+    __host__ DeviceArray &operator=(const HostArray &host) {
       gpuErrChk(cudaMemcpy(this->content, host.content.get(),
                  TOTAL_PADDED_SIZE * sizeof(Float), cudaMemcpyHostToDevice));
       return *this;
     }
 
-    __host__ __device__ ~DeviceArray() {
-      if (this->content != NULL) cudaFree(this->content);
+    __host__ ~DeviceArray() {
+      if (this->content != NULL) globalAllocator.free(this->content);
     }
 
-    __host__ __device__ DeviceArray(DeviceArray &&other) {
+    __host__ DeviceArray(DeviceArray &&other) {
       this->content = other.content;
       other.content = NULL;
     }
 
-    __host__ __device__ DeviceArray &operator=(DeviceArray &&other) {
-      cudaFree(this->content);
+    __host__ DeviceArray &operator=(DeviceArray &&other) {
+      globalAllocator.free(this->content);
       this->content = other.content;
       other.content = NULL;
       return *this;
@@ -427,8 +500,8 @@ struct forall_ops {
                  *u1_dev = NULL,
                  *u2_dev = NULL;
 
-    // One single cudaMalloc call
-    cudaMalloc(&result_dev, 6 * sizeof(Array));
+    // One single globalAllocator.alloc call
+    globalAllocator.alloc(&result_dev, 6 * sizeof(Array));
     u_dev = result_dev + 1;
     v_dev = result_dev + 2;
     u0_dev = result_dev + 3;
@@ -446,7 +519,7 @@ struct forall_ops {
 
     substep_ix_global<_substepIx><<<nbBlocks, nbThreadsPerBlock>>>(result_dev, u_dev, v_dev, u0_dev, u1_dev, u2_dev);
 
-    gpuErrChk(cudaFree(result_dev));
+    globalAllocator.free(result_dev);
 
     return result;
   }
