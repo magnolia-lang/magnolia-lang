@@ -27,6 +27,17 @@
 #define S_NU 1.0
 #define S_DX 1.0
 
+// Taken from https://stackoverflow.com/questions/14038589/what-is-the-canonical-way-to-check-for-errors-using-the-cuda-runtime-api
+#define gpuErrChk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess)
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
+
 struct constants {
     typedef float Float;
     __host__ __device__ constexpr Float nu() { return S_NU; }
@@ -137,24 +148,24 @@ struct array_ops {
   struct DeviceArray {
     Float *content;
     __host__ __device__ DeviceArray() {
-      cudaMalloc(&(this->content), TOTAL_PADDED_SIZE * sizeof(Float));
+      gpuErrChk(cudaMalloc(&(this->content), TOTAL_PADDED_SIZE * sizeof(Float)));
     }
 
     __host__ __device__ DeviceArray(const DeviceArray &other) {
-      cudaMalloc(&(this->content), TOTAL_PADDED_SIZE * sizeof(Float));
-      cudaMemcpy(this->content, other.content,
-                 TOTAL_PADDED_SIZE * sizeof(Float), cudaMemcpyDeviceToDevice);
+      gpuErrChk(cudaMalloc(&(this->content), TOTAL_PADDED_SIZE * sizeof(Float)));
+      gpuErrChk(cudaMemcpy(this->content, other.content,
+                 TOTAL_PADDED_SIZE * sizeof(Float), cudaMemcpyDeviceToDevice));
     }
 
     __host__ __device__ DeviceArray &operator=(const DeviceArray &other) {
-      cudaMemcpy(this->content, other.content,
-                 TOTAL_PADDED_SIZE * sizeof(Float), cudaMemcpyDeviceToDevice);
+      gpuErrChk(cudaMemcpy(this->content, other.content,
+                 TOTAL_PADDED_SIZE * sizeof(Float), cudaMemcpyDeviceToDevice));
       return *this;
     }
 
     __host__ __device__ DeviceArray &operator=(const HostArray &host) {
-      cudaMemcpy(this->content, host.content.get(),
-                 TOTAL_PADDED_SIZE * sizeof(Float), cudaMemcpyHostToDevice);
+      gpuErrChk(cudaMemcpy(this->content, host.content.get(),
+                 TOTAL_PADDED_SIZE * sizeof(Float), cudaMemcpyHostToDevice));
       return *this;
     }
 
@@ -426,16 +437,16 @@ struct forall_ops {
 
     const size_t ptrSize = sizeof(result.content);
     const auto htd = cudaMemcpyHostToDevice;
-    cudaMemcpy(&(result_dev->content), &(result.content), ptrSize, htd);
-    cudaMemcpy(&(u_dev->content), &(u.content), ptrSize, htd);
-    cudaMemcpy(&(v_dev->content), &(v.content), ptrSize, htd);
-    cudaMemcpy(&(u0_dev->content), &(u0.content), ptrSize, htd);
-    cudaMemcpy(&(u1_dev->content), &(u1.content), ptrSize, htd);
-    cudaMemcpy(&(u2_dev->content), &(u2.content), ptrSize, htd);
+    gpuErrChk(cudaMemcpy(&(result_dev->content), &(result.content), ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(u_dev->content), &(u.content), ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(v_dev->content), &(v.content), ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(u0_dev->content), &(u0.content), ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(u1_dev->content), &(u1.content), ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(u2_dev->content), &(u2.content), ptrSize, htd));
 
     substep_ix_global<_substepIx><<<nbBlocks, nbThreadsPerBlock>>>(result_dev, u_dev, v_dev, u0_dev, u1_dev, u2_dev);
 
-    cudaFree(result_dev);
+    gpuErrChk(cudaFree(result_dev));
 
     return result;
   }
