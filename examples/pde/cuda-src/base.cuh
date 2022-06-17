@@ -506,10 +506,11 @@ struct array_ops {
     Float *lhsFloat_dev = NULL;
 
     // One single globalAllocator.alloc call
-    globalAllocator.alloc(&result_dev, 2 * sizeof(Array) + sizeof(Float));
+    globalAllocator.alloc(&result_dev, 2 * sizeof(Array));
 
-    lhsFloat_dev = (Float*)(result_dev + 1);
-    rhs_dev = (Array*)(lhsFloat_dev + 1);
+    rhs_dev = result_dev + 1;
+
+    globalAllocator.alloc(&lhsFloat_dev, sizeof(Float));
 
     const size_t ptrSize = sizeof(result.content);
     const auto htd = cudaMemcpyHostToDevice;
@@ -523,6 +524,7 @@ struct array_ops {
       result_dev, lhsFloat_dev, rhs_dev);
 
     globalAllocator.free(result_dev);
+    globalAllocator.free(lhsFloat_dev);
 
     return result;
   }
@@ -581,12 +583,11 @@ struct array_ops {
     Offset *offset_dev;
 
     // One single globalAllocator.alloc call
-    globalAllocator.alloc(&result_dev, 2 * sizeof(Array) +
-                                       sizeof(Axis) +
-                                       sizeof(Offset));
+    globalAllocator.alloc(&result_dev, 2 * sizeof(Array));
     input_dev = result_dev + 1;
-    axis_dev = (Axis*)(result_dev + 2);
-    offset_dev = (Offset*)(axis_dev + 1);
+
+    globalAllocator.alloc(&axis_dev, sizeof(Axis));
+    globalAllocator.alloc(&offset_dev, sizeof(Offset));
 
     const size_t ptrSize = sizeof(result.content);
     const auto htd = cudaMemcpyHostToDevice;
@@ -601,6 +602,8 @@ struct array_ops {
       result_dev, input_dev, axis_dev, offset_dev);
 
     globalAllocator.free(result_dev);
+    globalAllocator.free(axis_dev);
+    globalAllocator.free(offset_dev);
 
     return result;
   }
