@@ -39,6 +39,9 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
    }
 }
 
+size_t nbThreadsPerBlock = 1024;
+size_t nbBlocks = (TOTAL_PADDED_SIZE / nbThreadsPerBlock) + (TOTAL_PADDED_SIZE % nbThreadsPerBlock > 0 ? 1 : 0);
+
 struct DevicePtrInfo {
   void* ptr;
   size_t size;
@@ -120,7 +123,7 @@ struct constants {
 };
 
 template <typename _Float>
-struct array_ops {
+struct base_types {
   typedef _Float Float;
   struct Offset { int value;
     __host__ __device__ Offset(){}
@@ -319,6 +322,60 @@ struct array_ops {
   };
 
   typedef DeviceArray Array;
+};
+
+template <class _rotateIx>
+__global__ void rotateIxGlobal(
+    base_types<constants::Float>::Array *res,
+    const base_types<constants::Float>::Array *input,
+    const base_types<constants::Float>::Axis *axis,
+    const base_types<constants::Float>::Offset *o) {
+
+  size_t ix = blockIdx.x * blockDim.x + threadIdx.x;
+  _rotateIx rotateIx;
+
+  if (ix < TOTAL_PADDED_SIZE) {
+    res->content[ix] = input->content[rotateIx(ix, *axis, *o)];
+  }
+}
+
+template <class _binOpIx>
+__global__ void binOpIxGlobal(
+    base_types<constants::Float>::Array *res,
+    const base_types<constants::Float>::Array *lhs,
+    const base_types<constants::Float>::Array *rhs) {
+
+  size_t ix = blockIdx.x * blockDim.x + threadIdx.x;
+  _binOpIx binOpIx;
+
+  if (ix < TOTAL_PADDED_SIZE) {
+    res->content[ix] = binOpIx((*lhs)[ix], (*rhs)[ix]);
+  }
+}
+
+template <class _binOpIx>
+__global__ void binOpIxGlobal(
+    base_types<constants::Float>::Array *res,
+    const base_types<constants::Float>::Float *lhsFloat,
+    const base_types<constants::Float>::Array *rhs) {
+
+  size_t ix = blockIdx.x * blockDim.x + threadIdx.x;
+  _binOpIx binOpIx;
+
+  if (ix < TOTAL_PADDED_SIZE) {
+    res->content[ix] = binOpIx(*lhsFloat, (*rhs)[ix]);
+  }
+}
+
+template <typename _Float>
+struct array_ops {
+  typedef typename base_types<_Float>::Float Float;
+  typedef typename base_types<_Float>::Offset Offset;
+  typedef typename base_types<_Float>::Axis Axis;
+  typedef typename base_types<_Float>::Index Index;
+  typedef typename base_types<_Float>::Nat Nat;
+  typedef typename base_types<_Float>::HostArray HostArray;
+  typedef typename base_types<_Float>::Array Array;
 
   __host__ __device__ inline Float psi(const Index & ix,
     const Array & array) {
@@ -329,22 +386,74 @@ struct array_ops {
   __host__ __device__ inline Float unary_sub(const Float & f) {
     return -f;
   }
-  __host__ __device__ inline Float binary_add(const Float & lhs,
-    const Float & rhs) {
-    return lhs + rhs;
+
+  template <typename _binOpIx>
+  Array binOpGlobalWrapper(const Array &lhs, const Array &rhs) {
+    Array result;
+
+    Array *result_dev = NULL,
+          *lhs_dev = NULL,
+          *rhs_dev = NULL;
+
+    // One single globalAllocator.alloc call
+    globalAllocator.alloc(&result_dev, 3 * sizeof(Array));
+
+    lhs_dev = result_dev + 1;
+    rhs_dev = result_dev + 2;
+
+    const size_t ptrSize = sizeof(result.content);
+    const auto htd = cudaMemcpyHostToDevice;
+    gpuErrChk(cudaMemcpy(&(result_dev->content), &(result.content),
+                         ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(lhs_dev->content), &(lhs.content),
+                         ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(rhs_dev->content), &(rhs.content),
+                         ptrSize, htd));
+
+    binOpIxGlobal<_binOpIx><<<nbBlocks, nbThreadsPerBlock>>>(
+      result_dev, lhs_dev, rhs_dev);
+
+    globalAllocator.free(result_dev);
+
+    return result;
   }
-  __host__ __device__ inline Float binary_sub(const Float & lhs,
-    const Float & rhs) {
-    return lhs - rhs;
-  }
-  __host__ __device__ inline Float mul(const Float & lhs,
-    const Float & rhs) {
-    return lhs * rhs;
-  }
-  __host__ __device__ inline Float div(const Float & num,
-    const Float & den) {
-    return num / den;
-  }
+
+  struct _binary_add {
+    __host__ __device__ inline Float operator()(const Float & lhs,
+      const Float & rhs) {
+      return lhs + rhs;
+    }
+  };
+
+  _binary_add binary_add_ix;
+
+  struct _binary_sub {
+    __host__ __device__ inline Float operator()(const Float & lhs,
+      const Float & rhs) {
+      return lhs - rhs;
+    }
+  };
+
+  _binary_sub binary_sub_ix;
+
+  struct _mul {
+    __host__ __device__ inline Float operator()(const Float & lhs,
+      const Float & rhs) {
+      return lhs * rhs;
+    }
+  };
+
+  _mul mul_ix;
+
+  struct _div {
+    __host__ __device__ inline Float operator()(const Float & num,
+      const Float & den) {
+      return num / den;
+    }
+  };
+
+  _div div_ix;
+
   __host__ __device__ inline Float one_float() {
     return 1;
   }
@@ -355,99 +464,145 @@ struct array_ops {
     return 3;
   }
 
-  /* Scalar-Array ops */
-  __host__ __device__ inline Array binary_add(const Float &lhs, const Array &rhs) {
-    Array out;
-    for (size_t i = 0; i < TOTAL_PADDED_SIZE; ++i) {
-      out[i] = lhs + rhs[i];
-    }
-    return out;
-  }
-  __host__ __device__ inline Array binary_sub(const Float &lhs, const Array &rhs) {
-    Array out;
-    for (size_t i = 0; i < TOTAL_PADDED_SIZE; ++i) {
-      out[i] = lhs - rhs[i];
-    }
-    return out;
-  }
-  __host__ __device__ inline Array mul(const Float &lhs, const Array &rhs) {
-    Array out;
-    for (size_t i = 0; i < TOTAL_PADDED_SIZE; ++i) {
-      out[i] = lhs * rhs[i];
-    }
-    return out;
-  }
-  __host__ __device__ inline Array div(const Float &lhs, const Array &rhs) {
-    Array out;
-    for (size_t i = 0; i < TOTAL_PADDED_SIZE; ++i) {
-      out[i] = lhs / rhs[i];
-    }
-    return out;
+  __host__ __device__ Float binary_add(const Float &lhs, const Float &rhs) {
+    return binary_add_ix(lhs, rhs);
   }
 
-  /* Array-Array ops */
-  __host__ __device__ inline Array binary_add(const Array &lhs, const Array &rhs) {
-    Array out;
-    for (size_t i = 0; i < TOTAL_PADDED_SIZE; ++i) {
-      out[i] = lhs[i] + rhs[i];
-    }
-    return out;
-  }
-  __host__ __device__ inline Array binary_sub(const Array &lhs, const Array &rhs) {
-    Array out;
-    for (size_t i = 0; i < TOTAL_PADDED_SIZE; ++i) {
-      out[i] = lhs[i] - rhs[i];
-    }
-    return out;
-  }
-  __host__ __device__ inline Array mul(const Array &lhs, const Array &rhs) {
-    Array out;
-    for (size_t i = 0; i < TOTAL_PADDED_SIZE; ++i) {
-      out[i] = lhs[i] * rhs[i];
-    }
-    return out;
-  }
-  __host__ __device__ inline Array div(const Array &lhs, const Array &rhs) {
-    Array out;
-    for (size_t i = 0; i < TOTAL_PADDED_SIZE; ++i) {
-      out[i] = lhs[i] / rhs[i];
-    }
-    return out;
+  __host__ __device__ Float binary_sub(const Float &lhs, const Float &rhs) {
+    return binary_sub_ix(lhs, rhs);
   }
 
-  __host__ __device__ inline Array rotate(const Array &array, const Axis &axis, const Offset &o) {
+  __host__ __device__ Float mul(const Float &lhs, const Float &rhs) {
+    return mul_ix(lhs, rhs);
+  }
+
+  __host__ __device__ Float div(const Float &lhs, const Float &rhs) {
+    return div_ix(lhs, rhs);
+  }
+
+  __host__ __device__ Array binary_add(const Array &lhs, const Array &rhs) {
+    return binOpGlobalWrapper<_binary_add>(lhs, rhs);
+  }
+
+  __host__ __device__ Array binary_sub(const Array &lhs, const Array &rhs) {
+    return binOpGlobalWrapper<_binary_sub>(lhs, rhs);
+  }
+
+  __host__ __device__ Array mul(const Array &lhs, const Array &rhs) {
+    return binOpGlobalWrapper<_mul>(lhs, rhs);
+  }
+
+  __host__ __device__ Array div(const Array &lhs, const Array &rhs) {
+    return binOpGlobalWrapper<_div>(lhs, rhs);
+  }
+
+  template <typename _binOpIx>
+  Array binOpGlobalWrapper(const Float &lhsFloat, const Array &rhs) {
     Array result;
 
-    for (size_t i = 0; i < TOTAL_PADDED_SIZE; ++i) {
-      Index ix = rotateIx(ix, axis, o);
-      result[i] = array[ix];
-    }
+    Array *result_dev = NULL,
+          *rhs_dev = NULL;
+
+    Float *lhsFloat_dev = NULL;
+
+    // One single globalAllocator.alloc call
+    globalAllocator.alloc(&result_dev, 2 * sizeof(Array) + sizeof(Float));
+
+    lhsFloat_dev = (Float*)(result_dev + 1);
+    rhs_dev = (Array*)(lhsFloat_dev + 1);
+
+    const size_t ptrSize = sizeof(result.content);
+    const auto htd = cudaMemcpyHostToDevice;
+    gpuErrChk(cudaMemcpy(&(result_dev->content), &(result.content),
+                         ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&lhsFloat_dev, &lhsFloat, sizeof(Float), htd));
+    gpuErrChk(cudaMemcpy(&(rhs_dev->content), &(rhs.content),
+                         ptrSize, htd));
+
+    binOpIxGlobal<_binOpIx><<<nbBlocks, nbThreadsPerBlock>>>(
+      result_dev, lhsFloat_dev, rhs_dev);
+
+    globalAllocator.free(result_dev);
 
     return result;
-    //throw "rotate not implemented";
-    //std::unreachable(); // Always optimize with DNF, do not rotate
   }
 
-  __host__ __device__ inline Index rotateIx(const Index &ix,
-                         const Axis &axis,
-                         const Offset &offset) {
-    if (axis.value == 0) {
-      size_t result = (ix + TOTAL_PADDED_SIZE + (offset.value * PADDED_S1 * PADDED_S2)) % TOTAL_PADDED_SIZE;
-      return result;
-    } else if (axis.value == 1) {
-      size_t ix_subarray_base = ix / (PADDED_S1 * PADDED_S2);
-      size_t ix_in_subarray = (ix + PADDED_S1 * PADDED_S2 + offset.value * PADDED_S2) % (PADDED_S1 * PADDED_S2);
-      return ix_subarray_base * (PADDED_S1 * PADDED_S2) + ix_in_subarray;
-    } else if (axis.value == 2) {
-      size_t ix_subarray_base = ix / PADDED_S2;
-      size_t ix_in_subarray = (ix + PADDED_S2 + offset.value) % PADDED_S2;
-      return ix_subarray_base * PADDED_S2 + ix_in_subarray;
-    }
+  __host__ __device__ Array binary_add(const Float &lhs, const Array &rhs) {
+    return binOpGlobalWrapper<_binary_add>(lhs, rhs);
+  }
 
-    // TODO: device code does not support exception handling
-    //throw "failed at rotating index";
-    //std::unreachable();
-    return 0;
+  __host__ __device__ Array binary_sub(const Float &lhs, const Array &rhs) {
+    return binOpGlobalWrapper<_binary_sub>(lhs, rhs);
+  }
+
+  __host__ __device__ Array mul(const Float &lhs, const Array &rhs) {
+    return binOpGlobalWrapper<_mul>(lhs, rhs);
+  }
+
+  __host__ __device__ Array div(const Float &lhs, const Array &rhs) {
+    return binOpGlobalWrapper<_div>(lhs, rhs);
+  }
+
+  struct _rotateIx {
+    __host__ __device__ inline Index operator()(const Index &ix,
+                                              const Axis &axis,
+                                              const Offset &offset) {
+      if (axis.value == 0) {
+        size_t result = (ix + TOTAL_PADDED_SIZE + (offset.value * PADDED_S1 * PADDED_S2)) % TOTAL_PADDED_SIZE;
+        return result;
+      } else if (axis.value == 1) {
+        size_t ix_subarray_base = ix / (PADDED_S1 * PADDED_S2);
+        size_t ix_in_subarray = (ix + PADDED_S1 * PADDED_S2 + offset.value * PADDED_S2) % (PADDED_S1 * PADDED_S2);
+        return ix_subarray_base * (PADDED_S1 * PADDED_S2) + ix_in_subarray;
+      } else if (axis.value == 2) {
+        size_t ix_subarray_base = ix / PADDED_S2;
+        size_t ix_in_subarray = (ix + PADDED_S2 + offset.value) % PADDED_S2;
+        return ix_subarray_base * PADDED_S2 + ix_in_subarray;
+      }
+
+      // TODO: device code does not support exception handling
+      //throw "failed at rotating index";
+      //std::unreachable();
+      return 0;
+    }
+  };
+
+  _rotateIx rotateIx;
+
+  __host__ __device__ inline Array rotate(const Array &input,
+                                          const Axis &axis,
+                                          const Offset &offset) {
+    Array result;
+
+    Array *result_dev = NULL,
+          *input_dev = NULL;
+
+    Axis *axis_dev;
+    Offset *offset_dev;
+
+    // One single globalAllocator.alloc call
+    globalAllocator.alloc(&result_dev, 2 * sizeof(Array) +
+                                       sizeof(Axis) +
+                                       sizeof(Offset));
+    input_dev = result_dev + 1;
+    axis_dev = (Axis*)(result_dev + 2);
+    offset_dev = (Offset*)(axis_dev + 1);
+
+    const size_t ptrSize = sizeof(result.content);
+    const auto htd = cudaMemcpyHostToDevice;
+    gpuErrChk(cudaMemcpy(&(result_dev->content), &(result.content),
+                         ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(input_dev->content), &(input.content),
+                         ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&axis_dev, &axis, sizeof(Axis), htd));
+    gpuErrChk(cudaMemcpy(&offset_dev, &offset, sizeof(Offset), htd));
+
+    rotateIxGlobal<_rotateIx><<<nbBlocks, nbThreadsPerBlock>>>(
+      result_dev, input_dev, axis_dev, offset_dev);
+
+    globalAllocator.free(result_dev);
+
+    return result;
   }
 
   __host__ __device__ inline Axis zero_axis() { return Axis(0); }
@@ -491,15 +646,12 @@ struct forall_ops {
 
     Array result;
 
-    size_t nbThreadsPerBlock = 1024;
-    size_t nbBlocks = (TOTAL_PADDED_SIZE / nbThreadsPerBlock) + (TOTAL_PADDED_SIZE % nbThreadsPerBlock > 0 ? 1 : 0);
-
     Array *result_dev = NULL,
-                 *u_dev = NULL,
-                 *v_dev = NULL,
-                 *u0_dev = NULL,
-                 *u1_dev = NULL,
-                 *u2_dev = NULL;
+          *u_dev = NULL,
+          *v_dev = NULL,
+          *u0_dev = NULL,
+          *u1_dev = NULL,
+          *u2_dev = NULL;
 
     // One single globalAllocator.alloc call
     globalAllocator.alloc(&result_dev, 6 * sizeof(Array));
