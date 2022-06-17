@@ -143,6 +143,7 @@ struct DeviceAllocator {
       gpuErrChk(cudaMemcpy(&((*result)->content), &ptr, sizeof(ptr),
                 cudaMemcpyHostToDevice));
       inUseChunks.push_back(DevicePtrInfo(*result, sizeof(Wrapper)));
+      wrapperChunks.push_back(std::make_pair((void*)ptr, (void*)(*result)));
     }
   };
 
@@ -342,7 +343,7 @@ struct base_types {
       replenishPaddingGlobal<<<nbBlocks, nbThreadsPerBlock>>>(deviceArr);
 
       cudaDeviceSynchronize();
-      //globalAllocator.free(deviceArr);
+      globalAllocator.free(deviceArr);
 
       double end = omp_get_wtime();
 
@@ -1127,12 +1128,20 @@ struct specialize_psi_ops_2 {
 
     const size_t ptrSize = sizeof(result.content);
     const auto htd = cudaMemcpyHostToDevice;
-    gpuErrChk(cudaMemcpy(&(result_dev->content), &(result.content), ptrSize, htd));
-    gpuErrChk(cudaMemcpy(&(u_dev->content), &(u.content), ptrSize, htd));
-    gpuErrChk(cudaMemcpy(&(v_dev->content), &(v.content), ptrSize, htd));
-    gpuErrChk(cudaMemcpy(&(u0_dev->content), &(u0.content), ptrSize, htd));
-    gpuErrChk(cudaMemcpy(&(u1_dev->content), &(u1.content), ptrSize, htd));
-    gpuErrChk(cudaMemcpy(&(u2_dev->content), &(u2.content), ptrSize, htd));
+
+    globalAllocator.deviceWrap(&result_dev, result.content);
+    globalAllocator.deviceWrap(&u_dev, u.content);
+    globalAllocator.deviceWrap(&v_dev, v.content);
+    globalAllocator.deviceWrap(&u0_dev, u0.content);
+    globalAllocator.deviceWrap(&u1_dev, u1.content);
+    globalAllocator.deviceWrap(&u2_dev, u2.content);
+
+    // gpuErrChk(cudaMemcpy(&(result_dev->content), &(result.content), ptrSize, htd));
+    // gpuErrChk(cudaMemcpy(&(u_dev->content), &(u.content), ptrSize, htd));
+    // gpuErrChk(cudaMemcpy(&(v_dev->content), &(v.content), ptrSize, htd));
+    // gpuErrChk(cudaMemcpy(&(u0_dev->content), &(u0.content), ptrSize, htd));
+    // gpuErrChk(cudaMemcpy(&(u1_dev->content), &(u1.content), ptrSize, htd));
+    // gpuErrChk(cudaMemcpy(&(u2_dev->content), &(u2.content), ptrSize, htd));
 
     substepIx3DPaddedGlobal<_substepIx3D><<<nbBlocks, nbThreadsPerBlock>>>(result_dev, u_dev, v_dev, u0_dev, u1_dev, u2_dev);
 
