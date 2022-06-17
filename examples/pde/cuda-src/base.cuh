@@ -247,14 +247,17 @@ struct base_types {
 
   struct DeviceArray {
     Float *content;
+    DeviceArray *onDeviceArr;
     __host__ DeviceArray() {
       gpuErrChk(globalAllocator.alloc(&(this->content), TOTAL_PADDED_SIZE * sizeof(Float)));
+      this->onDeviceArr = NULL;
     }
 
     __host__ DeviceArray(const DeviceArray &other) {
       gpuErrChk(globalAllocator.alloc(&(this->content), TOTAL_PADDED_SIZE * sizeof(Float)));
       gpuErrChk(cudaMemcpy(this->content, other.content,
                  TOTAL_PADDED_SIZE * sizeof(Float), cudaMemcpyDeviceToDevice));
+      this->onDeviceArr = NULL;
     }
 
     __host__ DeviceArray &operator=(const DeviceArray &other) {
@@ -299,16 +302,16 @@ struct base_types {
       double begin = omp_get_wtime();
 
       // static variable allows avoiding cudaMemcpy everytime
-      static Array *deviceArr = NULL;
+      //Array *deviceArr = NULL;
 
-      if (deviceArr == NULL) {
-        globalAllocator.alloc(&deviceArr, sizeof(Array));
+      if (this->onDeviceArr == NULL) {
+        globalAllocator.alloc(&this->onDeviceArr, sizeof(Array));
 
-        gpuErrChk(cudaMemcpy(&(deviceArr->content), &(this->content),
+        gpuErrChk(cudaMemcpy(&(this->onDeviceArr->content), &(this->content),
                              sizeof(this->content), cudaMemcpyHostToDevice));
       }
 
-      replenishPaddingGlobal<<<nbBlocks, nbThreadsPerBlock>>>(deviceArr);
+      replenishPaddingGlobal<<<nbBlocks, nbThreadsPerBlock>>>(this->onDeviceArr);
 
       //globalAllocator.free(deviceArr);
 
