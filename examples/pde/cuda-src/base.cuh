@@ -1089,7 +1089,7 @@ struct specialize_psi_ops_2 {
 
     substepIx3DPaddedGlobal<_substepIx3D><<<nbBlocks, nbThreadsPerBlock>>>(result_dev, u_dev, v_dev, u0_dev, u1_dev, u2_dev);
 
-    std::cout <<  "OK This worked" << std::endl;
+    //std::cout <<  "OK This worked" << std::endl;
 
     globalAllocator.free(result_dev);
 
