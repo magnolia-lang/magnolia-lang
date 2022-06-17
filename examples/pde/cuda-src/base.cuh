@@ -278,12 +278,14 @@ struct base_types {
 
     __host__ DeviceArray(DeviceArray &&other) {
       this->content = other.content;
+      this->onDeviceArr = other.onDeviceArr;
       other.content = NULL;
     }
 
     __host__ DeviceArray &operator=(DeviceArray &&other) {
       globalAllocator.free(this->content);
       this->content = other.content;
+      this->onDeviceArr = other.onDeviceArr;
       other.content = NULL;
       return *this;
     }
