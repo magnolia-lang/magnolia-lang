@@ -11,9 +11,17 @@
 
 #include <omp.h>
 
+#ifndef S0
 #define S0 512
+#endif
+
+#ifndef S1
 #define S1 512
+#endif
+
+#ifndef S2
 #define S2 512
+#endif
 
 #define PADDED_S0 (S0 + 2 * PAD0)
 #define PADDED_S1 (S1 + 2 * PAD1)
