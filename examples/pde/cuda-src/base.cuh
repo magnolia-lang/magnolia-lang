@@ -643,7 +643,12 @@ __global__ void substepIxPaddedGlobal(array_ops<float>::Array *res,const array_o
                       (j >= PAD1 && j < PADDED_S1 - PAD1) &&
                       (k >= PAD2 && k < PADDED_S2 - PAD2);
 
-  if (ix < TOTAL_PADDED_SIZE && isNotPadding) {
+  if (ix < TOTAL_PADDED_SIZE) {
+    // Hack to avoid divergence: if there is any padding in the array, the
+    // 0th index of the array *has* to be padding (since padding is always
+    // on both ends of the array). We avoid thread divergence by mapping all
+    // padding indices to 0.
+    ix = ix * isNotPadding;
     res->content[ix] = substepIx(*u,*v,*u0,*u1,*u2,ix);
   }
 }
