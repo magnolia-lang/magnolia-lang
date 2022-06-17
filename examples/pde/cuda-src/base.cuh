@@ -303,13 +303,13 @@ struct base_types {
 
     __host__ DeviceArray(DeviceArray &&other) {
       this->content = other.content;
-      //other.content = NULL;
+      other.content = NULL;
     }
 
     __host__ DeviceArray &operator=(DeviceArray &&other) {
       globalAllocator.free(this->content);
       this->content = other.content;
-      //other.content = NULL;
+      other.content = NULL;
       return *this;
     }
 
@@ -327,19 +327,11 @@ struct base_types {
       double begin = omp_get_wtime();
 
       // static variable allows avoiding cudaMemcpy everytime
-      //Array *deviceArr = NULL;
+      Array *deviceArr = NULL;
+      globalAllocator.alloc(&deviceArr, sizeof(Array));
 
-      std::cout << "OK" << std::endl;
-      Array *deviceArr;
-      globalAllocator.deviceWrap(&deviceArr, this->content);
-
-      std::cout << "wrapped: deviceArr" << std::endl;
-      // if (this->onDeviceArr == NULL) {
-      //   globalAllocator.alloc(&this->onDeviceArr, sizeof(Array));
-
-      //   gpuErrChk(cudaMemcpy(&(this->onDeviceArr->content), &(this->content),
-      //                        sizeof(this->content), cudaMemcpyHostToDevice));
-      // }
+      gpuErrChk(cudaMemcpy(&(deviceArr->content), &(this->content),
+                            sizeof(this->content), cudaMemcpyHostToDevice));
 
       replenishPaddingGlobal<<<nbBlocks, nbThreadsPerBlock>>>(deviceArr);
 
@@ -1120,29 +1112,29 @@ struct specialize_psi_ops_2 {
           *u2_dev = NULL;
 
     // One single globalAllocator.alloc call
-    // globalAllocator.alloc(&result_dev, 6 * sizeof(Array));
-    // u_dev = result_dev + 1;
-    // v_dev = result_dev + 2;
-    // u0_dev = result_dev + 3;
-    // u1_dev = result_dev + 4;
-    // u2_dev = result_dev + 5;
+    globalAllocator.alloc(&result_dev, 6 * sizeof(Array));
+    u_dev = result_dev + 1;
+    v_dev = result_dev + 2;
+    u0_dev = result_dev + 3;
+    u1_dev = result_dev + 4;
+    u2_dev = result_dev + 5;
 
-    // const size_t ptrSize = sizeof(result.content);
-    // const auto htd = cudaMemcpyHostToDevice;
+    const size_t ptrSize = sizeof(result.content);
+    const auto htd = cudaMemcpyHostToDevice;
 
-    globalAllocator.deviceWrap(&result_dev, result.content);
-    globalAllocator.deviceWrap(&u_dev, u.content);
-    globalAllocator.deviceWrap(&v_dev, v.content);
-    globalAllocator.deviceWrap(&u0_dev, u0.content);
-    globalAllocator.deviceWrap(&u1_dev, u1.content);
-    globalAllocator.deviceWrap(&u2_dev, u2.content);
+    // globalAllocator.deviceWrap(&result_dev, result.content);
+    // globalAllocator.deviceWrap(&u_dev, u.content);
+    // globalAllocator.deviceWrap(&v_dev, v.content);
+    // globalAllocator.deviceWrap(&u0_dev, u0.content);
+    // globalAllocator.deviceWrap(&u1_dev, u1.content);
+    // globalAllocator.deviceWrap(&u2_dev, u2.content);
 
-    // gpuErrChk(cudaMemcpy(&(result_dev->content), &(result.content), ptrSize, htd));
-    // gpuErrChk(cudaMemcpy(&(u_dev->content), &(u.content), ptrSize, htd));
-    // gpuErrChk(cudaMemcpy(&(v_dev->content), &(v.content), ptrSize, htd));
-    // gpuErrChk(cudaMemcpy(&(u0_dev->content), &(u0.content), ptrSize, htd));
-    // gpuErrChk(cudaMemcpy(&(u1_dev->content), &(u1.content), ptrSize, htd));
-    // gpuErrChk(cudaMemcpy(&(u2_dev->content), &(u2.content), ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(result_dev->content), &(result.content), ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(u_dev->content), &(u.content), ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(v_dev->content), &(v.content), ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(u0_dev->content), &(u0.content), ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(u1_dev->content), &(u1.content), ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(u2_dev->content), &(u2.content), ptrSize, htd));
 
     substepIx3DPaddedGlobal<_substepIx3D><<<nbBlocks, nbThreadsPerBlock>>>(result_dev, u_dev, v_dev, u0_dev, u1_dev, u2_dev);
 
