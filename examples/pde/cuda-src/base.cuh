@@ -651,7 +651,10 @@ __global__ void substepIxGlobal(array_ops<float>::Array *res,const array_ops<flo
 
 template <class _substepIx>
 __global__ void substepIxPaddedGlobal(array_ops<float>::Array *res,const array_ops<float>::Array *u, const array_ops<float>::Array *v, const array_ops<float>::Array *u0, const array_ops<float>::Array *u1, const array_ops<float>::Array *u2) {
-  size_t ix = blockIdx.x * blockDim.x + threadIdx.x;
+  size_t ix = (blockIdx.x * blockDim.x + threadIdx.x) + \
+              PAD0 * PADDED_S1 * PADDED_S2 + \
+              PAD1 * PADDED_S1 + \
+              PAD2;
 
   _substepIx substepIx;
 
@@ -670,7 +673,10 @@ __global__ void substepIxPaddedGlobal(array_ops<float>::Array *res,const array_o
 
 template <class _substepIx3D>
 __global__ void substepIx3DPaddedGlobal(array_ops<float>::Array *res,const array_ops<float>::Array *u, const array_ops<float>::Array *v, const array_ops<float>::Array *u0, const array_ops<float>::Array *u1, const array_ops<float>::Array *u2) {
-  size_t ix = blockIdx.x * blockDim.x + threadIdx.x;
+  size_t ix = (blockIdx.x * blockDim.x + threadIdx.x) + \
+              PAD0 * PADDED_S1 * PADDED_S2 + \
+              PAD1 * PADDED_S1 + \
+              PAD2;
 
   _substepIx3D substepIx3D;
 
@@ -678,9 +684,9 @@ __global__ void substepIx3DPaddedGlobal(array_ops<float>::Array *res,const array
          j = (ix / PADDED_S2) % PADDED_S1,
          k = ix % PADDED_S2;
 
-  bool isNotPadding = (i >= PAD0 && i < PADDED_S0 - PAD0) &&
-                      (j >= PAD1 && j < PADDED_S1 - PAD1) &&
-                      (k >= PAD2 && k < PADDED_S2 - PAD2);
+  bool isNotPadding = (i >= PAD0 && i < S0 + PAD0) &&
+                      (j >= PAD1 && j < S1 + PAD1) &&
+                      (k >= PAD2 && k < S2 + PAD2);
 
   if (ix < TOTAL_PADDED_SIZE && isNotPadding) {
     base_types<constants::Float>::ScalarIndex si(i), sj(j), sk(k);
@@ -1100,6 +1106,8 @@ struct specialize_psi_ops_2 {
     gpuErrChk(cudaMemcpy(&(u2_dev->content), &(u2.content), ptrSize, htd));
 
     substepIx3DPaddedGlobal<_substepIx3D><<<nbBlocks, nbThreadsPerBlock>>>(result_dev, u_dev, v_dev, u0_dev, u1_dev, u2_dev);
+
+    std::cout <<  "OK This worked" << std::endl;
 
     globalAllocator.free(result_dev);
 
