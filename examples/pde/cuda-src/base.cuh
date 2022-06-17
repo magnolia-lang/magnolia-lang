@@ -296,7 +296,7 @@ struct base_types {
     // TODO: this is probably all broken...
     __host__ void replenish_padding() {
 
-      //double begin = omp_get_wtime();
+      double begin = omp_get_wtime();
 
       // static variable allows avoiding cudaMemcpy everytime
       static Array *deviceArr = NULL;
@@ -312,9 +312,9 @@ struct base_types {
 
       //globalAllocator.free(deviceArr);
 
-      //double end = omp_get_wtime();
+      double end = omp_get_wtime();
 
-      //std::cout << "cost: " << end - begin << "[s]" << std::endl;
+      std::cout << "cost: " << end - begin << "[s]" << std::endl;
       return;
     }
   };
