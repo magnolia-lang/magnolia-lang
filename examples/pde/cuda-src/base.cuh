@@ -296,6 +296,8 @@ struct base_types {
     // TODO: this is probably all broken...
     __host__ void replenish_padding() {
 
+      double begin = omp_get_wtime();
+
       Array *deviceArr = NULL;
       globalAllocator.alloc(&deviceArr, sizeof(Array));
 
@@ -305,6 +307,10 @@ struct base_types {
       replenishPaddingGlobal<<<nbBlocks, nbThreadsPerBlock>>>(deviceArr);
 
       globalAllocator.free(deviceArr);
+
+      double end = omp_get_wtime();
+
+      std::cout << "cost: " << end - begin << "[s]" << std::endl;
       return;
     }
   };
