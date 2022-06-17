@@ -127,7 +127,7 @@ struct DeviceAllocator {
   // Wrapper has to have a content element
   template <typename Wrapper, typename Content>
   void deviceWrap(Wrapper **result, Content *ptr) {
-    result = NULL;
+    *result = NULL;
     // For real stable code, we might want to check that this chunk is actually
     // not in use, or at least make sure to put it in use after this. In
     // practice, this should be fine and not really matter?
