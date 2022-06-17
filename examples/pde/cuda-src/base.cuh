@@ -82,6 +82,7 @@ struct DevicePtrInfo {
 struct DeviceAllocator {
   std::vector<DevicePtrInfo> unusedChunks;
   std::vector<DevicePtrInfo> inUseChunks;
+  std::vector<std::pair<void*, void*>> wrapperChunks;
 
   DeviceAllocator() {};
   ~DeviceAllocator() {
@@ -122,6 +123,28 @@ struct DeviceAllocator {
 
     return returnCode;
   }
+
+  // Wrapper has to have a content element
+  template <typename Wrapper, typename Content>
+  void deviceWrap(Wrapper **result, Content *ptr) {
+    result = NULL;
+    // For real stable code, we might want to check that this chunk is actually
+    // not in use, or at least make sure to put it in use after this. In
+    // practice, this should be fine and not really matter?
+    for (auto itr = wrapperChunks.begin(); itr != wrapperChunks.end(); ++itr) {
+      if (itr->first == ptr) {
+        *result = (Wrapper*)itr->second;
+        break;
+      }
+    }
+
+    if (result == NULL) {
+      this->alloc(result, sizeof(Wrapper));
+      gpuErrChk(cudaMemcpy(&((*result)->content), &ptr, sizeof(ptr),
+                cudaMemcpyHostToDevice));
+      inUseChunks.push_back(DevicePtrInfo(*result, sizeof(Wrapper)));
+    }
+  };
 
   void free(void *ptr) {
     for (auto itr = inUseChunks.begin(); itr != inUseChunks.end(); ++itr) {
@@ -296,7 +319,7 @@ struct base_types {
       return this->content[ix];
     }
 
-    __host__ __device__ inline Float & operator[](const Index & ix) {
+    __host__ __device__ inline Float &operator[](const Index & ix) {
       return this->content[ix];
     }
 
@@ -307,6 +330,9 @@ struct base_types {
 
       // static variable allows avoiding cudaMemcpy everytime
       //Array *deviceArr = NULL;
+
+      Array *deviceArr;
+      globalAllocator.deviceWrap(&deviceArr, this->content);
 
       if (this->onDeviceArr == NULL) {
         globalAllocator.alloc(&this->onDeviceArr, sizeof(Array));
