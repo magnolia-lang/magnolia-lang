@@ -272,17 +272,15 @@ struct base_types {
 
   struct DeviceArray {
     Float *content;
-    DeviceArray *onDeviceArr;
+
     __host__ DeviceArray() {
       gpuErrChk(globalAllocator.alloc(&(this->content), TOTAL_PADDED_SIZE * sizeof(Float)));
-      this->onDeviceArr = NULL;
     }
 
     __host__ DeviceArray(const DeviceArray &other) {
       gpuErrChk(globalAllocator.alloc(&(this->content), TOTAL_PADDED_SIZE * sizeof(Float)));
       gpuErrChk(cudaMemcpy(this->content, other.content,
                  TOTAL_PADDED_SIZE * sizeof(Float), cudaMemcpyDeviceToDevice));
-      this->onDeviceArr = NULL;
     }
 
     __host__ DeviceArray &operator=(const DeviceArray &other) {
@@ -303,14 +301,12 @@ struct base_types {
 
     __host__ DeviceArray(DeviceArray &&other) {
       this->content = other.content;
-      this->onDeviceArr = other.onDeviceArr;
       other.content = NULL;
     }
 
     __host__ DeviceArray &operator=(DeviceArray &&other) {
       globalAllocator.free(this->content);
       this->content = other.content;
-      this->onDeviceArr = other.onDeviceArr;
       other.content = NULL;
       return *this;
     }
@@ -331,17 +327,19 @@ struct base_types {
       // static variable allows avoiding cudaMemcpy everytime
       //Array *deviceArr = NULL;
 
+      std::cout << "OK" << std::endl;
       Array *deviceArr;
       globalAllocator.deviceWrap(&deviceArr, this->content);
 
-      if (this->onDeviceArr == NULL) {
-        globalAllocator.alloc(&this->onDeviceArr, sizeof(Array));
+      std::cout << "wrapped: deviceArr" << std::endl;
+      // if (this->onDeviceArr == NULL) {
+      //   globalAllocator.alloc(&this->onDeviceArr, sizeof(Array));
 
-        gpuErrChk(cudaMemcpy(&(this->onDeviceArr->content), &(this->content),
-                             sizeof(this->content), cudaMemcpyHostToDevice));
-      }
+      //   gpuErrChk(cudaMemcpy(&(this->onDeviceArr->content), &(this->content),
+      //                        sizeof(this->content), cudaMemcpyHostToDevice));
+      // }
 
-      replenishPaddingGlobal<<<nbBlocks, nbThreadsPerBlock>>>(this->onDeviceArr);
+      replenishPaddingGlobal<<<nbBlocks, nbThreadsPerBlock>>>(deviceArr);
 
       cudaDeviceSynchronize();
       //globalAllocator.free(deviceArr);
