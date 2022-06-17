@@ -298,15 +298,18 @@ struct base_types {
 
       double begin = omp_get_wtime();
 
-      Array *deviceArr = NULL;
-      globalAllocator.alloc(&deviceArr, sizeof(Array));
+      static Array *deviceArr = NULL;
 
-      gpuErrChk(cudaMemcpy(&(deviceArr->content), &(this->content),
-                           sizeof(this->content), cudaMemcpyHostToDevice));
+      if (deviceArr == NULL) {
+        globalAllocator.alloc(&deviceArr, sizeof(Array));
+
+        gpuErrChk(cudaMemcpy(&(deviceArr->content), &(this->content),
+                             sizeof(this->content), cudaMemcpyHostToDevice));
+      }
 
       replenishPaddingGlobal<<<nbBlocks, nbThreadsPerBlock>>>(deviceArr);
 
-      globalAllocator.free(deviceArr);
+      //globalAllocator.free(deviceArr);
 
       double end = omp_get_wtime();
 
