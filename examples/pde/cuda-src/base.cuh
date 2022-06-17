@@ -138,7 +138,7 @@ struct DeviceAllocator {
       }
     }
 
-    if (result == NULL) {
+    if (*result == NULL) {
       this->alloc(result, sizeof(Wrapper));
       gpuErrChk(cudaMemcpy(&((*result)->content), &ptr, sizeof(ptr),
                 cudaMemcpyHostToDevice));
