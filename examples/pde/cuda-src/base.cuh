@@ -569,9 +569,9 @@ struct array_ops {
 
   _rotateIx rotateIx;
 
-  __host__ __device__ inline Array rotate(const Array &input,
-                                          const Axis &axis,
-                                          const Offset &offset) {
+  __host__ inline Array rotate(const Array &input,
+                               const Axis &axis,
+                               const Offset &offset) {
     Array result;
 
     Array *result_dev = NULL,
