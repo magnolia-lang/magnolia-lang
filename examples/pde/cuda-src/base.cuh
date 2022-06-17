@@ -11,6 +11,18 @@
 
 #include <omp.h>
 
+#ifndef PAD0
+#define PAD0 0
+#endif
+
+#ifndef PAD1
+#define PAD1 0
+#endif
+
+#ifndef PAD2
+#define PAD2 0
+#endif
+
 #ifndef S0
 #define S0 512
 #endif
@@ -300,8 +312,6 @@ struct base_types {
             }
         }
       }
-
-      //std::cout << "overhead: " << end - begin << " [s]" << std::endl;
 
       // Axis 1
       if (PAD1 > 0) {
@@ -626,12 +636,31 @@ struct array_ops {
 
 // CUDA kernel
 template <class _substepIx>
-__global__ void substep_ix_global(array_ops<float>::Array *res,const array_ops<float>::Array *u, const array_ops<float>::Array *v, const array_ops<float>::Array *u0, const array_ops<float>::Array *u1, const array_ops<float>::Array *u2) {
+__global__ void substepIxGlobal(array_ops<float>::Array *res,const array_ops<float>::Array *u, const array_ops<float>::Array *v, const array_ops<float>::Array *u0, const array_ops<float>::Array *u1, const array_ops<float>::Array *u2) {
   size_t ix = blockIdx.x * blockDim.x + threadIdx.x;
 
   _substepIx substepIx;
 
   if (ix < TOTAL_PADDED_SIZE) {
+    res->content[ix] = substepIx(*u,*v,*u0,*u1,*u2,ix);
+  }
+}
+
+template <class _substepIx>
+__global__ void substepIxPaddedGlobal(array_ops<float>::Array *res,const array_ops<float>::Array *u, const array_ops<float>::Array *v, const array_ops<float>::Array *u0, const array_ops<float>::Array *u1, const array_ops<float>::Array *u2) {
+  size_t ix = blockIdx.x * blockDim.x + threadIdx.x;
+
+  _substepIx substepIx;
+
+  size_t i = ix / (PADDED_S1 * PADDED_S2),
+         j = (ix / PADDED_S2) % PADDED_S1,
+         k = ix % PADDED_S2;
+
+  bool isNotPadding = (i >= PAD0 && i < PADDED_S0 - PAD0) &&
+                      (j >= PAD1 && j < PADDED_S1 - PAD1) &&
+                      (k >= PAD2 && k < PADDED_S2 - PAD2);
+
+  if (ix < TOTAL_PADDED_SIZE && isNotPadding) {
     res->content[ix] = substepIx(*u,*v,*u0,*u1,*u2,ix);
   }
 }
@@ -681,7 +710,7 @@ struct forall_ops {
     gpuErrChk(cudaMemcpy(&(u1_dev->content), &(u1.content), ptrSize, htd));
     gpuErrChk(cudaMemcpy(&(u2_dev->content), &(u2.content), ptrSize, htd));
 
-    substep_ix_global<_substepIx><<<nbBlocks, nbThreadsPerBlock>>>(result_dev, u_dev, v_dev, u0_dev, u1_dev, u2_dev);
+    substepIxGlobal<_substepIx><<<nbBlocks, nbThreadsPerBlock>>>(result_dev, u_dev, v_dev, u0_dev, u1_dev, u2_dev);
 
     globalAllocator.free(result_dev);
 
@@ -723,35 +752,6 @@ struct forall_ops {
 
     return result;
   }
-
-  /* OF Pad extension */
-  __host__ __device__ inline Array schedulePadded(const Array &u, const Array &v,
-      const Array &u0, const Array &u1, const Array &u2) {
-    Array result;
-    std::cout << "in schedulePadded" << std::endl;
-    for (size_t i = PAD0; i < S0 + PAD0; ++i) {
-      for (size_t j = PAD1; j < S1 + PAD1; ++j) {
-        for (size_t k = PAD2; k < S2 + PAD2; ++k) {
-          size_t ix = i * PADDED_S1 * PADDED_S2 + j * PADDED_S2 + k;
-          result[ix] = substepIx(u, v, u0, u1, u2, ix);
-        }
-      }
-    }
-
-    //std::cout << "produced: " << result[PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2] << std::endl;
-    // exit(1);
-
-    return result;
-  }
-
-  // inline Array refill_all_padding(const Array &arr) {
-  //   double begin = omp_get_wtime();
-  //   Array result(arr);
-  //   result.replenish_padding();
-  //   double end = omp_get_wtime();
-  //   std::cout << "copying: " << end - begin << " [s] elapsed" << std::endl;
-  //   return result;
-  // }
 
   __host__ __device__ inline void refillPadding(Array& arr) {
     arr.replenish_padding();
@@ -985,19 +985,41 @@ struct padded_schedule {
 
   _substepIx substepIx;
 
-  __host__ __device__ inline Array schedulePadded(const Array &u, const Array &v,
-                              const Array &u0, const Array &u1,
-                              const Array &u2) {
+  __host__ inline Array schedulePadded(const Array &u, const Array &v,
+      const Array &u0, const Array &u1, const Array &u2) {
+
+    std::cout << "in schedulePadded" << std::endl;
+
     Array result;
-    printf("in schedulePadded\n");
-    for (size_t i = PAD0; i < S0 + PAD0; ++i) {
-      for (size_t j = PAD1; j < S1 + PAD1; ++j) {
-        for (size_t k = PAD2; k < S2 + PAD2; ++k) {
-          size_t ix = i * PADDED_S1 * PADDED_S2 + j * PADDED_S2 + k;
-          result[ix] = substepIx(u, v, u0, u1, u2, ix);
-        }
-      }
-    }
+
+    Array *result_dev = NULL,
+          *u_dev = NULL,
+          *v_dev = NULL,
+          *u0_dev = NULL,
+          *u1_dev = NULL,
+          *u2_dev = NULL;
+
+    // One single globalAllocator.alloc call
+    globalAllocator.alloc(&result_dev, 6 * sizeof(Array));
+    u_dev = result_dev + 1;
+    v_dev = result_dev + 2;
+    u0_dev = result_dev + 3;
+    u1_dev = result_dev + 4;
+    u2_dev = result_dev + 5;
+
+    const size_t ptrSize = sizeof(result.content);
+    const auto htd = cudaMemcpyHostToDevice;
+    gpuErrChk(cudaMemcpy(&(result_dev->content), &(result.content), ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(u_dev->content), &(u.content), ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(v_dev->content), &(v.content), ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(u0_dev->content), &(u0.content), ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(u1_dev->content), &(u1.content), ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(u2_dev->content), &(u2.content), ptrSize, htd));
+
+    substepIxPaddedGlobal<_substepIx><<<nbBlocks, nbThreadsPerBlock>>>(result_dev, u_dev, v_dev, u0_dev, u1_dev, u2_dev);
+
+    globalAllocator.free(result_dev);
+
     return result;
   }
 };
