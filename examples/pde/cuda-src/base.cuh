@@ -281,7 +281,7 @@ struct base_types {
     __host__ DeviceArray(const DeviceArray &other) {
       gpuErrChk(globalAllocator.alloc(&(this->content), TOTAL_PADDED_SIZE * sizeof(Float)));
       gpuErrChk(cudaMemcpy(this->content, other.content,
-                 TOTAL_PADDED_SIZE * sizeof(Float), cudaMemcpyDeviceToDevice));
+                TOTAL_PADDED_SIZE * sizeof(Float), cudaMemcpyDeviceToDevice));
     }
 
     __host__ DeviceArray &operator=(const DeviceArray &other) {
@@ -1119,15 +1119,15 @@ struct specialize_psi_ops_2 {
           *u2_dev = NULL;
 
     // One single globalAllocator.alloc call
-    globalAllocator.alloc(&result_dev, 6 * sizeof(Array));
-    u_dev = result_dev + 1;
-    v_dev = result_dev + 2;
-    u0_dev = result_dev + 3;
-    u1_dev = result_dev + 4;
-    u2_dev = result_dev + 5;
+    // globalAllocator.alloc(&result_dev, 6 * sizeof(Array));
+    // u_dev = result_dev + 1;
+    // v_dev = result_dev + 2;
+    // u0_dev = result_dev + 3;
+    // u1_dev = result_dev + 4;
+    // u2_dev = result_dev + 5;
 
-    const size_t ptrSize = sizeof(result.content);
-    const auto htd = cudaMemcpyHostToDevice;
+    // const size_t ptrSize = sizeof(result.content);
+    // const auto htd = cudaMemcpyHostToDevice;
 
     globalAllocator.deviceWrap(&result_dev, result.content);
     globalAllocator.deviceWrap(&u_dev, u.content);
@@ -1148,6 +1148,11 @@ struct specialize_psi_ops_2 {
     //std::cout <<  "OK This worked" << std::endl;
 
     globalAllocator.free(result_dev);
+    globalAllocator.free(u_dev);
+    globalAllocator.free(v_dev);
+    globalAllocator.free(u0_dev);
+    globalAllocator.free(u1_dev);
+    globalAllocator.free(u2_dev);
 
     return result;
   }
