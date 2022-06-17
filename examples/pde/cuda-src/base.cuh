@@ -594,8 +594,8 @@ struct array_ops {
                          ptrSize, htd));
     gpuErrChk(cudaMemcpy(&(input_dev->content), &(input.content),
                          ptrSize, htd));
-    gpuErrChk(cudaMemcpy(&axis_dev, &axis, sizeof(Axis), htd));
-    gpuErrChk(cudaMemcpy(&offset_dev, &offset, sizeof(Offset), htd));
+    gpuErrChk(cudaMemcpy(axis_dev, &axis, sizeof(Axis), htd));
+    gpuErrChk(cudaMemcpy(offset_dev, &offset, sizeof(Offset), htd));
 
     rotateIxGlobal<_rotateIx><<<nbBlocks, nbThreadsPerBlock>>>(
       result_dev, input_dev, axis_dev, offset_dev);
