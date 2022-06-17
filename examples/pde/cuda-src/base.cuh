@@ -294,8 +294,9 @@ struct base_types {
     }
 
     // TODO: this is probably all broken...
-    __host__ __device__ void replenish_padding() {
+    __host__ void replenish_padding() {
       Float *raw_content = this->content;
+      auto dtd = cudaMemcpyDeviceToDevice;
 
       // Axis 2
       if (PAD2 > 0) {
@@ -308,10 +309,10 @@ struct base_types {
                 // |s2|pad2|pad2|
                 // |pad2|pad2|s2|
 
-                memcpy(start_padded, start_padded + S2,
-                      PAD2 * sizeof(Float)); // left pad
-                memcpy(start_padded + PAD2 + S2, start_padded + PAD2,
-                      PAD2 * sizeof(Float)); // right pad
+                gpuErrChk(cudaMemcpy(start_padded, start_padded + S2,
+                      PAD2 * sizeof(Float), dtd)); // left pad
+                gpuErrChk(cudaMemcpy(start_padded + PAD2 + S2, start_padded + PAD2,
+                      PAD2 * sizeof(Float), dtd)); // right pad
             }
         }
       }
@@ -323,22 +324,22 @@ struct base_types {
             size_t start_offset = (PAD0 + i) * PADDED_S1 * PADDED_S2;
             Float *start_padded = raw_content + start_offset;
 
-            memcpy(start_padded,
+            gpuErrChk(cudaMemcpy(start_padded,
                   start_padded + PADDED_S1 * PADDED_S2 - 2 * PAD1 * PADDED_S2,
-                  PAD1 * PADDED_S2 * sizeof(Float)); // left pad
-            memcpy(start_padded + PADDED_S1 * PADDED_S2 - PAD1 * PADDED_S2,
+                  PAD1 * PADDED_S2 * sizeof(Float), dtd)); // left pad
+            gpuErrChk(cudaMemcpy(start_padded + PADDED_S1 * PADDED_S2 - PAD1 * PADDED_S2,
                   start_padded + PAD1 * PADDED_S2,
-                  PAD1 * PADDED_S2 * sizeof(Float)); // right pad
+                  PAD1 * PADDED_S2 * sizeof(Float), dtd)); // right pad
         }
       }
 
       // Axis 0
-      memcpy(raw_content,
+      gpuErrChk(cudaMemcpy(raw_content,
              raw_content + TOTAL_PADDED_SIZE - 2 * PAD0 * PADDED_S1 * PADDED_S2,
-             PAD0 * PADDED_S1 * PADDED_S2 * sizeof(Float)); // left pad
-      memcpy(raw_content + TOTAL_PADDED_SIZE - PAD0 * PADDED_S1 * PADDED_S2,
+             PAD0 * PADDED_S1 * PADDED_S2 * sizeof(Float), dtd)); // left pad
+      gpuErrChk(cudaMemcpy(raw_content + TOTAL_PADDED_SIZE - PAD0 * PADDED_S1 * PADDED_S2,
              raw_content + PAD0 * PADDED_S1 * PADDED_S2,
-             PAD0 * PADDED_S1 * PADDED_S2 * sizeof(Float)); // right pad
+             PAD0 * PADDED_S1 * PADDED_S2 * sizeof(Float), dtd)); // right pad
     }
   };
 
