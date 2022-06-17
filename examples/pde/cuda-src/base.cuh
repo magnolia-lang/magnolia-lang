@@ -155,6 +155,9 @@ struct base_types {
   struct Nat { size_t value;
     __host__ __device__ Nat(){}
     __host__ __device__ Nat(const size_t &v) : value(v) {} };
+  struct ScalarIndex { size_t value;
+    __host__ __device__ ScalarIndex(){}
+    __host__ __device__ ScalarIndex(const size_t &v) : value(v) {} };
 
   struct HostArray {
     std::unique_ptr<Float[]> content;
@@ -665,6 +668,27 @@ __global__ void substepIxPaddedGlobal(array_ops<float>::Array *res,const array_o
   }
 }
 
+template <class _substepIx3D>
+__global__ void substepIx3DPaddedGlobal(array_ops<float>::Array *res,const array_ops<float>::Array *u, const array_ops<float>::Array *v, const array_ops<float>::Array *u0, const array_ops<float>::Array *u1, const array_ops<float>::Array *u2) {
+  size_t ix = blockIdx.x * blockDim.x + threadIdx.x;
+
+  _substepIx3D substepIx3D;
+
+  size_t i = ix / (PADDED_S1 * PADDED_S2),
+         j = (ix / PADDED_S2) % PADDED_S1,
+         k = ix % PADDED_S2;
+
+  bool isNotPadding = (i >= PAD0 && i < PADDED_S0 - PAD0) &&
+                      (j >= PAD1 && j < PADDED_S1 - PAD1) &&
+                      (k >= PAD2 && k < PADDED_S2 - PAD2);
+
+  if (ix < TOTAL_PADDED_SIZE && isNotPadding) {
+    base_types<constants::Float>::ScalarIndex si(i), sj(j), sk(k);
+    res->content[ix] = substepIx3D(*u, *v, *u0, *u1, *u2, si, sj, sk);
+  }
+}
+
+
 template <typename _Array, typename _Axis, typename _Float, typename _Index,
           typename _Nat, typename _Offset, class _substepIx>
 struct forall_ops {
@@ -795,7 +819,7 @@ struct forall_ops {
 
   /* OF specialize psi extension */
 
-  struct ScalarIndex { size_t value; };
+  typedef base_types<constants::Float>::ScalarIndex ScalarIndex;
 
   __host__ __device__ inline Index mkIx(const ScalarIndex &i, const ScalarIndex &j,
                        const ScalarIndex &k) {
@@ -870,8 +894,7 @@ template<typename _Index>
 struct scalar_index {
   typedef _Index Index;
 
-  struct ScalarIndex { size_t value;
-    __host__ __device__ ScalarIndex(size_t i) {this->value = i;}};
+  typedef base_types<constants::Float>::ScalarIndex ScalarIndex;
 
   __host__ __device__ inline Index mkIx(const ScalarIndex &i, const ScalarIndex &j,
                        const ScalarIndex &k) {
@@ -1045,18 +1068,40 @@ struct specialize_psi_ops_2 {
     return a[i.value * PADDED_S1 * PADDED_S2 + j.value * PADDED_S2 + k.value];
   }
 
-  __host__ __device__ inline Array schedule3DPadded(const Array &u, const Array &v,
+  __host__ inline Array schedule3DPadded(const Array &u, const Array &v,
       const Array &u0, const Array &u1, const Array &u2) {
+
+    std::cout << "in schedule3DPadded" << std::endl;
+
     Array result;
-    printf("in schedule3DPadded\n");
-    for (size_t i = PAD0; i < S0 + PAD0; ++i) {
-      for (size_t j = PAD1; j < S1 + PAD1; ++j) {
-        for (size_t k = PAD2; k < S2 + PAD2; ++k) {
-          size_t ix = i * PADDED_S1 * PADDED_S2 + j * PADDED_S2 + k;
-          result[ix] = substepIx3D(u, v, u0, u1, u2, ScalarIndex(i), ScalarIndex(j), ScalarIndex(k));
-        }
-      }
-    }
+
+    Array *result_dev = NULL,
+          *u_dev = NULL,
+          *v_dev = NULL,
+          *u0_dev = NULL,
+          *u1_dev = NULL,
+          *u2_dev = NULL;
+
+    // One single globalAllocator.alloc call
+    globalAllocator.alloc(&result_dev, 6 * sizeof(Array));
+    u_dev = result_dev + 1;
+    v_dev = result_dev + 2;
+    u0_dev = result_dev + 3;
+    u1_dev = result_dev + 4;
+    u2_dev = result_dev + 5;
+
+    const size_t ptrSize = sizeof(result.content);
+    const auto htd = cudaMemcpyHostToDevice;
+    gpuErrChk(cudaMemcpy(&(result_dev->content), &(result.content), ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(u_dev->content), &(u.content), ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(v_dev->content), &(v.content), ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(u0_dev->content), &(u0.content), ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(u1_dev->content), &(u1.content), ptrSize, htd));
+    gpuErrChk(cudaMemcpy(&(u2_dev->content), &(u2.content), ptrSize, htd));
+
+    substepIx3DPaddedGlobal<_substepIx3D><<<nbBlocks, nbThreadsPerBlock>>>(result_dev, u_dev, v_dev, u0_dev, u1_dev, u2_dev);
+
+    globalAllocator.free(result_dev);
 
     return result;
   }
