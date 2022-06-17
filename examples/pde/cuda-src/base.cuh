@@ -515,7 +515,7 @@ struct array_ops {
     const auto htd = cudaMemcpyHostToDevice;
     gpuErrChk(cudaMemcpy(&(result_dev->content), &(result.content),
                          ptrSize, htd));
-    gpuErrChk(cudaMemcpy(&lhsFloat_dev, &lhsFloat, sizeof(Float), htd));
+    gpuErrChk(cudaMemcpy(lhsFloat_dev, &lhsFloat, sizeof(Float), htd));
     gpuErrChk(cudaMemcpy(&(rhs_dev->content), &(rhs.content),
                          ptrSize, htd));
 
