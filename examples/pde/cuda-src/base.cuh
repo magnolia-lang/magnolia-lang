@@ -669,9 +669,9 @@ __global__ void replenishPaddingGlobal(array_ops<float>::Array *arr) {
          k = ix % PADDED_S2;
 
   // Computing the corresponding index within the inner array
-  size_t oi = (i < PAD0) ? i + S0 : ((i >= S0 + PAD0) ? (i + 2 * PAD0) % PADDED_S0 : i);
-  size_t oj = (j < PAD0) ? j + S0 : ((j >= S0 + PAD0) ? (j + 2 * PAD0) % PADDED_S0 : j);
-  size_t ok = (k < PAD0) ? k + S0 : ((k >= S0 + PAD0) ? (k + 2 * PAD0) % PADDED_S0 : k);
+  size_t oi = (i < PAD0) ? i + S0 : ((i >= S0 + PAD0) ? i - S0 : i);
+  size_t oj = (j < PAD1) ? j + S1 : ((j >= S1 + PAD1) ? j - S1 : j);
+  size_t ok = (k < PAD2) ? k + S2 : ((k >= S2 + PAD2) ? k - S2 : k);
 
   size_t oix = oi * PADDED_S1 * PADDED_S2 + oj * PADDED_S2 + ok;
   arr->content[ix] = arr->content[oix];
