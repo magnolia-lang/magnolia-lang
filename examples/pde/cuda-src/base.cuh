@@ -296,8 +296,9 @@ struct base_types {
     // TODO: this is probably all broken...
     __host__ void replenish_padding() {
 
-      double begin = omp_get_wtime();
+      //double begin = omp_get_wtime();
 
+      // static variable allows avoiding cudaMemcpy everytime
       static Array *deviceArr = NULL;
 
       if (deviceArr == NULL) {
@@ -311,9 +312,9 @@ struct base_types {
 
       //globalAllocator.free(deviceArr);
 
-      double end = omp_get_wtime();
+      //double end = omp_get_wtime();
 
-      std::cout << "cost: " << end - begin << "[s]" << std::endl;
+      //std::cout << "cost: " << end - begin << "[s]" << std::endl;
       return;
     }
   };
@@ -1072,22 +1073,20 @@ struct specialize_psi_ops_2 {
 
     Array result;
 
-    static Array *result_dev = NULL,
+    Array *result_dev = NULL,
           *u_dev = NULL,
           *v_dev = NULL,
           *u0_dev = NULL,
           *u1_dev = NULL,
           *u2_dev = NULL;
 
-    if (result_dev == NULL) {
-      // One single globalAllocator.alloc call
-      globalAllocator.alloc(&result_dev, 6 * sizeof(Array));
-      u_dev = result_dev + 1;
-      v_dev = result_dev + 2;
-      u0_dev = result_dev + 3;
-      u1_dev = result_dev + 4;
-      u2_dev = result_dev + 5;
-    }
+    // One single globalAllocator.alloc call
+    globalAllocator.alloc(&result_dev, 6 * sizeof(Array));
+    u_dev = result_dev + 1;
+    v_dev = result_dev + 2;
+    u0_dev = result_dev + 3;
+    u1_dev = result_dev + 4;
+    u2_dev = result_dev + 5;
 
     const size_t ptrSize = sizeof(result.content);
     const auto htd = cudaMemcpyHostToDevice;
@@ -1102,7 +1101,7 @@ struct specialize_psi_ops_2 {
 
     //std::cout <<  "OK This worked" << std::endl;
 
-    //globalAllocator.free(result_dev);
+    globalAllocator.free(result_dev);
 
     return result;
   }
