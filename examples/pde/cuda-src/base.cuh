@@ -1072,20 +1072,22 @@ struct specialize_psi_ops_2 {
 
     Array result;
 
-    Array *result_dev = NULL,
+    static Array *result_dev = NULL,
           *u_dev = NULL,
           *v_dev = NULL,
           *u0_dev = NULL,
           *u1_dev = NULL,
           *u2_dev = NULL;
 
-    // One single globalAllocator.alloc call
-    globalAllocator.alloc(&result_dev, 6 * sizeof(Array));
-    u_dev = result_dev + 1;
-    v_dev = result_dev + 2;
-    u0_dev = result_dev + 3;
-    u1_dev = result_dev + 4;
-    u2_dev = result_dev + 5;
+    if (result_dev == NULL) {
+      // One single globalAllocator.alloc call
+      globalAllocator.alloc(&result_dev, 6 * sizeof(Array));
+      u_dev = result_dev + 1;
+      v_dev = result_dev + 2;
+      u0_dev = result_dev + 3;
+      u1_dev = result_dev + 4;
+      u2_dev = result_dev + 5;
+    }
 
     const size_t ptrSize = sizeof(result.content);
     const auto htd = cudaMemcpyHostToDevice;
@@ -1100,7 +1102,7 @@ struct specialize_psi_ops_2 {
 
     //std::cout <<  "OK This worked" << std::endl;
 
-    globalAllocator.free(result_dev);
+    //globalAllocator.free(result_dev);
 
     return result;
   }
