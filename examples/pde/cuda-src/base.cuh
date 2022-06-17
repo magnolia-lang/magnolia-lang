@@ -134,6 +134,7 @@ struct DeviceAllocator {
     for (auto itr = wrapperChunks.begin(); itr != wrapperChunks.end(); ++itr) {
       if (itr->first == ptr) {
         *result = (Wrapper*)itr->second;
+        std::cout << "reuse!" << std::endl;
         break;
       }
     }
