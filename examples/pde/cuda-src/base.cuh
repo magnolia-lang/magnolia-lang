@@ -295,51 +295,17 @@ struct base_types {
 
     // TODO: this is probably all broken...
     __host__ void replenish_padding() {
-      Float *raw_content = this->content;
-      auto dtd = cudaMemcpyDeviceToDevice;
 
-      // Axis 2
-      if (PAD2 > 0) {
-        for (size_t i = 0; i < S0; ++i) {
-            for (size_t j = 0; j < S1; ++j) {
-                size_t start_offset_padded = (PAD0 + i) * PADDED_S1 * PADDED_S2 +
-                                            (PAD1 + j) * PADDED_S2;
-                Float *start_padded = raw_content + start_offset_padded;
-                // |pad2|s2|pad2|
-                // |s2|pad2|pad2|
-                // |pad2|pad2|s2|
+      Array *deviceArr = NULL;
+      globalAllocator.alloc(&deviceArr, sizeof(Array));
 
-                gpuErrChk(cudaMemcpy(start_padded, start_padded + S2,
-                      PAD2 * sizeof(Float), dtd)); // left pad
-                gpuErrChk(cudaMemcpy(start_padded + PAD2 + S2, start_padded + PAD2,
-                      PAD2 * sizeof(Float), dtd)); // right pad
-            }
-        }
-      }
+      gpuErrChk(cudaMemcpy(&(deviceArr->content), &(this->content),
+                           sizeof(this->content), cudaMemcpyHostToDevice));
 
-      // Axis 1
-      if (PAD1 > 0) {
-        for (size_t i = 0; i < S0; i++) {
-            // [ ? <content> ? ]
-            size_t start_offset = (PAD0 + i) * PADDED_S1 * PADDED_S2;
-            Float *start_padded = raw_content + start_offset;
+      replenishPaddingGlobal<<<nbBlocks, nbThreadsPerBlock>>>(deviceArr);
 
-            gpuErrChk(cudaMemcpy(start_padded,
-                  start_padded + PADDED_S1 * PADDED_S2 - 2 * PAD1 * PADDED_S2,
-                  PAD1 * PADDED_S2 * sizeof(Float), dtd)); // left pad
-            gpuErrChk(cudaMemcpy(start_padded + PADDED_S1 * PADDED_S2 - PAD1 * PADDED_S2,
-                  start_padded + PAD1 * PADDED_S2,
-                  PAD1 * PADDED_S2 * sizeof(Float), dtd)); // right pad
-        }
-      }
-
-      // Axis 0
-      gpuErrChk(cudaMemcpy(raw_content,
-             raw_content + TOTAL_PADDED_SIZE - 2 * PAD0 * PADDED_S1 * PADDED_S2,
-             PAD0 * PADDED_S1 * PADDED_S2 * sizeof(Float), dtd)); // left pad
-      gpuErrChk(cudaMemcpy(raw_content + TOTAL_PADDED_SIZE - PAD0 * PADDED_S1 * PADDED_S2,
-             raw_content + PAD0 * PADDED_S1 * PADDED_S2,
-             PAD0 * PADDED_S1 * PADDED_S2 * sizeof(Float), dtd)); // right pad
+      globalAllocator.free(deviceArr);
+      return;
     }
   };
 
@@ -695,6 +661,21 @@ __global__ void substepIx3DPaddedGlobal(array_ops<float>::Array *res,const array
   }
 }
 
+__global__ void replenishPaddingGlobal(array_ops<float>::Array *arr) {
+  // shape: 2 * (PAD0 * PADDED_S1 * PADDED_S2 + PAD1 * PADDED_S2 + PAD2)
+  size_t ix = blockIdx.x * blockDim.x + threadIdx.x;
+  size_t i = ix / (PADDED_S1 * PADDED_S2),
+         j = (ix / PADDED_S2) % PADDED_S1,
+         k = ix % PADDED_S2;
+
+  // Computing the corresponding index within the inner array
+  size_t oi = (i < PAD0) ? i + S0 : ((i >= S0 + PAD0) ? (i + 2 * PAD0) % PADDED_S0 : i);
+  size_t oj = (j < PAD0) ? j + S0 : ((j >= S0 + PAD0) ? (j + 2 * PAD0) % PADDED_S0 : j);
+  size_t ok = (k < PAD0) ? k + S0 : ((k >= S0 + PAD0) ? (k + 2 * PAD0) % PADDED_S0 : k);
+
+  size_t oix = oi * PADDED_S1 * PADDED_S2 + oj * PADDED_S2 + ok;
+  arr->content[ix] = arr->content[oix];
+}
 
 template <typename _Array, typename _Axis, typename _Float, typename _Index,
           typename _Nat, typename _Offset, class _substepIx>
