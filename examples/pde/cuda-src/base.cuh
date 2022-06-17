@@ -101,6 +101,8 @@ struct DeviceAllocator {
     }
   }
 
+  // We could make this a map to have a more efficient lookup, but we do not
+  // bother at the moment.
   template <typename T>
   cudaError_t alloc(T** ptr, size_t size) {
     *ptr = NULL;
@@ -315,6 +317,7 @@ struct base_types {
 
       replenishPaddingGlobal<<<nbBlocks, nbThreadsPerBlock>>>(this->onDeviceArr);
 
+      cudaDeviceSynchronize();
       //globalAllocator.free(deviceArr);
 
       double end = omp_get_wtime();
