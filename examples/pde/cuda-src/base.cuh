@@ -328,10 +328,10 @@ struct base_types {
 
       // static variable allows avoiding cudaMemcpy everytime
       Array *deviceArr = NULL;
-      globalAllocator.alloc(&deviceArr, sizeof(Array));
+      gpuErrChk(globalAllocator.alloc(&deviceArr, sizeof(Array)));
 
       gpuErrChk(cudaMemcpy(&(deviceArr->content), &(this->content),
-                            sizeof(this->content), cudaMemcpyHostToDevice));
+                           sizeof(this->content), cudaMemcpyHostToDevice));
 
       replenishPaddingGlobal<<<nbBlocks, nbThreadsPerBlock>>>(deviceArr);
 
@@ -340,7 +340,6 @@ struct base_types {
 
       double end = omp_get_wtime();
 
-      std::cout << "cost: " << end - begin << "[s]" << std::endl;
       return;
     }
   };
@@ -669,12 +668,13 @@ __global__ void substepIxPaddedGlobal(array_ops<float>::Array *res,const array_o
                       (j >= PAD1 && j < PADDED_S1 - PAD1) &&
                       (k >= PAD2 && k < PADDED_S2 - PAD2);
 
-  if (ix < TOTAL_PADDED_SIZE) {
+  if (ix < TOTAL_PADDED_SIZE && isNotPadding) {
     // Hack to avoid divergence: if there is any padding in the array, the
     // 0th index of the array *has* to be padding (since padding is always
     // on both ends of the array). We avoid thread divergence by mapping all
     // padding indices to 0.
-    ix = ix * isNotPadding;
+    // TODO: seems like this hack is inefficient.
+    // ix = ix * isNotPadding;
     res->content[ix] = substepIx(*u,*v,*u0,*u1,*u2,ix);
   }
 }
@@ -1141,11 +1141,11 @@ struct specialize_psi_ops_2 {
     //std::cout <<  "OK This worked" << std::endl;
 
     globalAllocator.free(result_dev);
-    globalAllocator.free(u_dev);
-    globalAllocator.free(v_dev);
-    globalAllocator.free(u0_dev);
-    globalAllocator.free(u1_dev);
-    globalAllocator.free(u2_dev);
+    // globalAllocator.free(u_dev);
+    // globalAllocator.free(v_dev);
+    // globalAllocator.free(u0_dev);
+    // globalAllocator.free(u1_dev);
+    // globalAllocator.free(u2_dev);
 
     return result;
   }
