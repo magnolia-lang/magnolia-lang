@@ -763,7 +763,13 @@ struct forall_ops {
     gpuErrChk(cudaMemcpy(&(u1_dev->content), &(u1.content), ptrSize, htd));
     gpuErrChk(cudaMemcpy(&(u2_dev->content), &(u2.content), ptrSize, htd));
 
+    double begin = omp_get_wtime();
+
     substepIxGlobal<_substepIx><<<nbBlocks, nbThreadsPerBlock>>>(result_dev, u_dev, v_dev, u0_dev, u1_dev, u2_dev);
+
+    double end = omp_get_wtime();
+
+    std::cout << "substep took " << end - begin << "[s]" << std::endl;
 
     globalAllocator.free(result_dev);
 
@@ -1136,7 +1142,13 @@ struct specialize_psi_ops_2 {
     gpuErrChk(cudaMemcpy(&(u1_dev->content), &(u1.content), ptrSize, htd));
     gpuErrChk(cudaMemcpy(&(u2_dev->content), &(u2.content), ptrSize, htd));
 
+    double begin = omp_get_wtime();
+
     substepIx3DPaddedGlobal<_substepIx3D><<<nbBlocks, nbThreadsPerBlock>>>(result_dev, u_dev, v_dev, u0_dev, u1_dev, u2_dev);
+
+    double end = omp_get_wtime();
+
+    std::cout << "substep took " << end - begin << "[s]" << std::endl;
 
     //std::cout <<  "OK This worked" << std::endl;
 
