@@ -59,9 +59,6 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
    }
 }
 
-size_t nbThreadsPerBlock = 1024;
-size_t nbBlocks = (TOTAL_PADDED_SIZE / nbThreadsPerBlock) + (TOTAL_PADDED_SIZE % nbThreadsPerBlock > 0 ? 1 : 0);
-
 struct DevicePtrInfo {
   void* ptr;
   size_t size;
@@ -333,6 +330,9 @@ struct base_types {
       gpuErrChk(cudaMemcpy(&(deviceArr->content), &(this->content),
                             sizeof(this->content), cudaMemcpyHostToDevice));
 
+      size_t nbThreadsPerBlock = 1024;
+      size_t nbBlocks = (S0 * S1 * S2 / nbThreadsPerBlock) + (S0 * S1 * S2 % nbThreadsPerBlock > 0 ? 1 : 0);
+
       replenishPaddingGlobal<<<nbBlocks, nbThreadsPerBlock>>>(deviceArr);
 
       cudaDeviceSynchronize();
@@ -433,6 +433,9 @@ struct array_ops {
                          ptrSize, htd));
     gpuErrChk(cudaMemcpy(&(rhs_dev->content), &(rhs.content),
                          ptrSize, htd));
+
+    size_t nbThreadsPerBlock = 1024;
+    size_t nbBlocks = (TOTAL_PADDED_SIZE / nbThreadsPerBlock) + (TOTAL_PADDED_SIZE % nbThreadsPerBlock > 0 ? 1 : 0);
 
     binOpIxGlobal<_binOpIx><<<nbBlocks, nbThreadsPerBlock>>>(
       result_dev, lhs_dev, rhs_dev);
@@ -544,6 +547,9 @@ struct array_ops {
     gpuErrChk(cudaMemcpy(&(rhs_dev->content), &(rhs.content),
                          ptrSize, htd));
 
+    size_t nbThreadsPerBlock = 1024;
+    size_t nbBlocks = (TOTAL_PADDED_SIZE / nbThreadsPerBlock) + (TOTAL_PADDED_SIZE % nbThreadsPerBlock > 0 ? 1 : 0);
+
     binOpIxGlobal<_binOpIx><<<nbBlocks, nbThreadsPerBlock>>>(
       result_dev, lhsFloat_dev, rhs_dev);
 
@@ -622,6 +628,9 @@ struct array_ops {
     gpuErrChk(cudaMemcpy(axis_dev, &axis, sizeof(Axis), htd));
     gpuErrChk(cudaMemcpy(offset_dev, &offset, sizeof(Offset), htd));
 
+    size_t nbThreadsPerBlock = 1024;
+    size_t nbBlocks = (TOTAL_PADDED_SIZE / nbThreadsPerBlock) + (TOTAL_PADDED_SIZE % nbThreadsPerBlock > 0 ? 1 : 0);
+
     rotateIxGlobal<_rotateIx><<<nbBlocks, nbThreadsPerBlock>>>(
       result_dev, input_dev, axis_dev, offset_dev);
 
@@ -681,25 +690,16 @@ __global__ void substepIxPaddedGlobal(array_ops<float>::Array *res,const array_o
 
 template <class _substepIx3D>
 __global__ void substepIx3DPaddedGlobal(array_ops<float>::Array *res,const array_ops<float>::Array *u, const array_ops<float>::Array *v, const array_ops<float>::Array *u0, const array_ops<float>::Array *u1, const array_ops<float>::Array *u2) {
-  size_t ix = (blockIdx.x * blockDim.x + threadIdx.x) + \
-              PAD0 * PADDED_S1 * PADDED_S2 + \
-              PAD1 * PADDED_S1 + \
-              PAD2;
+  size_t ix = blockIdx.x * blockDim.x + threadIdx.x;
 
   _substepIx3D substepIx3D;
 
-  size_t i = ix / (PADDED_S1 * PADDED_S2),
-         j = (ix / PADDED_S2) % PADDED_S1,
-         k = ix % PADDED_S2;
+  size_t i = ix / (S1 * S2) + PAD0,
+         j = (ix / S2) % S1 + PAD1,
+         k = ix % S2 + PAD2;
 
-  bool isNotPadding = (i >= PAD0 && i < S0 + PAD0) &&
-                      (j >= PAD1 && j < S1 + PAD1) &&
-                      (k >= PAD2 && k < S2 + PAD2);
-
-  if (ix < TOTAL_PADDED_SIZE && isNotPadding) {
-    base_types<constants::Float>::ScalarIndex si(i), sj(j), sk(k);
-    res->content[ix] = substepIx3D(*u, *v, *u0, *u1, *u2, si, sj, sk);
-  }
+  base_types<constants::Float>::ScalarIndex si(i), sj(j), sk(k);
+  res->content[ix] = substepIx3D(*u, *v, *u0, *u1, *u2, si, sj, sk);
 }
 
 __global__ void replenishPaddingGlobal(array_ops<float>::Array *arr) {
@@ -762,6 +762,9 @@ struct forall_ops {
     gpuErrChk(cudaMemcpy(&(u0_dev->content), &(u0.content), ptrSize, htd));
     gpuErrChk(cudaMemcpy(&(u1_dev->content), &(u1.content), ptrSize, htd));
     gpuErrChk(cudaMemcpy(&(u2_dev->content), &(u2.content), ptrSize, htd));
+
+    size_t nbThreadsPerBlock = 1024;
+    size_t nbBlocks = (TOTAL_PADDED_SIZE / nbThreadsPerBlock) + (TOTAL_PADDED_SIZE % nbThreadsPerBlock > 0 ? 1 : 0);
 
     double begin = omp_get_wtime();
 
@@ -1074,6 +1077,9 @@ struct padded_schedule {
     gpuErrChk(cudaMemcpy(&(u1_dev->content), &(u1.content), ptrSize, htd));
     gpuErrChk(cudaMemcpy(&(u2_dev->content), &(u2.content), ptrSize, htd));
 
+    size_t nbThreadsPerBlock = 1024;
+    size_t nbBlocks = (S0 * S1 * S2 / nbThreadsPerBlock) + (S0 * S1 * S2 % nbThreadsPerBlock > 0 ? 1 : 0);
+
     substepIxPaddedGlobal<_substepIx><<<nbBlocks, nbThreadsPerBlock>>>(result_dev, u_dev, v_dev, u0_dev, u1_dev, u2_dev);
 
     globalAllocator.free(result_dev);
@@ -1143,6 +1149,9 @@ struct specialize_psi_ops_2 {
     gpuErrChk(cudaMemcpy(&(u2_dev->content), &(u2.content), ptrSize, htd));
 
     double begin = omp_get_wtime();
+
+    size_t nbThreadsPerBlock = 1024;
+    size_t nbBlocks = (S0 * S1 * S2 / nbThreadsPerBlock) + (S0 * S1 * S2 % nbThreadsPerBlock > 0 ? 1 : 0);
 
     substepIx3DPaddedGlobal<_substepIx3D><<<nbBlocks, nbThreadsPerBlock>>>(result_dev, u_dev, v_dev, u0_dev, u1_dev, u2_dev);
 
