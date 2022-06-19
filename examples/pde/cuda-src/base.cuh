@@ -326,17 +326,19 @@ struct base_types {
 
       double begin = omp_get_wtime();
 
-      // static variable allows avoiding cudaMemcpy everytime
-      Array *deviceArr = NULL;
-      gpuErrChk(globalAllocator.alloc(&deviceArr, sizeof(Array)));
+      if constexpr(PAD0 > 0 || PAD1 > 0 || PAD2 > 0) {
 
-      gpuErrChk(cudaMemcpy(&(deviceArr->content), &(this->content),
-                           sizeof(this->content), cudaMemcpyHostToDevice));
+        Array *deviceArr = NULL;
+        gpuErrChk(globalAllocator.alloc(&deviceArr, sizeof(Array)));
 
-      replenishPaddingGlobal<<<nbBlocks, nbThreadsPerBlock>>>(deviceArr);
+        gpuErrChk(cudaMemcpy(&(deviceArr->content), &(this->content),
+                            sizeof(this->content), cudaMemcpyHostToDevice));
 
-      cudaDeviceSynchronize();
-      globalAllocator.free(deviceArr);
+        replenishPaddingGlobal<<<nbBlocks, nbThreadsPerBlock>>>(deviceArr);
+
+        cudaDeviceSynchronize();
+        globalAllocator.free(deviceArr);
+      }
 
       double end = omp_get_wtime();
 
