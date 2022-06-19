@@ -211,13 +211,13 @@ checkModuleExpr tlDecls _
 -- TODO: handle
 checkModuleExpr tlDecls _
         (Ann src (MModuleTransform morphism moduleExpr)) = do
-  tcModuleExpr <- checkModuleExpr tlDecls Implementation moduleExpr
   case morphism of
     MModuleMorphism'ToSignature -> throwLocatedE NotImplementedErr src
       "WIP have not implemented module morphism cast to signature"
     -- TODO: here there'll be problems when merging different bodies coming from
     -- the same decl. Will work on error-handling after the deadline.
     MModuleMorphism'RewriteWith rewModuleExpr nbRewrites -> do
+      tcModuleExpr <- checkModuleExpr tlDecls Implementation moduleExpr
       tcRewModuleExpr <- checkModuleExpr tlDecls Concept rewModuleExpr
       ~(Ann _ (MModuleDef tcRewrittenDecls tcDeps tcRenamingBlocks)) <-
           runOptimizer tcRewModuleExpr nbRewrites tcModuleExpr
@@ -227,6 +227,11 @@ checkModuleExpr tlDecls _
                         (join $ M.elems tcRewDecls)
       pure (Ann src (MModuleDef allDecls tcDeps tcRenamingBlocks))
     MModuleMorphism'GenerateWith genModuleExpr -> do
+      let synthModuleExpr = Ann src (MModuleDef []
+            [ Ann src (MModuleDep MModuleDepRequire genModuleExpr)
+            , Ann src (MModuleDep MModuleDepUse moduleExpr)
+            ] [])
+      tcModuleExpr <- checkModuleExpr tlDecls Implementation synthModuleExpr
       tcGenModuleExpr <- checkModuleExpr tlDecls Concept genModuleExpr
       ~(Ann _ (MModuleDef tcGenDecls _ _)) <-
         castModuleExpr Signature tcGenModuleExpr
