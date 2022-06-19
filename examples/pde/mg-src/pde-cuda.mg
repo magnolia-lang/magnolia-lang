@@ -93,7 +93,7 @@ program BasePDEProgram = {
                  , one_offset => one
                  ];
   use ExtConstants;
-  //use ExtExtendMissingBypass;
+  //use ExtBasicSchedule;
 }
 
 program PDEProgramDNF = {
@@ -103,7 +103,7 @@ program PDEProgramDNF = {
       with DNFRules 20)
     with ToIxwise 1);
 
-  use ExtExtendMissingBypass;
+  use ExtBasicSchedule;
 }
 
 // // program PDEProgram2 = {
@@ -120,15 +120,14 @@ program PDEProgram3D = {
   use (rewrite
         (rewrite
           (rewrite
-            (generate OFSpecializeSubstepGenerator in { use PDEProgramDNF;
-                                                        use ExtScalarIndex; })
+            (generate OFSpecializeSubstepGenerator in PDEProgramDNF)
           with OFSpecializePsi 10)
         with OFReduceMakeIxRotate 20)
       with SwitchSchedule[ sourceSchedule => schedule
                          , targetSchedule => schedule3D
                          ] 1);
 
-  //use ExtScalarIndex;
+  use ExtScalarIndex;
   use ExtAxisLength;
   use ExtSpecializeBase;
   use ExtNeededFns[schedule3DPadded => schedule3D];
@@ -139,14 +138,14 @@ program PDEProgram3DPadded = {
         (rewrite
           (rewrite
             (rewrite
-              (generate OFSpecializeSubstepGenerator in { use PDEProgramDNF;
-                                                          use ExtScalarIndex; })
+              (generate OFSpecializeSubstepGenerator in PDEProgramDNF)
             with OFSpecializePsi 10)
           with OFReduceMakeIxRotate 20)
         with OFPad[schedulePadded =>
                    schedule3DPadded] 1)
       with OFEliminateModuloPadding 10);
 
+  use ExtScalarIndex;
   use ExtAxisLength;
   use ExtSpecializeBase;
   use ExtNeededFns; // pulling in psi, schedules, etc...
@@ -258,7 +257,7 @@ implementation ExtNeededFns = external CUDA [dims=(a,b,c), globals=(schedule3DPa
 }
 
 
-implementation ExtExtendMissingBypass = external CUDA [dims=(a,b,c), globals=(schedule)] base.forall_ops {
+implementation ExtBasicSchedule = external CUDA [dims=(a,b,c), globals=(schedule)] base.forall_ops {
   require type Float;
   require type Array;
   require type Offset;
