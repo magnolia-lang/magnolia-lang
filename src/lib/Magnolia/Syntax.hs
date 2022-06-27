@@ -317,7 +317,7 @@ deriving instance Eq (MModuleExpr' PhCheck)
 
 data MModuleMorphism p = MModuleMorphism'ToSignature
                        | MModuleMorphism'RewriteWith (MModuleExpr p) Int
-                       | MModuleMorphism'GenerateWith (MModuleExpr p)
+                       | MModuleMorphism'ImplementWith (MModuleExpr p)
 
 deriving instance Eq (MModuleMorphism PhCheck)
 
@@ -800,7 +800,7 @@ instance HasDependencies (MModuleExpr' PhParse) where
     MModuleTransform transformation moduleExpr' -> (case transformation of
       MModuleMorphism'ToSignature -> []
       MModuleMorphism'RewriteWith rewriteRules _ -> dependencies rewriteRules
-      MModuleMorphism'GenerateWith generator -> dependencies generator) <>
+      MModuleMorphism'ImplementWith generator -> dependencies generator) <>
         dependencies moduleExpr'
     MModuleExternal _ _ moduleExpr' -> dependencies moduleExpr'
 

@@ -147,7 +147,7 @@ moduleType = (keyword ConceptKW >> return Concept)
 
 moduleTransformedRef :: Parser ParsedModuleExpr
 moduleTransformedRef = annot $ do
-  (morphism, targetModuleExpr) <- choice [rewriteWith, generateWith]
+  (morphism, targetModuleExpr) <- choice [rewriteWith, implementWith]
   --renamingBlocks <- many renamingBlock
   return $ MModuleTransform morphism targetModuleExpr
   where
@@ -160,12 +160,12 @@ moduleTransformedRef = annot $ do
       pure (MModuleMorphism'RewriteWith rewModuleExpr nbRewrites,
             targetModuleExpr)
 
-    generateWith = do
-      keyword GenerateKW
+    implementWith = do
+      keyword ImplementKW
       genModuleExpr <- moduleExpr
       keyword InKW
       targetModuleExpr <- moduleExpr
-      pure (MModuleMorphism'GenerateWith genModuleExpr, targetModuleExpr)
+      pure (MModuleMorphism'ImplementWith genModuleExpr, targetModuleExpr)
 
 moduleRef :: Parser ParsedModuleExpr
 moduleRef = annot $ do
@@ -458,7 +458,7 @@ data Keyword = ConceptKW | ImplementationKW | ProgramKW | SignatureKW
              | AssertKW | CallKW | IfKW | ThenKW | ElseKW | LetKW | SkipKW
              | ValueKW
              | PackageKW | ImportKW
-             | RewriteKW | GenerateKW | InKW
+             | RewriteKW | ImplementKW | InKW
 
 keyword :: Keyword -> Parser ()
 keyword kw = (lexeme . try) $ string s *> notFollowedBy nameChar
@@ -501,7 +501,7 @@ keyword kw = (lexeme . try) $ string s *> notFollowedBy nameChar
       PackageKW        -> "package"
       ImportKW         -> "imports"
       RewriteKW        -> "rewrite"
-      GenerateKW       -> "generate"
+      ImplementKW      -> "implement"
       InKW             -> "in"
 
 sc :: Parser ()

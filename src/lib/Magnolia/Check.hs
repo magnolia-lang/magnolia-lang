@@ -226,7 +226,7 @@ checkModuleExpr tlDecls _
       allDecls <- foldM insertAndMergeDecl tcRewrittenDecls
                         (join $ M.elems tcRewDecls)
       pure (Ann src (MModuleDef allDecls tcDeps tcRenamingBlocks))
-    MModuleMorphism'GenerateWith genModuleExpr -> do
+    MModuleMorphism'ImplementWith genModuleExpr -> do
       let synthModuleExpr = Ann src (MModuleDef []
             [ Ann src (MModuleDep MModuleDepRequire genModuleExpr)
             , Ann src (MModuleDep MModuleDepUse moduleExpr)
