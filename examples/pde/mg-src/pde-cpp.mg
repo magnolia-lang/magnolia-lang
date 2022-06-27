@@ -99,7 +99,7 @@ program BasePDEProgram = {
 program PDEProgramDNF = {
   use (rewrite
         (rewrite
-          (generate ToIxwiseGenerator in BasePDEProgram)
+          (implement ToIxwiseGenerator in BasePDEProgram)
       with DNFRules 20)
     with ToIxwise 1);
 
@@ -119,7 +119,7 @@ program PDEProgram3D = {
   use (rewrite
         (rewrite
           (rewrite
-            (generate OFSpecializeSubstepGenerator in PDEProgramDNF)
+            (implement OFSpecializeSubstepGenerator in PDEProgramDNF)
           with OFSpecializePsi 10)
         with OFReduceMakeIxRotate 20)
       with SwitchSchedule[ sourceSchedule => schedule
@@ -134,7 +134,7 @@ program PDEProgram3DPadded = {
         (rewrite
           (rewrite
             (rewrite
-              (generate OFSpecializeSubstepGenerator in PDEProgramDNF)
+              (implement OFSpecializeSubstepGenerator in PDEProgramDNF)
             with OFSpecializePsi 10)
           with OFReduceMakeIxRotate 20)
         with OFPad[schedulePadded =>

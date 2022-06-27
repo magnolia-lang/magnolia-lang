@@ -96,15 +96,16 @@ program BasePDEProgram = {
   //use ExtBasicSchedule;
 }
 
-program PDEProgramDNF = {
+program PDEProgramMoA = {
   use (rewrite
-        (rewrite
-          (generate ToIxwiseGenerator in BasePDEProgram)
-      with DNFRules 20)
-    with ToIxwise 1);
-
+        (implement ToIxwiseGenerator in BasePDEProgram)
+      with ToIxwise 1);
   use ExtBasicSchedule;
-}
+};
+
+//implementation BasePDEProgram =
+
+program PDEProgramDNF = rewrite PDEProgramMoA with DNFRules 20;
 
 // // program PDEProgram2 = {
 // //   use (rewrite PDEProgramDNF with OFLiftCores 1);
@@ -120,7 +121,7 @@ program PDEProgram3D = {
   use (rewrite
         (rewrite
           (rewrite
-            (generate OFSpecializeSubstepGenerator in PDEProgramDNF)
+            (implement OFSpecializeSubstepGenerator in PDEProgramDNF)
           with OFSpecializePsi 10)
         with OFReduceMakeIxRotate 20)
       with SwitchSchedule[ sourceSchedule => schedule
@@ -130,7 +131,7 @@ program PDEProgram3D = {
   use ExtScalarIndex;
   use ExtAxisLength;
   use ExtSpecializeBase;
-  use ExtNeededFns[schedule3DPadded => schedule3D];
+  use Ext3DSchedule[schedule3DPadded => schedule3D];
 }
 
 program PDEProgram3DPadded = {
@@ -138,17 +139,17 @@ program PDEProgram3DPadded = {
         (rewrite
           (rewrite
             (rewrite
-              (generate OFSpecializeSubstepGenerator in PDEProgramDNF)
+              (implement OFSpecializeSubstepGenerator in PDEProgramDNF)
             with OFSpecializePsi 10)
           with OFReduceMakeIxRotate 20)
         with OFPad[schedulePadded =>
                    schedule3DPadded] 1)
       with OFEliminateModuloPadding 10);
 
-  use ExtScalarIndex;
-  use ExtAxisLength;
-  use ExtSpecializeBase;
-  use ExtNeededFns; // pulling in psi, schedules, etc...
+  use ExtScalarIndex;    // pulling in ScalarIndex utils
+  use ExtAxisLength;     // pulling in AxisLength utils
+  use ExtSpecializeBase; // pulling in psi
+  use Ext3DSchedule;     // pulling in schedule3DPadded
 }
 
 // program PDEProgram = PDEProgramDNF;
@@ -231,7 +232,7 @@ implementation ExtSpecializeBase = external CUDA [dims=(a,b,c), globals=()]
 }
 
 
-implementation ExtNeededFns = external CUDA [dims=(a,b,c), globals=(schedule3DPadded)] base.specialize_psi_ops_2 {
+implementation Ext3DSchedule = external CUDA [dims=(a,b,c), globals=(schedule3DPadded)] base.specialize_psi_ops_2 {
   require type Axis;
   require type Index;
   require type Offset;
