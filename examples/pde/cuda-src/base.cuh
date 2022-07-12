@@ -336,7 +336,6 @@ struct base_types {
 
         replenishPaddingGlobal<<<nbBlocks, nbThreadsPerBlock>>>(deviceArr);
 
-        cudaDeviceSynchronize();
         globalAllocator.free(deviceArr);
       }
 
