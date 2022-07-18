@@ -294,9 +294,8 @@ deriving instance Eq (MModule' PhCheck)
 type MModuleExpr p = Ann p MModuleExpr'
 data MModuleExpr' p =
     MModuleDef (XPhasedContainer p (MDecl p)) [MModuleDep p]
-               [MRenamingBlock p]
-  | MModuleRef (XRef p) [MRenamingBlock p]
-  | MModuleAsSignature (XRef p) [MRenamingBlock p]
+  | MModuleRef (XRef p)
+  | MModuleAsSignature (XRef p)
   | MModuleTransform (MModuleMorphism p) (XTransformTarget p)
   | MModuleExternal ExternalModuleInfo FullyQualifiedName (XExternalModule p)
 
@@ -315,9 +314,11 @@ data CudaDim3 = CudaDim3 Name Name Name
 
 deriving instance Eq (MModuleExpr' PhCheck)
 
-data MModuleMorphism p = MModuleMorphism'ToSignature
-                       | MModuleMorphism'RewriteWith (MModuleExpr p) Int
-                       | MModuleMorphism'ImplementWith (MModuleExpr p)
+data MModuleMorphism p =
+    MModuleMorphism'ToSignature
+  | MModuleMorphism'Rename (MRenamingBlock p)
+  | MModuleMorphism'RewriteWith (MModuleExpr p) Int
+  | MModuleMorphism'ImplementWith (MModuleExpr p)
 
 deriving instance Eq (MModuleMorphism PhCheck)
 
@@ -793,12 +794,13 @@ instance HasDependencies (MModule' PhCheck) where
 
 instance HasDependencies (MModuleExpr' PhParse) where
   dependencies moduleExpr = case moduleExpr of
-    MModuleDef _ deps _ -> join $
+    MModuleDef _ deps -> join $
       map (dependencies . _elem . _mmoduleDepModuleExpr . _elem) deps
-    MModuleRef refName _ -> [refName]
-    MModuleAsSignature refName _ -> [refName]
+    MModuleRef refName -> [refName]
+    MModuleAsSignature refName -> [refName]
     MModuleTransform transformation moduleExpr' -> (case transformation of
       MModuleMorphism'ToSignature -> []
+      MModuleMorphism'Rename _ -> []
       MModuleMorphism'RewriteWith rewriteRules _ -> dependencies rewriteRules
       MModuleMorphism'ImplementWith generator -> dependencies generator) <>
         dependencies moduleExpr'
@@ -806,9 +808,9 @@ instance HasDependencies (MModuleExpr' PhParse) where
 
 instance HasDependencies (MModuleExpr' PhCheck) where
   dependencies modul = case modul of
-    MModuleDef _ deps _ -> join $ map (snd . _ann) deps
-    MModuleRef v _ -> absurd v
-    MModuleAsSignature v _ -> absurd v
+    MModuleDef _ deps -> join $ map (snd . _ann) deps
+    MModuleRef v -> absurd v
+    MModuleAsSignature v -> absurd v
     MModuleTransform _ v -> absurd v
     MModuleExternal _ _ v -> absurd v
 
@@ -914,9 +916,9 @@ moduleDecls (Ann _ (MModule _ _ tcModuleExpr)) = moduleExprDecls tcModuleExpr
 -- | Extracts declarations from a type checked module expression.
 moduleExprDecls :: TcModuleExpr -> Env [TcDecl]
 moduleExprDecls (Ann _ moduleExpr) = case moduleExpr of
-  MModuleDef decls _ _ -> decls
-  MModuleRef v _ -> absurd v
-  MModuleAsSignature v _ -> absurd v
+  MModuleDef decls _ -> decls
+  MModuleRef v -> absurd v
+  MModuleAsSignature v -> absurd v
   MModuleTransform _ v -> absurd v
   MModuleExternal _ _ v -> absurd v
 

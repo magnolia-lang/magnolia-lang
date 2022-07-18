@@ -190,56 +190,57 @@ checkModuleExpr
   -> MModuleType
   -> ParsedModuleExpr
   -> MgMonad TcModuleExpr
-checkModuleExpr tlDecls _ (Ann src (MModuleRef ref renamingBlocks)) = do
+checkModuleExpr tlDecls _ (Ann src (MModuleRef ref)) = do
   -- TODO: cast module: do we need to check out the deps?
-  ~(Ann _ (MModuleDef decls deps refRenamingBlocks)) <-
+  ~(Ann _ (MModuleDef decls deps)) <-
     lookupTopLevelRef src (M.map getModules tlDecls) ref >>=
       \(~(Ann _ (MModule _ _ moduleExpr))) -> pure moduleExpr
-  tcRenamingBlocks <-
-    mapM (checkRenamingBlock (M.map getNamedRenamings tlDecls)) renamingBlocks
-  renamedDecls <- foldM applyRenamingBlock decls tcRenamingBlocks
-  let tcModuleExpr =  Ann src $
-        MModuleDef renamedDecls deps (refRenamingBlocks <> tcRenamingBlocks)
-  pure tcModuleExpr
+  pure $ Ann src $ MModuleDef decls deps
 
-checkModuleExpr tlDecls _
-                (Ann src (MModuleAsSignature ref renamingBlocks)) = do
-  let moduleRefExpr = Ann src $ MModuleRef ref renamingBlocks
+checkModuleExpr tlDecls _ (Ann src (MModuleAsSignature ref)) = do
+  let moduleRefExpr = Ann src $ MModuleRef ref
   checkModuleExpr tlDecls Implementation moduleRefExpr
     >>= castModuleExpr Signature
 
 -- TODO: handle
-checkModuleExpr tlDecls _
+checkModuleExpr tlDecls moduleType
         (Ann src (MModuleTransform morphism moduleExpr)) = do
   case morphism of
     MModuleMorphism'ToSignature -> throwLocatedE NotImplementedErr src
       "WIP have not implemented module morphism cast to signature"
+    MModuleMorphism'Rename renamingBlock -> do
+      ~(Ann _ (MModuleDef tcDecls tcDeps)) <-
+        checkModuleExpr tlDecls moduleType moduleExpr
+      tcRenamingBlock <-
+        checkRenamingBlock (M.map getNamedRenamings tlDecls) renamingBlock
+      renamedDecls <- applyRenamingBlock tcDecls tcRenamingBlock
+      pure (Ann src (MModuleDef renamedDecls tcDeps))
     -- TODO: here there'll be problems when merging different bodies coming from
     -- the same decl. Will work on error-handling after the deadline.
     MModuleMorphism'RewriteWith rewModuleExpr nbRewrites -> do
       tcModuleExpr <- checkModuleExpr tlDecls Implementation moduleExpr
       tcRewModuleExpr <- checkModuleExpr tlDecls Concept rewModuleExpr
-      ~(Ann _ (MModuleDef tcRewrittenDecls tcDeps tcRenamingBlocks)) <-
+      ~(Ann _ (MModuleDef tcRewrittenDecls tcDeps)) <-
           runOptimizer tcRewModuleExpr nbRewrites tcModuleExpr
-      ~(Ann _ (MModuleDef tcRewDecls _ _)) <-
+      ~(Ann _ (MModuleDef tcRewDecls _)) <-
         castModuleExpr Signature tcRewModuleExpr
       allDecls <- foldM insertAndMergeDecl tcRewrittenDecls
                         (join $ M.elems tcRewDecls)
-      pure (Ann src (MModuleDef allDecls tcDeps tcRenamingBlocks))
+      pure (Ann src (MModuleDef allDecls tcDeps))
     MModuleMorphism'ImplementWith genModuleExpr -> do
       let synthModuleExpr = Ann src (MModuleDef []
             [ Ann src (MModuleDep MModuleDepRequire genModuleExpr)
             , Ann src (MModuleDep MModuleDepUse moduleExpr)
-            ] [])
+            ])
       tcModuleExpr <- checkModuleExpr tlDecls Implementation synthModuleExpr
       tcGenModuleExpr <- checkModuleExpr tlDecls Concept genModuleExpr
-      ~(Ann _ (MModuleDef tcGenDecls _ _)) <-
+      ~(Ann _ (MModuleDef tcGenDecls _)) <-
         castModuleExpr Signature tcGenModuleExpr
-      let ~(Ann _ (MModuleDef tcDecls tcDeps tcRenamingBlocks)) = tcModuleExpr
+      let ~(Ann _ (MModuleDef tcDecls tcDeps)) = tcModuleExpr
           tcGenDeclsList = join (M.elems tcGenDecls)
       newDecls <- runGenerator tcGenModuleExpr tcModuleExpr
       allDecls <- foldM insertAndMergeDecl tcDecls (tcGenDeclsList <> newDecls)
-      pure (Ann src (MModuleDef allDecls tcDeps tcRenamingBlocks))
+      pure (Ann src (MModuleDef allDecls tcDeps))
 
 checkModuleExpr tlDecls moduleType
                 (Ann src (MModuleExternal extModuleInfo fqn moduleExpr)) = do
@@ -248,7 +249,7 @@ checkModuleExpr tlDecls moduleType
     >>= externalizeModuleExpr extModuleInfo fqn src
 
 checkModuleExpr tlDecls moduleType
-                (Ann modSrc (MModuleDef decls deps renamingBlocks)) = do
+                (Ann modSrc (MModuleDef decls deps)) = do
   moduleName <- getParentModuleName
   when (maybe False (any isLocalDecl . getModules)
               (M.lookup moduleName tlDecls)) $
@@ -288,14 +289,9 @@ checkModuleExpr tlDecls moduleType
     foldMAccumErrors (registerProto' True) protoScopeWithoutGuards
                      callablesAndModifiers
   -- Step 5: check bodies if allowed
-  finalScope <- foldMAccumErrors checkCallable' protoScope
-                                 callablesAndModifiers
-  -- Step 6: everything declared locally is fine inside the module expression,
-  --         check renamings
-  tcRenamingBlocks <-
-    mapM (checkRenamingBlock (M.map getNamedRenamings tlDecls)) renamingBlocks
-  tcRenamedDecls <- foldM applyRenamingBlock finalScope tcRenamingBlocks
-  pure $ Ann modSrc $ MModuleDef tcRenamedDecls tcDeps tcRenamingBlocks
+  tcDecls <- foldMAccumErrors checkCallable' protoScope
+                              callablesAndModifiers
+  pure $ Ann modSrc $ MModuleDef tcDecls tcDeps
   where
     mkAbstractTypeDecl :: ParsedTypeDecl -> MgMonad TcTypeDecl
     mkAbstractTypeDecl (Ann src (Type n)) =
@@ -372,11 +368,11 @@ checkCallable _ env modifiers
 -- as a parameter.
 checkModuleExprFitsModuleType :: MModuleType -> TcModuleExpr -> MgMonad ()
 checkModuleExprFitsModuleType targetModuleType tcModuleExpr
-  | MModuleRef v _ <- _elem tcModuleExpr = absurd v
-  | MModuleAsSignature v _ <- _elem tcModuleExpr = absurd v
+  | MModuleRef v <- _elem tcModuleExpr = absurd v
+  | MModuleAsSignature v <- _elem tcModuleExpr = absurd v
   | MModuleTransform _ v <- _elem tcModuleExpr = absurd v
   | MModuleExternal _ _ v <- _elem tcModuleExpr = absurd v
-  | MModuleDef decls _ _ <- _elem tcModuleExpr =
+  | MModuleDef decls _ <- _elem tcModuleExpr =
     case targetModuleType of
       -- Signatures do not carry axioms, nor callable bodies. Therefore, we
       -- strip them from the declarations.
@@ -477,21 +473,20 @@ checkConcrete src tcDecl = do
 -- any context.
 castModuleExpr :: MModuleType -> TcModuleExpr -> MgMonad TcModuleExpr
 castModuleExpr targetModuleType tcModuleExpr
-  | MModuleRef v _ <- _elem tcModuleExpr = absurd v
-  | MModuleAsSignature v _ <- _elem tcModuleExpr = absurd v
+  | MModuleRef v <- _elem tcModuleExpr = absurd v
+  | MModuleAsSignature v <- _elem tcModuleExpr = absurd v
   | MModuleTransform _ v <- _elem tcModuleExpr = absurd v
   | MModuleExternal _ _ v <- _elem tcModuleExpr = absurd v
-  | MModuleDef decls deps renamings <- _elem tcModuleExpr =
+  | MModuleDef decls deps <- _elem tcModuleExpr =
     case targetModuleType of
       -- Signatures do not carry axioms, nor callable bodies. Therefore, we
       -- strip them from the declarations.
       Signature -> let stripAxioms = filter (not . isAxiom) in
         pure $ Ann (_ann tcModuleExpr) $
           MModuleDef (M.map (map makeAbstract . stripAxioms) decls) deps
-                     renamings
       -- Concepts are signatures that can carry axioms.
       Concept -> pure $ Ann (_ann tcModuleExpr) $
-          MModuleDef (M.map (map makeAbstract) decls) deps renamings
+          MModuleDef (M.map (map makeAbstract) decls) deps
       -- Implementations are the most permissive block: every type of
       -- declaration can be carried around (though axioms can not be directly
       -- defined in them).
@@ -537,16 +532,16 @@ externalizeModuleExpr :: ExternalModuleInfo -- ^ information specific to the
                       -> TcModuleExpr
                       -> MgMonad TcModuleExpr
 externalizeModuleExpr extModuleInfo extModuleFqn src tcModuleExpr
-  | MModuleRef v _ <- _elem tcModuleExpr = absurd v
-  | MModuleAsSignature v _ <- _elem tcModuleExpr = absurd v
+  | MModuleRef v <- _elem tcModuleExpr = absurd v
+  | MModuleAsSignature v <- _elem tcModuleExpr = absurd v
   | MModuleTransform _ v <- _elem tcModuleExpr = absurd v
   | MModuleExternal _ _ v <- _elem tcModuleExpr = absurd v
-  | MModuleDef decls deps renamings <- _elem tcModuleExpr = do
+  | MModuleDef decls deps <- _elem tcModuleExpr = do
       traverse_ (
         traverse_ (recover checkAbstractOrImplementedInCurrentExternal)) decls
       let allRequirements = gatherAllRequirements $ join (M.elems decls)
       externalDecls <- mapM (mapM (makeExternal allRequirements)) decls
-      pure $ Ann (_ann tcModuleExpr) $ MModuleDef externalDecls deps renamings
+      pure $ Ann (_ann tcModuleExpr) $ MModuleDef externalDecls deps
   where
     -- Checks that a declaration is abstract or defined in the current
     -- external block.
@@ -1199,11 +1194,11 @@ checkModuleDep env (Ann src (MModuleDep mmoduleDepType moduleExpr)) = do
   where
     requireModuleExpr :: TcModuleExpr -> TcModuleExpr
     requireModuleExpr (Ann ann tcModuleExpr)
-      | MModuleRef v _ <- tcModuleExpr = absurd v
-      | MModuleAsSignature v _ <- tcModuleExpr = absurd v
+      | MModuleRef v <- tcModuleExpr = absurd v
+      | MModuleAsSignature v <- tcModuleExpr = absurd v
       | MModuleTransform _ v <- tcModuleExpr = absurd v
       | MModuleExternal _ _ v <- tcModuleExpr = absurd v
-      | MModuleDef decls deps renamings <- tcModuleExpr =
+      | MModuleDef decls deps <- tcModuleExpr =
           let addRequireModifier mods = if Require `elem` mods
                                         then mods
                                         else Require : mods
@@ -1218,7 +1213,7 @@ checkModuleDep env (Ann src (MModuleDep mmoduleDepType moduleExpr)) = do
                     _ ->
                       MCallableDecl (addRequireModifier modifiers) callableDecl
               newDecls = M.map (map addRequireModifierToDecl) decls
-          in Ann ann (MModuleDef newDecls deps renamings)
+          in Ann ann (MModuleDef newDecls deps)
 
 mkEnvFromDep :: TcModuleDep -> Env [TcDecl]
 mkEnvFromDep (Ann (src, _) (MModuleDep _ tcModuleExpr)) =

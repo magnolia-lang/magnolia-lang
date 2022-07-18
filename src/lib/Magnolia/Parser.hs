@@ -136,8 +136,17 @@ moduleDecl = label "module" $ annot $ do
   MModule typ name <$> moduleExpr
 
 moduleExpr :: Parser ParsedModuleExpr
-moduleExpr = parens moduleExpr <|> moduleDef <|> moduleCastedRef
-          <|> moduleTransformedRef <|> moduleExternal <|> moduleRef
+moduleExpr = do
+  modExpr <- parens moduleExpr <|> moduleDef <|> moduleCastedRef
+    <|> moduleTransformedRef <|> moduleExternal <|> moduleRef
+  renamingBlocks <- many renamingBlock
+  pure $ foldl doRename modExpr renamingBlocks
+    where
+      doRename modExpr@(Ann srcM _) oneRenamingBlock@(Ann srcR _) =
+        let ~(SrcCtx (Just (startM, _))) = srcM
+            ~(SrcCtx (Just (_, endR))) = srcR
+        in Ann (SrcCtx (Just (startM, endR))) $
+            MModuleTransform (MModuleMorphism'Rename oneRenamingBlock) modExpr
 
 moduleType :: Parser MModuleType
 moduleType = (keyword ConceptKW >> return Concept)
@@ -170,15 +179,13 @@ moduleTransformedRef = annot $ do
 moduleRef :: Parser ParsedModuleExpr
 moduleRef = annot $ do
   refName <- fullyQualifiedName NSPackage NSModule
-  renamingBlocks <- many renamingBlock
-  return $ MModuleRef refName renamingBlocks
+  return $ MModuleRef refName
 
 moduleCastedRef :: Parser ParsedModuleExpr
 moduleCastedRef = annot $ do
   keyword SignatureKW
   refName <- parens $ fullyQualifiedName NSPackage NSModule
-  renamingBlocks <- many renamingBlock
-  return $ MModuleAsSignature refName renamingBlocks
+  return $ MModuleAsSignature refName
 
 moduleExternal :: Parser ParsedModuleExpr
 moduleExternal = annot $ do
@@ -222,8 +229,7 @@ moduleDef = annot $ do
        else keyword UseKW >> Right <$> dependency MModuleDepUse))
   let decls = [decl | (Left decl) <- declsAndDeps]
       deps  = [dep  | (Right dep) <- declsAndDeps]
-  renamingBlocks <- many renamingBlock
-  pure $ MModuleDef decls deps renamingBlocks
+  pure $ MModuleDef decls deps
   where
     declaration :: Bool -> Parser ParsedDecl
     declaration isExplicitlyRequired = label "declaration" $ do

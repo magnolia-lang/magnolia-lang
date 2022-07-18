@@ -490,11 +490,11 @@ runGenerator generatorModuleExpr (Ann _ ctxModuleExpr') = do
   liftIO $ mapM_ print constraintDb
   -- 4. traverse each constraint to create a new callable
   x <- case ctxModuleExpr' of
-    MModuleDef contextDecls _ _ -> do
+    MModuleDef contextDecls _ -> do
       mapM (generateCallable contextDecls generatorModuleExpr)
             constraintDb
-    MModuleRef v _ -> absurd v
-    MModuleAsSignature v _ -> absurd v
+    MModuleRef v -> absurd v
+    MModuleAsSignature v -> absurd v
     MModuleTransform _ v -> absurd v
     MModuleExternal _ _ v -> absurd v
   liftIO $ pprint x
@@ -545,11 +545,11 @@ runOptimizer optimizerModuleExpr maxSteps (Ann src tgtModuleExpr) = do
   -- 4. traverse each expression in the target module to rewrite it (while
   -- elaborating the scope)
   resultModuleExpr <- Ann src <$> case tgtModuleExpr of
-    MModuleDef decls deps renamings -> do
+    MModuleDef decls deps -> do
       decls' <- mapM (traverse $ rewriteDecl constraintDb) decls
-      pure $ MModuleDef decls' deps renamings
-    MModuleRef v _ -> absurd v
-    MModuleAsSignature v _ -> absurd v
+      pure $ MModuleDef decls' deps
+    MModuleRef v -> absurd v
+    MModuleAsSignature v -> absurd v
     MModuleTransform _ v -> absurd v
     MModuleExternal {} -> pure tgtModuleExpr
   liftIO $ pprint resultModuleExpr

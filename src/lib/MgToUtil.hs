@@ -86,10 +86,11 @@ orderedRequirements extDeclDetails = L.sortBy orderRequirements $
 -- distinct.
 gatherUniqueExternalRequirements :: TcModuleExpr -> [(Name, [Requirement])]
 gatherUniqueExternalRequirements (Ann _ tcModuleExpr')
-  | MModuleRef v _ <- tcModuleExpr' = absurd v
-  | MModuleAsSignature v _ <- tcModuleExpr' = absurd v
+  | MModuleRef v <- tcModuleExpr' = absurd v
+  | MModuleAsSignature v <- tcModuleExpr' = absurd v
   | MModuleExternal _ _ v <- tcModuleExpr' = absurd v
-  | MModuleDef decls _ _ <- tcModuleExpr' =
+  | MModuleTransform _ v <- tcModuleExpr' = absurd v
+  | MModuleDef decls _ <- tcModuleExpr' =
     S.toList $ foldl accExtReqs S.empty (join $ M.elems decls)
   where
     accExtReqs :: S.Set (Name, [Requirement]) -> TcDecl

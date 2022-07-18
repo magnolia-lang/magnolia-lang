@@ -134,13 +134,13 @@ instance Pretty (MModule' PhCheck) where
     p moduleType <+> p name <+> "=" <+> p moduleExpr
 
 instance Pretty (MModuleExpr' PhCheck) where
-  pretty (MModuleDef decls deps renamingBlocks) =
+  pretty (MModuleDef decls deps) =
     lbrace <> line <>
     indent 4 (vsep (map p deps <>
                     map ((<> semi) . p) (join (M.elems decls)))) <> line <>
-    rbrace <> align (vsep $ map p renamingBlocks)
-  pretty (MModuleRef v _) = absurd v
-  pretty (MModuleAsSignature v _) = absurd v
+    rbrace
+  pretty (MModuleRef v) = absurd v
+  pretty (MModuleAsSignature v) = absurd v
   pretty (MModuleTransform _ v) = absurd v
   pretty (MModuleExternal extModuleInfo fqn moduleExpr') =
     "external" <+> p extModuleInfo <+> p fqn <+> p moduleExpr'

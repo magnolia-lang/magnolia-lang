@@ -66,11 +66,11 @@ mgPackageToCudaSelfContainedProgramPackage tcPkg =
 
     extractIncludeFromModuleExpr :: TcModuleExpr -> S.Set CudaInclude
     extractIncludeFromModuleExpr (Ann _ moduleExpr) = case moduleExpr of
-      MModuleRef v _ -> absurd v
-      MModuleAsSignature v _ -> absurd v
+      MModuleRef v -> absurd v
+      MModuleAsSignature v -> absurd v
       MModuleTransform _ v -> absurd v
       MModuleExternal _ _ v -> absurd v
-      MModuleDef decls _ _ -> do
+      MModuleDef decls _ -> do
         let innerFoldFn acc tcDecl =
               maybe acc (`S.insert` acc) (extractExternalReference tcDecl)
         foldl (foldl innerFoldFn) S.empty decls
@@ -100,7 +100,7 @@ mgPackageToCudaSelfContainedProgramPackage tcPkg =
 mgProgramToCudaProgramModule :: Name -> TcModule -> MgMonad CudaModule
 mgProgramToCudaProgramModule
   pkgName (Ann declO (MModule Program name
-                              tcModuleExpr@(Ann _ (MModuleDef decls deps _)))) =
+                              tcModuleExpr@(Ann _ (MModuleDef decls deps)))) =
   enter name $ do
     let moduleFqName = FullyQualifiedName (Just pkgName) name
         boundNames = S.fromList . map _name $
